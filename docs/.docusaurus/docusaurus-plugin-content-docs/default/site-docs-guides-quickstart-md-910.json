@@ -1,0 +1,25 @@
+{
+  "id": "guides/quickstart",
+  "title": "Quickstart",
+  "description": "Get from zero to a verified piece of impact in ~10 minutes.",
+  "source": "@site/docs/guides/quickstart.md",
+  "sourceDirName": "guides",
+  "slug": "/guides/quickstart",
+  "permalink": "/docs/guides/quickstart",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/masareen/masareen-docs/tree/main/docs/guides/quickstart.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "id": "quickstart",
+    "title": "Quickstart",
+    "sidebar_position": 1
+  },
+  "sidebar": "guides",
+  "next": {
+    "title": "Guide: Individual Users",
+    "permalink": "/docs/guides/individual-user"
+  }
+}

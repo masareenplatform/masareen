@@ -1,0 +1,8 @@
+# AUDIT: Opportunities surface reached via the bottom navigation "Explore" tab.
+appId: com.masaren.app
+---
+- runFlow: login.yaml
+
+- tapOn: "Explore"
+- waitForAnimationToEnd
+- assertVisible: "Opportunities"

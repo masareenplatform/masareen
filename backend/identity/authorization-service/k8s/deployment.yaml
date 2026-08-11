@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: authorization-service
+  namespace: masaren
+  labels:
+    app: authorization-service
+    domain: identity
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: authorization-service
+  template:
+    metadata:
+      labels:
+        app: authorization-service
+        domain: identity
+    spec:
+      containers:
+        - name: authorization-service
+          image: masaren/authorization-service:latest
+          ports:
+            - containerPort: 8003
+          envFrom:
+            - secretRef:
+                name: masaren-secrets
+            - configMapRef:
+                name: masaren-config
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8003
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8003
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: masaren-authorization-service
+  namespace: masaren
+spec:
+  selector:
+    app: authorization-service
+  ports:
+    - port: 80
+      targetPort: 8003
+  type: ClusterIP

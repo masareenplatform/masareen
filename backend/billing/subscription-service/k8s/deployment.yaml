@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: subscription-service
+  namespace: masaren
+  labels:
+    app: subscription-service
+    domain: billing
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: subscription-service
+  template:
+    metadata:
+      labels:
+        app: subscription-service
+        domain: billing
+    spec:
+      containers:
+        - name: subscription-service
+          image: masaren/subscription-service:latest
+          ports:
+            - containerPort: 8024
+          envFrom:
+            - secretRef:
+                name: masaren-secrets
+            - configMapRef:
+                name: masaren-config
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8024
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8024
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: masaren-subscription-service
+  namespace: masaren
+spec:
+  selector:
+    app: subscription-service
+  ports:
+    - port: 80
+      targetPort: 8024
+  type: ClusterIP

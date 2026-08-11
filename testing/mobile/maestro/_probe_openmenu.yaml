@@ -1,0 +1,7 @@
+appId: com.masaren.app
+---
+- runFlow: login.yaml
+- tapOn:
+    text: "Menu"
+- waitForAnimationToEnd
+- assertVisible: "MASAREEN Tools"

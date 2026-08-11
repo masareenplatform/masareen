@@ -1,0 +1,489 @@
+
+% ============================================================
+% SECTION 5: COMBINED BACKEND ARCHITECTURE
+% ============================================================
+\section{Combined Backend Architecture}
+
+\subsection{Purpose and Design}
+
+The Combined Backend is a design pattern unique to the MASAREN platform that merges all 35+ microservices into a single FastAPI process for local development efficiency. This approach eliminates the overhead of running 30+ separate Docker containers during development while maintaining complete service compatibility.
+
+\begin{description}
+  \item[Purpose:] Single-process backend that merges all microservices for local development
+  \item[Architecture:] Imports each service as a uniquely-named package and routes requests to appropriate handlers
+  \item[Benefits:] Local development on a laptop or small cloud droplet without running the full Docker stack
+  \item[Complexity:] Duplicate table registration requires SQLAlchemy Table.\_\_new\_\_ patching
+  \item[Performance:] Single process eliminates network overhead between services
+\end{description}
+
+\subsection{Service Registration Mechanism}
+
+The combined backend programmatically registers each service package at runtime. Each service is given a unique alias and its source directory is added to Python's module path:
+
+\begin{lstlisting}[language=Python, caption=Service Registration in combined/main.py]
+SERVICES = [
+    ("ms_identity",      "identity/identity-service"),
+    ("ms_auth",          "identity/authentication-service"),
+    ("ms_authz",         "identity/authorization-service"),
+    ("ms_organization",  "execution/organization-service"),
+    ("ms_program",       "execution/program-service"),
+    ("ms_task",          "execution/task-service"),
+    ("ms_workflow",      "execution/workflow-service"),
+    ("ms_verification",  "verification/verification-service"),
+    ("ms_evidence",      "verification/evidence-service"),
+    ("ms_gps",           "verification/gps-service"),
+    ("ms_audit",         "verification/audit-service"),
+    ("ms_media",         "verification/media-service"),
+    ("ms_submission",    "verification/submission-service"),
+    ("ms_graph",         "graph/graph-service"),
+    ("ms_reputation",    "reputation/portfolio-service"),
+    ("ms_impact_score",  "reputation/impact-score-service"),
+    ("ms_org_score",     "reputation/organization-score-service"),
+    ("ms_marketplace",   "marketplace/opportunity-service"),
+    ("ms_matching",      "marketplace/matching-service"),
+    ("ms_report",        "reporting/report-service"),
+    ("ms_analytics",     "reporting/analytics-service"),
+    ("ms_forecast",      "reporting/forecast-service"),
+    ("ms_notification",  "notifications/notification-service"),
+    ("ms_chat",          "chat-service"),
+    ("ms_billing",       "billing/billing-service"),
+    ("ms_payment",       "billing/payment-service"),
+    ("ms_subscription",  "billing/subscription-service"),
+    ("ms_partner",       "partners/partner-service"),
+    ("ms_coin",          "coin/coin-service"),
+    ("ms_ads",           "ads/ads-service"),
+    ("ms_platform",      "platform/platform-service"),
+]
+\end{lstlisting}
+
+\subsection{Package Registration Function}
+
+Each service is dynamically registered as a top-level Python package. This allows standard Python imports to resolve service modules correctly:
+
+\begin{lstlisting}[language=Python, caption=Dynamic Package Registration]
+def _register_service_package(alias: str, rel: str) -> None:
+    \"\"\"Register backend/<rel> as a top-level package named alias.\"\"\"
+    svc_root = os.path.join(BACKEND, rel)
+    pkg = types.ModuleType(alias)
+    pkg.__path__ = [svc_root]
+    pkg.__package__ = alias
+    sys.modules[alias] = pkg
+\end{lstlisting}
+
+\subsection{Duplicate Table Resolution}
+
+A critical challenge of merging 30+ independent services is that many define the same SQLAlchemy ORM tables (e.g., \texttt{users}, \texttt{organizations}). The solution is a monkey-patch on \texttt{Table.\_\_new\_\_} that deduplicates table registrations:
+
+\begin{lstlisting}[language=Python, caption=SQLAlchemy Table Deduplication]
+import sqlalchemy as _sa
+from sqlalchemy import Table as _Table
+
+_orig_table_new = _Table.__new__
+
+def _patched_table_new(cls, *args, **kwargs):
+    metadata = kwargs.get("metadata") or \
+               (args[1] if len(args) >= 2 else None)
+    name = kwargs.get("name") or \
+           (args[0] if args else None)
+    schema = kwargs.get("schema")
+
+    if metadata is not None and name is not None:
+        key = (schema, name) if schema else name
+        if key in metadata.tables:
+            return metadata.tables[key]
+
+    return _orig_table_new(cls, *args, **kwargs)
+
+_Table.__new__ = staticmethod(_patched_table_new)
+\end{lstlisting}
+
+\subsection{Route Merging}
+
+After registering packages and patching tables, the combined backend iterates through all services and merges their FastAPI routes into a single application:
+
+\begin{lstlisting}[language=Python, caption=Route Merging]
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI(
+    title="MASAREN Combined Backend",
+    version="0.1.0"
+)
+
+for alias, rel in SERVICES:
+    try:
+        _register_service_package(alias, rel)
+        mod = importlib.import_module(f"{alias}.src.main")
+        svc = getattr(mod, "app", None)
+
+        if svc is None:
+            continue
+
+        for r in list(svc.routes):
+            if getattr(r, "path", None) in SKIP:
+                svc.routes.remove(r)
+
+        app.include_router(svc.router)
+
+        for exc_type, handler in \
+                svc.exception_handlers.items():
+            if exc_type not in app.exception_handlers:
+                app.add_exception_handler(exc_type, handler)
+
+        _included.append(alias)
+        print(f"[combined] OK included {alias}", flush=True)
+    except Exception as e:
+        print(f"[combined] FAIL {alias}: {e!r}", flush=True)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=os.getenv(
+        "CORS_ORIGINS",
+        "http://localhost:3000,http://localhost:3001"
+    ).split(","),
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+\end{lstlisting}
+
+\subsection{Service Skip List}
+
+Certain routes are excluded from the combined backend to avoid conflicts:
+\begin{itemize}
+  \item Gateway routes (\texttt{/api/v1/*}) -- the gateway should not proxy to itself
+  \item Duplicate health check endpoints (only one \texttt{/health} is kept)
+  \item OpenAPI documentation endpoints (only the combined app's docs are exposed)
+\end{itemize}
+
+\clearpage
+
+% ============================================================
+% SECTION 6: WEB APPLICATION ARCHITECTURE
+% ============================================================
+\section{Web Application Architecture}
+
+\subsection{Component Architecture}
+
+The web application at \texttt{apps/web} is a React 18.2 + TypeScript application built with Vite 5.1. It follows a component-based architecture with clear separation of concerns:
+
+\subsubsection{Directory Structure}
+
+\begin{verbatim}
+apps/web/src/
+  components/
+    layout/          TopNav, Sidebar, Header, RightRail
+    common/          Branding, ErrorBoundary, Icons
+  pages/             30+ page components
+  services/          API client layer
+  store/             React Context providers
+  hooks/             Custom React hooks
+  types/             TypeScript type definitions
+  test/              Test utilities and setup
+  i18n.tsx           Internationalization configuration
+\end{verbatim}
+
+\subsubsection{Page Structure}
+
+The application defines 30+ pages accessible through React Router v6:
+
+\begin{longtable}{|p{3.5cm}|p{3cm}|p{6cm}|}
+\hline
+\textbf{Page} & \textbf{Route} & \textbf{Description} \\
+\hline
+\endhead
+LandingPage & /, /landing & Public landing with platform overview \\
+\hline
+LoginPage & /login & Authentication with email/password and Google OAuth \\
+\hline
+RegisterPage & /register & User registration with email verification \\
+\hline
+DashboardPage & /dashboard & Personal dashboard with metrics and activity \\
+\hline
+ProgramsPage & /programs & Program discovery and enrollment \\
+\hline
+TasksPage & /tasks & Task management and assignment \\
+\hline
+EvidencePage & /evidence & Evidence submission and tracking \\
+\hline
+PassportPage & /passport & Digital impact passport \\
+\hline
+OpportunitiesPage & /opportunities & Marketplace opportunity discovery \\
+\hline
+PortfolioPage & /portfolio & Impact asset portfolio \\
+\hline
+ProfilePage & /profile & User profile management \\
+\hline
+PersonnelProfilePage & /personnel/:id & Public personnel profile \\
+\hline
+InstitutionProfilePage & /institution/:id & Institution profile view \\
+\hline
+AdminPage & /admin & Administrative dashboard (ADMIN/SUPER\_ADMIN) \\
+\hline
+NotificationsPage & /notifications & Notification center \\
+\hline
+ReportsPage & /reports & Analytics and reports \\
+\hline
+BillingPage & /billing & Billing and subscription management \\
+\hline
+ChatPage & /chat & Real-time messaging \\
+\hline
+FeedPage & /feed & Social activity feed \\
+\hline
+WalletPage & /wallet & MRC wallet management \\
+\hline
+\ldots & \ldots & Additional pages for ads, payments, revenue, challenges, etc. \\
+\hline
+\end{longtable}
+
+\subsection{Routing Architecture}
+
+The application implements protected routes with role-based access control:
+
+\begin{lstlisting}[language=TypeScript, caption=Protected Route Implementation]
+function RequireRole({
+  roles,
+  children
+}: {
+  roles: string[];
+  children: ReactElement;
+}) {
+  const { user, isAuthenticated } = useAuth();
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (user && !roles.includes(user.role))
+    return <Navigate to="/dashboard" replace />;
+  return children;
+}
+\end{lstlisting}
+
+\subsection{State Management}
+
+The application uses a dual state management approach:
+
+\begin{description}
+  \item[React Context] Client-side state for authentication (\texttt{AuthProvider}), theme preferences, and UI state
+  \item[TanStack Query] Server state management with automatic caching, background refetching, and optimistic updates
+\end{description}
+
+\subsection{Internationalization}
+
+The application supports bilingual English/Arabic operation:
+
+\begin{lstlisting}[language=TypeScript, caption=i18n Configuration]
+// apps/web/src/i18n.tsx
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+
+i18n.use(initReactI18next).init({
+  resources: {
+    en: { translation: enTranslations },
+    ar: { translation: arTranslations }
+  },
+  lng: 'en',
+  fallbackLng: 'en',
+  interpolation: { escapeValue: false }
+});
+\end{lstlisting}
+
+\subsection{Authentication Flow}
+
+\begin{enumerate}
+  \item User navigates to login page
+  \item User authenticates via email/password or Google OAuth popup
+  \item Backend issues JWT access token and refresh token
+  \item Axios interceptor attaches JWT to all API requests
+  \item On 401 response, interceptor attempts token refresh
+  \item On refresh failure, user is redirected to login
+\end{enumerate}
+
+\subsection{API Client Layer}
+
+The services layer provides type-safe API interaction:
+
+\begin{lstlisting}[language=TypeScript, caption=API Client Structure]
+// apps/web/src/services/
+import axios from 'axios';
+
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL ||
+           'http://localhost:8080/api/v1',
+});
+
+api.interceptors.request.use((config) => {
+  const token = getAccessToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response?.status === 401) {
+      await refreshToken();
+      return api.request(error.config);
+    }
+    return Promise.reject(error);
+  }
+);
+\end{lstlisting}
+
+\clearpage
+
+% ============================================================
+% SECTION 7: MOBILE APPLICATION ARCHITECTURE
+% ============================================================
+\section{Mobile Application Architecture}
+
+\subsection{Architecture Overview}
+
+The mobile application at \texttt{apps/mobile} is built with Flutter 3.22+ and follows the MVVM (Model-View-ViewModel) architecture pattern with Provider for state management. The app provides the same feature set as the web application, optimized for mobile form factors with offline support and device-native capabilities.
+
+\subsection{Directory Structure}
+
+\begin{verbatim}
+apps/mobile/lib/
+  features/            Feature-specific modules
+  providers/           ChangeNotifier providers
+  services/            API client and service layer
+  widgets/             Reusable UI components
+  models/              Data models and DTOs
+  screens/             Full-page screen widgets
+  utils/               Utility functions and helpers
+  main.dart            Application entry point
+\end{verbatim}
+
+\subsection{Screen Structure}
+
+The Flutter app implements the following screens:
+\begin{itemize}
+  \item Login and Registration screens with Google OAuth integration
+  \item Dashboard with activity summary and quick actions
+  \item Program discovery and enrollment screens
+  \item Task list and detail screens with mobile-optimized forms
+  \item Evidence capture screen with camera integration and GPS binding
+  \item Digital passport visualization
+  \item Opportunity marketplace with search and filters
+  \item Impact portfolio with charts and metrics
+  \item Profile management with edit capabilities
+  \item Real-time chat interface
+  \item Social feed with infinite scroll
+  \item Notification center with push notification handling
+  \item Billing and subscription management
+  \item Wallet for MRC balance and transactions
+\end{itemize}
+
+\subsection{State Management}
+
+The app uses the Provider package for state management:
+
+\begin{lstlisting}[language=Dart, caption=Provider Setup]
+// main.dart
+void main() {
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => ProgramProvider()),
+        ChangeNotifierProvider(create: (_) => TaskProvider()),
+        ChangeNotifierProvider(create: (_) => EvidenceProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationProvider()),
+      ],
+      child: const MasarenApp(),
+    ),
+  );
+}
+\end{lstlisting}
+
+\subsection{Navigation Architecture}
+
+The app uses Flutter Navigator with a custom bottom navigation bar:
+
+\begin{itemize}
+  \item \textbf{Bottom Navigation Tabs:} Dashboard, Programs, Tasks, Profile, More
+  \item \textbf{Drawer Menu:} Settings, Help, About, Logout
+  \item \textbf{Deep Linking:} Notification-driven navigation to specific screens
+  \item \textbf{Modal Routes:} Evidence capture, chat, and form modals
+\end{itemize}
+
+\subsection{Mobile-Specific Features}
+
+The mobile app leverages device capabilities not available on the web:
+
+\begin{itemize}
+  \item \textbf{Camera Integration:} Direct evidence capture through device camera
+  \item \textbf{GPS Location Binding:} Automatic coordinates attachment to submissions
+  \item \textbf{Offline Mode:} Queue submissions when offline, sync when connected
+  \item \textbf{Push Notifications:} FCM-based real-time alerts for assignments and verification
+  \item \textbf{Biometric Auth:} Fingerprint/Face ID for quick app unlock
+  \item \textbf{Image Gallery:} Photo library access for evidence selection
+  \item \textbf{File Management:} Download and open impact certificates and reports
+\end{itemize}
+
+\subsection{API Integration}
+
+\begin{lstlisting}[language=Dart, caption=API Service Layer]
+class ApiService {
+  static const String baseUrl =
+    'http://localhost:8080/api/v1';
+
+  Future<Map<String, dynamic>> get(
+    String endpoint, {
+    Map<String, String>? headers,
+  }) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/$endpoint'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ${await getToken()}',
+        ...?headers,
+      },
+    );
+    return json.decode(response.body);
+  }
+
+  Future<Map<String, dynamic>> post(
+    String endpoint, {
+    Map<String, dynamic>? body,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/$endpoint'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ${await getToken()}',
+      },
+      body: json.encode(body),
+    );
+    return json.decode(response.body);
+  }
+}
+\end{lstlisting}
+
+\subsection{Bilingual Support}
+
+The mobile app provides full bilingual support similar to the web:
+
+\begin{lstlisting}[language=Dart, caption=Internationalization Setup]
+class MasarenLocalizations {
+  static const Map<String, Map<String, String>> _localized = {
+    'en': {
+      'app.title': 'MASAREN',
+      'nav.home': 'Home',
+      'nav.programs': 'Programs',
+      'nav.tasks': 'Tasks',
+      'nav.profile': 'Profile',
+    },
+    'ar': {
+      'app.title': 'مسارين',
+      'nav.home': 'الرئيسية',
+      'nav.programs': 'البرامج',
+      'nav.tasks': 'المهام',
+      'nav.profile': 'الملف الشخصي',
+    },
+  };
+}
+\end{lstlisting}
+
+\clearpage

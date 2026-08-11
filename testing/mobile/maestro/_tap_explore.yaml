@@ -1,0 +1,7 @@
+appId: com.masaren.app
+---
+- runFlow: login.yaml
+- tapOn:
+    point: "324,2253"
+- waitForAnimationToEnd
+- assertVisible: "Opportunities"

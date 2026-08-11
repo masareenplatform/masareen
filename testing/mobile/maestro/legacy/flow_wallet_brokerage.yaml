@@ -1,0 +1,26 @@
+# MASAREN Mobile — Maestro E2E flow (wallet convert applies brokerage fee).
+#
+# Run:
+#   maestro test testing/mobile/maestro/flow_wallet_brokerage.yaml --device emulator-5554
+appId: com.masaren.app
+---
+- clearState
+- launchApp
+- waitForAnimationToEnd
+- tapOn: "Sign in"
+- runFlow: login.yaml
+- tapOn: "Open navigation menu"
+- tapOn: "MASAREN Coin"
+- assertVisible: "MASAREN Coin Wallet"
+- waitForAnimationToEnd
+- tapOn: "Convert (EGP ⇄ MRC)"
+- tapOn: "Fiat amount (EGP)"
+- inputText: "100"
+- tapOn:
+    text: "Convert"
+    exact: true
+- waitForAnimationToEnd
+- scrollUntilVisible:
+    element:
+      text: "Converted. Platform fee (brokerage): 25.0 MRC. Net: 975.0 MRC"
+    timeout: 20000

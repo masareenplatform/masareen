@@ -1,0 +1,26 @@
+{
+  "id": "workflows",
+  "title": "Platform Workflows",
+  "description": "This guide covers all major workflows in the MASAREEN platform, from registration to verification.",
+  "source": "@site/docs/workflows.md",
+  "sourceDirName": ".",
+  "slug": "/workflows",
+  "permalink": "/docs/workflows",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/masareen/masareen-docs/tree/main/docs/workflows.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 2,
+  "frontMatter": {
+    "id": "workflows",
+    "title": "Platform Workflows",
+    "slug": "/workflows",
+    "sidebar_position": 2
+  },
+  "sidebar": "intro",
+  "previous": {
+    "title": "Workflow & Verification Pipelines",
+    "permalink": "/docs/intro/workflow-and-pipelines"
+  }
+}

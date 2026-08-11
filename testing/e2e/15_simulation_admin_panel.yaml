@@ -1,0 +1,25 @@
+# E2E Simulation: Admin panel
+# Pre-condition: must be logged in as admin
+appId: com.masaren.app
+---
+- waitForAnimationToEnd:
+    timeout: 3000
+# Navigate to Admin via More menu
+- tapOn: "Tab 5 of 5"
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn: "Admin"
+- waitForAnimationToEnd:
+    timeout: 8000
+- takeScreenshot: /tmp/e2e_15_admin_panel
+# Scroll admin content
+- swipe:
+    start: "540,1400"
+    end: "540,800"
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: /tmp/e2e_15_admin_scroll
+# Back to feed
+- tapOn: "Tab 1 of 5"
+- waitForAnimationToEnd:
+    timeout: 3000

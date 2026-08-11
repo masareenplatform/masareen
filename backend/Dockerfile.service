@@ -1,0 +1,40 @@
+# Generic, DRY Dockerfile for every MASAREN Python microservice.
+#
+# All services share the `backend/shared` package, so the Docker build context
+# MUST be `./backend` (not the individual service directory). Pass the service's
+# path (relative to backend/) via the SERVICE_PATH build arg, e.g.:
+#
+#   build:
+#     context: ./backend
+#     dockerfile: Dockerfile.service
+#     args:
+#       SERVICE_PATH: identity/identity-service
+#
+# Every service container listens on port 8000 internally.
+FROM python:3.12-slim
+
+WORKDIR /app
+
+ARG SERVICE_PATH
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app
+
+# Install dependencies first (better layer caching).
+COPY ${SERVICE_PATH}/requirements.txt ./requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the shared package (imported as `shared.*` by every service) and the
+# service source. The service is wrapped in a `svc` package (copied to /app/svc)
+# so that the code's package-relative imports (e.g. `from ..config.settings`)
+# resolve correctly, and the app is launched as `svc.src.main:app`.
+COPY shared ./shared
+COPY ${SERVICE_PATH}/ ./svc/
+RUN touch /app/svc/__init__.py
+
+EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)" || exit 1
+
+CMD ["uvicorn", "svc.src.main:app", "--host", "0.0.0.0", "--port", "8000"]

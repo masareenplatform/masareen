@@ -1,0 +1,28 @@
+# AUDIT: Persistent session ("cookies"). After a successful login the token is
+# stored; restarting the app should land the user straight on the home feed
+# (no login screen). Signing out then returns to the login screen.
+appId: com.masaren.app
+---
+- runFlow: login.yaml
+
+# Restart the app WITHOUT clearing state -> persisted token should skip login.
+- stopApp
+- launchApp
+- waitForAnimationToEnd
+- assertVisible:
+    id: "menu_button"
+
+# Sign out from Settings -> back to login.
+- tapOn:
+    id: "menu_button"
+- waitForAnimationToEnd
+- scrollUntilVisible:
+    element:
+      text: "Settings"
+    timeout: 10000
+- tapOn: "Settings"
+- waitForAnimationToEnd
+- assertVisible: "Sign out"
+- tapOn: "Sign out"
+- waitForAnimationToEnd
+- assertVisible: "Sign In"

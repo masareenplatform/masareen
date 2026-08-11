@@ -1,0 +1,69 @@
+# MASAREN Mobile — Maestro E2E flow (login + the four monetisation surfaces).
+#
+# Drives the already-installed debug APK on the emulator. The app talks to the
+# mock gateway on the host (10.0.2.2:8080). No app rebuild needed between runs.
+#
+# Run:
+#   adb install -r android/build/app/outputs/flutter-apk/app-debug.apk
+#   node testing/mobile/mock_gateway.mjs            # host :8080
+#   maestro test testing/mobile/maestro/flow_surfaces.yaml --device emulator-5554
+appId: com.masaren.app
+---
+- clearState
+- launchApp
+- waitForAnimationToEnd
+- tapOn: "Sign in"
+- waitForAnimationToEnd
+- runFlow: login.yaml
+
+# --- Wallet ---
+- tapOn: "Open navigation menu"
+- waitForAnimationToEnd
+- tapOn: "MASAREN Coin"
+- waitForAnimationToEnd
+- assertVisible: "MASAREN Coin Wallet"
+- waitForAnimationToEnd
+- waitForAnimationToEnd
+- assertVisible: "Platform brokerage fee on monetizable actions: 2.50%"
+
+# --- Ads Manager ---
+- clearState
+- launchApp
+- waitForAnimationToEnd
+- tapOn: "Sign in"
+- waitForAnimationToEnd
+- runFlow: login.yaml
+- tapOn: "Open navigation menu"
+- waitForAnimationToEnd
+- tapOn: "Ads Manager"
+- waitForAnimationToEnd
+- assertVisible: "Ads Manager"
+- waitForAnimationToEnd
+- waitForAnimationToEnd
+- assertVisible: "Platform brokerage fee on ad budget: 2.50%"
+
+# --- Payments ---
+- clearState
+- launchApp
+- waitForAnimationToEnd
+- tapOn: "Sign in"
+- waitForAnimationToEnd
+- runFlow: login.yaml
+- tapOn: "Open navigation menu"
+- waitForAnimationToEnd
+- tapOn: "Payments"
+- waitForAnimationToEnd
+- assertVisible: "Payments"
+
+# --- Platform Revenue & Fees ---
+- clearState
+- launchApp
+- waitForAnimationToEnd
+- tapOn: "Sign in"
+- waitForAnimationToEnd
+- runFlow: login.yaml
+- tapOn: "Open navigation menu"
+- waitForAnimationToEnd
+- tapOn: "Platform Revenue & Fees"
+- waitForAnimationToEnd
+- assertVisible: "Platform Revenue & Fees"

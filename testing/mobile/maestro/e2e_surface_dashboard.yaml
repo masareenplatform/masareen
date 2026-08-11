@@ -1,0 +1,11 @@
+﻿# MASAREN - real-backend surface E2E (Maestro): Dashboard
+appId: com.masaren.app
+---
+- runFlow: e2e_login.yaml
+- tapOn:
+    id: "menu_button"
+- waitForAnimationToEnd
+- assertVisible: "MASAREN Tools"
+- tapOn: "Dashboard"
+- waitForAnimationToEnd
+- assertVisible: "Dashboard"

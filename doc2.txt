@@ -1,0 +1,471 @@
+MASAREN Media Institutions
+Blueprint
+Credible Mass Communication, Audience Growth, and Profitable
+Distribution
+Sector Architecture and Operating Model
+
+MASAREN Platform Architecture
+July 21, 2026
+
+Operating principle: Reach is economically sustainable only when provenance,
+editorial responsibility, rights, corrections, and audience value remain visible
+throughout distribution.
+Abstract
+This document defines how Egyptian and regional media institutions can use MASAREN
+as a verified content, newsroom, distribution, audience, rights, and commercial infrastructure. It covers public broadcasters, television and radio networks, newspapers, digital publishers, production companies, sports-rights operations, independent newsrooms, creators,
+correspondents, and institutional communication teams. Examples include the National Media Authority and Maspero, United Media Services, Al-Ahram and Ahram Online, Al-Masry
+Al-Youm, television networks, radio channels, and digital-first newsrooms. The blueprint explains how feed algorithms can increase qualified viewership without rewarding sensationalism; how a transparent confidence model can strengthen audience trust; how source, author,
+evidence, rights, correction, and sponsorship records travel with content; and how credible content becomes more discoverable, reusable, syndicateable, measurable, and profitable.
+Institutional names are illustrative and do not imply platform participation or endorsement.
+
+1
+
+Contents
+1 Media Mission and Market Position
+
+3
+
+2 Canonical Media Content Model
+
+3
+
+3 Media Architecture on MASAREN
+
+5
+
+4 Credibility Confidence Mechanism
+
+6
+
+5 Feed Algorithm for Viewership and Trust
+
+7
+
+6 Egyptian Institution Use Cases
+
+8
+
+7 Newsroom-to-Revenue Workflow
+
+8
+
+8 Profitability Without Credibility Erosion
+
+10
+
+9 Governance, Safety, and Delivery
+
+11
+
+References
+
+12
+
+2
+
+1 Media Mission and Market Position
+The coordination problem. A modern media institution operates across broadcast, websites,
+mobile applications, social channels, connected television, podcasts, newsletters, syndication,
+live events, and advertising platforms. Editorial planning, source material, rights, production,
+fact-checking, legal review, scheduling, audience analytics, commercial commitments, and corrections are frequently held in separate systems. The resulting fragmentation slows publication,
+weakens provenance, creates rights risk, and encourages teams to optimize each channel for
+immediate clicks rather than long-term audience value.
+Egyptian institutional examples. The National Media Authority and Maspero represent a
+public-service and national broadcasting context spanning audio, visual, digital, and live distribution; UNESCO describes the unified Maspero website as an electronic window for its sectors
+and online broadcasting. United Media Services describes a broad portfolio across visual, audio, print, digital, production, advertising, and sports-rights activities. Al-Ahram and Ahram
+Online illustrate a publishing organization serving news, business, culture, sport, and multimedia audiences (Al-Ahram Organization, 2026; UNESCO, 2026; United Media Services, 2026).
+MASAREN can support these different institutional models without imposing one editorial
+policy or ownership structure.
+Trust and engagement pressure. News institutions face simultaneous pressure to grow direct audiences, compete with platforms and creators, finance reporting, respond quickly, and
+maintain public confidence. Reuters Institute reporting continues to document diﬀicult conditions for news engagement, trust, and digital revenue, while audience attitudes toward algorithmic selection vary according to perceived control, purpose, and transparency (Reuters Institute
+for the Study of Journalism, 2023, 2026). The platform must therefore optimize meaningful consumption, return behavior, subscription, and public value rather than raw impressions
+alone.
+Target outcome. The media capability should allow an institution to ingest a source once,
+preserve evidence and rights, produce multiple language and format variants, obtain editorial
+and legal approval, distribute to owned and partner channels, personalize feeds within published rules, measure attention and trust, correct every derivative, and reconcile revenue. The
+same content identifier must connect newsroom decisions, public disclosures, recommendation
+behavior, advertising separation, rights usage, corrections, and payment.
+
+2 Canonical Media Content Model
+Story identity. Every story, episode, clip, live stream, image, audio segment, data visualization, or social card receives a stable content identifier. A story can have multiple versions
+and derivatives, but the platform preserves the original source package, editorial state, author,
+desk, language, rights, publication history, and correction lineage. Republishing a clip on five
+channels creates five distribution records, not five unrelated stories.
+
+3
+
+Source package. The source package contains interviews, documents, oﬀicial statements, field
+notes, photographs, raw video, data, translations, prior coverage, and machine-generated assistance. Each item records who supplied it, when it was obtained, what rights apply, how
+identity was verified, whether confidentiality is required, and what transformations occurred.
+Anonymous sources receive restricted identity records and a public explanation approved by
+editorial policy, not exposure through a public profile.
+Editorial record. The editorial record identifies the reporter, producer, editor, fact-checker,
+legal reviewer, standards reviewer, publication decision, headline changes, key claims, supporting evidence, conflicts, corrections, and final accountability owner. The Trust Project’s
+indicators provide a useful transparency reference for author expertise, type of work, citations,
+methods, local knowledge, diverse voices, feedback, and organizational practice (The Trust
+Project, 2026).
+Rights and commercial record. Rights Service stores owner, territory, channel, language,
+format, term, exclusivity, embargo, attribution, royalty, music, talent release, archive restriction,
+and takedown obligations. Commercial records distinguish advertising, sponsorship, branded
+content, aﬀiliate relationships, subscription access, syndication, and public-interest funding.
+The user interface must never present paid material as independent news.
+Audience and trust record. Audience events record impressions, qualified starts, completion,
+active time, return behavior, saves, shares, subscriptions, complaints, hides, and correction
+acknowledgements. Trust events record source disclosure views, evidence opens, author-profile
+views, correction history, user feedback, fact-check results, and successful challenges. Raw
+engagement and credibility remain separate dimensions so a sensational item cannot buy a
+trust score through popularity.
+
+4
+
+Domain
+
+Owner
+
+Representative data
+
+Source and evidence
+
+Source Registry /
+newsroom
+
+Editorial workflow
+
+Newsroom Service
+
+Production
+
+Media Production
+Service
+
+Rights
+
+Rights Service
+
+Distribution
+
+Channel and Partner Services
+
+Audience
+
+Analytics Service
+
+Credibility
+
+Trust Service
+
+Commercial
+
+Advertising, Subscription, and
+Billing
+
+Source identity, documents, raw media,
+capture time, confidentiality, verification, evidence hashes
+Pitch, assignment, draft, review, claim
+checklist, approval, hold, correction,
+accountability owner
+Script, rundown, edit decision list, subtitles, transcript, graphics, audio mix,
+thumbnails, derivatives
+Ownership, license, territory, term, embargo, attribution, royalty, releases,
+restrictions
+Website, app, broadcast, social,
+newsletter, podcast, syndication, schedule, delivery result
+Qualified attention, completion, return,
+subscription, share, complaint, fatigue,
+conversion, cohort
+Provenance, corroboration, author expertise, disclosure, corrections, challenge outcomes, confidence explanation
+Inventory, campaign, sponsorship, paywall, entitlement, invoice, settlement,
+revenue share
+
+Table 1: Ownership and contents of the canonical media record
+
+3 Media Architecture on MASAREN
+Bounded contexts. Identity and Organization manage staff, contributors, institutions, roles,
+and partner access. Source Registry manages sources and evidence. Newsroom Service manages pitch-to-publication state. Verification combines claim review, evidence, provenance, and
+specialist checks. Media Production creates transcripts, captions, clips, graphics, and language
+variants. Rights governs permissions. Content Graph links people, places, organizations, events,
+claims, topics, and prior coverage. Feed and Recommendation select content. Distribution
+publishes to owned and partner channels. Trust calculates explainable confidence indicators.
+Advertising, Subscription, Billing, and Payment monetize inventory and access. Reporting
+measures editorial, audience, trust, commercial, and public-value outcomes.
+Source Registry
+and Evidence
+
+Assignment, Draft,
+and Editorial Review
+
+Verification, Rights,
+and Standards
+
+Audience, Credibility,
+Feed Ranking, Diversity,
+and Public-Value Analytics
+and Trust Controls
+
+Production, Language,
+and Derivatives
+
+Content Graph
+and Archive
+
+Owned, Broadcast, Social, Advertising, Subscription,
+Syndication, Billing
+Partner Distribution
+
+Figure 1: MASAREN credible-media production and distribution loop
+Contract model. Newsroom and partner APIs use HTTP and OpenAPI; content, rights, correction, feed, delivery, audience, and billing events use AsyncAPI and CloudEvents-compatible
+envelopes. W3C trace context follows a story from source ingestion through editorial review and
+
+5
+
+every downstream channel. The outbox and durable inbox preserve delivery, while zero-trust
+policy limits access to confidential sources, embargoes, legal holds, unreleased media, and commercial terms (AsyncAPI Initiative, 2023; Cloud Native Computing Foundation, 2024; Fielding
+et al., 2022; National Institute of Standards and Technology, 2020; OpenAPI Initiative, 2024;
+World Wide Web Consortium, 2021).
+
+4 Credibility Confidence Mechanism
+Meaning of confidence. The confidence value estimates how completely a published item
+satisfies the institution’s declared evidence and transparency policy. It is not a government
+truth label, political approval score, or guarantee that every claim is correct. The score is
+accompanied by the factors, missing evidence, responsible editor, policy version, update time,
+and challenge route. A publisher may expose a simple label publicly while authorized newsroom
+users see the full diagnostic.
+Input dimensions. Source confidence measures identity assurance, directness, reliability history, and conflicts. Evidence confidence measures document, recording, data, location, timestamp, and chain of custody. Corroboration measures independent support for material claims.
+Editorial confidence measures named accountability, specialist review, legal or standards review
+where required, and completion of the claim checklist. Transparency measures author, type of
+work, method, citations, funding, correction route, and rights disclosure. Manipulation risk
+measures synthetic media, misleading edits, coordinated behavior, plagiarism, and anomalous
+provenance. The Trust Project informs public disclosures, while NIST AI guidance governs automated assistance and synthetic-content risk (National Institute of Standards and Technology,
+2023, 2024; The Trust Project, 2026).
+Illustrative formula. A newsroom may configure a policy-specific score
+C = 0.20S + 0.22E + 0.18K + 0.15R + 0.15T + 0.10H − P,
+where S is source assurance, E evidence completeness, K corroboration, R editorial review,
+T transparency, H correction and reliability history, and P is a bounded penalty for unresolved manipulation, conflict, or rights risk. Weights vary by content type: breaking news may
+initially have limited corroboration but must display uncertainty and receive a short review
+deadline; investigative work requires stronger evidence and legal review; opinion is evaluated
+for transparent authorship and sourcing rather than agreement with its conclusion.
+Correction effect. A transparent correction does not automatically destroy institutional confidence. The platform distinguishes an honest, timely correction from concealment, repeated
+negligence, or material fabrication. Corrections propagate to every derivative and partner, the
+prior version remains auditable, affected audiences can be notified, and the confidence explanation updates. This creates an incentive to correct quickly rather than silently overwrite.
+
+6
+
+5 Feed Algorithm for Viewership and Trust
+Objective. The feed seeks to maximize long-term qualified audience value subject to credibility,
+diversity, safety, rights, and editorial constraints. Qualified value combines active attention,
+completion appropriate to format, return behavior, saves, subscriptions, constructive sharing,
+and satisfaction. It subtracts immediate exits, hides, repeated exposure, complaints, unresolved
+credibility risk, and content fatigue. Raw clicks are a weak signal and never the sole optimization
+target.
+Candidate generation. Candidates come from followed topics and institutions, local relevance, breaking-news desks, scheduled programming, content graph relationships, continuing
+stories, public-service obligations, personalized history, editorial selections, and partner inventory. Rights, age, territory, language, embargo, paywall, and safety policy remove ineligible
+content before ranking.
+Ranking. An illustrative ranking score is
+R = 0.24U + 0.16Q + 0.14F + 0.13C + 0.10D + 0.09L + 0.08N + 0.06B − X,
+where U is predicted user value, Q production and editorial quality, F freshness appropriate
+to the story, C credibility confidence, D source and viewpoint diversity contribution, L local
+or contextual relevance, N novelty, B institutional or public-service priority, and X combines
+fatigue, duplication, safety, manipulation, and rights penalties. The formula is a governance
+example rather than a universal truth; every deployment requires offline evaluation, controlled
+experiments, subgroup analysis, editorial review, and rollback.
+Diversity and public value. Re-ranking prevents one topic, publisher, format, or viewpoint
+from occupying the entire feed. The algorithm reserves space for important low-click publicservice information, corrections, local reporting, culture, science, and underrepresented communities. Users can select chronological, following, local, or editorial modes and inspect why an
+item appeared. Research on audience attitudes supports giving users clarity and meaningful
+control over algorithmic news selection (Reuters Institute for the Study of Journalism, 2023).
+Confidence and reach. High confidence improves eligibility for prominent placement, syndication, notifications, advertising adjacency, and archive reuse, but confidence alone does not
+guarantee reach. A highly verified item still needs relevance and format quality. Low-confidence
+breaking news may be distributed with explicit uncertainty and narrower reach, then re-ranked
+when corroboration arrives. Content with unresolved fabrication, rights, or safety risk is held
+regardless of predicted engagement.
+Institutional learning. Analytics reports why reach changed: topic saturation, headline mismatch, weak opening retention, slow page performance, audience fatigue, insuﬀicient local relevance, low source disclosure, rights restriction, or correction history. Editors receive actionable
+diagnostics rather than pressure to imitate sensational content. Experiments optimize formats,
+
+7
+
+timing, language, packaging, and recommendations while protecting editorial red lines.
+
+6 Egyptian Institution Use Cases
+National Media Authority and Maspero. MASAREN can unify television, radio, archive,
+digital, regional, and international distribution around one content identity while keeping channel schedules and editorial ownership separate. A public-service campaign can begin with an
+oﬀicial source package, create Arabic and multilingual broadcast, radio, short-video, article,
+and accessible-caption variants, distribute them across terrestrial and digital channels, and
+measure reach by region and demographic band without building unrestricted citizen profiles.
+The archive gains searchable provenance, rights, and correction history (UNESCO, 2026).
+United Media Services. A group with television, audio, print, digital, production, advertising, and sports-rights activities can use the platform as a group-wide content graph and rights
+ledger. A drama, sports event, interview, or news package can be produced once, assigned
+channel and territory rights, promoted through coordinated campaigns, clipped for social distribution, sold through advertising or sponsorship, and reconciled across subsidiaries while each
+newsroom retains editorial accountability (United Media Services, 2026).
+Al-Ahram and Ahram Online. A publishing organization can connect historic archive, daily
+reporting, English and Arabic digital coverage, author expertise, data journalism, photography,
+and syndication. Search and recommendation can resurface authoritative background when
+a story develops, while Trust indicators, corrections, and source links strengthen the reader’s
+ability to understand why the item deserves confidence (Al-Ahram Organization, 2026; The
+Trust Project, 2026).
+Al-Masry Al-Youm and digital publishers. An independent or privately operated newsroom can use the same architecture for source management, assignment, subscription, advertising, newsletters, social distribution, investigations, audience membership, and correction propagation. The platform does not impose the editorial line; it makes provenance, responsibility,
+rights, sponsorship, and algorithmic treatment auditable.
+Sports newsroom example. A sports desk receives an oﬀicial Egyptian Football Association
+fixture, a club media release, accredited match data, reporter observations, photographs, and
+rights-cleared video. The desk links every asset to the match identity, publishes live text and
+verified statistics, holds unconfirmed injury claims, produces Arabic and English summaries,
+distributes approved clips, and reconciles sponsor delivery. Corrections to a result or disciplinary
+decision update all derivatives through the same content graph (Al Ahly Sporting Club, 2026;
+Egyptian Football Association, 2026).
+
+7 Newsroom-to-Revenue Workflow
+Assignment. A desk creates a story proposal with audience need, public value, deadline,
+format plan, sources, risks, and commercial separation. Newsroom Service assigns accountable
+8
+
+roles and creates the story identifier. Confidential-source access is restricted from production,
+advertising, and general analytics teams.
+Verification. Reporters upload documents, recordings, photographs, and data; Verification
+extracts metadata, checks provenance, identifies claims requiring corroboration, detects possible
+synthetic or manipulated media, and records uncertainty. Editors decide whether to publish,
+hold, narrow, or label the item. AI may transcribe, translate, summarize, classify, or suggest
+links, but the responsible human approves material claims and final framing (National Institute
+of Standards and Technology, 2024).
+Production and rights. Production creates article, broadcast, vertical video, podcast,
+newsletter, caption, translation, and social-card variants.
+
+Rights Service confirms talent
+
+releases, archive terms, music, images, territory, embargo, and partner obligations. Advertising
+and sponsorship are attached only after editorial content and commercial content are clearly
+separated.
+Distribution. The approved package enters the content graph and candidate pools. The feed
+ranks it for eligible audiences, broadcast scheduling places it in linear channels, Notification
+applies urgency and fatigue policy, Partner Service delivers syndication or platform feeds, and
+social distribution creates channel-specific tracking. Every destination receives the canonical
+identifier, version, rights, confidence label, and correction endpoint.
+Revenue. Advertising Service sells contextually and behaviorally permitted inventory; Subscription enforces entitlements; Syndication records partner usage; Sponsorship tracks promised
+placements and exclusions; Billing invoices verified delivery; and Payment reconciles settlement.
+Revenue attribution credits the original reporting and derivative teams according to declared
+internal rules instead of rewarding only the final click source.
+Learning and correction. Audience and Trust Services measure qualified attention, confidence interactions, conversions, complaints, diversity, and correction outcomes. Editors review
+diagnostics and may change headline, format, explanation, timing, or distribution, but the
+system retains the history. A correction publishes a new version, updates feeds and partner
+endpoints, and can notify people who consumed the affected version.
+
+9
+
+Source package and assignment
+
+Claim, evidence, rights, and standards review
+
+Article, broadcast, clip, podcast, translation
+
+Content graph, confidence, and feed ranking
+
+Advertising, subscription, syndication, sponsor
+
+Owned, broadcast, social, newsletter, partner
+
+Audience learning, corrections, and audit
+
+Figure 2: Verified media workflow from source to revenue and correction
+
+8 Profitability Without Credibility Erosion
+Direct audience. MASAREN helps institutions strengthen direct web, app, newsletter, podcast, and connected-TV relationships. Identity and consent support membership and personalization; the content graph improves discovery and archive value; feed controls reduce fatigue;
+and qualified-attention analytics distinguish loyal use from accidental clicks. Direct relationships reduce dependency on external platform changes.
+Advertising. Credibility confidence, rights status, content category, audience consent, and
+brand-safety controls make inventory easier to price and audit. Advertisers can buy verified
+contexts and completed delivery rather than vague impression bundles. The institution can
+protect news independence by preventing advertisers from editing ranking weights, suppressing
+criticism, or disguising branded content.
+Subscription and membership. The platform can package premium investigations, archives,
+specialist verticals, sports coverage, documentaries, newsletters, events, and ad-light experiences. Recommendations improve trial-to-subscription conversion by explaining the value of
+relevant work, while retention models identify content gaps without exploiting sensitive traits.
+Syndication and rights. A rights-aware content graph makes articles, video, audio, photographs, data, and archive packages discoverable to approved partners. Territory, language,
+term, royalty, attribution, correction, and takedown obligations travel with each item. Automated usage evidence reduces leakage and accelerates invoicing.
+Production eﬀiciency. Transcription, translation, captioning, metadata extraction, clipping,
+archive matching, and format generation can reduce repetitive work when quality controls and
+human approval are preserved. NIST guidance requires generative-AI risk to be governed across
+design, use, evaluation, incident response, and change management rather than treated as a
+simple productivity tool (National Institute of Standards and Technology, 2024).
+
+10
+
+9 Governance, Safety, and Delivery
+Editorial independence. The institution defines editorial policy, but the platform requires
+accountable roles, visible corrections, separation of news and paid content, protected-source
+access, auditable ranking changes, and a documented override process. Public-service and
+commercial institutions may configure different objectives, yet neither may secretly convert
+payment or political preference into credibility confidence.
+Algorithm governance. Every feed model has an owner, purpose, training and evaluation
+data record, protected features, offline metrics, experiment design, subgroup results, risk assessment, rollback threshold, and expiry review. Editors can set public-interest constraints and
+emergency modes. Users can inspect basic recommendation reasons and choose less personalized modes. Major changes are logged and reviewed under the AI risk-management process
+(National Institute of Standards and Technology, 2023, 2024; Reuters Institute for the Study
+of Journalism, 2023).
+Cybersecurity and continuity. Media organizations require protection for sources, embargoes, live production, broadcast systems, archives, credentials, and distribution channels.
+Zero-trust access, workload identity, encryption, immutable backups, signed releases, dependency controls, newsroom continuity, incident playbooks, and partner isolation follow the core
+MASAREN platform and media-specific cybersecurity guidance (European Broadcasting Union,
+2025; National Institute of Standards and Technology, 2020; OWASP Foundation, 2025; SLSA
+Community, 2025; SPDX Project, 2024).
+Delivery phases. Foundation delivers organization, newsroom identity, source registry, content identity, editorial workflow, rights, and audit. Pilot connects one newsroom, website, application, social channel, and analytics environment with confidence disclosures and correction
+propagation. Scale adds broadcast, radio, multilingual production, content graph, recommendation, subscription, advertising, syndication, and archive migration. Ecosystem delivery adds
+partner APIs, creator workflows, public-service exchanges, and cross-institution trusted-news
+recommendations such as those explored by public-service broadcasters (European Broadcasting
+Union, 2021).
+Acceptance scenario. A pilot must ingest an oﬀicial statement and field interview, protect
+one confidential source, verify claims, publish Arabic and English article and video variants,
+enforce rights, rank the story with an explanation, distribute it to owned and partner channels,
+display confidence disclosures, record qualified attention, sell or reserve compliant inventory,
+issue a correction, propagate that correction everywhere, and reconcile the editorial, audience,
+rights, and revenue history from one canonical story identifier.
+
+11
+
+References
+Al Ahly Sporting Club. (2026). Oﬀicial website of al ahly sporting club. Retrieved July 21, 2026,
+from https://www.alahlyegypt.com/en
+Al-Ahram Organization. (2026). Ahram online. Retrieved July 21, 2026, from https://english.
+ahram.org.eg/
+AsyncAPI Initiative. (2023). Asyncapi specification version 3.0.0. Retrieved July 21, 2026, from
+https://www.asyncapi.com/docs/reference/specification/v3.0.0
+Cloud Native Computing Foundation. (2024). Cloudevents specification. Retrieved July 21, 2026,
+from https://cloudevents.io/
+Egyptian Football Association. (2026). Oﬀicial portal. Retrieved July 21, 2026, from https :
+//www.efa.com.eg/
+European Broadcasting Union. (2021). Public service broadcasters give audiences access to
+trusted news. Retrieved July 21, 2026, from https://tech.ebu.ch/news/2021/01/tenpublic- service- broadcasters- join- ebu- initiative- to- give- audiences- access- to- trustednews-from-across-europe
+European Broadcasting Union. (2025). Cybersecurity for media vendor systems, software, and
+services. Retrieved July 21, 2026, from https://tech.ebu.ch/publications/r143
+Fielding, R. T., Nottingham, M., & Reschke, J. (2022). Http semantics (tech. rep. No. RFC
+9110). Internet Engineering Task Force. https://doi.org/10.17487/RFC9110
+National Institute of Standards and Technology. (2020). Zero trust architecture (tech. rep.
+No. NIST SP 800-207). U.S. Department of Commerce. https://doi.org/10.6028/NIST.
+SP.800-207
+National Institute of Standards and Technology. (2023). Artificial intelligence risk management
+framework (ai rmf 1.0) (tech. rep. No. NIST AI 100-1). U.S. Department of Commerce.
+https://doi.org/10.6028/NIST.AI.100-1
+National Institute of Standards and Technology. (2024). Artificial intelligence risk management
+framework: Generative artificial intelligence profile (tech. rep. No. NIST AI 600-1). U.S.
+Department of Commerce. https://doi.org/10.6028/NIST.AI.600-1
+OpenAPI Initiative. (2024). Openapi specification version 3.1.1. Retrieved July 21, 2026, from
+https://spec.openapis.org/oas/v3.1.1.html
+OWASP Foundation. (2025). Cyclonedx bill of materials standard. Retrieved July 21, 2026, from
+https://cyclonedx.org/specification/overview/
+Reuters Institute for the Study of Journalism. (2023). Attitudes towards algorithms and their
+impact on news. Retrieved July 21, 2026, from https://reutersinstitute.politics.ox.ac.
+uk/digital-news-report/2023/attitudes-towards-algorithms-impact-news
+Reuters Institute for the Study of Journalism. (2026). Digital news report 2026: Overview and key
+findings. Retrieved July 21, 2026, from https://reutersinstitute.politics.ox.ac.uk/digitalnews-report/2026/dnr-executive-summary
+SLSA Community. (2025). Supply-chain levels for software artifacts specification version 1.1.
+Retrieved July 21, 2026, from https://slsa.dev/spec/v1.1/
+
+12
+
+SPDX Project. (2024). Spdx specification version 3.0. Retrieved July 21, 2026, from https :
+//spdx.dev/use/specifications/
+The Trust Project. (2026). Trust indicators explained. Retrieved July 21, 2026, from https :
+//thetrustproject.org/trust-indicators/
+UNESCO. (2026). The national media authority—maspero. Retrieved July 21, 2026, from https:
+/ / www . unesco . org / creativity / en / policy - monitoring - platform / national - media authority-maspero
+United Media Services. (2026). About united media services. Retrieved July 21, 2026, from
+https://ums.com.eg/en/about-en/
+World Wide Web Consortium. (2021). Trace context (tech. rep.). World Wide Web Consortium.
+Retrieved July 21, 2026, from https://www.w3.org/TR/trace-context/
+
+13
+
+

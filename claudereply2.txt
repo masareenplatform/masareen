@@ -1,0 +1,146 @@
+Architected component structure with type mapping and follow state management
+Architected component structure with type mapping and follow state management
+The user is asking for a massive redesign spanning web and mobile platforms with social media aesthetics combined with professional polish, including comprehensive functionality and thorough testing. Given the effort constraints, I need to propose a realistic phased approach and dive into executing the first stage with concrete deliverables before the session ends.
+
+My strategy is to quickly outline the design language and concept—a hybrid social-professional identity leveraging the existing Tailwind theme with the brand's navy and gold palette—then immediately start building real design system components and updated layouts for Stage 1, stopping for feedback before moving forward. I need to move from planning into actual execution—checking the current design tokens in the config files, then building out Stage 1 with real code for the design system, shell components, and feed page to have something concrete to show before the session ends.
+
+Show less
+
+Inspect current design tokens
+
+Script
+Looking at the existing design system, there's already a solid Material3 foundation with navy, azure, and green branding, social platform styling with comments, Cairo font support, and card-based components with animations—so rather than starting from scratch, I should build on what's already there.
+
+Given the scope of this project (22 pages, 20+ mobile screens) and the request for comprehensive redesign with testing in stages, I need to be realistic about what's achievable. I'll propose a five-stage plan covering web, mobile, and testing, then dive into Stage 1 right now: refining the design system and rebuilding the core shell components (top nav, sidebar, right rail, bottom nav, menu sheet) plus the feed page, post card, and composer—these are the highest-impact pieces since they form the social backbone that appears across every page.
+
+Before I redesign anything, I should examine what's already in the codebase—the current feed page, post card, composer, and navigation components—to understand what functionality needs to be preserved, like mock posts and internationalization hooks, rather than starting from scratch.
+
+Show less
+
+Check sizes of feed/shell components
+
+Script
+
+View FeedPage
+The platform already has solid fundamentals with filters, composer, and feed functionality that mirrors Facebook and Instagram. The redesign probably needs visual refinement and richer features—things like a stories bar, diverse post types, reaction options beyond likes, save functionality, media rendering, verification badges, SDG tags as chips, discovery sections for trending content and recommendations, and professional elements like endorsements to give it more polish and depth.
+
+Given the scope and time constraints, I'm going to take a staged approach rather than rebuild everything from scratch. I'll map out a clear roadmap first so we can get feedback incrementally, then focus Stage 1 on enhancing the core feed experience—refining design tokens with Instagram and LinkedIn-inspired touches like a story rail, richer post cards with reactions and save buttons, impact chips, a trending sidebar, and verified badges. I'll wire everything to existing state and services to avoid creating new mock data, then pause to get feedback before moving forward.
+
+Show less
+
+View PostCard component
+The component is already pretty functional with the core social features like badges, comments, sharing, and media grids, plus impact/SDG indicators. A truly comprehensive redesign would be a massive undertaking though — it could expand into stories, reels, groups, live video, marketplace features, professional endorsements, networking, messaging, notifications, saved posts, hashtags, and search functionality.
+
+Given the scope and the existing codebase, I'm going to take a staged approach: first, I'll map out a concrete 5-6 stage plan that combines Facebook/Instagram feed patterns with LinkedIn's professional polish, making sure each stage builds on what the backend already supports without inventing new endpoints. I'll start with Stage 1 now — a design language refresh and shell redesign covering the top nav, sidebar, right rail, and bottom nav for web — then pause for feedback before moving forward.
+
+For Stage 1 specifically, I'm refining the design tokens (adding a story ring gradient, leveraging existing shadows), then redesigning the shell components to feel more network-oriented — pulling in real data from existing services like the opportunity and analytics endpoints to populate a LinkedIn-style profile strength widget in the sidebar and trending content in the right rail.
+
+Let me pull up those three component files to see what we're working with.
+
+Show less
+
+View Sidebar
+I'm checking whether the Sidebar's imports from ../common/Branding will still work after deleting Branding.js — the TypeScript version should still export NavItem, PRIMARY_NAV, and TOOLS_NAV, so I need to verify those exports are actually there.
+
+
+View RightRail
+I'm noticing that the "People to follow" and "Trending in impact" sections in RightRail are completely hardcoded with static data and aren't pulling from any actual service. I should connect these to real data sources — using userService.list() for the people recommendations and deriving trending topics from the programs and opportunities through programService or analyticsService, or aggregating from postService if the backend doesn't have a dedicated trending endpoint. This reinforces why my Stage 1 plan makes sense: I need to build out the foundational shell and frontend infrastructure first.
+
+Before I start implementing, I should quickly review Composer.tsx, TopNav.tsx, and Icons.tsx to understand what I'm working with. Then I'll tackle Stage 1: polishing the Sidebar, TopNav, and RightRail visually while wiring RightRail to real userService data and deriving trending from actual posts. I also need to enhance PostCard with bookmark/save functionality (using localStorage since there's no backend concept for saved posts yet) and add a follow button connected to userService. I'm realizing the web API doesn't have follow endpoints like the mobile version does, but since the backend gateway already supports /users/{id}/follow, I can add those endpoints to web's api.ts to match what mobile has — that's a legitimate parity fix, not inventing new contracts.
+
+For Stage 1 specifically, I'll add follow and suggestedUsers to the web userService, redesign RightRail to pull real suggested users and derive trending from hashtags and program tags in current posts, add a lightweight search bar to TopNav that filters across posts and programs, and enhance PostCard with localStorage-backed bookmarks and a follow button for non-connected authors.
+
+I should also add an "Impact Highlights" rail at the top of the feed pulling from top-ranked posts by impact value, and update the Composer with post-type selector chips and an SDG picker. …
+
+Show less
+
+View TopNav
+The search input is just a placeholder with no actual functionality — it doesn't handle changes, show results, or navigate anywhere. That's a real gap I need to address with proper global search across programs, opportunities, and users. I'm also noticing the notifications bell icon is completely missing from the navbar even though there's a NotificationsPage and translation keys for it, and I can see the IconBell is imported in Icons.tsx but never actually used in the JSX.
+
+So I'm mapping out Stage 1 work: wire up the search with debouncing and a dropdown showing real results, add a functional notifications bell that displays the unread count and links to the notifications page, and polish the visual design to match Instagram/Facebook style with a centered search on desktop and a LinkedIn-style profile dropdown. I'll also add a mini profile card at the top of the sidebar showing the user's avatar, name, and role, then replace the hardcoded suggestions and trending sections with real data from the user service.
+
+For the PostCard, I'm adding save/bookmark functionality using localStorage and a follow button for non-self authors. I'm also planning an "Impact Highlights" rail at the top of the feed that displays top-ranked posts in a horizontal avatar carousel, reusing the existing ranking logic rather than creating new mock data.
+
+Now I need to start implementing by adding the follow endpoints to the web API's userService to match what the mobile app already has.
+
+Show less
+
+Check truncated middle section of api.ts around users/notifications
+I need to add follow, isFollowing, and suggestedUsers methods to the userService, implementing the same endpoints that exist on the mobile side.
+
+
+Add follow/connection endpoints to web userService, mirroring the mobile client's existing contract
+
+api.ts
++18
+-5
+I need to map the avatarColors and userService types carefully since the API returns raw objects with an unknown shape, but I know the User type has id, email, full_name, and role fields. I'll also need to handle follow state management with optimistic toggling and loading states, using the backend's isFollowing endpoint for each user. Now I'm building out the new RightRail component with this data structure in mind.
+
+
+Redesign RightRail: real suggested-connections data (was hardcoded), real trending derived from live posts, working follow button with loading/error state
+
+RightRail.tsx
++181
+-79
+The i18n key for the app name is already set up. Now I'm redesigning the TopNav component to add a functional search feature with debouncing across programs and opportunities, plus a working notifications bell that displays the unread count. I need to check the notification service to see if items have a read field so I can calculate the unread count properly.
+
+For the search, I'm going to fetch from both services and filter client-side rather than relying on unverified backend query parameters — I'll call the list endpoints once per session and cache the results, then filter locally for the typeahead. For the notifications bell, I'll fetch the notification list, count unread items, and poll every 60 seconds to keep it fresh, with a link to the notifications page.
+
+
+Check Icons.tsx for available icon set before building search dropdown
+Done
+Good, I have everything needed (search, bell icons already there). Now let's build a functional global search + working notification bell into TopNav:
+
+
+Leveraged existing user data to streamline profile card implementation efficiently
+Leveraged existing user data to streamline profile card implementation efficiently
+
+Rewrite TopNav with a real global search (programs/opportunities/people) and a functional notifications bell with live unread count, replacing the dead search input and unused bell import
+
+TopNav.tsx
++273
+-89
+I'll add a profile card to the Sidebar showing the user's PMS score. Since the User type already has pms_score as a property, I can use that directly without making an extra API call, which keeps things simpler and more efficient.
+
+Done
+Now let's add a LinkedIn-style profile summary card to the Sidebar:
+
+
+Verified component exports and type definitions
+Verified component exports and type definitions
+Good, all exports confirmed. Now let's add PostCard enhancements (Save/Bookmark + Follow affordance) — a focused, high-value addition rather than a full rewrite:
+
+
+Architected bookmark component integration with save and follow features
+Architected bookmark component integration with save and follow features
+
+Recheck types/social.ts for Post/PostAuthor shape before extending PostCard
+I'm adding a save/bookmark feature with a localStorage-backed store in the post service, then wiring up a Save button and Follow chip to the PostCard component.
+
+
+Add a lightweight bookmarks store to postService (localStorage-backed, real per-user client feature) for the new Save button
+
+postService.ts
++49
+-14
+I need to create a bookmark icon component and integrate it into the PostCard with a Save button and Follow chip for authors the user isn't already following.
+
+
+Add bookmark icon for the new Save/Bookmark post action
+
+Icons.tsx
++4
+-1
+Done
+Now update PostCard with Save + Follow, and a slightly more IG/FB-polished action row:
+
+
+Add working Save/Bookmark and Follow affordances to PostCard, and a professional-looking follow chip on non-self authors
+Add working Save/Bookmark and Follow affordances to PostCard, and a professional-looking follow chip on non-self authors
+
+Add working Save/Bookmark and Follow affordances to PostCard, and a professional-looking follow chip on non-self authors
+
+PostCard.tsx
++204
+-155
+Done

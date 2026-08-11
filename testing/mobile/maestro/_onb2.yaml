@@ -1,0 +1,6 @@
+appId: com.masaren.app
+---
+- clearState
+- launchApp
+- tapOn: "Continue"
+- waitForAnimationToEnd

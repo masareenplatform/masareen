@@ -1,0 +1,55 @@
+# MASAREN Kafka Topic Catalog
+# All topics follow: masaren.{domain}.{event_name}.v{version}
+
+topics:
+  # Identity
+  - name: masaren.identity.user_registered.v1
+    partitions: 12
+    replication: 3
+    retention_ms: 604800000
+  - name: masaren.identity.user_verified.v1
+    partitions: 6
+  - name: masaren.identity.pms_updated.v1
+    partitions: 12
+
+  # Execution
+  - name: masaren.execution.organization_created.v1
+    partitions: 6
+  - name: masaren.execution.program_created.v1
+    partitions: 6
+  - name: masaren.execution.task_assigned.v1
+    partitions: 12
+  - name: masaren.execution.task_started.v1
+    partitions: 12
+  - name: masaren.execution.task_completed.v1
+    partitions: 12
+
+  # Verification
+  - name: masaren.verification.evidence_captured.v1
+    partitions: 24
+  - name: masaren.verification.evidence_uploaded.v1
+    partitions: 24
+  - name: masaren.verification.evidence_verified.v1
+    partitions: 12
+  - name: masaren.verification.location_reached.v1
+    partitions: 24
+  - name: masaren.verification.fraud_detected.v1
+    partitions: 6
+
+  # Reputation
+  - name: masaren.reputation.impact_asset_created.v1
+    partitions: 12
+  - name: masaren.reputation.certificate_issued.v1
+    partitions: 6
+  - name: masaren.reputation.oii_updated.v1
+    partitions: 6
+
+  # Marketplace
+  - name: masaren.marketplace.opportunity_matched.v1
+    partitions: 6
+  - name: masaren.marketplace.funding_approved.v1
+    partitions: 3
+
+  # Reporting
+  - name: masaren.reporting.report_generated.v1
+    partitions: 3

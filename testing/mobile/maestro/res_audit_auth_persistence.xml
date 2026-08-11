@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<testsuites>
+  <testsuite name="Test Suite" device="masaren_test" tests="1" failures="1" time="48.0">
+    <testcase id="audit_auth_persistence" name="audit_auth_persistence" classname="audit_auth_persistence" file="testing\mobile\maestro\audit_auth_persistence.yaml" time="48.0" status="ERROR">
+      <failure>Assertion is false: "Real impact, social first" is visible</failure>
+    </testcase>
+  </testsuite>
+</testsuites>

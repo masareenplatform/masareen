@@ -1,0 +1,11 @@
+﻿# MASAREN - real-backend surface E2E (Maestro): Ads Manager
+appId: com.masaren.app
+---
+- runFlow: e2e_login.yaml
+- tapOn:
+    id: "menu_button"
+- waitForAnimationToEnd
+- assertVisible: "MASAREN Tools"
+- tapOn: "Ads Manager"
+- waitForAnimationToEnd
+- assertVisible: "Ads Manager"

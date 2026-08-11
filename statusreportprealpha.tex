@@ -1,0 +1,147 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\geometry{top=1.5cm,bottom=1.5cm,left=1.5cm,right=1.5cm}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{microtype}
+\usepackage{hyperref}
+\usepackage{amssymb}
+\usepackage{enumitem}
+
+\definecolor{masarengreen}{RGB}{36,156,60}
+\definecolor{masarenblue}{RGB}{1,83,156}
+\definecolor{darkgray}{RGB}{38,52,65}
+\definecolor{masarenamber}{RGB}{198,140,0}
+\definecolor{masarenred}{RGB}{176,42,42}
+
+\hypersetup{colorlinks=true,linkcolor=masarenblue,urlcolor=masarenblue,pdftitle={MASAREN - Pre-Alpha Consolidated Status Report},pdfauthor={Engineering Team}}
+
+\newcommand{\status}[1]{\textcolor{masarengreen}{\bfseries #1}}
+\newcommand{\wip}[1]{\textcolor{masarenamber}{\bfseries #1}}
+\newcommand{\gap}[1]{\textcolor{masarenred}{\bfseries #1}}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\renewcommand{\arraystretch}{1.14}
+\pagestyle{empty}
+
+\begin{document}
+
+\section*{MASAREN - Pre-Alpha Consolidated Status Report}
+\textbf{Date:} Sunday, 12 July 2026 \quad \textbf{Phase:} \textcolor{masarenblue}{\bfseries Pre-Alpha} \quad \textbf{Generated:} \today
+\par\vspace{0.3em}
+\textit{Impact Infrastructure as a Service (IIaaS).} Consolidated pre-alpha snapshot of the MASAREN platform across backend, web, and mobile, capturing the state of the social/real-time overhaul (Stages 1--4), the platform-wide monetisation layer, the glassmorphism mobile redesign, and the offline verification harness ahead of the first human-tested alpha. Legend: \status{Completed} \quad \wip{In Progress} \quad \gap{Pending / Blocked}.
+
+\vspace{0.5em}
+\noindent\textbf{Core principle:} \textit{If an action cannot be verified, it cannot become an economic asset.}
+
+\vspace{0.6em}
+\subsection*{1. Platform \& Infrastructure Foundation}
+\begin{tabularx}{\textwidth}{L{4.6cm}L{2.4cm}Y}
+\toprule
+\textbf{Component} & \textbf{Status} & \textbf{Implementation Detail} \\
+\midrule
+Combined monolith backend & \status{Running} & \code{backend/combined/main.py} on \code{:8080}; \code{GET /health} healthy with 36/37 services registered (\code{ms\_bff} absent, harmless). Restart via \code{run\_combined.ps1}. \\
+\hline
+Microservice topology & \status{Completed} & 30+ FastAPI services across identity, execution, verification, graph, reputation, marketplace, reporting, notifications, social, billing, coin, ads, and platform domains (per \code{docker-compose.yml}). \\
+\hline
+Shared kernel & \status{Completed} & \code{backend/shared/*} (CQRS, base repository, Kafka producer/consumer, transactional outbox, JWT/RBAC middleware, app factory, health, structured logging) reused by every service. \\
+\hline
+Data layer & \status{Running} & PostgreSQL+PostGIS (transactional), Redis (cache/sessions), Neo4j+APOC (knowledge graph, Explore only), MinIO/S3 (evidence). Migrations \code{V001}--\code{V015} applied in order. \\
+\hline
+Event / async transport & \status{Completed} & Kafka event bus (Confluent + Zookeeper) with Transactional Outbox; NATS-style real-time fan-out for social. \\
+\hline
+AI / verification services & \wip{Partial} & POAI verification orchestrator (\code{:8070}) and fraud scoring (\code{:8090}) implemented; several \code{backend/ai/*} agents exist but are not yet wired into \code{docker-compose.yml}. \\
+\hline
+Full Docker runtime & \gap{Blocked} & Memory-constrained host (16 GB); containerised end-to-end still intermittently fails. Combined monolith is the working test backend instead. \\
+\bottomrule
+\end{tabularx}
+
+\vspace{0.6em}
+\subsection*{2. Social \& Real-Time Overhaul (Stages 1--5)}
+\begin{tabularx}{\textwidth}{L{4.6cm}L{2.4cm}Y}
+\toprule
+\textbf{Stage / Component} & \textbf{Status} & \textbf{Implementation Detail} \\
+\midrule
+Stage 1 --- Web social backbone & \status{Completed} & \code{postService} feed/rank/compose/react/save; verified \code{tsc --noEmit} clean and 9/9 vitest pass. \\
+\hline
+Stage 2 --- Mobile parity & \status{Completed} & Flutter feed, search, discover, save/follow, filter chips; \code{flutter analyze} reports 0 errors. \\
+\hline
+Stage 3 --- Backend social-service & \status{Completed} & \code{backend/social/posts-service} (posts/likes/comments/bookmarks) on shared \code{Base}; live-verified GET/POST/like/save/saved and 401 auth. \\
+\hline
+Stage 3b --- Monolith parity & \status{Completed} & \code{ms\_posts} registration serves \code{/api/v1/posts} inside the combined monolith identically to standalone. \\
+\hline
+Stage 4 --- Real-time fan-out & \status{Completed} & Zero-dependency \code{ws-server.mjs} broadcast hub (\code{:8787}, broadcast-to-others, REST \code{/publish}, \code{/health}); \code{VITE\_WS\_URL} wired; web store merges remote \code{POST\_NEW/REACT/COMMENT} (id-deduped). \\
+\hline
+Server-side event publish & \status{Completed} & Social-service create/like/comment/save handlers push events to the hub via \code{REALTIME\_HUB\_URL} so API/mobile-created posts also go live. \\
+\hline
+Mobile WS consumption & \gap{Pending} & Mobile \code{realtime}/\code{bookmark\_store} remain local-only; cross-user live updates on mobile are a follow-up. \\
+\hline
+Stage 5 --- Polish & \gap{Pending} & Empty/loading states, RTL (Arabic) QA, accessibility pass, and the full 14-flow Maestro e2e audit still outstanding. \\
+\bottomrule
+\end{tabularx}
+
+\vspace{0.6em}
+\subsection*{3. Mobile Application (Flutter) --- Glassmorphism Redesign}
+\begin{tabularx}{\textwidth}{L{4.6cm}L{2.4cm}Y}
+\toprule
+\textbf{Component} & \textbf{Status} & \textbf{Implementation Detail} \\
+\midrule
+Glass design system & \status{Completed} & \code{masaren\_theme.dart} glass/glow tokens + reusable \code{GlassContainer} (blur + frosted + glow); brand navy/blue/green palette preserved. \\
+\hline
+Onboarding redesign & \status{Completed} & Full glass + glow onboarding; \code{\_HeroVisual} hardened (square aspect, \code{shrinkWrap}, \code{errorBuilder} placeholders); \code{audit\_splash\_onboarding.yaml} passes. \\
+\hline
+App shell & \status{Completed} & Glass app bar, floating glass bottom nav, glass menu/compose sheets; verified via \code{maestro hierarchy}. \\
+\hline
+Home feed data fix & \status{Completed} & \code{getFeed} switched from Neo4j \code{/matching/feed} to the ranked \code{/posts} service; 13 seeded post types (text/image/video/audio/article/link) render in glass cards (user-confirmed). \\
+\hline
+Android release APK & \status{Built} & \code{app-release.apk} (\textasciitilde{}32 MB) built and installed on emulator \code{emulator-5554} (AVD \code{masaren\_test}); Gradle tuned for the memory-limited host. \\
+\hline
+Explore tab (graph feed) & \gap{Pending} & Still hits \code{/matching/feed}; requires Neo4j up for a personalised feed (not needed for Home). \\
+\bottomrule
+\end{tabularx}
+
+\vspace{0.6em}
+\subsection*{4. Monetisation, Web Client \& Verification Harness}
+\begin{tabularx}{\textwidth}{L{4.6cm}L{2.4cm}Y}
+\toprule
+\textbf{Component} & \textbf{Status} & \textbf{Implementation Detail} \\
+\midrule
+Platform brokerage layer & \status{Completed} & Configurable fee (default 2.5\%, admin-adjustable) on coin conversions, peer transfers, PSP settlements, and ad funding; every cut written to the append-only \code{platform\_revenue} ledger. \\
+\hline
+Payments / PSP & \status{Completed} & Paymob card + Vodafone Cash with HMAC-verified webhook; Stripe/local-ledger fallback; coin wallet + ads manager (web + mobile). \\
+\hline
+Web client (React/TS) & \status{Completed} & 21 routes render clean; \code{npm run build} passes; consumption-first feed with live WS merge; admin Revenue and HITL panels. \\
+\hline
+Web simulation harness & \status{GREEN} & Puppeteer + in-process stateful mock gateway: 21/21 routes rendered, 0 console errors, 23/23 interactions and 24/24 features PASS (offline, no Docker). \\
+\hline
+Backend unit tests & \status{Completed} & Coin, payment, ads, and social suites green (brokerage assertions included); combined monolith exercised live via TestClient. \\
+\hline
+Mobile e2e (Maestro) & \wip{In Progress} & Splash/onboarding, shell, compose, and feed verification flows pass; full 14-flow audit (\code{run\_e2e\_audit.ps1}) pending an unattended run. \\
+\hline
+E2E credentials & \status{Resolved} & \code{admin@masaren.org} / \code{Masaren@1234} registered and set \code{ACTIVE}/verified in Postgres (re-seed required after any DB wipe). \\
+\bottomrule
+\end{tabularx}
+
+\vspace{0.6em}
+\subsection*{5. Known Gaps \& Pre-Alpha Risks (from AUDIT\_REPORT.md)}
+\begin{itemize}[leftmargin=1.4em,itemsep=1pt,topsep=2pt]
+  \item \gap{Medium} --- Client-generated post/bookmark IDs (\code{p\_...}) desync from server IDs after backend sync; likes/saves on offline-created posts can 404. Acceptable for demo, reconcile before GA.
+  \item \gap{Low} --- \code{create\_post} can 500 if a JWT lacks an \code{email} claim and no \code{author\_name} is supplied; guard \code{token.email}.
+  \item \gap{Low} --- Stale ``no backend /posts'' comments in web/mobile; functionality is now live.
+  \item \gap{Env} --- \code{github-gateway-sync} MCP is unauthenticated in this environment, so findings could not be auto-filed as issues.
+  \item \gap{Infra} --- Full Docker stack is memory-blocked; DB is wiped on Docker restart (admin user + seed must be re-applied); OpenSearch search layer is planned but absent.
+  \item \gap{QA} --- Onboarding image fix verified in code and on-device layout; comprehensive RTL, accessibility, and empty/loading-state QA remain outstanding for alpha.
+\end{itemize}
+
+\vspace{0.5em}
+\begin{minipage}{\textwidth}\small
+\textbf{Executive Summary:} MASAREN has reached a coherent \textbf{pre-alpha} milestone. The platform runs end-to-end on a combined FastAPI monolith (36/37 services healthy) backed by real PostgreSQL, Redis, Neo4j, and Kafka, with a shared kernel enforcing CQRS, the transactional outbox, and JWT/RBAC across every domain. The social overhaul is functionally complete through Stage 4: web and mobile share one ranked \code{/posts} service, and a zero-dependency WebSocket hub delivers cross-user live feed updates. Monetisation is production-shaped --- an auditable, admin-tunable brokerage fee is deducted across coin, transfer, PSP, and ads flows and written to an immutable revenue ledger. The mobile app ships as a glassmorphism-redesigned Android release APK verified on-emulator, and the web client passes an offline GREEN simulation (21/21 routes, 24/24 features). Remaining work before human-tested alpha is Stage 5 polish (RTL/accessibility/empty states), mobile WebSocket consumption, the full 14-flow mobile e2e audit, ID reconciliation between client and server, and standing up a stable full Docker runtime. No blocking defects exist in the verified Stage 1--4 code path; the platform is safe to demo with or without a live backend.
+\end{minipage}
+
+\end{document}

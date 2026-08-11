@@ -1,0 +1,9 @@
+appId: com.masaren.app
+---
+- clearState
+- launchApp
+- waitForAnimationToEnd
+- tapOn: "Skip"
+- waitForAnimationToEnd
+- tapOn: "Sign In"
+- waitForAnimationToEnd

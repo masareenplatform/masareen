@@ -1,0 +1,25 @@
+{
+  "id": "frontend/mobile",
+  "title": "Mobile Application (Flutter)",
+  "description": "A focused Android app for capture-and-verify in the field: sign in, browse",
+  "source": "@site/docs/frontend/mobile.md",
+  "sourceDirName": "frontend",
+  "slug": "/frontend/mobile",
+  "permalink": "/docs/frontend/mobile",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/masareen/masareen-docs/tree/main/docs/frontend/mobile.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 3,
+  "frontMatter": {
+    "id": "mobile",
+    "title": "Mobile Application (Flutter)",
+    "sidebar_position": 3
+  },
+  "sidebar": "frontend",
+  "previous": {
+    "title": "Web Application",
+    "permalink": "/docs/frontend/web"
+  }
+}

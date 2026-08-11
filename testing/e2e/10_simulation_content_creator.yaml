@@ -1,0 +1,35 @@
+# E2E Simulation: Content creator
+# Creates a post, verifies it in the feed, checks profile
+# Pre-condition: must be logged in
+appId: com.masaren.app
+---
+# === Create a post ===
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn: "Tab 3 of 5"
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn: "Story"
+- waitForAnimationToEnd:
+    timeout: 5000
+# Type post content
+- tapOn:
+    point: "540,600"
+- inputText: "Content Creator Test: Amazing impact at the mangrove restoration site today!"
+- takeScreenshot: /tmp/e2e_10_before_post
+# Post it
+- tapOn: "Post"
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: /tmp/e2e_10_after_post
+
+# === Verify in feed ===
+- tapOn: "Tab 1 of 5"
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn: "For You"
+- takeScreenshot: /tmp/e2e_10_feed_after_post
+- swipe:
+    start: "540,1400"
+    end: "540,800"
+- takeScreenshot: /tmp/e2e_10_feed_scrolled

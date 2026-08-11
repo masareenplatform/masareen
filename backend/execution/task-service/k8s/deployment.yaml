@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: task-service
+  namespace: masaren
+  labels:
+    app: task-service
+    domain: execution
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: task-service
+  template:
+    metadata:
+      labels:
+        app: task-service
+        domain: execution
+    spec:
+      containers:
+        - name: task-service
+          image: masaren/task-service:latest
+          ports:
+            - containerPort: 8006
+          envFrom:
+            - secretRef:
+                name: masaren-secrets
+            - configMapRef:
+                name: masaren-config
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8006
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8006
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: masaren-task-service
+  namespace: masaren
+spec:
+  selector:
+    app: task-service
+  ports:
+    - port: 80
+      targetPort: 8006
+  type: ClusterIP

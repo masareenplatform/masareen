@@ -1,0 +1,21 @@
+appId: com.masaren.app
+---
+- clearState
+- launchApp
+- waitForAnimationToEnd
+- tapOn: "Skip"
+- waitForAnimationToEnd
+- tapOn: "Email"
+- inputText: "admin@masaren.org"
+- tapOn: "Password"
+- inputText: "Masaren@1234"
+- tapOn: "Sign In"
+- waitForAnimationToEnd:
+    timeout: 8000
+- assertVisible: "Home"
+- assertVisible: "Explore"
+- assertVisible: "Profile"
+- tapOn: "Explore"
+- waitForAnimationToEnd
+- tapOn: "Home"
+- waitForAnimationToEnd

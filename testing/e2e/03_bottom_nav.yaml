@@ -1,0 +1,32 @@
+# E2E: Bottom navigation between all 5 tabs
+# Pre-condition: must be logged in on feed screen
+appId: com.masaren.app
+---
+- waitForAnimationToEnd:
+    timeout: 3000
+# Verify feed is loaded
+- tapOn: "For You"
+- takeScreenshot: /tmp/e2e_03_feed_tab
+# Tab 2: Explore/Opportunities (bottom nav at center 324,2253)
+- tapOn:
+    point: "324,2253"
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: /tmp/e2e_03_explore_tab
+# Tab 4: Courses/Profile (bottom nav at center 756,2253)
+- tapOn:
+    point: "756,2253"
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: /tmp/e2e_03_profile_tab
+# Tab 5: More menu (bottom nav at center 972,2253)
+- tapOn:
+    point: "972,2253"
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: /tmp/e2e_03_more_sheet
+# Go back to feed (Tab 1 at center 108,2253)
+- tapOn:
+    point: "108,2253"
+- waitForAnimationToEnd:
+    timeout: 3000

@@ -1,0 +1,29 @@
+{
+  "id": "guides/organization",
+  "title": "Guide: Organizations",
+  "description": "How an organization uses MASAREEN to source trusted help and prove outcomes.",
+  "source": "@site/docs/guides/organization.md",
+  "sourceDirName": "guides",
+  "slug": "/guides/organization",
+  "permalink": "/docs/guides/organization",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/masareen/masareen-docs/tree/main/docs/guides/organization.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 3,
+  "frontMatter": {
+    "id": "organization",
+    "title": "Guide: Organizations",
+    "sidebar_position": 3
+  },
+  "sidebar": "guides",
+  "previous": {
+    "title": "Guide: Individual Users",
+    "permalink": "/docs/guides/individual-user"
+  },
+  "next": {
+    "title": "Guide: Submitting Verified Evidence",
+    "permalink": "/docs/guides/submit-evidence"
+  }
+}

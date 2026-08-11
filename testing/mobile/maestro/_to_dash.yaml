@@ -1,0 +1,13 @@
+appId: com.masaren.app
+---
+- clearState
+- launchApp
+- waitForAnimationToEnd
+- tapOn: "Skip"
+- waitForAnimationToEnd
+- tapOn: "Email"
+- inputText: "admin@masaren.org"
+- tapOn: "Password"
+- inputText: "password"
+- tapOn: "Sign In"
+- waitForAnimationToEnd

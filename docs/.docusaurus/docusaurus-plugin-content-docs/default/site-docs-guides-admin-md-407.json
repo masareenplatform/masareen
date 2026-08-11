@@ -1,0 +1,25 @@
+{
+  "id": "guides/admin",
+  "title": "Guide: Administrators",
+  "description": "The SUPER_ADMIN perspective: keep the network trustworthy and healthy.",
+  "source": "@site/docs/guides/admin.md",
+  "sourceDirName": "guides",
+  "slug": "/guides/admin",
+  "permalink": "/docs/guides/admin",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/masareen/masareen-docs/tree/main/docs/guides/admin.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 5,
+  "frontMatter": {
+    "id": "admin",
+    "title": "Guide: Administrators",
+    "sidebar_position": 5
+  },
+  "sidebar": "guides",
+  "previous": {
+    "title": "Guide: Submitting Verified Evidence",
+    "permalink": "/docs/guides/submit-evidence"
+  }
+}

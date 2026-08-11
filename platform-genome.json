@@ -1,0 +1,129 @@
+{
+  "platform": {
+    "name": "MASAREN",
+    "arabic_name": "مسارين",
+    "version": "2.0.0",
+    "genome_version": "2.0",
+    "genome_date": "2026-07-12",
+    "description": "Impact Infrastructure as a Service (IIaaS)",
+    "mission": "Convert verified real-world actions into immutable measurable economic assets.",
+    "core_principle": "If an action cannot be verified, it cannot become an economic asset."
+  },
+  "repo": {
+    "monorepo": true,
+    "root": "MASAREN",
+    "entry_doc": "README.md",
+    "genome_doc": "PLATFORM_GENOME.md",
+    "genome_json": "platform-genome.json",
+    "source_dirs": ["apps", "backend", "docs", "infrastructure", "testing", "MASAREN-DEMO", "analytics", "logo"],
+    "removed_dirs": ["shared (top-level)", "frontend", "maestro", "crewai_verification_testing", "backend/social", "backend/bff", "backend/chat/chat-service", "backend/ai/fraud-service/rust", "backend/identity/authentication-service/go", "backend/reputation/impact-score-service/go"]
+  },
+  "architecture": {
+    "style": ["DDD", "Clean/Hexagonal", "CQRS", "Event Sourcing", "Transactional Outbox", "Event-Driven", "Microservices", "Knowledge Graph"],
+    "layers": ["Presentation", "Experience", "Business", "AI", "Knowledge", "Data", "Infrastructure"],
+    "sync_transport": "REST (FastAPI) behind API Gateway (BFF)",
+    "async_transport": ["Kafka (event bus / source of truth)", "NATS (real-time posts/feed fan-out)"],
+    "notes": "README mentions Kafka KRaft; deployed docker-compose uses Confluent Kafka + Zookeeper. OpenSearch is planned but NOT in current compose."
+  },
+  "datastores": {
+    "transactional": "PostgreSQL + PostGIS (migrations V001-V015 in infrastructure/databases/postgres/migrations)",
+    "graph": "Neo4j 5 Community + APOC",
+    "cache_sessions": "Redis 7",
+    "binary_storage": "MinIO / S3 (evidence media)",
+    "search": "OpenSearch (planned, not deployed)"
+  },
+  "ai": {
+    "deployment": "Cloud only (OpenAI / Google Gemini). No local LLMs.",
+    "env": ["OPENAI_API_KEY", "CREWAI_BROKER_URL"],
+    "orchestrator": "backend/ai/verification_orchestrator_service (POAI deliberative crew)",
+    "fraud": "backend/ai/fraud-service/python",
+    "modules": ["auditor-agent", "economist-agent", "broker-agent", "planner-agent", "recommendation-agent", "vision-ai-service", "speech-ai-service", "compliance-service", "media-distribution-service"]
+  },
+  "services": [
+    {"domain": "gateway", "compose": "gateway", "path": "backend/gateway", "port_published": 8080, "internal": 8000, "lang": "Python", "role": "BFF: routing, JWT auth, rate-limit, aggregation"},
+    {"domain": "identity", "compose": "identity", "path": "backend/identity/identity-service", "internal": 8000, "lang": "Python", "role": "Users, profiles, RBAC"},
+    {"domain": "identity", "compose": "auth", "path": "backend/identity/authentication-service", "internal": 8000, "lang": "Python", "role": "Login / token issuance"},
+    {"domain": "identity", "compose": "authz", "path": "backend/identity/authorization-service", "internal": 8000, "lang": "Python", "role": "Authorization checks"},
+    {"domain": "execution", "compose": "organization", "path": "backend/execution/organization-service", "internal": 8000, "lang": "Python", "role": "Orgs, affiliations"},
+    {"domain": "execution", "compose": "program", "path": "backend/execution/program-service", "internal": 8000, "lang": "Python", "role": "Program lifecycle, SDG mapping"},
+    {"domain": "execution", "compose": "task", "path": "backend/execution/task-service", "internal": 8000, "lang": "Python", "role": "Task FSM, assignments"},
+    {"domain": "execution", "compose": "workflow", "path": "backend/execution/workflow-service", "internal": 8000, "lang": "Python", "role": "Process orchestration"},
+    {"domain": "verification", "compose": "verification", "path": "backend/verification/verification-service", "internal": 8000, "lang": "Python", "role": "Verification logic & verdicts"},
+    {"domain": "verification", "compose": "evidence", "path": "backend/verification/evidence-service", "internal": 8000, "lang": "Python", "role": "Evidence persistence/storage"},
+    {"domain": "verification", "compose": "gps", "path": "backend/verification/gps-service", "internal": 8000, "lang": "Python", "role": "Geo proof"},
+    {"domain": "verification", "compose": "audit", "path": "backend/verification/audit-service", "internal": 8000, "lang": "Python", "role": "Audit trail"},
+    {"domain": "verification", "compose": "media", "path": "backend/verification/media-service", "internal": 8000, "lang": "Python", "role": "Media handling"},
+    {"domain": "verification", "compose": "submission", "path": "backend/verification/submission-service", "internal": 8000, "lang": "Python", "role": "Submission intake"},
+    {"domain": "graph", "compose": "graph", "path": "backend/graph/graph-service", "internal": 8000, "lang": "Python", "role": "Neo4j knowledge graph"},
+    {"domain": "reputation", "compose": "reputation", "path": "backend/reputation/portfolio-service", "internal": 8000, "lang": "Python", "role": "Impact portfolios"},
+    {"domain": "reputation", "compose": "impact-score", "path": "backend/reputation/impact-score-service", "internal": 8000, "lang": "Python", "role": "PMS / impact score"},
+    {"domain": "reputation", "compose": "org-score", "path": "backend/reputation/organization-score-service", "internal": 8000, "lang": "Python", "role": "Org reputation"},
+    {"domain": "marketplace", "compose": "marketplace", "path": "backend/marketplace/opportunity-service", "internal": 8000, "lang": "Python", "role": "Opportunity lifecycle"},
+    {"domain": "marketplace", "compose": "matching", "path": "backend/marketplace/matching-service", "internal": 8000, "lang": "Python", "role": "Matching"},
+    {"domain": "reporting", "compose": "report", "path": "backend/reporting/report-service", "internal": 8000, "lang": "Python", "role": "Report generation"},
+    {"domain": "reporting", "compose": "analytics", "path": "backend/reporting/analytics-service", "internal": 8000, "lang": "Python", "role": "Live SQL analytics"},
+    {"domain": "reporting", "compose": "forecast", "path": "backend/reporting/forecast-service", "internal": 8000, "lang": "Python", "role": "Forecasting"},
+    {"domain": "notifications", "compose": "notification", "path": "backend/notifications/notification-service", "internal": 8000, "lang": "Python", "role": "FCM / in-app alerts"},
+    {"domain": "social", "compose": "chat", "path": "backend/chat-service", "internal": 8000, "lang": "Python", "role": "Chat + posts/feed (NATS)"},
+    {"domain": "billing", "compose": "billing", "path": "backend/billing/billing-service", "internal": 8000, "lang": "Python", "role": "Invoicing"},
+    {"domain": "billing", "compose": "payment", "path": "backend/billing/payment-service", "internal": 8000, "lang": "Python", "role": "Stripe / Paymob (Vodafone Cash)"},
+    {"domain": "billing", "compose": "subscription", "path": "backend/billing/subscription-service", "internal": 8000, "lang": "Python", "role": "Subscriptions"},
+    {"domain": "partners", "compose": "partner", "path": "backend/partners/partner-service", "internal": 8000, "lang": "Python", "role": "Partner orgs"},
+    {"domain": "coin", "compose": "coin", "path": "backend/coin/coin-service", "internal": 8000, "lang": "Python", "role": "MASAREN Coin (MRC)"},
+    {"domain": "ads", "compose": "ads", "path": "backend/ads/ads-service", "internal": 8000, "lang": "Python", "role": "Ads / brokerage"},
+    {"domain": "platform", "compose": "platform", "path": "backend/platform/platform-service", "internal": 8000, "lang": "Python", "role": "Platform revenue/aggregation"}
+  ],
+  "native_dev_ports": {
+    "gateway": 8080, "identity": 8001, "auth": 8002, "organization": 8004, "program": 8005,
+    "task": 8006, "workflow": 8007, "verification": 8008, "evidence": 8009, "graph": 8011,
+    "opportunity": 8013, "matching": 8014, "billing": 8050, "notification": 8060,
+    "orchestrator": 8070, "fraud-python": 8090, "auth-python": 8093, "impact-score-python": 8094
+  },
+  "frontends": {
+    "web": {"stack": "React + TypeScript (Vite)", "port": 3000, "note": "compiled .js duplicates removed; author in .tsx"},
+    "admin": {"stack": "React + TypeScript (Vite, Mantine)", "port": 3001},
+    "mobile": {"stack": "Flutter", "note": "bilingual EN/AR"}
+  },
+  "events": {
+    "source_of_truth": "Kafka",
+    "catalog": "infrastructure/kafka/topics/event_catalog.yaml",
+    "docs": ["docs/architecture/event-catalog.md", "docs/api/events/event_catalog.md"],
+    "contracts": ["organization_created", "program_created", "task_created", "task_assigned", "task_started", "task_completed", "location_reached", "submission_uploaded", "evidence_uploaded", "evidence_verified", "fraud_detected", "impact_asset_created", "impact_score_updated", "organization_score_updated", "portfolio_updated", "graph_updated"],
+    "rule": "Never publish Kafka events without Transactional Outbox"
+  },
+  "shared_kernel": {
+    "package": "backend/shared (imported as shared.*)",
+    "modules": ["base_entity", "base_repository", "constants", "dtos", "events", "exceptions", "infrastructure", "middleware", "testing", "types", "utils"]
+  },
+  "env": {
+    "authoritative_file": ".env.example",
+    "required": ["JWT_SECRET"],
+    "optional": ["STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET", "PAYMOB_API_KEY", "PAYMOB_HMAC_SECRET", "PAYMOB_WALLET_INTEGRATION_ID", "PAYMOB_VODAFONE_INTEGRATION_ID", "PAYMOB_IFRAME_ID", "FCM_SERVICE_ACCOUNT_JSON", "OPENAI_API_KEY", "CREWAI_BROKER_URL"],
+    "platform": ["MRC_PER_EGP", "PAYMOB_CURRENCY", "PUBLIC_GATEWAY_URL"],
+    "infra_in_compose": ["DATABASE_URL", "REDIS_URL", "KAFKA_BOOTSTRAP_SERVERS", "NEO4J_URL"]
+  },
+  "run": {
+    "docker": "cp .env.example .env && docker compose up -d   # gateway :8080, web :3000, admin :3001",
+    "native": "cd backend && ./run_native.ps1",
+    "migrations": "infrastructure/databases/postgres/migrations (V001-V015, auto-applied)"
+  },
+  "docs_index": {
+    "architecture": ["docs/architecture/adr/ADR-001..007", "docs/architecture/service-contracts.md", "docs/architecture/event-catalog.md", "docs/architecture/saga-design.md", "docs/architecture/verification-sequence.md", "docs/architecture/database-ownership.md"],
+    "api": ["docs/api/api-reference.md", "docs/api/contracts.md"],
+    "runbooks": ["docs/deployment/runbooks/local-dev-setup.md", "docs/deployment/runbooks/production-checklist.md", "docs/deployment/runbooks/k8s-service-template.yaml"],
+    "guides": ["docs/setup-guide.md", "docs/user-guide.md", "docs/algorithm-guide.md", "docs/monitoring.md", "docs/nginx-proxy.md", "docs/efficiency-selector.md", "docs/verification-domain-validation.md"]
+  },
+  "engineering_rules": {
+    "never": ["bypass domain events", "couple to another service DB", "call another DB directly", "run AI inference locally", "put business logic in controllers", "bypass CommandBus/QueryBus", "publish Kafka without Outbox", "circular deps", "expose internal entities via API", "duplicate domain logic"],
+    "always": ["Repository pattern", "validate DTOs", "publish domain events", "unit+integration+contract+event tests", "independent deployability", "structured JSON logging", "health endpoints", "idempotent consumers", "framework-independent domain models"],
+    "coverage_target": 90,
+    "language_reality": "All realized services are Python/FastAPI. Go/Rust in older docs are aspirational targets; abandoned Go/Rust impls were removed."
+  },
+  "cleanup_audit_2026_07_12": {
+    "removed_root_clutter": ["prompt1-30.txt", "promptres*.txt", "prompte2e*.txt", "promptlog.txt", "promptrn*.txt", "statusreport1-5.tex", "workstream2.tex", "statusreporterrors.txt", "latexfix.txt", "lastprompt.txt", "output.txt", "present.md", "_dbg.py", "_net.py", "_smoke_all.py", "validate_evidence.*", "audit_verification_service.py", "build_log.txt", "app-arm64-v8a-release.apk", "audit_run.*", "_audit_run.log", "_apk_build.*", "e2e_audit.json", "report.xml", "prune_log.txt", "landing.png", "on_login.png", ".pytest_cache", "logs/"],
+    "removed_transient_docs": ["AGENT_HANDOFF.md", "CONTINUITY.md", "CONTINUITY_BACKEND.md", "CONTINUITY_E2E.md", "CONTINUITY_MOBILE_BUILD.md", "SESSION_CONTINUITY.md", "SESSION_STATUS_NO_MOCK_BACKEND.md", "SYSTEM_STATE.md", "PROJECT_STATE.md", "PROJECT_REGISTRY.md", "BASELINE.md", "IMMEDIATE_EXECUTION_COMMAND.md", "IMMEDIATE_EXECUTION_PLAN.md", "IMPLEMENTATION_PRIORITY.md", "MAESTRO_E2E_HANDOFF.md", "FLUTTER_MAESTRO_E2E_HANDOFF.md", "E2E_AUDIT.md"],
+    "removed_dead_code": ["backend/ai/fraud-service/rust", "backend/identity/authentication-service/go", "backend/reputation/impact-score-service/go", "backend/chat/chat-service", "backend/social/posts-service", "backend/bff/dashboard-service", "maestro/", "shared/ (top-level)", "crewai_verification_testing/", "frontend/", "backend/_repro*.py", "backend/_fix_columns.py", "backend/_apply_columns.py", "backend/selector_state.json", "apps/web/src/*.js", "apps/web/public/*.apk", "MASAREN-DEMO/promptfix.txt", "logo AI-scratch .html/.js"],
+    "kept_live": ["all docker-compose services", "backend/shared", "docs/", "infrastructure/", "apps/{web,admin,mobile}", "testing/", "MASAREN-DEMO/", "analytics/", "logo/", "reference docs (moved to docs/)"],
+    "known_gaps": ["per-function dead-code pass (ruff/vulture) across 30+ services not yet done", "several backend/ai/* agents implemented but not in docker-compose", "OpenSearch search layer planned but absent"]
+  }
+}

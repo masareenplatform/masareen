@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gps-service
+  namespace: masaren
+  labels:
+    app: gps-service
+    domain: verification
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: gps-service
+  template:
+    metadata:
+      labels:
+        app: gps-service
+        domain: verification
+    spec:
+      containers:
+        - name: gps-service
+          image: masaren/gps-service:latest
+          ports:
+            - containerPort: 8010
+          envFrom:
+            - secretRef:
+                name: masaren-secrets
+            - configMapRef:
+                name: masaren-config
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8010
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8010
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: masaren-gps-service
+  namespace: masaren
+spec:
+  selector:
+    app: gps-service
+  ports:
+    - port: 80
+      targetPort: 8010
+  type: ClusterIP

@@ -1,0 +1,20 @@
+appId: com.masaren.app
+---
+- clearState
+- launchApp
+- waitForAnimationToEnd
+- tapOn: "Skip"
+- waitForAnimationToEnd
+- tapOn: "Email"
+- inputText: "admin@masaren.org"
+- tapOn: "Password"
+- inputText: "Masaren@1234"
+- tapOn: "Sign In"
+- waitForAnimationToEnd:
+    timeout: 10000
+- assertVisible: "For You"
+- assertVisible: "Amira Saleh"
+- assertVisible: "SolarCoop"
+- assertVisible: "EduForAll"
+- assertVisible: "WaterWatch"
+- assertVisible: "Verified Impact"

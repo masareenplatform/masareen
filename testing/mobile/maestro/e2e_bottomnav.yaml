@@ -1,0 +1,26 @@
+# MASAREN — real-backend bottom-nav E2E (Maestro).
+# Logs in against the live combined backend, then walks all 5 primary tabs.
+appId: com.masaren.app
+---
+- runFlow: e2e_login.yaml
+
+- assertVisible: "Home"
+- tapOn: "Explore"
+- waitForAnimationToEnd
+- assertVisible: "Opportunities"
+
+- tapOn: "Tasks"
+- waitForAnimationToEnd
+- assertVisible: "My Tasks"
+
+- tapOn: "Alerts"
+- waitForAnimationToEnd
+- assertVisible: "Alerts"
+
+- tapOn: "Profile"
+- waitForAnimationToEnd
+- assertVisible: "Profile"
+
+- tapOn: "Home"
+- waitForAnimationToEnd
+- assertVisible: "MASAREN"

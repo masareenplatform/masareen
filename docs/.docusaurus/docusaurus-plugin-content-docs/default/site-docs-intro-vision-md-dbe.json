@@ -1,0 +1,29 @@
+{
+  "id": "intro/vision",
+  "title": "Vision & Principles",
+  "description": "MASAREEN is not a social network with a cause bolted on. It is infrastructure — the",
+  "source": "@site/docs/intro/vision.md",
+  "sourceDirName": "intro",
+  "slug": "/intro/vision",
+  "permalink": "/docs/intro/vision",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/masareen/masareen-docs/tree/main/docs/intro/vision.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 2,
+  "frontMatter": {
+    "id": "vision",
+    "title": "Vision & Principles",
+    "sidebar_position": 2
+  },
+  "sidebar": "intro",
+  "previous": {
+    "title": "Welcome to MASAREEN",
+    "permalink": "/docs/"
+  },
+  "next": {
+    "title": "Workflow & Verification Pipelines",
+    "permalink": "/docs/intro/workflow-and-pipelines"
+  }
+}

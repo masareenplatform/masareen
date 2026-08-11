@@ -1,0 +1,16 @@
+# AUDIT: Profile surface surfaces the user's stats (badges earned, posts) plus
+# the people-to-follow rail and sign-out action.
+appId: com.masaren.app
+---
+- runFlow: login.yaml
+
+- tapOn:
+    id: "menu_button"
+- waitForAnimationToEnd
+- tapOn: "Profile"
+- waitForAnimationToEnd
+
+- assertVisible: "Badges"
+- assertVisible: "Posts"
+- assertVisible: "People to follow"
+- assertVisible: "Sign Out"

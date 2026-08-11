@@ -1,0 +1,109 @@
+# MASAREN backend — Docker Compose
+#
+# Services:
+#   mock-gateway  (port 8080) Node mock of the full API contract. This is what
+#                 the Flutter app hits by default (10.0.2.2:8080/api/v1) and is
+#                 the backend used by the Maestro end-to-end audit. It is the
+#                 SOURCE OF TRUTH for the mobile e2e green run.
+#   gateway       (port 8000) The real BFF (FastAPI). Proxies to the microservice
+#                 registry; downstream services are still being implemented, so it
+#                 is included here to prove the container stack builds & runs.
+#   chat-service  (port 8001) The one fully-implemented microservice, backed by
+#                 postgres. Included to exercise the generic Dockerfile.service path.
+#   postgres / redis  supporting infra.
+#
+# Build context for the Python services MUST be ./backend (they share `shared`).
+# NOTE: the per-service backend/gateway/Dockerfile is intentionally NOT used here
+# because it omits the shared package; the generic backend/Dockerfile.service is
+# the correct builder.
+
+services:
+  mock-gateway:
+    build:
+      context: ../../testing/mobile
+      dockerfile: Dockerfile.mockgw
+    image: masaren/mock-gateway:latest
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:8080/health',r=>process.exit(r.statusCode<500?0:1)).on('error',()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: masaren
+      POSTGRES_PASSWORD: masaren
+      POSTGRES_DB: masaren
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U masaren"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  gateway:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE_PATH: gateway
+    image: masaren/gateway:latest
+    ports:
+      - "8000:8000"
+    environment:
+      JWT_SECRET: "dev-secret-change-me"
+      CORS_ORIGINS: "*"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  chat-service:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE_PATH: chat-service
+    image: masaren/chat-service:latest
+    ports:
+      - "8001:8000"
+    environment:
+      DATABASE_URL: "postgresql+asyncpg://masaren:masaren@postgres:5432/masaren"
+      REDIS_URL: "redis://redis:6379/0"
+      JWT_SECRET: "dev-secret-change-me"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 25s
+
+volumes:
+  pgdata:

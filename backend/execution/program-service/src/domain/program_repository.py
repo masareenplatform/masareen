@@ -1,0 +1,13 @@
+from abc import ABC, abstractmethod
+from typing import List, Optional, Tuple
+from .program import Program
+
+class ProgramRepository(ABC):
+    @abstractmethod
+    async def get_by_id(self, program_id: str) -> Optional[Program]: ...
+    @abstractmethod
+    async def save(self, program: Program) -> Program: ...
+    @abstractmethod
+    async def list_by_organization(self, org_id: str, limit: int, offset: int) -> Tuple[List[Program], int]: ...
+    @abstractmethod
+    async def list_programs(self, limit: int, offset: int, status: Optional[str], country: Optional[str]) -> Tuple[List[Program], int]: ...

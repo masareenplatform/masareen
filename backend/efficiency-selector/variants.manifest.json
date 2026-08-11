@@ -1,0 +1,53 @@
+{
+  "_comment": "Seed of known language variants per capability. The EfficiencySelector loads this on startup and registers each variant. URLs use the in-cluster service DNS names (matching docker-compose.yml service names). Benchmarks are triggered at runtime via POST /selector/capabilities/{cap}/bench (real measurements, never hardcoded).",
+  "variants": [
+    {
+      "capability": "fraud.score",
+      "language": "python",
+      "version": "1",
+      "health_url": "http://fraud-python:8090/health",
+      "bench_url": "http://fraud-python:8090/bench",
+      "business_url": "http://fraud-python:8090/fraud/score"
+    },
+    {
+      "capability": "fraud.score",
+      "language": "rust",
+      "version": "1",
+      "health_url": "http://fraud-rust:8090/health",
+      "bench_url": "http://fraud-rust:8090/bench",
+      "business_url": "http://fraud-rust:8090/fraud/score"
+    },
+    {
+      "capability": "auth.verify",
+      "language": "python",
+      "version": "1",
+      "health_url": "http://auth-python:8093/health",
+      "bench_url": "http://auth-python:8093/bench",
+      "business_url": "http://auth-python:8093/auth"
+    },
+    {
+      "capability": "auth.verify",
+      "language": "go",
+      "version": "1",
+      "health_url": "http://auth-go:8091/health",
+      "bench_url": "http://auth-go:8091/bench",
+      "business_url": "http://auth-go:8091/auth"
+    },
+    {
+      "capability": "reputation.score",
+      "language": "python",
+      "version": "1",
+      "health_url": "http://impact-score-python:8094/health",
+      "bench_url": "http://impact-score-python:8094/bench",
+      "business_url": "http://impact-score-python:8094/reputation"
+    },
+    {
+      "capability": "reputation.score",
+      "language": "go",
+      "version": "1",
+      "health_url": "http://impact-score-go:8092/health",
+      "bench_url": "http://impact-score-go:8092/bench",
+      "business_url": "http://impact-score-go:8092/reputation"
+    }
+  ]
+}

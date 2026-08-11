@@ -1,0 +1,129 @@
+{
+    "generatedAt":  "2026-07-13T08:45:08.9242809+02:00",
+    "backend":  "real (docker compose, gateway :8080)",
+    "totals":  {
+                   "total":  16,
+                   "passed":  9,
+                   "failed":  7
+               },
+    "flows":  [
+                  {
+                      "flow":  "audit_auth_persistence",
+                      "file":  "C:\\Users\\sherifrashwan\\Downloads\\MASAREN-FINAL\\MASAREN\\testing\\mobile\\maestro\\audit_auth_persistence.yaml",
+                      "status":  "PASS",
+                      "detail":  "",
+                      "exit":  0
+                  },
+                  {
+                      "flow":  "audit_feed_reactions",
+                      "file":  "C:\\Users\\sherifrashwan\\Downloads\\MASAREN-FINAL\\MASAREN\\testing\\mobile\\maestro\\audit_feed_reactions.yaml",
+                      "status":  "FAIL",
+                      "detail":  "Assertion \u0027\"Verified by POAI Crew\" is visible\u0027 failed. Check the UI hierarchy in debug artifacts to verify the element state and properties.",
+                      "exit":  1
+                  },
+                  {
+                      "flow":  "audit_opportunities",
+                      "file":  "C:\\Users\\sherifrashwan\\Downloads\\MASAREN-FINAL\\MASAREN\\testing\\mobile\\maestro\\audit_opportunities.yaml",
+                      "status":  "FAIL",
+                      "detail":  "Tap on \"Explore\"... FAILED",
+                      "exit":  1
+                  },
+                  {
+                      "flow":  "audit_profile_badges",
+                      "file":  "C:\\Users\\sherifrashwan\\Downloads\\MASAREN-FINAL\\MASAREN\\testing\\mobile\\maestro\\audit_profile_badges.yaml",
+                      "status":  "FAIL",
+                      "detail":  "Assertion \u0027\"Sign Out\" is visible\u0027 failed. Check the UI hierarchy in debug artifacts to verify the element state and properties.",
+                      "exit":  1
+                  },
+                  {
+                      "flow":  "audit_register",
+                      "file":  "C:\\Users\\sherifrashwan\\Downloads\\MASAREN-FINAL\\MASAREN\\testing\\mobile\\maestro\\audit_register.yaml",
+                      "status":  "PASS",
+                      "detail":  "",
+                      "exit":  0
+                  },
+                  {
+                      "flow":  "audit_splash_onboarding",
+                      "file":  "C:\\Users\\sherifrashwan\\Downloads\\MASAREN-FINAL\\MASAREN\\testing\\mobile\\maestro\\audit_splash_onboarding.yaml",
+                      "status":  "PASS",
+                      "detail":  "",
+                      "exit":  0
+                  },
+                  {
+                      "flow":  "audit_surface_adsmanager",
+                      "file":  "C:\\Users\\sherifrashwan\\Downloads\\MASAREN-FINAL\\MASAREN\\testing\\mobile\\maestro\\audit_surface_adsmanager.yaml",
+                      "status":  "PASS",
+                      "detail":  "",
+                      "exit":  0
+                  },
+                  {
+                      "flow":  "audit_surface_collaborate",
+                      "file":  "C:\\Users\\sherifrashwan\\Downloads\\MASAREN-FINAL\\MASAREN\\testing\\mobile\\maestro\\audit_surface_collaborate.yaml",
+                      "status":  "FAIL",
+                      "detail":  "Assertion \u0027\"Host on MASAREN\" is visible\u0027 failed. Check the UI hierarchy in debug artifacts to verify the element state and properties.",
+                      "exit":  1
+                  },
+                  {
+                      "flow":  "audit_surface_dashboard",
+                      "file":  "C:\\Users\\sherifrashwan\\Downloads\\MASAREN-FINAL\\MASAREN\\testing\\mobile\\maestro\\audit_surface_dashboard.yaml",
+                      "status":  "PASS",
+                      "detail":  "",
+                      "exit":  0
+                  },
+                  {
+                      "flow":  "audit_surface_evidence",
+                      "file":  "C:\\Users\\sherifrashwan\\Downloads\\MASAREN-FINAL\\MASAREN\\testing\\mobile\\maestro\\audit_surface_evidence.yaml",
+                      "status":  "PASS",
+                      "detail":  "",
+                      "exit":  0
+                  },
+                  {
+                      "flow":  "audit_surface_impactpassport",
+                      "file":  "C:\\Users\\sherifrashwan\\Downloads\\MASAREN-FINAL\\MASAREN\\testing\\mobile\\maestro\\audit_surface_impactpassport.yaml",
+                      "status":  "PASS",
+                      "detail":  "",
+                      "exit":  0
+                  },
+                  {
+                      "flow":  "audit_surface_masarencoin",
+                      "file":  "C:\\Users\\sherifrashwan\\Downloads\\MASAREN-FINAL\\MASAREN\\testing\\mobile\\maestro\\audit_surface_masarencoin.yaml",
+                      "status":  "PASS",
+                      "detail":  "",
+                      "exit":  0
+                  },
+                  {
+                      "flow":  "audit_surface_payments",
+                      "file":  "C:\\Users\\sherifrashwan\\Downloads\\MASAREN-FINAL\\MASAREN\\testing\\mobile\\maestro\\audit_surface_payments.yaml",
+                      "status":  "FAIL",
+                      "detail":  "Tap on \"Payments\"... FAILED",
+                      "exit":  1
+                  },
+                  {
+                      "flow":  "audit_surface_platformrevenuefees",
+                      "file":  "C:\\Users\\sherifrashwan\\Downloads\\MASAREN-FINAL\\MASAREN\\testing\\mobile\\maestro\\audit_surface_platformrevenuefees.yaml",
+                      "status":  "FAIL",
+                      "detail":  "Assertion \u0027\"Platform Revenue \u0026 Fees\" is visible\u0027 failed. Check the UI hierarchy in debug artifacts to verify the element state and properties.",
+                      "exit":  1
+                  },
+                  {
+                      "flow":  "audit_surface_profile",
+                      "file":  "C:\\Users\\sherifrashwan\\Downloads\\MASAREN-FINAL\\MASAREN\\testing\\mobile\\maestro\\audit_surface_profile.yaml",
+                      "status":  "FAIL",
+                      "detail":  "Assertion \u0027\"Personal Information\" is visible\u0027 failed. Check the UI hierarchy in debug artifacts to verify the element state and properties.",
+                      "exit":  1
+                  },
+                  {
+                      "flow":  "audit_surface_settings",
+                      "file":  "C:\\Users\\sherifrashwan\\Downloads\\MASAREN-FINAL\\MASAREN\\testing\\mobile\\maestro\\audit_surface_settings.yaml",
+                      "status":  "PASS",
+                      "detail":  "",
+                      "exit":  0
+                  }
+              ],
+    "services":  [
+                     "masaren-kafka-1 Up 16 hours",
+                     "masaren-postgres-1 Up 16 hours (healthy)",
+                     "masaren-redis-1 Up 16 hours",
+                     "masaren-zookeeper-1 Up 16 hours"
+                 ]
+}

@@ -1,0 +1,82 @@
+{
+  "title": "MASAREN Platform Overview",
+  "uid": "masaren-platform",
+  "schemaVersion": 38,
+  "tags": ["masaren", "platform"],
+  "timezone": "browser",
+  "refresh": "30s",
+  "panels": [
+    {
+      "id": 1, "type": "stat", "title": "Platform Health",
+      "gridPos": {"x":0,"y":0,"w":4,"h":4},
+      "targets": [{"expr": "count(up{job=~\"masaren-.*\"} == 1)", "legendFormat": "Services Up"}],
+      "options": {"colorMode": "background", "graphMode": "none"},
+      "fieldConfig": {"defaults": {"thresholds": {"steps": [
+        {"value": 0, "color": "red"},
+        {"value": 20, "color": "yellow"},
+        {"value": 24, "color": "green"}
+      ]}}}
+    },
+    {
+      "id": 2, "type": "stat", "title": "Evidence Verified (24h)",
+      "gridPos": {"x":4,"y":0,"w":4,"h":4},
+      "targets": [{"expr": "increase(masaren_evidence_verified_total[24h])", "legendFormat": "Verified"}]
+    },
+    {
+      "id": 3, "type": "stat", "title": "Impact Assets Created (24h)",
+      "gridPos": {"x":8,"y":0,"w":4,"h":4},
+      "targets": [{"expr": "increase(masaren_impact_assets_total[24h])"}]
+    },
+    {
+      "id": 4, "type": "stat", "title": "Active Users (1h)",
+      "gridPos": {"x":12,"y":0,"w":4,"h":4},
+      "targets": [{"expr": "masaren_active_users_1h"}]
+    },
+    {
+      "id": 5, "type": "stat", "title": "Fraud Detected (24h)",
+      "gridPos": {"x":16,"y":0,"w":4,"h":4},
+      "targets": [{"expr": "increase(masaren_fraud_detected_total[24h])"}],
+      "fieldConfig": {"defaults": {"thresholds": {"steps": [
+        {"value": 0,"color":"green"},{"value": 10,"color":"yellow"},{"value": 50,"color":"red"}
+      ]}}}
+    },
+    {
+      "id": 6, "type": "stat", "title": "Outbox Queue Depth",
+      "gridPos": {"x":20,"y":0,"w":4,"h":4},
+      "targets": [{"expr": "masaren_outbox_unpublished_total"}],
+      "fieldConfig": {"defaults": {"thresholds": {"steps": [
+        {"value": 0,"color":"green"},{"value": 100,"color":"yellow"},{"value": 500,"color":"red"}
+      ]}}}
+    },
+    {
+      "id": 7, "type": "timeseries", "title": "Request Rate by Service",
+      "gridPos": {"x":0,"y":4,"w":12,"h":8},
+      "targets": [{"expr": "rate(http_requests_total{job=~\"masaren-.*\"}[5m])", "legendFormat": "{{job}}"}]
+    },
+    {
+      "id": 8, "type": "timeseries", "title": "P99 Latency by Service (ms)",
+      "gridPos": {"x":12,"y":4,"w":12,"h":8},
+      "targets": [{"expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{job=~\"masaren-.*\"}[5m])) * 1000", "legendFormat": "{{job}}"}]
+    },
+    {
+      "id": 9, "type": "timeseries", "title": "Error Rate (5xx)",
+      "gridPos": {"x":0,"y":12,"w":12,"h":6},
+      "targets": [{"expr": "rate(http_requests_total{status=~\"5..\",job=~\"masaren-.*\"}[5m])", "legendFormat": "{{job}}"}]
+    },
+    {
+      "id": 10, "type": "timeseries", "title": "Kafka Consumer Lag",
+      "gridPos": {"x":12,"y":12,"w":12,"h":6},
+      "targets": [{"expr": "kafka_consumergroup_lag_sum", "legendFormat": "{{consumergroup}}"}]
+    },
+    {
+      "id": 11, "type": "timeseries", "title": "Cloud LLM Request Latency P95 (s)",
+      "gridPos": {"x":0,"y":18,"w":12,"h":6},
+      "targets": [{"expr": "histogram_quantile(0.95, rate(masaren_llm_request_duration_seconds_bucket[5m]))", "legendFormat": "{{provider}}"}]
+    },
+    {
+      "id": 12, "type": "piechart", "title": "Evidence Verdicts Distribution",
+      "gridPos": {"x":12,"y":18,"w":12,"h":6},
+      "targets": [{"expr": "masaren_evidence_verdicts_total", "legendFormat": "{{verdict}}"}]
+    }
+  ]
+}

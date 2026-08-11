@@ -1,0 +1,9 @@
+appId: com.masaren.app
+---
+- runFlow: login.yaml
+- tapOn:
+    id: "menu_button"
+- waitForAnimationToEnd
+- tapOn: "Profile"
+- waitForAnimationToEnd
+- waitForAnimationToEnd

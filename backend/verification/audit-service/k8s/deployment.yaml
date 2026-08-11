@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: audit-service
+  namespace: masaren
+  labels:
+    app: audit-service
+    domain: verification
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: audit-service
+  template:
+    metadata:
+      labels:
+        app: audit-service
+        domain: verification
+    spec:
+      containers:
+        - name: audit-service
+          image: masaren/audit-service:latest
+          ports:
+            - containerPort: 8013
+          envFrom:
+            - secretRef:
+                name: masaren-secrets
+            - configMapRef:
+                name: masaren-config
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8013
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8013
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: masaren-audit-service
+  namespace: masaren
+spec:
+  selector:
+    app: audit-service
+  ports:
+    - port: 80
+      targetPort: 8013
+  type: ClusterIP

@@ -1,0 +1,8 @@
+appId: com.masaren.app
+---
+- clearState
+- launchApp
+- scrollUntilVisible:
+    element:
+      text: "Skip"
+    timeout: 45000

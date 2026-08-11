@@ -1,0 +1,25 @@
+{
+  "id": "frontend/overview",
+  "title": "Frontend Overview",
+  "description": "MASAREEN ships two frontends that talk to the same backend:",
+  "source": "@site/docs/frontend/overview.md",
+  "sourceDirName": "frontend",
+  "slug": "/frontend/overview",
+  "permalink": "/docs/frontend/overview",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/masareen/masareen-docs/tree/main/docs/frontend/overview.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "id": "overview",
+    "title": "Frontend Overview",
+    "sidebar_position": 1
+  },
+  "sidebar": "frontend",
+  "next": {
+    "title": "Web Application",
+    "permalink": "/docs/frontend/web"
+  }
+}

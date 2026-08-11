@@ -1,0 +1,25 @@
+{
+  "id": "concepts/verified-evidence",
+  "title": "Verified Evidence — What It Actually Is",
+  "description": "\"Verified evidence\" is the central noun of MASAREEN. This page defines it precisely,",
+  "source": "@site/docs/concepts/verified-evidence.md",
+  "sourceDirName": "concepts",
+  "slug": "/concepts/verified-evidence",
+  "permalink": "/docs/concepts/verified-evidence",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/masareen/masareen-docs/tree/main/docs/concepts/verified-evidence.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 4,
+  "frontMatter": {
+    "id": "verified-evidence",
+    "title": "Verified Evidence — What It Actually Is",
+    "sidebar_position": 4
+  },
+  "sidebar": "concepts",
+  "previous": {
+    "title": "Opportunities, Tasks & the Marketplace",
+    "permalink": "/docs/concepts/opportunities"
+  }
+}

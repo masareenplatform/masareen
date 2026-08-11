@@ -1,0 +1,101 @@
+name: MASAREN CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: backend/identity/identity-service
+            name: identity
+          - service: backend/identity/authorization-service
+            name: authz
+          - service: backend/execution/task-service
+            name: task
+          - service: backend/verification/evidence-service
+            name: evidence
+          - service: backend/verification/gps-service
+            name: gps
+          - service: backend/reputation/impact-score-service
+            name: pms
+          - service: backend/marketplace/opportunity-service
+            name: opportunity
+          - service: backend/reporting/report-service
+            name: report
+          - service: backend/billing/billing-service
+            name: billing
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install shared kernel
+        run: pip install pydantic>=2.7.0 structlog>=24.1.0 python-jose[cryptography]>=3.3.0 passlib[bcrypt]>=1.7.4
+
+      - name: Install service dependencies
+        working-directory: ${{ matrix.service }}
+        run: pip install -r requirements.txt pytest pytest-asyncio pytest-cov aiosqlite
+
+      - name: Run unit tests
+        working-directory: ${{ matrix.service }}
+        run: pytest tests/unit/ -v --tb=short
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install ruff
+      - run: ruff check backend/ --ignore E501,F401,F811,E402
+
+  docker-build:
+    needs: [test, lint]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    strategy:
+      matrix:
+        service:
+          - { path: backend/gateway,                           name: masaren-gateway }
+          - { path: backend/identity/identity-service,         name: masaren-identity }
+          - { path: backend/identity/authentication-service,   name: masaren-auth }
+          - { path: backend/identity/authorization-service,    name: masaren-authz }
+          - { path: backend/execution/organization-service,    name: masaren-org }
+          - { path: backend/execution/program-service,         name: masaren-program }
+          - { path: backend/execution/task-service,            name: masaren-task }
+          - { path: backend/execution/workflow-service,        name: masaren-workflow }
+          - { path: backend/verification/verification-service, name: masaren-verification }
+          - { path: backend/verification/evidence-service,     name: masaren-evidence }
+          - { path: backend/verification/gps-service,          name: masaren-gps }
+          - { path: backend/verification/submission-service,   name: masaren-submission }
+          - { path: backend/verification/media-service,        name: masaren-media }
+          - { path: backend/reputation/impact-score-service,   name: masaren-pms }
+          - { path: backend/reputation/organization-score-service, name: masaren-oii }
+          - { path: backend/reputation/portfolio-service,      name: masaren-portfolio }
+          - { path: backend/graph/graph-service,               name: masaren-graph }
+          - { path: backend/marketplace/opportunity-service,   name: masaren-opportunity }
+          - { path: backend/marketplace/matching-service,      name: masaren-matching }
+          - { path: backend/reporting/report-service,          name: masaren-report }
+          - { path: backend/reporting/analytics-service,       name: masaren-analytics }
+          - { path: backend/notifications/notification-service,name: masaren-notification }
+          - { path: backend/billing/billing-service,           name: masaren-billing }
+          - { path: backend/billing/subscription-service,      name: masaren-subscription }
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image
+        run: |
+          echo "Building ${{ matrix.service.name }}..."
+          # docker build -t ghcr.io/masaren/${{ matrix.service.name }}:${{ github.sha }} ${{ matrix.service.path }}
+          echo "Image build step — configure registry credentials in repo secrets"

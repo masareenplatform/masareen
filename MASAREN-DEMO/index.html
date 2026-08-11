@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>MASAREN — Impact Infrastructure</title>
+<link rel="icon" href="/static/favicon.ico" type="image/x-icon"/>
+<link rel="stylesheet" href="/static/styles.css"/>
+</head>
+<body>
+
+<div id="auth">
+  <div class="auth-orbs"><span></span><span></span><span></span></div>
+  <div class="ac">
+    <div class="alo"><h1>MASAREN</h1><p>مسارين &middot; Impact Infrastructure as a Service</p></div>
+    <div class="atb">
+      <button class="at act" id="tl" onclick="stab('login')">Sign In</button>
+      <button class="at" id="tr" onclick="stab('reg')">Register</button>
+    </div>
+    <div id="fl">
+      <div class="fg"><label>Email</label><div class="input-wrap"><input id="le" type="email" value="sara@masaren.io" autocomplete="email"/></div></div>
+      <div class="fg"><label>Password</label><div class="input-wrap"><input id="lp" type="password" value="demo1234" autocomplete="current-password"/><button type="button" class="pw-toggle" onclick="togglePW('lp')" tabindex="-1" aria-label="Toggle password visibility">&#x1F441;</button></div></div>
+      <button class="btn bg bf" onclick="doLogin()" id="loginBtn">&#x1F510; Sign In</button>
+      <div class="dh"><strong>Demo accounts:</strong><br/>
+        <button class="dp" onclick="fill('sara@masaren.io')">Sara Ahmed</button>
+        <button class="dp" onclick="fill('khalid@masaren.io')">Khalid Nour</button>
+        <button class="dp" onclick="fill('admin@masaren.io')">Admin</button>
+        <br/><span style="font-size:.7rem;color:var(--text-secondary)">All passwords: <strong>demo1234</strong></span>
+      </div>
+    </div>
+    <div id="fr" style="display:none">
+      <div class="fg"><label>Full Name</label><div class="input-wrap"><input id="rn" placeholder="Your full name" autocomplete="name"/></div></div>
+      <div class="fg"><label>Email</label><div class="input-wrap"><input id="re" type="email" placeholder="you@example.com" autocomplete="email"/></div></div>
+      <div class="fg"><label>Password</label><div class="input-wrap"><input id="rp" type="password" placeholder="Min 6 characters" autocomplete="new-password"/><button type="button" class="pw-toggle" onclick="togglePW('rp')" tabindex="-1" aria-label="Toggle password visibility">&#x1F441;</button></div></div>
+      <div class="fg"><label>Role</label>
+        <div class="tag-selector" id="rr-tags">
+          <button type="button" class="tag-btn act" data-value="INDIVIDUAL" onclick="selectTag('rr','rr-tags','INDIVIDUAL',this)"><span class="tag-label">Field Worker / Researcher</span></button>
+          <button type="button" class="tag-btn" data-value="ORGANIZATION" onclick="selectTag('rr','rr-tags','ORGANIZATION',this)"><span class="tag-label">Organization</span></button>
+        </div>
+        <input type="hidden" id="rr" value="INDIVIDUAL"/>
+      </div>
+      <button class="btn bg bf" onclick="doReg()" id="regBtn">&#x2728; Create Account</button>
+    </div>
+  </div>
+</div>
+
+<div id="app">
+<div id="tb">
+  <div class="logo">MASAREN <em>مسارين</em></div>
+  <button class="hamburger" onclick="toggleMNav()" aria-label="Menu"><span></span><span></span><span></span></button>
+  <div class="sw"><span class="search-icon">&#x1F50D;</span><input type="text" placeholder="Search programs, people, tasks..." id="searchInput"/></div>
+  <div class="ni">
+    <button id="themeToggle" onclick="toggleTheme()" title="Toggle theme"><span class="icn">&#x1F319;</span></button>
+    <button title="Feed" onclick="pg('feed')" id="nbf">&#x1F3E0;</button>
+    <button title="New Program" onclick="om('mprog')">&#x1F4CB;</button>
+    <button title="New Task" onclick="om('mtask')">&#x2705;</button>
+    <button title="Submit Evidence" onclick="om('mev')">&#x1F4F8;</button>
+    <button title="Notifications" id="notifBtn" onclick="toggleNotif()" style="position:relative">&#x1F514;<span class="nd"></span></button>
+    <button id="av" onclick="pg('passport')">?</button>
+  </div>
+</div>
+
+<div id="notifDropdown" class="notif-dropdown" style="display:none">
+  <div class="notif-header">Notifications</div>
+  <div id="notifList"></div>
+</div>
+
+<div id="feed-page">
+<div id="lay">
+  <div id="sl">
+    <div class="sn">
+      <button class="sni act" onclick="pg('feed');sf('all')"><span class="ic">&#x1F3E0;</span>Home Feed</button>
+      <button class="sni" onclick="pg('passport')"><span class="ic">&#x1FAAA;</span>My Passport</button>
+      <button class="sni" onclick="om('mprog')"><span class="ic">&#x1F4CB;</span>New Program</button>
+      <button class="sni" onclick="om('mtask')"><span class="ic">&#x2705;</span>New Task</button>
+      <button class="sni" onclick="om('mev')"><span class="ic">&#x1F4F8;</span>Submit Evidence</button>
+      <button class="sni" onclick="om('morg')"><span class="ic">&#x1F3E2;</span>New Organization</button>
+      <div class="sdiv"></div>
+      <button class="sni" onclick="sf('IMPACT_ASSET')"><span class="ic">&#x1F48E;</span>Impact Assets</button>
+      <button class="sni" onclick="sf('TASK_COMPLETED')"><span class="ic">&#x2705;</span>Completions</button>
+      <button class="sni" onclick="sf('PROGRAM_LAUNCHED')"><span class="ic">&#x1F680;</span>Programs</button>
+      <div class="sdiv"></div>
+      <button class="sni" onclick="pg('network')"><span class="ic">&#x1F578;&#xFE0F;</span>User Network</button>
+      <button class="sni" onclick="om('malgo')"><span class="ic">&#x2699;&#xFE0F;</span>Algorithm</button>
+      <button class="sni" onclick="window.open('/docs','_blank')"><span class="ic">&#x1F4D6;</span>Documentation</button>
+      <div class="sdiv"></div>
+      <button class="sni" onclick="logout()" style="color:var(--red)"><span class="ic">&#x1F44B;</span>Sign Out</button>
+    </div>
+    <div class="ss" id="ssbox"></div>
+  </div>
+
+  <div id="fc">
+    <div class="cbox">
+      <div class="cav" id="cav">?</div>
+      <div class="ci" onclick="om('mev')">Share field evidence or activity...</div>
+      <div class="ca">
+        <button class="cb" onclick="om('mev')">&#x1F4F8; Evidence</button>
+        <button class="cb" onclick="om('mtask')">&#x2705; Task</button>
+      </div>
+    </div>
+    <div class="fts">
+      <button class="ft act" onclick="sf('all',this)">&#x2728; All</button>
+      <button class="ft" onclick="sf('IMPACT_ASSET',this)">&#x1F48E; Impact Assets</button>
+      <button class="ft" onclick="sf('TASK_COMPLETED',this)">&#x2705; Completions</button>
+      <button class="ft" onclick="sf('PROGRAM_LAUNCHED',this)">&#x1F680; Programs</button>
+    </div>
+    <div id="fi"></div>
+    <div id="lm"><div class="sp"></div>Loading more impact...</div>
+    <div id="ef">&#x1F389; You&rsquo;re all caught up on today&rsquo;s impact</div>
+    <div id="sen"></div>
+  </div>
+
+  <div id="sr">
+    <div class="wg"><h3>&#x1F3C6; Leaderboard <a onclick="pg('passport')">All</a></h3><div id="lbl"></div></div>
+    <div class="wg"><h3>&#x1F30D; SDG Impact</h3><div id="sdgw"></div></div>
+    <div class="wg" style="background:linear-gradient(135deg,var(--navy-dark),var(--navy-mid))">
+      <div style="font-size:.68rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:.35rem">Core Principle</div>
+      <div style="font-size:.82rem;line-height:1.6;color:var(--gold-l);font-style:italic">
+        &ldquo;If an action cannot be verified, it cannot become an economic asset.&rdquo;
+      </div>
+      <div style="font-size:.68rem;color:var(--muted);margin-top:.45rem">MASAREN IIaaS</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<div id="pp">
+  <div class="pph" id="pph">
+    <div class="phl">MASAREN IMPACT PASSPORT</div>
+    <div class="phi" id="ppid">MP---------</div>
+    <div class="phn" id="ppn">&mdash;</div>
+    <span class="ttp" id="pptier">BRONZE</span>
+    <div class="phst">
+      <div><div class="v" id="pps">0.000</div><div class="l">PMS Score</div></div>
+      <div><div class="v" id="ppt">0</div><div class="l">Tasks Done</div></div>
+      <div><div class="v" id="ppe">0</div><div class="l">Evidence Filed</div></div>
+      <div><div class="v" id="ppv">$0</div><div class="l">Impact Value</div></div>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+    <div><div class="wg"><h3>&#x1F4CA; PMS Dimensions</h3><div class="dg" id="ppdims"></div></div></div>
+    <div><div class="wg"><h3>&#x1F465; Platform Members <a onclick="loadPP()">Refresh</a></h3><div id="ppusers"></div></div></div>
+  </div>
+  <div style="text-align:center;margin:.9rem 0">
+    <button class="btn bgh bsm" onclick="pg('feed')">&#x2190; Back to Feed</button>
+  </div>
+</div>
+
+<div id="up" style="display:none">
+  <div style="max-width:820px;margin:1.2rem auto;padding:0 1rem">
+    <!-- Cover Photo -->
+    <div class="up-cover" id="upCover">
+      <img id="upCoverImg" src="" alt="" style="width:100%;height:100%;object-fit:cover"/>
+      <div class="up-avatar" id="upAvatar"><span id="upAvatarText">?</span></div>
+    </div>
+    <!-- Profile Header -->
+    <div class="up-body">
+      <div class="up-info">
+        <h1 id="upName">—</h1>
+        <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+          <span class="tb2" id="upRole">INDIVIDUAL</span>
+          <span class="ttp" id="upTier" style="font-size:.72rem">BRONZE</span>
+          <span id="upLocation" style="font-size:.78rem;color:var(--text-secondary)">📍 Cairo, Egypt</span>
+        </div>
+        <p id="upBio" style="margin-top:.6rem;font-size:.85rem;color:var(--text-secondary);line-height:1.5">—</p>
+      </div>
+      <!-- Stats -->
+      <div class="phst" style="margin-top:1rem" id="upStats">
+        <div><div class="v" id="upPms">0.000</div><div class="l">PMS Score</div></div>
+        <div><div class="v" id="upTasks">0</div><div class="l">Tasks Done</div></div>
+        <div><div class="v" id="upEv">0</div><div class="l">Evidence</div></div>
+        <div><div class="v" id="upVal">$0</div><div class="l">Impact Value</div></div>
+      </div>
+      <!-- Tabs -->
+      <div class="up-tabs">
+        <button class="up-tab act" data-tab="activity" onclick="switchUpTab('activity')">Activity</button>
+        <button class="up-tab" data-tab="evidence" onclick="switchUpTab('evidence')">Evidence</button>
+        <button class="up-tab" data-tab="programs" onclick="switchUpTab('programs')">Programs</button>
+      </div>
+    </div>
+    <!-- Tab Content -->
+    <div id="upTabContent">
+      <div class="up-tab-content" data-tab="activity">
+        <div class="wg"><h3>Recent Activity</h3><div id="upActivity" style="font-size:.85rem;color:var(--text-secondary);padding:.5rem 0">No recent activity</div></div>
+      </div>
+      <div class="up-tab-content" data-tab="evidence" style="display:none">
+        <div class="wg"><h3>Evidence Submitted</h3><div id="upEvidence" style="font-size:.85rem;color:var(--text-secondary);padding:.5rem 0">No evidence submitted</div></div>
+      </div>
+      <div class="up-tab-content" data-tab="programs" style="display:none">
+        <div class="wg"><h3>Participating Programs</h3><div id="upPrograms" style="font-size:.85rem;color:var(--text-secondary);padding:.5rem 0">No programs joined</div></div>
+      </div>
+    </div>
+    <div style="text-align:center;margin:1rem 0">
+      <button class="btn bgh bsm" onclick="pg('feed')">← Back to Feed</button>
+    </div>
+  </div>
+</div>
+
+<div id="np" style="display:none">
+  <div style="max-width:1100px;margin:1.2rem auto;padding:0 1rem">
+    <div class="wg" style="padding:0;overflow:hidden;border-radius:20px">
+      <div style="background:linear-gradient(135deg,var(--navy-dark),var(--navy-mid));padding:.9rem 1.2rem;display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-size:.66rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase">MASAREN</div>
+          <div style="font-size:1.1rem;font-weight:800;color:#fff;margin-top:.15rem">&#x1F578;&#xFE0F; User Collaboration Network</div>
+        </div>
+        <div style="display:flex;gap:.5rem">
+          <button class="btn bn bsm" onclick="loadNetwork()">&#x21BB; Refresh</button>
+          <button class="btn bgh bsm" onclick="pg('feed')" style="color:#fff;border-color:rgba(255,255,255,.2)">&#x2190; Feed</button>
+        </div>
+      </div>
+      <div style="padding:1rem">
+        <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem">
+          <div style="flex:1;min-width:140px;background:var(--bg);border-radius:10px;padding:.6rem .85rem;text-align:center">
+            <div class="v" style="font-size:1.1rem;font-weight:700;color:var(--gold)" id="ntotal">0</div>
+            <div class="l" style="font-size:.68rem;color:var(--text-secondary)">Network Nodes</div>
+          </div>
+          <div style="flex:1;min-width:140px;background:var(--bg);border-radius:10px;padding:.6rem .85rem;text-align:center">
+            <div class="v" style="font-size:1.1rem;font-weight:700;color:var(--gold)" id="nedges">0</div>
+            <div class="l" style="font-size:.68rem;color:var(--text-secondary)">Connections</div>
+          </div>
+          <div style="flex:1;min-width:140px;background:var(--bg);border-radius:10px;padding:.6rem .85rem;text-align:center">
+            <div class="v" style="font-size:1.1rem;font-weight:700;color:var(--gold)" id="nclusters">0</div>
+            <div class="l" style="font-size:.68rem;color:var(--text-secondary)">Avg Connections</div>
+          </div>
+        </div>
+        <div class="net-legend" style="display:flex;gap:.6rem;flex-wrap:wrap;margin-bottom:.75rem;font-size:.72rem;color:var(--text-secondary)">
+          <span>&#x1F534; BRONZE</span><span>&#x26AA; SILVER</span><span>&#x2B50; GOLD</span><span>&#x1F7E3; PLATINUM</span>
+          <span style="margin-left:auto">&#x1F517; = Shared Program &middot; Drag nodes to explore</span>
+        </div>
+        <div class="net-container">
+          <canvas id="netCanvas"></canvas>
+          <div class="net-tooltip" id="netTip"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mb" id="mprog">
+  <div class="md">
+    <h2>&#x1F4CB; New Program <button class="mc" onclick="cm('mprog')">&#x2715;</button></h2>
+    <div class="fg"><label>Organization</label><div class="tag-selector" id="mpo-tags"></div><input type="hidden" id="mpo"/></div>
+    <div class="fg"><label>Title</label><input id="mpt" placeholder="e.g. Water Sanitation Initiative 2025"/></div>
+    <div class="fg"><label>Description</label><textarea id="mpd" rows="2" placeholder="Impact description..."></textarea></div>
+    <div class="fg"><label>SDG Goals (e.g. 3,6,10)</label><input id="mpsdg" placeholder="3,6,10"/></div>
+    <div class="fg"><label>Country</label><input id="mpc" value="Egypt"/></div>
+    <div style="display:flex;gap:.5rem;justify-content:flex-end">
+      <button class="btn bgh" onclick="cm('mprog')">Cancel</button>
+      <button class="btn bg" onclick="createProg()">&#x1F680; Launch</button>
+    </div>
+    <hr style="margin:.75rem 0;border:none;border-top:1px solid var(--border-light)"/>
+    <div style="font-size:.76rem;color:var(--text-secondary);margin-bottom:.4rem">Quick: Create Organization first</div>
+    <div style="display:flex;gap:.45rem">
+      <input id="mon" placeholder="Organization name" style="flex:1;padding:.48rem .75rem;border:1.5px solid var(--border);border-radius:var(--rs);font-size:.82rem;outline:none;background:var(--bg-card);color:var(--text);transition:var(--tt)"/>
+      <button class="btn bn bsm" onclick="createOrg()">+ Org</button>
+    </div>
+  </div>
+</div>
+
+<div class="mb" id="mtask">
+  <div class="md">
+    <h2>&#x2705; New Task <button class="mc" onclick="cm('mtask')">&#x2715;</button></h2>
+    <div class="fg"><label>Program</label><div class="tag-selector" id="mtp-tags"></div><input type="hidden" id="mtp"/></div>
+      <div class="fg"><label>Title</label><input id="mtt" placeholder="e.g. Site Assessment - Village X"/></div>
+    <div class="fg"><label>Priority</label>
+      <div class="tag-selector" id="mtz-tags">
+        <button type="button" class="tag-btn" data-value="HIGH" onclick="selectTag('mtz','mtz-tags','HIGH',this)"><span class="tag-color" style="background:#e74c3c"></span><span class="tag-label">HIGH</span></button>
+        <button type="button" class="tag-btn act" data-value="MEDIUM" onclick="selectTag('mtz','mtz-tags','MEDIUM',this)"><span class="tag-color" style="background:#f39c12"></span><span class="tag-label">MEDIUM</span></button>
+        <button type="button" class="tag-btn" data-value="LOW" onclick="selectTag('mtz','mtz-tags','LOW',this)"><span class="tag-color" style="background:#27ae60"></span><span class="tag-label">LOW</span></button>
+      </div>
+      <input type="hidden" id="mtz" value="MEDIUM"/></div>
+    <div class="fg"><label>Assign To</label><div class="tag-selector" id="mtu-tags"></div><input type="hidden" id="mtu"/></div>
+    <div style="display:flex;gap:.5rem;justify-content:flex-end">
+      <button class="btn bgh" onclick="cm('mtask')">Cancel</button>
+      <button class="btn bg" onclick="createTask()">&#x2705; Create</button>
+    </div>
+  </div>
+</div>
+
+<div class="mb" id="mev">
+  <div class="md">
+    <h2>&#x1F4F8; Submit Evidence <button class="mc" onclick="cm('mev')">&#x2715;</button></h2>
+    <div style="background:var(--bg);border-radius:var(--rs);padding:.55rem .75rem;font-size:.74rem;color:var(--text-secondary);margin-bottom:.75rem;border:1px solid var(--border)">
+      &#x26A1; AI verification runs instantly. Confidence &gt;80% = auto-approved.
+    </div>
+    <div class="fg"><label>Task</label><div class="tag-selector" id="met-tags"></div><input type="hidden" id="met"/></div>
+    <div class="fg"><label>Media Type</label>
+      <div class="tag-selector" id="mem-tags">
+        <button type="button" class="tag-btn act" data-value="PHOTO" onclick="selectTag('mem','mem-tags','PHOTO',this)"><span class="tag-label">\uD83D\uDCF7 PHOTO</span></button>
+        <button type="button" class="tag-btn" data-value="VIDEO" onclick="selectTag('mem','mem-tags','VIDEO',this)"><span class="tag-label">\uD83C\uDFA5 VIDEO</span></button>
+        <button type="button" class="tag-btn" data-value="AUDIO" onclick="selectTag('mem','mem-tags','AUDIO',this)"><span class="tag-label">\uD83C\uDF99\uFE0F AUDIO</span></button>
+        <button type="button" class="tag-btn" data-value="DOCUMENT" onclick="selectTag('mem','mem-tags','DOCUMENT',this)"><span class="tag-label">\uD83D\uDCC4 DOCUMENT</span></button>
+      </div>
+      <input type="hidden" id="mem" value="PHOTO"/></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.55rem">
+      <div class="fg"><label>GPS Lat</label><input id="mela" type="number" step="0.0001" value="30.0626"/></div>
+      <div class="fg"><label>GPS Lon</label><input id="melo" type="number" step="0.0001" value="31.2497"/></div>
+    </div>
+    <div class="fg"><label>Field Notes</label><textarea id="med" rows="2" placeholder="What did you observe?"></textarea></div>
+    <div style="display:flex;gap:.5rem;justify-content:flex-end">
+      <button class="btn bgh" onclick="cm('mev')">Cancel</button>
+      <button class="btn bg" onclick="submitEv()">&#x1F4E4; Submit &amp; Verify</button>
+    </div>
+  </div>
+</div>
+
+<div class="mb" id="morg">
+  <div class="md">
+    <h2>&#x1F3E2; New Organization <button class="mc" onclick="cm('morg')">&#x2715;</button></h2>
+    <div class="fg"><label>Name</label><input id="orn" placeholder="Organization name"/></div>
+    <div class="fg"><label>Type</label>
+      <div class="tag-selector" id="ort-tags">
+        <button type="button" class="tag-btn act" data-value="NGO" onclick="selectTag('ort','ort-tags','NGO',this)"><span class="tag-label">NGO</span></button>
+        <button type="button" class="tag-btn" data-value="CSR" onclick="selectTag('ort','ort-tags','CSR',this)"><span class="tag-label">CSR</span></button>
+        <button type="button" class="tag-btn" data-value="GOVERNMENT" onclick="selectTag('ort','ort-tags','GOVERNMENT',this)"><span class="tag-label">Government</span></button>
+        <button type="button" class="tag-btn" data-value="UNIVERSITY" onclick="selectTag('ort','ort-tags','UNIVERSITY',this)"><span class="tag-label">University</span></button>
+      </div>
+      <input type="hidden" id="ort" value="NGO"/></div>
+    <div class="fg"><label>Country</label><input id="orc" value="Egypt"/></div>
+    <div style="display:flex;gap:.5rem;justify-content:flex-end">
+      <button class="btn bgh" onclick="cm('morg')">Cancel</button>
+      <button class="btn bg" onclick="createOrg2()">+ Create Org</button>
+    </div>
+  </div>
+</div>
+
+<div class="mb" id="massign">
+  <div class="md">
+    <h2>&#x1F464; Assign Task <button class="mc" onclick="cm('massign')">&#x2715;</button></h2>
+    <input type="hidden" id="atid"/>
+    <div class="fg"><label>Assign To</label><div class="tag-selector" id="asu-tags"></div><input type="hidden" id="asu"/></div>
+    <div style="display:flex;gap:.5rem;justify-content:flex-end">
+      <button class="btn bgh" onclick="cm('massign')">Cancel</button>
+      <button class="btn bg" onclick="doAssign()">Assign</button>
+    </div>
+  </div>
+</div>
+
+
+
+<div class="mb" id="malgo">
+  <div class="md" style="max-width:500px">
+    <h2>&#x2699;&#xFE0F; Algorithm Parameters <button class="mc" onclick="cm('malgo')">&#x2715;</button></h2>
+    <div style="background:var(--bg);border-radius:var(--rs);padding:.5rem .75rem;font-size:.73rem;color:var(--text-secondary);margin-bottom:.75rem;border:1px solid var(--border)">
+      &#x26A1; Tweaking these parameters affects how items are ranked in the feed. Changes apply instantly.
+    </div>
+    <div id="algoparams"></div>
+    <div style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:.75rem;border-top:1px solid var(--border-light);padding-top:.75rem">
+      <button class="btn bgh" onclick="resetAlgoParams()">&#x21A9; Reset</button>
+      <button class="btn bg" onclick="saveAlgoParams()">&#x1F4BE; Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<div class="mb" id="mpdetail">
+  <div class="md" style="max-width:560px">
+    <div id="mpdCover" style="height:140px;border-radius:10px;background:var(--navy);margin-bottom:.75rem;overflow:hidden">
+      <img id="mpdCoverImg" src="" alt="" style="width:100%;height:100%;object-fit:cover"/>
+    </div>
+    <h2 style="margin-bottom:.3rem"><span id="mpdTitle">—</span> <button class="mc" onclick="cm('mpdetail')">✕</button></h2>
+    <div id="mpdSdgs" style="display:flex;gap:.25rem;flex-wrap:wrap;margin-bottom:.5rem"></div>
+    <p id="mpdDesc" style="font-size:.82rem;color:var(--text-secondary);line-height:1.5;margin-bottom:.75rem">—</p>
+    <div style="display:flex;gap:1rem;margin-bottom:.75rem">
+      <div><strong id="mpdTasks">0</strong> <span style="color:var(--text-secondary)">tasks</span></div>
+      <div><strong id="mpdEnrolled">0</strong> <span style="color:var(--text-secondary)">enrolled</span></div>
+      <div><strong id="mpdCountry">—</strong></div>
+    </div>
+    <div style="border-top:1px solid var(--border-light);padding-top:.6rem">
+      <div style="font-size:.78rem;font-weight:600;color:var(--text);margin-bottom:.4rem">📋 Tasks</div>
+      <div id="mpdTaskList" style="font-size:.8rem;color:var(--text-secondary)">Loading...</div>
+    </div>
+  </div>
+</div>
+
+<div class="mb" id="mtdetail">
+  <div class="md" style="max-width:540px">
+    <h2><span id="mtdTitle">—</span> <button class="mc" onclick="cm('mtdetail')">✕</button></h2>
+    <div id="mtdStatus" style="display:inline-flex;padding:.2rem .6rem;border-radius:20px;font-size:.72rem;font-weight:700;margin-bottom:.5rem">PENDING</div>
+    <p id="mtdDesc" style="font-size:.82rem;color:var(--text-secondary);line-height:1.5;margin-bottom:.6rem">—</p>
+    <div style="display:flex;gap:1rem;margin-bottom:.6rem;font-size:.78rem">
+      <div><span style="color:var(--text-secondary)">Priority:</span> <strong id="mtdPriority">MEDIUM</strong></div>
+      <div><span style="color:var(--text-secondary)">Program:</span> <strong id="mtdProgram">—</strong></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:.6rem;padding:.5rem 0;border-top:1px solid var(--border-light);border-bottom:1px solid var(--border-light);margin-bottom:.6rem;cursor:pointer" id="mtdAssignee" onclick="openUserProfile(this.dataset.uid)">
+      <div id="mtdAv" style="width:36px;height:36px;border-radius:50%;background:var(--navy-light);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:.75rem">?</div>
+      <div><div id="mtdAssigneeName" style="font-weight:600;font-size:.85rem">—</div><div style="font-size:.7rem;color:var(--text-secondary)">Assignee</div></div>
+    </div>
+    <div><div style="font-size:.78rem;font-weight:600;color:var(--text);margin-bottom:.3rem">📎 Evidence</div><div id="mtdEvidence" style="font-size:.8rem;color:var(--text-secondary)">None</div></div>
+  </div>
+</div>
+
+<button id="scrollTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Scroll to top">&#x2191;</button>
+
+<div id="tw"></div>
+
+<div id="mnav-overlay" class="mnav-overlay">
+  <div class="mnav-header">
+    <span class="mnav-title">MASAREN</span>
+    <button class="mnav-close" onclick="toggleMNav()">&#x2715;</button>
+  </div>
+  <div class="mnav-body">
+    <button class="sni" onclick="pg('feed');sf('all')"><span class="ic">&#x1F3E0;</span>Home Feed</button>
+    <button class="sni" onclick="pg('passport')"><span class="ic">&#x1FAAA;</span>My Passport</button>
+    <div class="sdiv"></div>
+    <button class="sni" onclick="om('mprog')"><span class="ic">&#x1F4CB;</span>New Program</button>
+    <button class="sni" onclick="om('mtask')"><span class="ic">&#x2705;</span>New Task</button>
+    <button class="sni" onclick="om('mev')"><span class="ic">&#x1F4F8;</span>Submit Evidence</button>
+    <button class="sni" onclick="om('morg')"><span class="ic">&#x1F3E2;</span>New Organization</button>
+    <div class="sdiv"></div>
+    <button class="sni" onclick="sf('IMPACT_ASSET')"><span class="ic">&#x1F48E;</span>Impact Assets</button>
+    <button class="sni" onclick="sf('TASK_COMPLETED')"><span class="ic">&#x2705;</span>Completions</button>
+    <button class="sni" onclick="sf('PROGRAM_LAUNCHED')"><span class="ic">&#x1F680;</span>Programs</button>
+    <div class="sdiv"></div>
+      <button class="sni" onclick="pg('network')"><span class="ic">&#x1F578;&#xFE0F;</span>User Network</button>
+      <button class="sni" onclick="om('malgo')"><span class="ic">&#x2699;&#xFE0F;</span>Algorithm</button>
+      <button class="sni" onclick="window.open('/docs','_blank')"><span class="ic">&#x1F4D6;</span>Documentation</button>
+      <div class="sdiv"></div>
+      <button class="sni" onclick="logout()" style="color:var(--red)"><span class="ic">&#x1F44B;</span>Sign Out</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  try{
+    var t=localStorage.getItem('masaren-token');
+    var u=localStorage.getItem('masaren-user');
+    if(t&&u){window._SAVED_TOKEN=t;window._SAVED_USER=JSON.parse(u);}
+  }catch(e){}
+})();
+</script>
+<script src="/static/app.js"></script>
+</body>
+</html>

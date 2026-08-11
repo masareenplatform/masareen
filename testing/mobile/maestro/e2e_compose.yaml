@@ -1,0 +1,13 @@
+# MASAREN — real-backend compose E2E (Maestro).
+# Logs in, opens the compose FAB, authors a post, and asserts it appears.
+appId: com.masaren.app
+---
+- runFlow: e2e_login.yaml
+
+- tapOn: "Create post"
+- waitForAnimationToEnd
+- assertVisible: "Create a post"
+- inputText: "Flutter Maestro E2E post ${DATE}"
+- tapOn: "Post"
+- waitForAnimationToEnd
+- assertVisible: "Flutter Maestro E2E post"

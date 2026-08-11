@@ -1,0 +1,29 @@
+{
+  "id": "backend/services",
+  "title": "Services Catalog",
+  "description": "The combined backend hosts 37 service routers. Below is the catalog grouped by domain,",
+  "source": "@site/docs/backend/services.md",
+  "sourceDirName": "backend",
+  "slug": "/backend/services",
+  "permalink": "/docs/backend/services",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/masareen/masareen-docs/tree/main/docs/backend/services.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 2,
+  "frontMatter": {
+    "id": "services",
+    "title": "Services Catalog",
+    "sidebar_position": 2
+  },
+  "sidebar": "backend",
+  "previous": {
+    "title": "Backend Architecture",
+    "permalink": "/docs/backend/architecture"
+  },
+  "next": {
+    "title": "Authentication & Authorization",
+    "permalink": "/docs/backend/auth"
+  }
+}

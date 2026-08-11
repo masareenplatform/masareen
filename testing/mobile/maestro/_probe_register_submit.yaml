@@ -1,0 +1,24 @@
+appId: com.masaren.app
+---
+- clearState
+- launchApp
+- waitForAnimationToEnd
+- tapOn: "Continue"
+- waitForAnimationToEnd
+- tapOn: "Continue"
+- waitForAnimationToEnd
+- tapOn: "Continue"
+- waitForAnimationToEnd
+- tapOn: "Create an account"
+- waitForAnimationToEnd
+- assertVisible: "Create Account"
+- tapOn: "I agree to the Terms of Service and Privacy Policy and consent to processing my data for the alpha programme."
+- tapOn: "Full Name"
+- inputText: "Alpha Maestro"
+- tapOn: "Email"
+- inputText: "${EMAIL}"
+- tapOn: "Password"
+- inputText: "${PASSWORD}"
+- tapOn: "Create Account"
+- waitForAnimationToEnd
+- waitForAnimationToEnd

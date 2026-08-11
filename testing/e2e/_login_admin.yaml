@@ -1,0 +1,14 @@
+# Helper: Login as admin (must be called after app is on login screen)
+appId: com.masaren.app
+---
+- waitForAnimationToEnd:
+    timeout: 6000
+- tapOn:
+    point: "540,1158"
+- inputText: "admin@masaren.org"
+- tapOn:
+    point: "540,1326"
+- inputText: "Masaren@1234"
+- tapOn: "Sign in"
+- waitForAnimationToEnd:
+    timeout: 15000

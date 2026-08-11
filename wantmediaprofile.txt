@@ -1,0 +1,916 @@
+# Prompt for Hy3 OpenCode Zen
+
+I want you to implement a **Media Personnel Profile** for **MASAREEN**, inspired by the **information architecture, spacing, hierarchy, section ordering, card layout, alignments, and usability** shown in the attached reference image.
+
+**DO NOT copy the colors, branding, typography, icons, logos, or visual identity.**
+This is **not a clone**. Instead, preserve only the UX principles, information organization, and dashboard philosophy while using MASAREEN's existing design system, colors, typography, spacing, border radius, shadows, animations, and components.
+
+The implementation must be production-ready for both:
+
+* Flutter
+* Web (React/Next.js)
+
+Both implementations must use the exact same data model and API.
+
+---
+
+# Overview
+
+This page represents the **professional impact profile of a media personnel member** inside MASAREEN.
+
+The user is **not** simply a social profile.
+
+They are a verified professional whose work is measured, archived, analyzed, scored, and transformed into an impact portfolio.
+
+The profile becomes their digital CV, performance dashboard, historical archive, verification center, analytics page, and reputation system.
+
+Think of it as:
+
+* LinkedIn
+* ResearchGate
+* GitHub profile
+* Google Scholar
+* Creator Studio
+* Analytics Dashboard
+
+combined into one professional profile.
+
+---
+
+# Navigation Flow
+
+The profile must be accessible through several paths.
+
+## Web
+
+Sidebar
+
+```
+Workspace
+ └── People
+      └── Media Personnel
+             └── Open Profile
+```
+
+or
+
+```
+Reports
+     └── Report Details
+             └── Click Author
+```
+
+or
+
+```
+Search
+     └── Search Personnel
+             └── Open Profile
+```
+
+---
+
+## Flutter
+
+Bottom Navigation
+
+```
+Home
+Reports
+People
+Notifications
+Profile
+```
+
+Selecting a media personnel opens
+
+```
+Personnel Profile
+```
+
+using Hero animation.
+
+---
+
+# Tabs
+
+The profile contains horizontal tabs similar to the reference.
+
+Example:
+
+```
+Overview
+
+Reports
+
+Coverage
+
+Media
+
+Opinions
+
+Analytics
+
+Achievements
+
+Timeline
+
+Evidence
+
+Settings (Owner only)
+```
+
+These tabs should be responsive.
+
+Desktop
+
+Horizontal.
+
+Tablet
+
+Scrollable.
+
+Mobile
+
+Scrollable with snapping.
+
+---
+
+# Header
+
+Large professional header.
+
+Contains
+
+Profile Photo
+
+Verification Badge
+
+Full Name
+
+Professional Role
+
+Organization
+
+Country
+
+Current Status
+
+Availability
+
+Member Since
+
+Impact Level
+
+Reputation Score
+
+Follow Button
+
+Message Button
+
+Invite Button (permission controlled)
+
+Export Portfolio
+
+Share Profile
+
+---
+
+# Primary Impact Card
+
+The first large card is the equivalent of the screenshot's impact card.
+
+Instead of the screenshot's exact content, it becomes MASAREEN's professional impact summary.
+
+Example fields:
+
+Professional Impact
+
+Verified Reports
+
+Published Reports
+
+Verified Evidence
+
+Completed Missions
+
+Organizations Worked With
+
+Primary Beat
+
+Primary Expertise
+
+Coverage Regions
+
+Languages
+
+Employment Status
+
+Joined MASAREEN
+
+Current Organization
+
+Verification Level
+
+Impact Tier
+
+Professional Rank
+
+Impact Score
+
+Trust Score
+
+Verification Confidence
+
+Community Rating
+
+Current Reach
+
+Lifetime Reach
+
+Average Reach
+
+Audience Growth
+
+Average Engagement
+
+Media Value
+
+Contribution Score
+
+Knowledge Score
+
+Field Activity Score
+
+Professional Consistency
+
+---
+
+# KPI Row
+
+Below the main profile card place a responsive KPI grid.
+
+Cards include
+
+Total Reports
+
+Verified Reports
+
+Verified Missions
+
+Evidence Submitted
+
+Organizations
+
+Countries Covered
+
+Coverage Hours
+
+Average Quality Score
+
+Average Review Time
+
+Trust Score
+
+AI Confidence
+
+Community Rating
+
+Monthly Growth
+
+Followers
+
+Following
+
+Bookmarks
+
+Saved Reports
+
+Recommendations
+
+Research Citations
+
+Media Mentions
+
+Professional Endorsements
+
+Each card animates when values change.
+
+---
+
+# Impact Timeline
+
+Equivalent to the chart in the screenshot.
+
+Instead of simple bars, build an advanced analytics section.
+
+Allow switching between
+
+Weekly
+
+Monthly
+
+Quarterly
+
+Yearly
+
+Lifetime
+
+Metrics selectable
+
+Impact Score
+
+Reach
+
+Engagement
+
+Verified Reports
+
+Evidence
+
+Trust Score
+
+Knowledge Contribution
+
+Media Influence
+
+Mission Completion
+
+Professional Growth
+
+Display
+
+Bar chart
+
+Line chart
+
+Area chart
+
+Heatmap
+
+Stacked comparison
+
+Include trend indicators.
+
+---
+
+# Professional Information
+
+Separate card.
+
+Contains
+
+Biography
+
+Professional Summary
+
+Mission Statement
+
+Areas of Expertise
+
+Education
+
+Experience
+
+Languages
+
+Skills
+
+Certificates
+
+Awards
+
+Memberships
+
+Publications
+
+Research
+
+Specializations
+
+---
+
+# Reports Section
+
+Shows every report written by this professional.
+
+Each report card contains
+
+Headline
+
+Cover Image
+
+Category
+
+Status
+
+Verification Status
+
+Publication Date
+
+Reach
+
+Engagement
+
+Organizations
+
+Evidence Count
+
+Quality Score
+
+Impact Score
+
+Read Report
+
+Open Analytics
+
+Export
+
+Filters
+
+Search
+
+Date
+
+Organization
+
+Status
+
+Category
+
+Impact
+
+Verification
+
+Infinite scrolling.
+
+---
+
+# Coverage Section
+
+Interactive map.
+
+Shows
+
+Countries
+
+Cities
+
+Regions
+
+Assignments
+
+Coverage Radius
+
+Mission Pins
+
+Clicking opens reports.
+
+---
+
+# Media Gallery
+
+Images
+
+Videos
+
+Audio
+
+Documents
+
+Drone Footage
+
+Live Streams
+
+Interviews
+
+Evidence
+
+Searchable and filterable.
+
+---
+
+# Opinions
+
+Editorials
+
+Articles
+
+Columns
+
+Guest Contributions
+
+Interviews
+
+Podcasts
+
+Each item contains
+
+Reach
+
+Impact
+
+Reading Time
+
+Verification
+
+Comments
+
+---
+
+# Achievements
+
+Timeline of
+
+Awards
+
+Promotions
+
+Completed Missions
+
+Badges
+
+Certifications
+
+Recognition
+
+Milestones
+
+Impact Levels
+
+---
+
+# Evidence
+
+Every verified evidence item.
+
+Photos
+
+Videos
+
+Audio
+
+GPS
+
+Documents
+
+Witness Statements
+
+Signatures
+
+Metadata
+
+AI Verification
+
+Manual Verification
+
+Chain of Custody
+
+Every evidence item expandable.
+
+---
+
+# Professional Analytics
+
+Dedicated analytics dashboard.
+
+Sections include
+
+Performance Trend
+
+Impact Distribution
+
+Knowledge Contribution
+
+Geographic Reach
+
+Organization Distribution
+
+Report Categories
+
+Engagement Funnel
+
+Verification Funnel
+
+Growth Curve
+
+Activity Heatmap
+
+Publishing Frequency
+
+Response Time
+
+Reader Retention
+
+Audience Demographics
+
+Mission Success
+
+Quality Distribution
+
+Professional Consistency
+
+Peer Comparison
+
+All charts interactive.
+
+---
+
+# Reputation Engine
+
+Dedicated card showing
+
+Trust Score
+
+Verification Score
+
+Reliability
+
+Professional Rank
+
+Community Rating
+
+Organization Rating
+
+Review History
+
+Disputes
+
+Appeals
+
+Resolved Cases
+
+False Reports
+
+Verification Accuracy
+
+Trend arrows.
+
+---
+
+# Timeline
+
+Chronological activity feed.
+
+Includes
+
+Published Report
+
+Mission Started
+
+Mission Completed
+
+Evidence Uploaded
+
+Award Received
+
+Organization Joined
+
+Promotion
+
+Verification Passed
+
+Comment
+
+Recommendation
+
+Like
+
+Follow
+
+Every activity expandable.
+
+---
+
+# Organization History
+
+Organizations worked with.
+
+Each card
+
+Organization Logo
+
+Role
+
+Duration
+
+Projects
+
+Reports
+
+Impact
+
+Achievements
+
+Recommendations
+
+---
+
+# Recommendation System
+
+Peer recommendations.
+
+Supervisor recommendations.
+
+Organization testimonials.
+
+Reader feedback.
+
+Verification panel.
+
+---
+
+# Export
+
+Generate
+
+PDF Portfolio
+
+CV
+
+Professional Resume
+
+Impact Report
+
+Verification Report
+
+Media Kit
+
+Research Portfolio
+
+JSON Export
+
+CSV Export
+
+---
+
+# Permissions
+
+Visitors
+
+Can view.
+
+Cannot edit.
+
+Owner
+
+Can edit.
+
+Organization Admin
+
+Can verify.
+
+Platform Admin
+
+Full access.
+
+---
+
+# Backend Requirements
+
+Create a dedicated Profile Domain.
+
+Suggested entities
+
+```
+Personnel
+
+ProfessionalProfile
+
+ImpactMetrics
+
+AnalyticsSnapshot
+
+TimelineEvent
+
+Achievement
+
+OrganizationHistory
+
+EvidenceSummary
+
+CoverageRegion
+
+ProfessionalSkill
+
+Publication
+
+Recommendation
+
+VerificationRecord
+```
+
+---
+
+# APIs
+
+```
+GET /personnel/{id}
+
+GET /personnel/{id}/overview
+
+GET /personnel/{id}/analytics
+
+GET /personnel/{id}/timeline
+
+GET /personnel/{id}/reports
+
+GET /personnel/{id}/coverage
+
+GET /personnel/{id}/media
+
+GET /personnel/{id}/opinions
+
+GET /personnel/{id}/evidence
+
+GET /personnel/{id}/organizations
+
+GET /personnel/{id}/recommendations
+
+PATCH /personnel/{id}
+
+POST /personnel/{id}/follow
+
+POST /personnel/{id}/endorse
+```
+
+---
+
+# Flutter Requirements
+
+Use
+
+Riverpod
+
+GoRouter
+
+Material 3
+
+Responsive layouts
+
+Hero transitions
+
+SliverAppBar
+
+Animated cards
+
+Lazy loading
+
+Offline caching
+
+Pull to refresh
+
+Adaptive layouts
+
+Dark/Light mode
+
+Desktop support
+
+---
+
+# Web Requirements
+
+Use
+
+Next.js
+
+React
+
+TypeScript
+
+Tailwind
+
+TanStack Query
+
+Framer Motion
+
+Recharts
+
+Virtualized lists
+
+Server Components where appropriate
+
+Responsive design
+
+Skeleton loading
+
+Progressive data fetching
+
+---
+
+# UX Principles
+
+The implementation should preserve only the **structural concepts** demonstrated in the reference image:
+
+* Prominent profile header.
+* Large professional summary card immediately below the header.
+* Clear KPI blocks.
+* Tabbed navigation separating profile domains.
+* Strong information hierarchy.
+* Analytics positioned as first-class content rather than hidden behind menus.
+* Card-based layout with generous spacing.
+* Easy scanning of professional metrics.
+* Responsive alignment across desktop, tablet, and mobile.
+
+Do **not** reproduce the visual identity of the reference. Instead, implement the interface entirely with MASAREEN's established design language, components, branding, typography, iconography, color palette, motion system, and accessibility standards so that it feels like a native MASAREEN experience rather than a redesigned copy.
+

@@ -1,0 +1,23 @@
+# E2E Simulation: Notifications flow
+# Pre-condition: must be logged in
+appId: com.masaren.app
+---
+- waitForAnimationToEnd:
+    timeout: 3000
+# Open Notifications via More menu
+- tapOn: "Tab 5 of 5"
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn: "Notifications"
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: /tmp/e2e_14_notifications
+# Scroll notifications if any
+- swipe:
+    start: "540,1400"
+    end: "540,800"
+- takeScreenshot: /tmp/e2e_14_notifications_scroll
+# Back to feed
+- tapOn: "Tab 1 of 5"
+- waitForAnimationToEnd:
+    timeout: 3000

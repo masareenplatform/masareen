@@ -1,0 +1,29 @@
+{
+  "id": "frontend/web",
+  "title": "Web Application",
+  "description": "Stack",
+  "source": "@site/docs/frontend/web.md",
+  "sourceDirName": "frontend",
+  "slug": "/frontend/web",
+  "permalink": "/docs/frontend/web",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/masareen/masareen-docs/tree/main/docs/frontend/web.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 2,
+  "frontMatter": {
+    "id": "web",
+    "title": "Web Application",
+    "sidebar_position": 2
+  },
+  "sidebar": "frontend",
+  "previous": {
+    "title": "Frontend Overview",
+    "permalink": "/docs/frontend/overview"
+  },
+  "next": {
+    "title": "Mobile Application (Flutter)",
+    "permalink": "/docs/frontend/mobile"
+  }
+}

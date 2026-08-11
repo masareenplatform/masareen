@@ -1,0 +1,122 @@
+{
+  "passed": 23,
+  "total": 23,
+  "results": [
+    {
+      "name": "auth_login",
+      "ok": true,
+      "detail": "token obtained"
+    },
+    {
+      "name": "route /dashboard",
+      "ok": true,
+      "detail": "bodyLen=631 consoleErrs=0"
+    },
+    {
+      "name": "route /programs",
+      "ok": true,
+      "detail": "bodyLen=570 consoleErrs=0"
+    },
+    {
+      "name": "route /tasks",
+      "ok": true,
+      "detail": "bodyLen=569 consoleErrs=0"
+    },
+    {
+      "name": "route /evidence",
+      "ok": true,
+      "detail": "bodyLen=602 consoleErrs=0"
+    },
+    {
+      "name": "route /passport",
+      "ok": true,
+      "detail": "bodyLen=639 consoleErrs=0"
+    },
+    {
+      "name": "route /opportunities",
+      "ok": true,
+      "detail": "bodyLen=667 consoleErrs=0"
+    },
+    {
+      "name": "route /portfolio",
+      "ok": true,
+      "detail": "bodyLen=577 consoleErrs=0"
+    },
+    {
+      "name": "route /profile",
+      "ok": true,
+      "detail": "bodyLen=789 consoleErrs=0"
+    },
+    {
+      "name": "route /admin",
+      "ok": true,
+      "detail": "bodyLen=588 consoleErrs=0"
+    },
+    {
+      "name": "route /notifications",
+      "ok": true,
+      "detail": "bodyLen=580 consoleErrs=0"
+    },
+    {
+      "name": "route /reports",
+      "ok": true,
+      "detail": "bodyLen=736 consoleErrs=0"
+    },
+    {
+      "name": "route /billing",
+      "ok": true,
+      "detail": "bodyLen=694 consoleErrs=0"
+    },
+    {
+      "name": "route /chat",
+      "ok": true,
+      "detail": "bodyLen=609 consoleErrs=0"
+    },
+    {
+      "name": "route /feed",
+      "ok": true,
+      "detail": "bodyLen=3151 consoleErrs=0"
+    },
+    {
+      "name": "route /collaborate",
+      "ok": true,
+      "detail": "bodyLen=810 consoleErrs=0"
+    },
+    {
+      "name": "route /wallet",
+      "ok": true,
+      "detail": "bodyLen=1018 consoleErrs=0"
+    },
+    {
+      "name": "route /ads",
+      "ok": true,
+      "detail": "bodyLen=722 consoleErrs=0"
+    },
+    {
+      "name": "route /payments",
+      "ok": true,
+      "detail": "bodyLen=747 consoleErrs=0"
+    },
+    {
+      "name": "route /revenue",
+      "ok": true,
+      "detail": "bodyLen=863 consoleErrs=0"
+    },
+    {
+      "name": "mobile_bottom_nav",
+      "ok": true,
+      "detail": "bottom-nav present"
+    },
+    {
+      "name": "mobile_compose_fab",
+      "ok": true,
+      "detail": "FAB present"
+    },
+    {
+      "name": "mobile_sidebar_hidden",
+      "ok": true,
+      "detail": "sidebar hidden on mobile"
+    }
+  ],
+  "consoleErrors": []
+}

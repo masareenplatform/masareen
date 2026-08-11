@@ -1,0 +1,71 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.pyo
+htmlcov/
+.coverage
+coverage.xml
+
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+*.g.dart
+*.freezed.dart
+pubspec.lock
+
+# Node / JS
+node_modules/
+.next/
+dist/
+yarn.lock
+package-lock.json
+
+# Environment — NEVER commit secrets
+.env
+.env.*
+!.env.example
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Infrastructure secrets
+*.tfstate
+*.tfstate.backup
+.terraform/
+kubeconfig
+*.pem
+*.key
+
+# Docker
+*.tar
+
+# Generated Flutter Android project (regenerated via `flutter create`)
+apps/mobile/android/
+
+# Logs
+*.log
+logs/
+
+# --- Cleanup audit additions (2026-07-12) ---
+backend/_run/            # generated native-run symlink workspace (run_native.ps1)
+*.apk                   # mobile build artifacts
+*.err                   # runtime error dumps
+analyze*.txt            # ad-hoc analysis logs
+_run/

@@ -1,0 +1,986 @@
+% ============================================================
+% SECTION 8: EVENT-DRIVEN ARCHITECTURE
+% ============================================================
+\section{Event-Driven Architecture}
+
+\subsection{Kafka Event Bus}
+
+Apache Kafka 3.7 serves as the central nervous system of the MASAREN platform, providing durable, scalable, and fault-tolerant event streaming. Kafka runs in KRaft mode (no Zookeeper dependency) for simplified operations.
+
+\subsection{Event Catalog}
+
+The platform defines 20+ domain events organized by bounded context:
+
+\begin{longtable}{|p{4cm}|p{3cm}|p{6cm}|}
+\hline
+\textbf{Event} & \textbf{Domain} & \textbf{Description} \\
+\hline
+\endhead
+organization\_created & Execution & A new organization has been registered \\
+\hline
+program\_created & Execution & A new program has been launched \\
+\hline
+task\_created & Execution & A new task has been defined \\
+\hline
+task\_assigned & Execution & Task assigned to a volunteer \\
+\hline
+task\_started & Execution & Volunteer began task execution \\
+\hline
+task\_completed & Execution & Volunteer marked task as done \\
+\hline
+location\_reached & Verification & GPS confirms arrival at target location \\
+\hline
+submission\_uploaded & Verification & Evidence submitted for verification \\
+\hline
+evidence\_uploaded & Verification & Media evidence uploaded \\
+\hline
+evidence\_verified & AI/Vision & AI completed verification analysis \\
+\hline
+fraud\_detected & AI/Fraud & Suspicious pattern identified \\
+\hline
+impact\_asset\_created & AI/Economist & New impact asset minted \\
+\hline
+impact\_score\_updated & Reputation & PMS recalculated \\
+\hline
+organization\_score\_updated & Reputation & OII recalculated \\
+\hline
+portfolio\_updated & Reputation & User portfolio changed \\
+\hline
+graph\_updated & Graph & Neo4j knowledge graph updated \\
+\hline
+\end{longtable}
+
+\subsection{Event Schema}
+
+Each domain event follows a standardized schema:
+
+\begin{lstlisting}[language=Python, caption=Domain Event Base Class]
+from pydantic import BaseModel
+from datetime import datetime
+from uuid import uuid4
+
+class DomainEvent(BaseModel):
+    event_id: str = str(uuid4())
+    event_type: str
+    aggregate_id: str
+    aggregate_type: str
+    event_version: int = 1
+    timestamp: datetime = datetime.utcnow()
+    data: dict
+    metadata: dict = {}
+\end{lstlisting}
+
+\subsection{Transactional Outbox Pattern}
+
+To ensure atomicity between database operations and event publication, every service uses the Transactional Outbox pattern:
+
+\begin{lstlisting}[language=Python, caption=Transactional Outbox Implementation]
+from sqlalchemy import Column, String, JSON, DateTime, Enum
+from sqlalchemy.ext.declarative import declarative_base
+
+class OutboxMessage(Base):
+    __tablename__ = "outbox_messages"
+
+    id = Column(String, primary_key=True, default=uuid4)
+    event_type = Column(String, nullable=False)
+    aggregate_id = Column(String, nullable=False)
+    aggregate_type = Column(String, nullable=False)
+    payload = Column(JSON, nullable=False)
+    status = Column(
+        Enum("PENDING", "PUBLISHED", "FAILED"),
+        default="PENDING"
+    )
+    created_at = Column(DateTime, default=datetime.utcnow)
+    published_at = Column(DateTime, nullable=True)
+
+def publish_event(event: DomainEvent) -> None:
+    session = Session()
+    outbox = OutboxMessage(
+        event_type=event.event_type,
+        aggregate_id=event.aggregate_id,
+        aggregate_type=event.aggregate_type,
+        payload=event.dict()
+    )
+    session.add(outbox)
+    session.commit()
+\end{lstlisting}
+
+\subsection{Event Processing Pipeline}
+
+\begin{enumerate}
+  \item Domain action triggers \texttt{publish\_event()} within a database transaction
+  \item Event is saved to the \texttt{outbox\_messages} table in the same transaction
+  \item Background processor polls for \texttt{PENDING} outbox messages
+  \item Each pending message is serialized and published to the appropriate Kafka topic
+  \item On successful publication, the message status is updated to \texttt{PUBLISHED}
+  \item Downstream services consume events with at-least-once delivery guarantees
+  \item Idempotent consumers deduplicate events using \texttt{event\_id}
+\end{enumerate}
+
+\subsection{Consumer Implementation}
+
+\begin{lstlisting}[language=Python, caption=Idempotent Kafka Consumer]
+from shared.utils.kafka_consumer import KafkaConsumer
+
+class VerificationEventConsumer(KafkaConsumer):
+    def __init__(self):
+        super().__init__(
+            topic="evidence_verified",
+            group_id="verification-service-group"
+        )
+
+    async def process(self, event: DomainEvent) -> None:
+        if await self._is_duplicate(event.event_id):
+            return
+        if event.data.get("status") == "APPROVED":
+            await self._trigger_economist_agent(event)
+        await self._mark_processed(event.event_id)
+
+    async def _is_duplicate(self, event_id: str) -> bool:
+        return await redis_client.sismember(
+            "processed_events", event_id
+        )
+
+    async def _mark_processed(self, event_id: str) -> None:
+        await redis_client.sadd("processed_events", event_id)
+\end{lstlisting}
+
+\clearpage
+
+% ============================================================
+% SECTION 9: SHARED KERNEL
+% ============================================================
+\section{Shared Kernel}
+
+The shared kernel at \texttt{backend/shared} provides reusable infrastructure code imported by all services as \texttt{shared.*}. It eliminates code duplication and ensures consistent patterns across the entire platform.
+
+\subsection{Kernel Modules}
+
+\begin{longtable}{|p{3.5cm}|p{9cm}|}
+\hline
+\textbf{Module} & \textbf{Purpose} \\
+\hline
+\endhead
+\texttt{events/} & Domain event base classes and all 20+ event contract definitions \\
+\hline
+\texttt{utils/cqrs.py} & CommandBus and QueryBus with middleware support for cross-cutting concerns \\
+\hline
+\texttt{utils/kafka\_producer.py} & Idempotent Kafka publisher with retry logic and error handling \\
+\hline
+\texttt{utils/kafka\_consumer.py} & At-least-once consumer base with automatic offset management \\
+\hline
+\texttt{utils/outbox.py} & Transactional Outbox pattern implementation \\
+\hline
+\texttt{utils/cloud\_llm\_client.py} & Unified abstraction for OpenAI and Google AI client APIs \\
+\hline
+\texttt{utils/app\_factory.py} & Shared FastAPI app factory with standardized configuration \\
+\hline
+\texttt{utils/health.py} & Composable health check system with Redis, PostgreSQL, Kafka checks \\
+\hline
+\texttt{utils/logging.py} & Structured JSON logging with request ID propagation \\
+\hline
+\texttt{middleware/} & JWT validation, RBAC enforcement, bcrypt password hashing \\
+\hline
+\texttt{base\_entity.py} & Abstract base for all domain entities with common fields \\
+\hline
+\texttt{base\_repository.py} & Generic CRUD repository with filtering and pagination \\
+\hline
+\texttt{constants.py} & Platform-wide constants, enums, and configuration \\
+\hline
+\texttt{dtos.py} & Shared Data Transfer Objects for cross-service communication \\
+\hline
+\texttt{exceptions.py} & Standardized exception hierarchy with HTTP mapping \\
+\hline
+\texttt{testing/} & Test fixtures, factories, and utilities \\
+\hline
+\texttt{types.py} & Custom type definitions and generic aliases \\
+\hline
+\end{longtable}
+
+\subsection{CQRS Pattern}
+
+\begin{lstlisting}[language=Python, caption=Command and Query Bus]
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+
+class Command(ABC):
+    pass
+
+class Query(ABC):
+    pass
+
+class CommandBus:
+    def __init__(self):
+        self._handlers = {}
+
+    def register(self, command_type, handler):
+        self._handlers[command_type] = handler
+
+    async def dispatch(self, command: Command):
+        handler = self._handlers.get(type(command))
+        if not handler:
+            raise ValueError(
+                f"No handler for {type(command).__name__}"
+            )
+        return await handler.handle(command)
+
+class QueryBus:
+    def __init__(self):
+        self._handlers = {}
+
+    def register(self, query_type, handler):
+        self._handlers[query_type] = handler
+
+    async def ask(self, query: Query):
+        handler = self._handlers.get(type(query))
+        if not handler:
+            raise ValueError(
+                f"No handler for {type(query).__name__}"
+            )
+        return await handler.handle(query)
+\end{lstlisting}
+
+\subsection{Health Check System}
+
+\begin{lstlisting}[language=Python, caption=Health Check Implementation]
+from shared.utils.health import (
+    HealthCheck,
+    RedisHealthCheck,
+    PostgresHealthCheck,
+    KafkaHealthCheck,
+)
+
+async def health_check():
+    checks = HealthCheck([
+        PostgresHealthCheck(),
+        RedisHealthCheck(),
+        KafkaHealthCheck(),
+    ])
+    return await checks.run()
+\end{lstlisting}
+
+\clearpage
+
+% ============================================================
+% SECTION 10: INFRASTRUCTURE AND DEPLOYMENT
+% ============================================================
+\section{Infrastructure and Deployment}
+
+\subsection{Docker Compose Architecture}
+
+The \texttt{docker-compose.yml} file defines 30+ services and infrastructure components for full-stack local development:
+
+\begin{longtable}{|p{3.5cm}|p{2cm}|p{1.5cm}|p{5cm}|}
+\hline
+\textbf{Component} & \textbf{Image} & \textbf{Port} & \textbf{Purpose} \\
+\hline
+\endhead
+Gateway & backend/Dockerfile.service & 8080 & BFF API Gateway \\
+\hline
+Web Frontend & apps/web/Dockerfile & 3000 & React web application \\
+\hline
+Admin Frontend & apps/admin/Dockerfile & 3001 & Admin panel \\
+\hline
+Identity & backend/Dockerfile.service & 8001 & Identity management \\
+\hline
+Auth & backend/Dockerfile.service & 8002 & Authentication \\
+\hline
+Authz & backend/Dockerfile.service & 8003 & Authorization \\
+\hline
+Organization & backend/Dockerfile.service & 8004 & Organization management \\
+\hline
+Program & backend/Dockerfile.service & 8005 & Program management \\
+\hline
+Task & backend/Dockerfile.service & 8006 & Task management \\
+\hline
+Workflow & backend/Dockerfile.service & 8007 & Workflow orchestration \\
+\hline
+Verification & backend/Dockerfile.service & 8008 & Verification engine \\
+\hline
+Evidence & backend/Dockerfile.service & 8009 & Evidence management \\
+\hline
+PostgreSQL & postgis/postgis:16-3.4 & 5432 & Primary database \\
+\hline
+Neo4j & neo4j:5-community & 7687 & Knowledge graph \\
+\hline
+Redis & redis:7-alpine & 6379 & Cache and sessions \\
+\hline
+Kafka & apache/kafka:3.7.0 & 9092 & Event bus \\
+\hline
+MinIO & minio/minio & 9000 & Blob storage \\
+\hline
+NATS & nats:latest & 4222 & Real-time messaging \\
+\hline
+\end{longtable}
+
+\subsection{Dockerfile Pattern}
+
+\begin{lstlisting}[language=Docker, caption=Dockerfile.service Template]
+FROM python:3.11-slim
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y gcc libpq-dev \\
+    && rm -rf /var/lib/apt/lists/*
+
+COPY backend/shared /app/shared
+
+ARG SERVICE_PATH
+COPY \${SERVICE_PATH} /app/service
+WORKDIR /app/service
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+EXPOSE 8000
+
+CMD ["uvicorn", "src.main:app", \\
+     "--host", "0.0.0.0", "--port", "8000"]
+\end{lstlisting}
+
+\subsection{Database Migrations}
+
+\begin{lstlisting}[language=SQL, caption=Migration Example (V001\_\_initial.sql)]
+CREATE EXTENSION IF NOT EXISTS postgis;
+
+CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    display_name VARCHAR(255),
+    role VARCHAR(50) DEFAULT 'VOLUNTEER',
+    email_verified BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE organizations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    logo_url TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+\end{lstlisting}
+
+\subsection{Kubernetes Deployment}
+
+\begin{lstlisting}[language=yaml, caption=Service Deployment Template]
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: identity-service
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: identity-service
+  template:
+    metadata:
+      labels:
+        app: identity-service
+    spec:
+      containers:
+      - name: identity
+        image: masaren/identity-service:latest
+        ports:
+        - containerPort: 8000
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 8000
+\end{lstlisting}
+
+\subsection{CI/CD Pipeline}
+
+\begin{lstlisting}[language=yaml, caption=CI Pipeline Structure]
+name: MASAREN CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-shared:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          cd backend/shared
+          pip install -r requirements.txt
+          pytest --cov=shared --cov-report=xml
+
+  test-services:
+    strategy:
+      matrix:
+        service: [identity, auth, organization, program, task]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          cd backend/\${{ matrix.service }}
+          pip install -r requirements.txt
+          pytest
+
+  build-docker:
+    needs: [test-shared, test-services]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          docker build -t masaren/app:latest .
+          docker push masaren/app:latest
+
+  deploy:
+    needs: [build-docker]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - run: |
+          kubectl set image deployment/app app=masaren/app:\${{ github.sha }}
+\end{lstlisting}
+
+\clearpage
+
+% ============================================================
+% SECTION 11: TESTING STRATEGY
+% ============================================================
+\section{Testing Strategy}
+
+The MASAREN platform employs a comprehensive testing strategy targeting 90\%+ code coverage across all services.
+
+\subsection{Testing Pyramid}
+
+\begin{description}
+  \item[Unit Tests:] Test individual functions, commands, queries, and domain logic in isolation. Mock all external dependencies (database, Kafka, Redis, AI APIs).
+  \item[Integration Tests:] Test service interactions with real database instances, Kafka topics, and Redis. Verify the Transactional Outbox pattern end-to-end.
+  \item[Contract Tests:] Verify API contract compliance between services using OpenAPI schema validation.
+  \item[Event Tests:] Verify event schemas, consumer idempotency, and event replay capabilities.
+  \item[E2E Tests:] Full-stack tests using Playwright (web) and Maestro (mobile) covering critical user journeys.
+\end{description}
+
+\subsection{Test Configuration}
+
+\begin{lstlisting}[language=Python, caption=Test Fixtures]
+import pytest
+from shared.testing import (
+    DatabaseFixture,
+    KafkaFixture,
+    RedisFixture,
+    AuthFixture,
+)
+
+@pytest.fixture
+async def db():
+    async with DatabaseFixture() as fixture:
+        await fixture.create_tables()
+        yield fixture
+        await fixture.drop_tables()
+
+@pytest.fixture
+async def kafka():
+    async with KafkaFixture() as fixture:
+        yield fixture
+
+@pytest.fixture
+def auth_token():
+    return AuthFixture().generate_token(
+        user_id="test-user",
+        roles=["VOLUNTEER"]
+    )
+\end{lstlisting}
+
+\subsection{Example Unit Test}
+
+\begin{lstlisting}[language=Python, caption=Unit Test Example]
+import pytest
+from datetime import datetime
+from uuid import uuid4
+
+class TestTaskService:
+    async def test_create_task_success(self, db, auth_token):
+        service = TaskService(db.session)
+        command = CreateTaskCommand(
+            program_id=str(uuid4()),
+            title="Plant 50 trees",
+            description="Reforestation task",
+            location={"lat": 30.0, "lng": 31.0},
+            deadline=datetime(2026, 12, 31),
+        )
+        result = await service.create_task(command, auth_token)
+        assert result.status == "CREATED"
+        assert result.title == "Plant 50 trees"
+
+    async def test_create_task_missing_title(self, db, auth_token):
+        with pytest.raises(ValidationError):
+            command = CreateTaskCommand(
+                program_id=str(uuid4()),
+                title="",
+                description="",
+            )
+            await service.create_task(command, auth_token)
+\end{lstlisting}
+
+\subsection{E2E Testing with Playwright}
+
+\begin{lstlisting}[language=TypeScript, caption=Web E2E Test]
+import { test, expect } from '@playwright/test';
+
+test('volunteer can complete task flow', async ({ page }) => {
+  await page.goto('/login');
+  await page.fill('[name=email]', 'volunteer@test.com');
+  await page.fill('[name=password]', 'password123');
+  await page.click('button[type=submit]');
+  await expect(page).toHaveURL('/dashboard');
+
+  await page.click('text=Tasks');
+  await expect(page).toHaveURL('/tasks');
+
+  await page.click('text=Plant 50 trees');
+  await page.click('text=Accept Task');
+
+  await page.click('text=Submit Evidence');
+  await page.setInputFiles('input[type=file]', 'test-assets/trees.jpg');
+  await page.click('text=Submit');
+
+  await expect(page.locator('text=Evidence Submitted')).toBeVisible();
+});
+\end{lstlisting}
+
+\subsection{Mobile E2E Testing with Maestro}
+
+\begin{lstlisting}[language=yaml, caption=Mobile E2E Flow]
+appId: com.masaren.app
+---
+- launchApp
+- tapOn: "Login"
+- inputText: "volunteer@test.com"
+- tapOn: "Next"
+- inputText: "password123"
+- tapOn: "Sign In"
+- assertVisible: "Dashboard"
+- tapOn: "Tasks"
+- assertVisible: "Plant 50 trees"
+- tapOn: "Accept Task"
+- tapOn: "Capture Evidence"
+- takeScreenshot: "evidence_capture"
+- tapOn: "Submit"
+- assertVisible: "Evidence Submitted"
+\end{lstlisting}
+
+\clearpage
+
+% ============================================================
+% SECTION 12: SECURITY
+% ============================================================
+\section{Security Architecture}
+
+\subsection{Authentication and Authorization}
+
+The platform implements a defense-in-depth security model:
+
+\begin{itemize}
+  \item \textbf{JWT-Based Authentication:} RS256 signed JWT tokens with short expiration (15 minutes) and refresh token rotation (7 days)
+  \item \textbf{RBAC:} Four roles with hierarchical permissions: VOLUNTEER < ORG\_ADMIN < ADMIN < SUPER\_ADMIN
+  \item \textbf{Google OAuth:} Popup-based authentication with PKCE flow for enhanced security
+  \item \textbf{API Key Authentication:} Service-to-service communication uses API keys stored in environment variables
+  \item \textbf{Rate Limiting:} Redis-backed rate limiting per IP and user ID
+  \item \textbf{CORS:} Strict origin validation with whitelisted domains
+  \item \textbf{Input Validation:} Pydantic models validate all API inputs with comprehensive error messages
+  \item \textbf{SQL Injection Prevention:} SQLAlchemy ORM with parameterized queries throughout
+\end{itemize}
+
+\subsection{Token Management}
+
+\begin{lstlisting}[language=Python, caption=JWT Token Management]
+from datetime import datetime, timedelta
+import jwt
+
+class TokenManager:
+    def __init__(self, secret: str):
+        self.secret = secret
+        self.access_expiry = timedelta(minutes=15)
+        self.refresh_expiry = timedelta(days=7)
+
+    def create_access_token(self, user_id: str, roles: list[str]) -> str:
+        payload = {
+            "sub": user_id,
+            "roles": roles,
+            "type": "access",
+            "iat": datetime.utcnow(),
+            "exp": datetime.utcnow() + self.access_expiry,
+        }
+        return jwt.encode(payload, self.secret, algorithm="HS256")
+
+    def create_refresh_token(self, user_id: str) -> str:
+        payload = {
+            "sub": user_id,
+            "type": "refresh",
+            "iat": datetime.utcnow(),
+            "exp": datetime.utcnow() + self.refresh_expiry,
+        }
+        return jwt.encode(payload, self.secret, algorithm="HS256")
+
+    def verify_token(self, token: str) -> dict:
+        try:
+            return jwt.decode(token, self.secret, algorithms=["HS256"])
+        except jwt.ExpiredSignatureError:
+            raise AuthenticationError("Token expired")
+        except jwt.InvalidTokenError:
+            raise AuthenticationError("Invalid token")
+\end{lstlisting}
+
+\subsection{RBAC Middleware}
+
+\begin{lstlisting}[language=Python, caption=Role-Based Access Control Middleware]
+from fastapi import Request, HTTPException
+from functools import wraps
+
+def require_roles(allowed_roles: list[str]):
+    def decorator(func):
+        @wraps(func)
+        async def wrapper(request: Request, *args, **kwargs):
+            user = request.state.user
+            if not user:
+                raise HTTPException(status_code=401, detail="Authentication required")
+            if not any(role in user.get("roles", []) for role in allowed_roles):
+                raise HTTPException(status_code=403, detail="Insufficient permissions")
+            return await func(request, *args, **kwargs)
+        return wrapper
+    return decorator
+\end{lstlisting}
+
+\subsection{Data Privacy}
+
+\begin{itemize}
+  \item \textbf{GDPR Compliance:} User data export, deletion, and consent management APIs
+  \item \textbf{Data Encryption:} All data encrypted at rest and in transit (TLS 1.3)
+  \item \textbf{PII Handling:} Personally Identifiable Information stored separately with restricted access
+  \item \textbf{Audit Trails:} All access to sensitive data is logged with user ID, timestamp, and action
+  \item \textbf{Evidence Privacy:} Evidence media is access-controlled with per-program visibility rules
+\end{itemize}
+
+\subsection{Security Best Practices}
+
+\begin{itemize}
+  \item Secrets stored in environment variables, never in code
+  \item \texttt{JWT\_SECRET} must be at least 256 bits and unique per deployment
+  \item Database passwords generated with cryptographic random generators
+  \item All API endpoints behind the Gateway -- no direct service exposure
+  \item Health endpoints are read-only and expose no sensitive data
+  \item Rate limiting prevents brute force and DDoS attacks
+  \item Input validation at API boundaries prevents injection attacks
+  \item CORS configured with explicit allowed origins
+\end{itemize}
+
+\clearpage
+
+% ============================================================
+% SECTION 13: ENVIRONMENT CONFIGURATION
+% ============================================================
+\section{Environment Configuration}
+
+\subsection{Required Environment Variables}
+
+\begin{longtable}{|p{4cm}|p{3cm}|p{5cm}|}
+\hline
+\textbf{Variable} & \textbf{Required} & \textbf{Description} \\
+\hline
+\endhead
+JWT\_SECRET & Yes & Shared secret for JWT signing (min 256-bit) \\
+\hline
+DATABASE\_URL & Yes & PostgreSQL connection string \\
+\hline
+REDIS\_URL & Yes & Redis connection string \\
+\hline
+KAFKA\_BOOTSTRAP\_SERVERS & Yes & Kafka broker addresses \\
+\hline
+NEO4J\_URL & Yes & Neo4j connection string \\
+\hline
+OPENAI\_API\_KEY & Yes & OpenAI API key for AI agents \\
+\hline
+PUBLIC\_GATEWAY\_URL & Yes & Public API Gateway URL \\
+\hline
+STRIPE\_SECRET\_KEY & No & Stripe payment processing \\
+\hline
+STRIPE\_WEBHOOK\_SECRET & No & Stripe webhook verification \\
+\hline
+PAYMOB\_API\_KEY & No & Paymob payment processing \\
+\hline
+PAYMOB\_INTEGRATION\_ID & No & Paymob integration identifier \\
+\hline
+FCM\_SERVICE\_ACCOUNT\_JSON & No & Firebase Cloud Messaging \\
+\hline
+MRC\_PER\_EGP & No & MASAREN Coin exchange rate \\
+\hline
+CREWAI\_BROKER\_URL & No & AI orchestrator broker URL \\
+\hline
+CORS\_ORIGINS & No & Allowed CORS origins \\
+\hline
+\end{longtable}
+
+\subsection{Environment Configuration File}
+
+\begin{lstlisting}[language=bash, caption=.env.example]
+JWT_SECRET=your-256-bit-secret-here
+DATABASE_URL=postgresql://masaren:password@localhost:5432/masaren
+REDIS_URL=redis://localhost:6379/0
+KAFKA_BOOTSTRAP_SERVERS=localhost:9092
+NEO4J_URL=bolt://neo4j:password@localhost:7687
+OPENAI_API_KEY=sk-your-openai-key
+PUBLIC_GATEWAY_URL=http://localhost:8080/api/v1
+\end{lstlisting}
+
+\clearpage
+
+% ============================================================
+% SECTION 14: DEVELOPMENT WORKFLOW
+% ============================================================
+\section{Development Workflow}
+
+\subsection{Local Development Setup}
+
+\begin{enumerate}
+  \item Clone the repository and copy environment configuration
+  \item Start infrastructure dependencies with Docker Compose
+  \item Run individual services natively using \texttt{uvicorn}
+  \item Or launch the combined backend for all-in-one development
+  \item Frontend development with Vite HMR and Flutter hot reload
+\end{enumerate}
+
+\begin{lstlisting}[language=bash, caption=Development Setup Commands]
+cp .env.example .env
+docker compose up -d postgres neo4j redis kafka minio
+cd backend/identity/identity-service
+pip install -r requirements.txt
+uvicorn src.main:app --reload --port 8001
+cd apps/web && npm install && npm run dev
+cd apps/mobile && flutter pub get && flutter run
+\end{lstlisting}
+
+\subsection{Native Development Script}
+
+\begin{lstlisting}[language=bash, caption=Native Port Assignments]
+gateway       :8080
+identity      :8001
+auth          :8002
+organization  :8004
+program       :8005
+task          :8006
+workflow      :8007
+verification  :8008
+evidence      :8009
+graph         :8011
+opportunity   :8013
+matching      :8014
+billing       :8050
+notification  :8060
+orchestrator  :8070
+fraud-python  :8090
+auth-python   :8093
+impact-score  :8094
+\end{lstlisting}
+
+\subsection{Engineering Rules}
+
+\begin{itemize}
+  \item \textbf{Never} bypass domain events -- always use Transactional Outbox
+  \item \textbf{Never} couple services to another service's database
+  \item \textbf{Never} call another service's database directly
+  \item \textbf{Never} run AI inference locally -- cloud only
+  \item \textbf{Never} put business logic in controllers
+  \item \textbf{Never} bypass CommandBus/QueryBus
+  \item \textbf{Never} publish Kafka events without the Outbox pattern
+  \item \textbf{Never} create circular service dependencies
+  \item \textbf{Always} use the Repository pattern for data access
+  \item \textbf{Always} validate DTOs with Pydantic
+  \item \textbf{Always} publish domain events for state changes
+  \item \textbf{Always} write unit + integration + contract tests
+  \item \textbf{Always} maintain independent deployability
+  \item \textbf{Always} use structured JSON logging
+  \item \textbf{Always} expose health check endpoints
+  \item \textbf{Always} implement idempotent event consumers
+  \item \textbf{Always} keep domain models framework-independent
+\end{itemize}
+
+\subsection{Development Stages Completed}
+
+\begin{longtable}{|p{2cm}|p{5cm}|p{5cm}|}
+\hline
+\textbf{Stage} & \textbf{Description} & \textbf{Status} \\
+\hline
+\endhead
+0 & Project specification & Completed \\
+\hline
+1 & Monorepo structure (423 directories, 24+ services) & Completed \\
+\hline
+2 & Shared kernel (22 modules) & Completed \\
+\hline
+3 & Identity domain (54 files, 30+ tests) & Completed \\
+\hline
+4 & Execution domain (organization, program, task, workflow) & Completed \\
+\hline
+5 & Verification domain (6 services) & Completed \\
+\hline
+6 & AI agents (full implementation) & Completed \\
+\hline
+7 & Reputation (PMS, OII, portfolio) & Completed \\
+\hline
+8 & Marketplace (opportunity, matching) & Completed \\
+\hline
+9 & Reporting and analytics & Completed \\
+\hline
+10 & Knowledge graph (Neo4j) & Completed \\
+\hline
+11 & Frontend (Flutter + React) & Completed \\
+\hline
+12 & Production infrastructure (Docker, K8s, CI/CD) & Completed \\
+\hline
+\end{longtable}
+
+\clearpage
+
+% ============================================================
+% SECTION 15: KNOWN GAPS AND FUTURE WORK
+% ============================================================
+\section{Known Gaps and Future Work}
+
+\subsection{Current Gaps}
+
+\begin{itemize}
+  \item Per-function dead-code analysis (ruff/vulture) across all 30+ services
+  \item Several AI agents implemented but not wired into docker-compose.yml
+  \item OpenSearch search layer planned but not present in compose stack
+  \item Go/Rust targets aspirational only; current implementation is Python
+  \item gRPC remains aspirational; REST + Kafka is the real transport
+\end{itemize}
+
+\subsection{Future Roadmap}
+
+\begin{enumerate}
+  \item \textbf{OpenSearch Integration:} Full-text search across programs, opportunities, and impact assets
+  \item \textbf{AI/ML Enhancement:} Additional AI agents for predictive analytics and recommendations
+  \item \textbf{Event Sourcing:} Complete event sourcing for core domain aggregates
+  \item \textbf{Saga Orchestration:} Distributed transaction management across bounded contexts
+  \item \textbf{Performance Optimization:} Query optimization, caching strategies, CDN integration
+  \item \textbf{Mobile Offline Mode:} Enhanced offline support with conflict resolution
+  \item \textbf{Advanced Analytics:} Real-time dashboards with drill-down capabilities
+  \item \textbf{Multi-Tenancy:} Tenant isolation for enterprise deployments
+  \item \textbf{API Versioning:} Formal API versioning strategy for backward compatibility
+\end{enumerate}
+
+\clearpage
+
+% ============================================================
+% SECTION 16: APPENDICES
+% ============================================================
+\section{Appendices}
+
+\subsection{Appendix A: Service Port Map}
+
+\begin{longtable}{|p{4cm}|p{2cm}|p{6cm}|}
+\hline
+\textbf{Service} & \textbf{Port} & \textbf{Docker Compose Key} \\
+\hline
+\endhead
+API Gateway & 8080 & gateway \\
+\hline
+Identity Service & 8001 & identity \\
+\hline
+Authentication Service & 8002 & auth \\
+\hline
+Authorization Service & 8003 & authz \\
+\hline
+Organization Service & 8004 & organization \\
+\hline
+Program Service & 8005 & program \\
+\hline
+Task Service & 8006 & task \\
+\hline
+Workflow Service & 8007 & workflow \\
+\hline
+Verification Service & 8008 & verification \\
+\hline
+Evidence Service & 8009 & evidence \\
+\hline
+Graph Service & 8011 & graph \\
+\hline
+Opportunity Service & 8013 & marketplace \\
+\hline
+Matching Service & 8014 & matching \\
+\hline
+Billing Service & 8050 & billing \\
+\hline
+Notification Service & 8060 & notification \\
+\hline
+AI Orchestrator & 8070 & orchestrator \\
+\hline
+Fraud Detection (Python) & 8090 & fraud-python \\
+\hline
+Auth (Python) & 8093 & auth-python \\
+\hline
+Impact Score (Python) & 8094 & impact-score-python \\
+\hline
+Web Frontend & 3000 & web \\
+\hline
+Admin Frontend & 3001 & admin \\
+\hline
+\end{longtable}
+
+\subsection{Appendix B: Repository Layout}
+
+\begin{verbatim}
+MASAREN/
+  README.md
+  PLATFORM_GENOME.md
+  platform-genome.json
+  docker-compose.yml
+  .env.example
+  apps/
+    web/                    React + TypeScript (port 3000)
+    admin/                  React + TypeScript (Mantine, port 3001)
+    mobile/                 Flutter (Android/iOS)
+  backend/
+    shared/                 Shared kernel package
+    combined/main.py        All models loader
+    identity/               Identity domain (3 services)
+    execution/              Execution domain (4 services)
+    verification/           Verification domain (6 services)
+    ai/                     AI agents + orchestrator
+    graph/                  Graph service
+    reputation/             Reputation domain (3 services)
+    marketplace/            Marketplace domain (2 services)
+    reporting/              Reporting domain (3 services)
+    notifications/          Notification service
+    billing/                Billing domain (3 services)
+    partners/               Partner service
+    coin/                   Coin service
+    ads/                    Ads service
+    platform/               Platform service
+    gateway/                API Gateway
+    chat-service/           Chat service
+  docs/                     Documentation
+  infrastructure/           DB migrations, K8s, CI/CD
+  testing/                  Test harnesses
+  analytics/                R report scripts
+  logo/                     Brand assets
+\end{verbatim}
+
+\subsection{Appendix C: Quick Reference}
+
+\begin{lstlisting}[language=bash, caption=Common Development Commands]
+docker compose up -d
+docker compose logs -f <service-name>
+cd backend/combined && python main.py
+cd backend && pytest
+cd apps/web && npm run dev
+cd apps/mobile && flutter run
+cd apps/mobile && flutter build apk
+\end{lstlisting}
+
+\end{document}

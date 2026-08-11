@@ -1,0 +1,29 @@
+{
+  "id": "concepts/opportunities",
+  "title": "Opportunities, Tasks & the Marketplace",
+  "description": "The marketplace is where intention lives. It is the mechanism that turns \"I need help\"",
+  "source": "@site/docs/concepts/opportunities.md",
+  "sourceDirName": "concepts",
+  "slug": "/concepts/opportunities",
+  "permalink": "/docs/concepts/opportunities",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/masareen/masareen-docs/tree/main/docs/concepts/opportunities.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 3,
+  "frontMatter": {
+    "id": "opportunities",
+    "title": "Opportunities, Tasks & the Marketplace",
+    "sidebar_position": 3
+  },
+  "sidebar": "concepts",
+  "previous": {
+    "title": "Profiles & Multiple Identities",
+    "permalink": "/docs/concepts/profiles-and-identities"
+  },
+  "next": {
+    "title": "Verified Evidence — What It Actually Is",
+    "permalink": "/docs/concepts/verified-evidence"
+  }
+}

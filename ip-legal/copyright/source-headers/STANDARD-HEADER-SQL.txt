@@ -1,0 +1,19 @@
+-- ==============================================================================
+-- Copyright (c) 2026 MASAREN Project. All Rights Reserved.
+--
+-- MASAREN — Impact Infrastructure as a Service (IIaaS)
+-- مسارين — منصة البنية التحتية للأثر كخدمة
+--
+-- This file is part of the MASAREN Platform, a proprietary software system.
+-- Unauthorized copying, distribution, modification, or use of this file,
+-- via any medium, is strictly prohibited without the prior written permission
+-- of the MASAREN Project.
+--
+-- PROPRIETARY AND CONFIDENTIAL
+--
+-- Migration: [migration_id]  (e.g., V001__initial_schema)
+-- Database: [database_name]  (e.g., PostgreSQL 16 + PostGIS)
+-- Description: [Brief description of schema changes in this migration]
+-- Author: MASAREN Data Team
+-- Created: 2026
+-- ==============================================================================

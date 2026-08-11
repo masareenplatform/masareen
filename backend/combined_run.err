@@ -1,0 +1,9 @@
+C:\Users\sherifrashwan\Downloads\MASAREN-FINAL\MASAREN\backend\.venv\Lib\site-packages\pydantic\_internal\_config.py:386: UserWarning: Valid config keys have changed in V2:
+* 'schema_extra' has been renamed to 'json_schema_extra'
+  warnings.warn(message, UserWarning)
+INFO:     Started server process [9284]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8080 (Press CTRL+C to quit)
+Unable connect to node with id 1: KafkaConnectionError: Connection at localhost:9092 closed
+Unable to update metadata from [1]

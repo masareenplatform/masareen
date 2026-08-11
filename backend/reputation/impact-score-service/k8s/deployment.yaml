@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: impact-score-service
+  namespace: masaren
+  labels:
+    app: impact-score-service
+    domain: reputation
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: impact-score-service
+  template:
+    metadata:
+      labels:
+        app: impact-score-service
+        domain: reputation
+    spec:
+      containers:
+        - name: impact-score-service
+          image: masaren/impact-score-service:latest
+          ports:
+            - containerPort: 8014
+          envFrom:
+            - secretRef:
+                name: masaren-secrets
+            - configMapRef:
+                name: masaren-config
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8014
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8014
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: masaren-impact-score-service
+  namespace: masaren
+spec:
+  selector:
+    app: impact-score-service
+  ports:
+    - port: 80
+      targetPort: 8014
+  type: ClusterIP

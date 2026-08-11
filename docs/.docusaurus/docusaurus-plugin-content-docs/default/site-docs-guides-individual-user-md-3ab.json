@@ -1,0 +1,29 @@
+{
+  "id": "guides/individual-user",
+  "title": "Guide: Individual Users",
+  "description": "This is the day-to-day playbook for a person using MASAREEN to prove and grow their impact.",
+  "source": "@site/docs/guides/individual-user.md",
+  "sourceDirName": "guides",
+  "slug": "/guides/individual-user",
+  "permalink": "/docs/guides/individual-user",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/masareen/masareen-docs/tree/main/docs/guides/individual-user.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 2,
+  "frontMatter": {
+    "id": "individual-user",
+    "title": "Guide: Individual Users",
+    "sidebar_position": 2
+  },
+  "sidebar": "guides",
+  "previous": {
+    "title": "Quickstart",
+    "permalink": "/docs/guides/quickstart"
+  },
+  "next": {
+    "title": "Guide: Organizations",
+    "permalink": "/docs/guides/organization"
+  }
+}

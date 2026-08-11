@@ -1,0 +1,13 @@
+{
+  "name": "masaren-web-simulation",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Offline Puppeteer smoke test + mock API gateway for the MASAREN web app.",
+  "type": "module",
+  "scripts": {
+    "smoke": "node smoke-test.mjs"
+  },
+  "dependencies": {
+    "puppeteer": "^23.0.0"
+  }
+}

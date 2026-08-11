@@ -1,0 +1,25 @@
+# E2E: Login with invalid credentials shows error
+appId: com.masaren.app
+---
+- waitForAnimationToEnd:
+    timeout: 6000
+# Tap email field and enter invalid email
+- tapOn:
+    point: "540,1157"
+- inputText: "wrong@email.com"
+# Dismiss keyboard
+- pressKey: Back
+- waitForAnimationToEnd:
+    timeout: 1000
+# Tap password and enter wrong password
+- tapOn:
+    point: "540,1325"
+- inputText: "WrongPassword"
+# Dismiss keyboard
+- pressKey: Back
+- waitForAnimationToEnd:
+    timeout: 1000
+# Tap sign in
+- tapOn: "Sign in"
+- waitForAnimationToEnd:
+    timeout: 10000

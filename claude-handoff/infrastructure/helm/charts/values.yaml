@@ -1,0 +1,89 @@
+# MASAREN Helm chart default values
+# Override with: helm install masaren . -f custom-values.yaml
+
+global:
+  imageRegistry: "masaren"
+  imagePullPolicy: IfNotPresent
+  namespace: masaren
+
+replicaCount:
+  default: 2
+  gateway: 3
+
+resources:
+  requests:
+    memory: "128Mi"
+    cpu: "100m"
+  limits:
+    memory: "512Mi"
+    cpu: "500m"
+
+services:
+  gateway:
+    port: 8000
+    replicas: 3
+  identity:
+    port: 8001
+    replicas: 2
+  authentication:
+    port: 8002
+    replicas: 2
+  authorization:
+    port: 8003
+    replicas: 2
+  organization:
+    port: 8004
+    replicas: 2
+  program:
+    port: 8005
+    replicas: 2
+  task:
+    port: 8006
+    replicas: 2
+  workflow:
+    port: 8007
+    replicas: 2
+  verification:
+    port: 8008
+    replicas: 3
+  evidence:
+    port: 8009
+    replicas: 2
+  gps:
+    port: 8010
+    replicas: 3
+
+infrastructure:
+  postgres:
+    enabled: true
+    image: postgis/postgis:16-3.4
+    storage: 50Gi
+  neo4j:
+    enabled: true
+    image: neo4j:5-community
+    storage: 20Gi
+    plugins: '["apoc","graph-data-science"]'
+  redis:
+    enabled: true
+    image: redis:7-alpine
+    storage: 5Gi
+  kafka:
+    enabled: true
+    image: apache/kafka:3.7.0
+    storage: 20Gi
+  opensearch:
+    enabled: true
+    image: opensearchproject/opensearch:2
+    storage: 30Gi
+
+ingress:
+  enabled: true
+  className: nginx
+  host: api.masaren.io
+  tls: true
+  certManager: true
+
+monitoring:
+  prometheus: true
+  grafana: true
+  alertmanager: true

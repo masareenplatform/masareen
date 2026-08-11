@@ -1,0 +1,80 @@
+global:
+  scrape_interval:     15s
+  evaluation_interval: 30s
+  external_labels:
+    cluster: masaren-production
+    region:  cairo-dc-1
+
+rule_files:
+  - "rules/masaren_alerts.yml"
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]
+
+scrape_configs:
+  - job_name: masaren-identity
+    static_configs:
+      - targets: ["masaren-identity:8001"]
+    metrics_path: /metrics
+
+  - job_name: masaren-auth
+    static_configs:
+      - targets: ["masaren-auth:8002"]
+
+  - job_name: masaren-org
+    static_configs:
+      - targets: ["masaren-org:8004"]
+
+  - job_name: masaren-program
+    static_configs:
+      - targets: ["masaren-program:8005"]
+
+  - job_name: masaren-task
+    static_configs:
+      - targets: ["masaren-task:8006"]
+
+  - job_name: masaren-verification
+    static_configs:
+      - targets: ["masaren-verification:8008"]
+
+  - job_name: masaren-evidence
+    static_configs:
+      - targets: ["masaren-evidence:8009"]
+
+  - job_name: masaren-gps
+    static_configs:
+      - targets: ["masaren-gps:8010"]
+
+  - job_name: masaren-reputation
+    static_configs:
+      - targets: ["masaren-reputation:8014", "masaren-org-score:8015", "masaren-portfolio:8016"]
+
+  - job_name: masaren-graph
+    static_configs:
+      - targets: ["masaren-graph:8017"]
+
+  - job_name: masaren-marketplace
+    static_configs:
+      - targets: ["masaren-opportunity:8018", "masaren-matching:8019"]
+
+  - job_name: masaren-report
+    static_configs:
+      - targets: ["masaren-report:8020", "masaren-analytics:8021"]
+
+  - job_name: masaren-gateway
+    static_configs:
+      - targets: ["masaren-gateway:8000"]
+
+  - job_name: postgres
+    static_configs:
+      - targets: ["postgres-exporter:9187"]
+
+  - job_name: kafka
+    static_configs:
+      - targets: ["kafka-exporter:9308"]
+
+  - job_name: redis
+    static_configs:
+      - targets: ["redis-exporter:9121"]

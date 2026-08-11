@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: graph-service
+  namespace: masaren
+  labels:
+    app: graph-service
+    domain: graph
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: graph-service
+  template:
+    metadata:
+      labels:
+        app: graph-service
+        domain: graph
+    spec:
+      containers:
+        - name: graph-service
+          image: masaren/graph-service:latest
+          ports:
+            - containerPort: 8017
+          envFrom:
+            - secretRef:
+                name: masaren-secrets
+            - configMapRef:
+                name: masaren-config
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8017
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8017
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: masaren-graph-service
+  namespace: masaren
+spec:
+  selector:
+    app: graph-service
+  ports:
+    - port: 80
+      targetPort: 8017
+  type: ClusterIP

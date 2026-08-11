@@ -1,0 +1,29 @@
+{
+  "id": "backend/verification-engine",
+  "title": "The Verification Engine",
+  "description": "This page zooms into the services that turn captured artifacts into verified evidence.",
+  "source": "@site/docs/backend/verification-engine.md",
+  "sourceDirName": "backend",
+  "slug": "/backend/verification-engine",
+  "permalink": "/docs/backend/verification-engine",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/masareen/masareen-docs/tree/main/docs/backend/verification-engine.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 4,
+  "frontMatter": {
+    "id": "verification-engine",
+    "title": "The Verification Engine",
+    "sidebar_position": 4
+  },
+  "sidebar": "backend",
+  "previous": {
+    "title": "Authentication & Authorization",
+    "permalink": "/docs/backend/auth"
+  },
+  "next": {
+    "title": "REST API Reference",
+    "permalink": "/docs/backend/api"
+  }
+}

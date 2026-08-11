@@ -1,0 +1,17 @@
+appId: com.masaren.app
+---
+- clearState
+- launchApp
+- waitForAnimationToEnd
+- waitForAnimationToEnd
+- assertVisible: "Sign in"
+- tapOn: "Sign in"
+- waitForAnimationToEnd
+- assertVisible: "Email"
+- tapOn: "Email"
+- inputText: "admin@masaren.org"
+- tapOn: "Password"
+- inputText: "password"
+- tapOn: "Sign In"
+- waitForAnimationToEnd
+- assertVisible: "MASAREN"

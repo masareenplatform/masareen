@@ -1,0 +1,26 @@
+{
+  "id": "intro/overview",
+  "title": "Welcome to MASAREEN",
+  "description": "Prove impact. Scale change. Earn trust. MASAREEN is the verified-impact",
+  "source": "@site/docs/intro/overview.md",
+  "sourceDirName": "intro",
+  "slug": "/",
+  "permalink": "/docs/",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/masareen/masareen-docs/tree/main/docs/intro/overview.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "id": "overview",
+    "title": "Welcome to MASAREEN",
+    "slug": "/",
+    "sidebar_position": 1
+  },
+  "sidebar": "intro",
+  "next": {
+    "title": "Vision & Principles",
+    "permalink": "/docs/intro/vision"
+  }
+}

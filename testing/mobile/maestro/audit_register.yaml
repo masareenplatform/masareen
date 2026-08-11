@@ -1,0 +1,44 @@
+# AUDIT: Alpha self-serve registration (auto-verify + auto-login).
+#
+# Walks the new registration screen: fills name/email/password, picks the
+# role + audience dropdowns, ticks the required Terms/consent box, and
+# submits. Because AUTO_VERIFY_ON_REGISTER is on in the alpha backend,
+# the account is auto-verified and the app auto-logs the user in,
+# landing them on the home shell (which exposes the `menu_button` id).
+#
+# EMAIL / PASSWORD are injected from the environment (set before running,
+# e.g. `maestro test audit_register.yaml -e EMAIL=... -e PASSWORD=...`
+# or exported in the shell that launches the audit). Use a FRESH email
+# each run — re-registering an existing address returns a 409 conflict.
+appId: com.masaren.app
+---
+- clearState
+- launchApp
+- waitForAnimationToEnd
+- tapOn: "Continue"
+- waitForAnimationToEnd
+- tapOn: "Continue"
+- waitForAnimationToEnd
+- tapOn: "Continue"
+- waitForAnimationToEnd
+- tapOn: "Create an account"
+- waitForAnimationToEnd
+- assertVisible: "Create your account"
+- assertVisible: "Full Name"
+- tapOn:
+    id: "consent_checkbox"
+- tapOn: "Full Name"
+- inputText: "Alpha Maestro"
+- tapOn: "Email"
+- inputText: "${EMAIL}"
+- tapOn: "Password"
+- inputText: "${PASSWORD}"
+- scrollUntilVisible:
+    element:
+      text: "Create Account"
+    direction: DOWN
+    timeout: 10000
+- tapOn: "Create Account"
+- waitForAnimationToEnd
+- assertVisible:
+    id: "menu_button"

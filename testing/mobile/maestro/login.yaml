@@ -1,0 +1,25 @@
+# Reusable login subroutine for MASAREN Maestro flows (run via `runFlow`).
+# For AUTH testing we open the login screen directly: after a cleared launch
+# the splash auto-routes to the onboarding carousel, so we wait for "Skip" to
+# appear and tap it to jump straight to sign-in, then authenticate against the
+# mock gateway, leaving the app on the home feed (AppShell).
+appId: com.masaren.app
+---
+- clearState
+- launchApp
+- waitForAnimationToEnd
+- tapOn: "Skip"
+- waitForAnimationToEnd
+- tapOn: "Email"
+- inputText: "admin@masaren.org"
+- tapOn: "Password"
+- inputText: "Masaren@1234"
+- scrollUntilVisible:
+    element:
+      text: "Sign In"
+    direction: DOWN
+    timeout: 10000
+- tapOn: "Sign In"
+- waitForAnimationToEnd
+- assertVisible:
+    id: "menu_button"

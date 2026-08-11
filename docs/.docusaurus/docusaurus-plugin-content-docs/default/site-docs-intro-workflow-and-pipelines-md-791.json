@@ -1,0 +1,29 @@
+{
+  "id": "intro/workflow-and-pipelines",
+  "title": "Workflow & Verification Pipelines",
+  "description": "This is the heart of MASAREEN. If you read one page, read this one. It explains how an",
+  "source": "@site/docs/intro/workflow-and-pipelines.md",
+  "sourceDirName": "intro",
+  "slug": "/intro/workflow-and-pipelines",
+  "permalink": "/docs/intro/workflow-and-pipelines",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/masareen/masareen-docs/tree/main/docs/intro/workflow-and-pipelines.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 3,
+  "frontMatter": {
+    "id": "workflow-and-pipelines",
+    "title": "Workflow & Verification Pipelines",
+    "sidebar_position": 3
+  },
+  "sidebar": "intro",
+  "previous": {
+    "title": "Vision & Principles",
+    "permalink": "/docs/intro/vision"
+  },
+  "next": {
+    "title": "Platform Workflows",
+    "permalink": "/docs/workflows"
+  }
+}

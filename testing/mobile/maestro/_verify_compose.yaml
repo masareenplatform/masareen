@@ -1,0 +1,23 @@
+appId: com.masaren.app
+---
+- clearState
+- launchApp
+- waitForAnimationToEnd
+- tapOn: "Skip"
+- waitForAnimationToEnd
+- tapOn: "Email"
+- inputText: "admin@masaren.org"
+- tapOn: "Password"
+- inputText: "Masaren@1234"
+- tapOn: "Sign In"
+- waitForAnimationToEnd:
+    timeout: 8000
+- assertVisible: "For You"
+- tapOn: "Create post"
+- waitForAnimationToEnd
+- tapOn: "Share your impact with the community…"
+- inputText: "Glass redesign live on MASAREEN"
+- tapOn: "Post"
+- waitForAnimationToEnd:
+    timeout: 8000
+- assertVisible: "Glass redesign live on MASAREN"

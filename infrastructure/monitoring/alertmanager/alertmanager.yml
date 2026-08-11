@@ -1,0 +1,38 @@
+global:
+  resolve_timeout: 5m
+  smtp_from: alerts@masaren.io
+  smtp_smarthost: smtp.masaren.io:587
+
+route:
+  receiver: masaren-default
+  group_by: [alertname, severity, team]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 12h
+  routes:
+    - match:
+        severity: critical
+      receiver: masaren-critical
+      repeat_interval: 1h
+    - match:
+        team: trust-safety
+      receiver: masaren-trust-safety
+
+receivers:
+  - name: masaren-default
+    email_configs:
+      - to: platform-team@masaren.io
+        send_resolved: true
+
+  - name: masaren-critical
+    email_configs:
+      - to: oncall@masaren.io
+        send_resolved: true
+    webhook_configs:
+      - url: https://hooks.masaren.io/alerts/critical
+        send_resolved: true
+
+  - name: masaren-trust-safety
+    email_configs:
+      - to: trust-safety@masaren.io
+        send_resolved: true

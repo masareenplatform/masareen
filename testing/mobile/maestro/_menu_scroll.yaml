@@ -1,0 +1,9 @@
+appId: com.masaren.app
+---
+- runFlow: login.yaml
+- tapOn: "Menu"
+- waitForAnimationToEnd
+- scrollUntilVisible:
+    element:
+      text: "Settings"
+    timeout: 10000

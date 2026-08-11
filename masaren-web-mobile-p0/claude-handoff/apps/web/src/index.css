@@ -1,0 +1,237 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --brand: #0250A3;
+  --azure: #0077C8;
+  --accent: #2A9D45;
+  --canvas: #F0F4FF;
+  --surface: #ffffff;
+  --ink: #0D1425;
+  --muted: #3D4F6B;
+  --line: #DCE6F5;
+  --like: #E25555;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: "Cairo", "Inter", system-ui, sans-serif;
+  color: var(--ink);
+  background: var(--canvas);
+  -webkit-font-smoothing: antialiased;
+}
+
+html[dir="rtl"] body,
+html[dir="rtl"] {
+  font-family: "Cairo", "Inter", sans-serif;
+}
+
+/* Heading weights feel more "Flutter/Cairo" with slightly tighter spacing. */
+h1, h2, h3, h4 {
+  letter-spacing: -0.01em;
+}
+
+/* ── Reusable component classes (Material 3 light, social-platform feel) ── */
+@layer components {
+  .card {
+    @apply bg-white border border-line rounded-2xl shadow-card;
+  }
+  .glass {
+    @apply bg-white border border-line rounded-2xl shadow-card;
+  }
+  .glass-strong {
+    @apply bg-white border border-line rounded-2xl shadow-card;
+  }
+  .glass-card {
+    @apply card p-4 transition duration-200;
+  }
+  .glass-card:hover {
+    @apply shadow-card-hover -translate-y-0.5;
+  }
+
+  .glass-input {
+    @apply w-full rounded-xl bg-canvas border border-line px-3.5 py-2.5 text-sm text-ink
+           placeholder-muted/70 outline-none transition
+           focus:border-brand/60 focus:ring-2 focus:ring-brand/15 focus:bg-white;
+  }
+
+  /* ── Buttons (mirror Flutter ElevatedButton / FilledButton) ── */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold
+           transition active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
+  }
+  .btn-gold {
+    @apply btn bg-brand text-white shadow-glow hover:bg-brand-700;
+  }
+  .btn-accent {
+    @apply btn bg-accent text-white shadow-card hover:bg-accent-700;
+  }
+  .btn-ghost {
+    @apply btn bg-white border border-line text-ink hover:bg-canvas;
+  }
+  .btn-soft {
+    @apply btn bg-brand-50 text-brand-700 hover:bg-brand-100;
+  }
+
+  /* ── Brand identity (mirrors Flutter ShaderMask wordmark) ── */
+  .brand-wordmark {
+    background: linear-gradient(100deg, var(--brand), var(--azure));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+  }
+  .brand-mark {
+    background: linear-gradient(135deg, var(--brand), var(--accent));
+    color: #fff;
+    display: grid;
+    place-items: center;
+    font-weight: 900;
+    box-shadow: 0 6px 16px rgba(2, 80, 163, 0.35);
+  }
+
+  /* ── Avatar (mirrors Flutter AppAvatar: brand-tinted, brand initial) ── */
+  .app-avatar {
+    @apply grid shrink-0 place-items-center rounded-full font-semibold text-white;
+    background: linear-gradient(135deg, var(--brand), var(--azure));
+  }
+  .avatar-gradient { background: linear-gradient(135deg, var(--c1, #2563eb), var(--c2, #16a34a)); }
+
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full bg-canvas border border-line px-3 py-1 text-xs font-medium text-muted;
+  }
+  .chip-brand {
+    @apply inline-flex items-center gap-1 rounded-full bg-brand-50 text-brand-700 px-3 py-1 text-xs font-semibold;
+  }
+  .chip-accent {
+    @apply inline-flex items-center gap-1 rounded-full bg-accent-50 text-accent-700 px-3 py-1 text-xs font-semibold;
+  }
+
+  /* ── Navigation (sidebar + bottom nav + menu sheet) ── */
+  .nav-link {
+    @apply flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted
+           hover:bg-canvas transition;
+  }
+  .nav-link-active {
+    @apply bg-brand-50 text-brand-700 font-semibold;
+  }
+
+  .icon-btn {
+    @apply grid place-items-center h-10 w-10 rounded-full text-muted hover:bg-canvas hover:text-ink transition;
+  }
+  .icon-btn-active {
+    @apply text-brand;
+  }
+
+  /* Mobile bottom navigation bar — mirrors Flutter NavigationBar */
+  .bottom-nav {
+    @apply fixed inset-x-0 bottom-0 z-40 flex h-16 items-stretch border-t border-line
+           bg-white/95 backdrop-blur;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  .bottom-nav-item {
+    @apply flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-medium text-muted transition;
+  }
+  .bottom-nav-item.active {
+    @apply text-brand;
+  }
+  .bottom-nav-fab {
+    @apply flex flex-1 flex-col items-center justify-center;
+  }
+
+  /* Compose FAB — mirrors Flutter brand→green gradient FAB */
+  .compose-fab {
+    @apply grid place-items-center rounded-full text-white shadow-fab;
+    background: linear-gradient(135deg, var(--brand), var(--accent));
+  }
+}
+
+@layer utilities {
+  .bg-aurora {
+    background:
+      radial-gradient(58% 58% at 12% 8%, rgba(2, 80, 163, 0.42), transparent 60%),
+      radial-gradient(52% 52% at 88% 18%, rgba(42, 157, 69, 0.32), transparent 60%),
+      radial-gradient(60% 60% at 65% 100%, rgba(0, 119, 200, 0.34), transparent 62%),
+      linear-gradient(135deg, #050910 0%, #0D1425 52%, #0A1E2E 100%);
+  }
+  .bg-aurora-light {
+    background:
+      radial-gradient(60% 60% at 15% 10%, rgba(2, 80, 163, 0.16), transparent 60%),
+      radial-gradient(55% 55% at 85% 20%, rgba(42, 157, 69, 0.14), transparent 60%),
+      radial-gradient(50% 50% at 60% 95%, rgba(0, 119, 200, 0.10), transparent 60%),
+      #F0F4FF;
+  }
+  .bg-dots {
+    background-image: radial-gradient(rgba(2, 80, 163, 0.12) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+  .bg-grid-fade {
+    background-image:
+      linear-gradient(rgba(15, 27, 61, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(15, 27, 61, 0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  .gradient-text {
+    background: linear-gradient(120deg, var(--brand), var(--accent));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+}
+
+/* Scroll-reveal (paired with useReveal hook) */
+.reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+.reveal.is-visible { opacity: 1; transform: none; }
+.reveal-left { transform: translateX(-26px); }
+.reveal-right { transform: translateX(26px); }
+.reveal-left.is-visible, .reveal-right.is-visible { transform: none; }
+.hover-lift { transition: transform 0.25s ease, box-shadow 0.25s ease; }
+.hover-lift:hover { transform: translateY(-4px); box-shadow: 0 18px 40px rgba(15, 27, 61, 0.12); }
+
+.skeleton {
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.04) 25%, rgba(0, 0, 0, 0.09) 37%, rgba(0, 0, 0, 0.04) 63%);
+  background-size: 800px 100%;
+  @apply animate-shimmer rounded-xl;
+}
+
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-thumb { background: rgba(15, 27, 61, 0.18); border-radius: 999px; }
+*::-webkit-scrollbar-track { background: transparent; }
+
+html[dir="rtl"] .nav-link-active { border-right: 2px solid var(--brand); }
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Legacy dark-theme normalization.
+   The older feature pages were written for a dark canvas and use text-white /
+   gold / navy utilities on what is now a light surface. These overrides keep
+   every page readable and on-brand WITHOUT editing each file individually.
+   ─────────────────────────────────────────────────────────────────────────── */
+main :is(h1, h2, h3, h4, h5, h6, p, label, td, th, li, span, small, a, div):not([class*="text-brand"]):not([class*="text-accent"]):not([class*="text-rose"]):not([class*="text-emerald"]):not([class*="text-amber"]):not([class*="text-green"]):not([class*="text-blue"]):not([class*="text-sky"]):not([class*="text-pink"]):not([class*="text-fuchsia"]):not([class*="text-indigo"]):not([class*="text-gold"]):not([class*="text-navy"]) {
+  color: var(--ink);
+}
+/* Soft/white text utilities on the light canvas → muted ink */
+.text-white,
+.text-white\/60,
+.text-white\/70,
+.text-white\/40,
+.text-white\/50,
+.text-white\/30 {
+  color: var(--muted) !important;
+}
+/* Gold accents on light backgrounds → brand blue */
+.text-gold { color: var(--brand) !important; }
+.from-gold-light { --tw-gradient-from: var(--brand) !important; }
+.to-gold { --tw-gradient-to: var(--azure) !important; }
+.shadow-glow-gold { box-shadow: var(--tw-shadow, 0 0 24px rgba(2, 80, 163, 0.25)) !important; }

@@ -1,0 +1,25 @@
+{
+  "id": "backend/architecture",
+  "title": "Backend Architecture",
+  "description": "The MASAREEN backend is a microservice system collapsed into a single process for",
+  "source": "@site/docs/backend/architecture.md",
+  "sourceDirName": "backend",
+  "slug": "/backend/architecture",
+  "permalink": "/docs/backend/architecture",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/masareen/masareen-docs/tree/main/docs/backend/architecture.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "id": "architecture",
+    "title": "Backend Architecture",
+    "sidebar_position": 1
+  },
+  "sidebar": "backend",
+  "next": {
+    "title": "Services Catalog",
+    "permalink": "/docs/backend/services"
+  }
+}

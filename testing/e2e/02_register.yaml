@@ -1,0 +1,19 @@
+# E2E: Register screen navigation
+appId: com.masaren.app
+---
+- waitForAnimationToEnd:
+    timeout: 6000
+# "Create an account" button has accessibilityText
+- tapOn: "Create an account"
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: /tmp/e2e_02_register_screen
+# Verify register form - tap name field
+- tapOn:
+    point: "540,1158"
+- inputText: "Test User"
+# Tap email field
+- tapOn:
+    point: "540,1326"
+- inputText: "newuser@test.com"
+- takeScreenshot: /tmp/e2e_02_register_filled

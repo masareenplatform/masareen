@@ -1,0 +1,32 @@
+# AUDIT: Home feed reaction (animated like + haptic/sound) and Settings panel
+# (theme + haptics/sound toggles). Also exercises the menu sheet.
+appId: com.masaren.app
+---
+- runFlow: login.yaml
+
+# --- Feed renders ---
+- assertVisible: "Verified by POAI Crew"
+- assertVisible: "Verified Impact"
+
+# --- Reaction: tap the like button, expect it to become "Liked" ---
+- tapOn: "Like"
+- waitForAnimationToEnd
+- assertVisible: "Liked"
+
+# --- Menu sheet ---
+- tapOn:
+    id: "menu_button"
+- waitForAnimationToEnd
+- assertVisible: "MASAREN Tools"
+- tapOn: "Settings"
+- waitForAnimationToEnd
+
+# --- Settings: theme + feedback toggles ---
+- assertVisible: "Reactions & feedback"
+- tapOn: "Haptic feedback"
+- waitForAnimationToEnd
+- tapOn: "Reaction sounds"
+- waitForAnimationToEnd
+- tapOn: "Dark"
+- waitForAnimationToEnd
+- assertVisible: "Appearance"

@@ -1,0 +1,8 @@
+[tool.pytest.ini_options]
+# Backend-wide pytest configuration.
+# asyncio_mode=auto lets async test functions run without per-test markers,
+# keeping the per-service conftest files focused on path/fixtures.
+asyncio_mode = "auto"
+testpaths = ["."]
+python_files = ["test_*.py"]
+addopts = "-q"

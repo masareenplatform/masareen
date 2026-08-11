@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: masaren
+
+resources:
+  - namespace.yaml
+  - ../../../backend/identity/identity-service/k8s/deployment.yaml
+  - ../../../backend/identity/authentication-service/k8s/deployment.yaml
+  - ../../../backend/execution/organization-service/k8s/deployment.yaml
+  - ../../../backend/execution/program-service/k8s/deployment.yaml
+  - ../../../backend/execution/task-service/k8s/deployment.yaml
+  - ../../../backend/verification/evidence-service/k8s/deployment.yaml
+  - ../../../backend/verification/verification-service/k8s/deployment.yaml
+  - ../../../backend/reputation/impact-score-service/k8s/deployment.yaml
+  - ../../../backend/graph/graph-service/k8s/deployment.yaml
+  - ../../../backend/notifications/notification-service/k8s/deployment.yaml

@@ -1,0 +1,27 @@
+# E2E Simulation: Post interactions (like, comment, share)
+# Pre-condition: must be logged in on feed
+appId: com.masaren.app
+---
+- waitForAnimationToEnd:
+    timeout: 3000
+# Tap on a post to open detail view
+# First post author area is clickable at around (606, 1837)
+- tapOn:
+    point: "540,1900"
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: /tmp/e2e_18_post_detail
+
+# Try to like - tap like button area
+- tapOn:
+    point: "200,2100"
+- waitForAnimationToEnd:
+    timeout: 2000
+- takeScreenshot: /tmp/e2e_18_after_like
+
+# Go back to feed
+- tapOn:
+    point: "540,200"
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: /tmp/e2e_18_back_feed

@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: program-service
+  namespace: masaren
+  labels:
+    app: program-service
+    domain: execution
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: program-service
+  template:
+    metadata:
+      labels:
+        app: program-service
+        domain: execution
+    spec:
+      containers:
+        - name: program-service
+          image: masaren/program-service:latest
+          ports:
+            - containerPort: 8005
+          envFrom:
+            - secretRef:
+                name: masaren-secrets
+            - configMapRef:
+                name: masaren-config
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8005
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8005
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: masaren-program-service
+  namespace: masaren
+spec:
+  selector:
+    app: program-service
+  ports:
+    - port: 80
+      targetPort: 8005
+  type: ClusterIP

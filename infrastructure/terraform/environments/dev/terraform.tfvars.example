@@ -1,0 +1,5 @@
+# Copy to terraform.tfvars — NEVER commit terraform.tfvars
+postgres_password = "change_me"
+neo4j_password    = "change_me"
+cloud_api_key     = "your_google_or_openai_key"
+jwt_secret        = "a_very_long_random_string_at_least_32_chars"

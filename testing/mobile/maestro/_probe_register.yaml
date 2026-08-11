@@ -1,0 +1,14 @@
+# PROBE: navigate to the register screen and stop (so the tree is inspectable).
+appId: com.masaren.app
+---
+- clearState
+- launchApp
+- waitForAnimationToEnd
+- tapOn: "Continue"
+- waitForAnimationToEnd
+- tapOn: "Continue"
+- waitForAnimationToEnd
+- tapOn: "Continue"
+- waitForAnimationToEnd
+- tapOn: "Create an account"
+- waitForAnimationToEnd

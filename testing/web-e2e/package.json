@@ -1,0 +1,15 @@
+{
+  "name": "masareen-web-e2e",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Playwright E2E tests for MASAREEN web frontend",
+  "scripts": {
+    "test": "npx playwright test",
+    "test:headed": "npx playwright test --headed",
+    "test:ui": "npx playwright test --ui",
+    "report": "npx playwright show-report test-results/html-report"
+  },
+  "dependencies": {
+    "@playwright/test": "^1.49.0"
+  }
+}

@@ -1,0 +1,367 @@
+# MASAREN — full-stack alpha deployment.
+#
+#   docker compose up --build
+#
+# Entry points:
+#   - API gateway (single BFF entry for all apps):  http://localhost:8080
+#   - Web app (volunteer / organisation):           http://localhost:3000
+#   - Admin app (HITL review + dashboards):          http://localhost:3001
+#   - Gateway API docs:                              http://localhost:8080/docs
+#
+# Every microservice image is built from backend/Dockerfile.service (which copies
+# the shared/ package + the service source). All services listen on :8000 inside
+# the compose network; only the gateway and frontends are published to the host.
+
+x-common-env: &common-env
+  DATABASE_URL: postgresql+asyncpg://masaren:masaren_password@postgres:5432/masaren
+  REDIS_URL: redis://redis:6379
+  KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+  NEO4J_URL: bolt://neo4j:7687
+  NEO4J_USER: neo4j
+  NEO4J_PASSWORD: masaren_dev
+  JWT_SECRET: ${JWT_SECRET:-masaren-alpha-change-me}
+  JWT_ALGORITHM: HS256
+
+x-svc: &svc
+  restart: unless-stopped
+  # Hard cap so the 30+ Python microservices can't balloon the Docker VM.
+  # This is a ceiling, not a reservation — idle services use far less.
+  deploy:
+    resources:
+      limits:
+        memory: 384M
+  depends_on:
+    postgres:
+      condition: service_healthy
+
+services:
+  # ── Infrastructure ────────────────────────────────────────────────────────────
+  postgres:
+    image: postgis/postgis:15-3.4
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+    environment:
+      POSTGRES_USER: masaren
+      POSTGRES_PASSWORD: masaren_password
+      POSTGRES_DB: masaren
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Migrations V001..V009 run in alphabetical order on first init.
+      - ./infrastructure/databases/postgres/migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U masaren -d masaren"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  neo4j:
+    image: neo4j:5-community
+    deploy:
+      resources:
+        limits:
+          memory: 1.5g
+    environment:
+      NEO4J_AUTH: neo4j/masaren_dev
+      NEO4J_PLUGINS: '["apoc"]'
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - neo4j_data:/data
+
+  redis:
+    image: redis:7-alpine
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+    ports:
+      - "6379:6379"
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.1
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.1
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  # ── NATS (real-time message fan-out for posts/feeds) ──────────────────────────
+  nats:
+    image: nats:2.10
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+    ports:
+      - "4222:4222"
+      - "6222:6222"
+      - "8222:8222"
+    command: ["-m", "8222"]
+
+  # ── API Gateway (single entry point for all apps) ───────────────────────────────
+  gateway:
+    <<: *svc
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE_PATH: gateway
+    environment:
+      <<: *common-env
+      CORS_ORIGINS: "*"
+    ports:
+      - "8080:8000"
+    depends_on:
+      - identity
+      - auth
+      - task
+      - coin
+      - ads
+      - payment
+      - platform
+
+  # ── Identity domain ─────────────────────────────────────────────────────────────
+  identity:
+    <<: *svc
+    build: { context: ./backend, dockerfile: Dockerfile.service, args: { SERVICE_PATH: identity/identity-service } }
+    environment: *common-env
+
+  auth:
+    <<: *svc
+    build: { context: ./backend, dockerfile: Dockerfile.service, args: { SERVICE_PATH: identity/authentication-service } }
+    environment: *common-env
+
+  authz:
+    <<: *svc
+    build: { context: ./backend, dockerfile: Dockerfile.service, args: { SERVICE_PATH: identity/authorization-service } }
+    environment: *common-env
+
+  # ── Execution domain ────────────────────────────────────────────────────────────
+  organization:
+    <<: *svc
+    build: { context: ./backend, dockerfile: Dockerfile.service, args: { SERVICE_PATH: execution/organization-service } }
+    environment: *common-env
+
+  program:
+    <<: *svc
+    build: { context: ./backend, dockerfile: Dockerfile.service, args: { SERVICE_PATH: execution/program-service } }
+    environment: *common-env
+
+  task:
+    <<: *svc
+    build: { context: ./backend, dockerfile: Dockerfile.service, args: { SERVICE_PATH: execution/task-service } }
+    environment: *common-env
+
+  workflow:
+    <<: *svc
+    build: { context: ./backend, dockerfile: Dockerfile.service, args: { SERVICE_PATH: execution/workflow-service } }
+    environment: *common-env
+
+  # ── Verification domain ─────────────────────────────────────────────────────────
+  verification:
+    <<: *svc
+    build: { context: ./backend, dockerfile: Dockerfile.service, args: { SERVICE_PATH: verification/verification-service } }
+    environment: *common-env
+
+  evidence:
+    <<: *svc
+    build: { context: ./backend, dockerfile: Dockerfile.service, args: { SERVICE_PATH: verification/evidence-service } }
+    environment: *common-env
+
+  gps:
+    <<: *svc
+    build: { context: ./backend, dockerfile: Dockerfile.service, args: { SERVICE_PATH: verification/gps-service } }
+    environment: *common-env
+
+  audit:
+    <<: *svc
+    build: { context: ./backend, dockerfile: Dockerfile.service, args: { SERVICE_PATH: verification/audit-service } }
+    environment: *common-env
+
+  media:
+    <<: *svc
+    build: { context: ./backend, dockerfile: Dockerfile.service, args: { SERVICE_PATH: verification/media-service } }
+    environment: *common-env
+
+  submission:
+    <<: *svc
+    build: { context: ./backend, dockerfile: Dockerfile.service, args: { SERVICE_PATH: verification/submission-service } }
+    environment: *common-env
+
+  # ── Graph / knowledge ───────────────────────────────────────────────────────────
+  graph:
+    <<: *svc
+    build: { context: ./backend, dockerfile: Dockerfile.service, args: { SERVICE_PATH: graph/graph-service } }
+    environment: *common-env
+    depends_on:
+      - neo4j
+
+  # ── Reputation domain ───────────────────────────────────────────────────────────
+  reputation:
+    <<: *svc
+    build: { context: ./backend, dockerfile: Dockerfile.service, args: { SERVICE_PATH: reputation/portfolio-service } }
+    environment: *common-env
+
+  impact-score:
+    <<: *svc
+    build: { context: ./backend, dockerfile: Dockerfile.service, args: { SERVICE_PATH: reputation/impact-score-service } }
+    environment: *common-env
+
+  org-score:
+    <<: *svc
+    build: { context: ./backend, dockerfile: Dockerfile.service, args: { SERVICE_PATH: reputation/organization-score-service } }
+    environment: *common-env
+
+  # ── Marketplace domain ──────────────────────────────────────────────────────────
+  marketplace:
+    <<: *svc
+    build: { context: ./backend, dockerfile: Dockerfile.service, args: { SERVICE_PATH: marketplace/opportunity-service } }
+    environment: *common-env
+
+  matching:
+    <<: *svc
+    build: { context: ./backend, dockerfile: Dockerfile.service, args: { SERVICE_PATH: marketplace/matching-service } }
+    environment:
+      <<: *common-env
+      GRAPH_SERVICE_URL: http://graph:8000/api/v1/graph
+    depends_on:
+      - graph
+
+  # ── Reporting domain ────────────────────────────────────────────────────────────
+  report:
+    <<: *svc
+    build: { context: ./backend, dockerfile: Dockerfile.service, args: { SERVICE_PATH: reporting/report-service } }
+    environment: *common-env
+
+  analytics:
+    <<: *svc
+    build: { context: ./backend, dockerfile: Dockerfile.service, args: { SERVICE_PATH: reporting/analytics-service } }
+    environment: *common-env
+
+  forecast:
+    <<: *svc
+    build: { context: ./backend, dockerfile: Dockerfile.service, args: { SERVICE_PATH: reporting/forecast-service } }
+    environment: *common-env
+
+  # ── Notifications ───────────────────────────────────────────────────────────────
+  notification:
+    <<: *svc
+    build: { context: ./backend, dockerfile: Dockerfile.service, args: { SERVICE_PATH: notifications/notification-service } }
+    environment:
+      <<: *common-env
+      # Optional real channels (honest no-op when unset):
+      SMTP_HOST: ${SMTP_HOST:-}
+      FCM_SERVICE_ACCOUNT_FILE: ${FCM_SERVICE_ACCOUNT_FILE:-}
+      FCM_PROJECT_ID: ${FCM_PROJECT_ID:-}
+
+  # ── Chat ────────────────────────────────────────────────────────────────────────
+  chat:
+    <<: *svc
+    build: { context: ./backend, dockerfile: Dockerfile.service, args: { SERVICE_PATH: chat-service } }
+    environment:
+      <<: *common-env
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+
+  # ── Billing domain ──────────────────────────────────────────────────────────────
+  billing:
+    <<: *svc
+    build: { context: ./backend, dockerfile: Dockerfile.service, args: { SERVICE_PATH: billing/billing-service } }
+    environment: *common-env
+
+  payment:
+    <<: *svc
+    build: { context: ./backend, dockerfile: Dockerfile.service, args: { SERVICE_PATH: billing/payment-service } }
+    environment:
+      <<: *common-env
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      PAYMOB_API_KEY: ${PAYMOB_API_KEY:-}
+      PAYMOB_HMAC_SECRET: ${PAYMOB_HMAC_SECRET:-}
+      PAYMOB_WALLET_INTEGRATION_ID: ${PAYMOB_WALLET_INTEGRATION_ID:-}
+      PAYMOB_VODAFONE_INTEGRATION_ID: ${PAYMOB_VODAFONE_INTEGRATION_ID:-}
+      PAYMOB_IFRAME_ID: ${PAYMOB_IFRAME_ID:-}
+      PAYMOB_CURRENCY: ${PAYMOB_CURRENCY:-EGP}
+      PAYMOB_API_BASE: ${PAYMOB_API_BASE:-https://accept.paymob.com}
+
+  subscription:
+    <<: *svc
+    build: { context: ./backend, dockerfile: Dockerfile.service, args: { SERVICE_PATH: billing/subscription-service } }
+    environment: *common-env
+
+  # ── Partner / collaboration hosting ───────────────────────────────────────────────
+  partner:
+    <<: *svc
+    build: { context: ./backend, dockerfile: Dockerfile.service, args: { SERVICE_PATH: partners/partner-service } }
+    environment: *common-env
+
+  # ── In-app coin (MASAREN Coin / MRC) wallet + EGP exchange ──────────────────────
+  coin:
+    <<: *svc
+    build: { context: ./backend, dockerfile: Dockerfile.service, args: { SERVICE_PATH: coin/coin-service } }
+    environment: *common-env
+
+  # ── Ads manager (campaigns funded in MRC, coin-based delivery) ──────────────────
+  ads:
+    <<: *svc
+    build: { context: ./backend, dockerfile: Dockerfile.service, args: { SERVICE_PATH: ads/ads-service } }
+    environment: *common-env
+
+  # ── Platform brokerage / revenue (admin-tweakable fee + profit ledger) ──────────
+  platform:
+    <<: *svc
+    build: { context: ./backend, dockerfile: Dockerfile.service, args: { SERVICE_PATH: platform/platform-service } }
+    environment: *common-env
+
+  # ── Frontends ───────────────────────────────────────────────────────────────────
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE: /api/v1
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - gateway
+
+  admin:
+    build:
+      context: ./apps/admin
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE: /api/v1
+    restart: unless-stopped
+    ports:
+      - "3001:80"
+    depends_on:
+      - gateway
+
+volumes:
+  postgres_data:
+  neo4j_data:

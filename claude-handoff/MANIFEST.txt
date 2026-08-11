@@ -1,0 +1,15 @@
+# claude-handoff manifest
+Generated: 2026-07-12 02:51:54Z
+Total: 20.7 MB across 903 files
+NOTE: for a Claude Project, files load on demand; the full size is NOT all in context at once.
+
+Deliverables:
+  PLATFORM_GENOME.md / platform-genome.json  - authoritative blueprint
+  CODE_PATTERNS.md                           - trimmed code exemplars
+  STRUCTURE.txt                              - compact package map
+  docker-compose.yml / .override.yml        - full-stack deployment
+  .env.example                               - env template
+  backend/  (19.35 MB)  - all microservices (excl vendored/tests/k8s)
+  apps/web/  (0.49 MB)  - React+TS app
+  apps/mobile/ (0.66 MB)  - Flutter app (lib/assets/test)
+  infrastructure/ (0.15 MB) - migrations, kafka, k8s, helm, terraform, ci, monitoring

@@ -1,0 +1,24 @@
+# AUDIT: Splash screen (animated logo) -> Onboarding carousel -> auth route.
+# Walks the first-run carousel with "Continue", then reaches the final
+# sign-in / register CTAs. Button labels are used for assertions because the
+# slide title+body share one semantics node (exact-line match requirement).
+appId: com.masaren.app
+---
+- clearState
+- launchApp
+- waitForAnimationToEnd
+- tapOn: "Continue"
+- waitForAnimationToEnd
+- assertVisible: "Skip"
+- assertVisible: "Continue"
+- tapOn: "Continue"
+- waitForAnimationToEnd
+- assertVisible: "Continue"
+- tapOn: "Continue"
+- waitForAnimationToEnd
+- assertVisible: "Get started"
+- assertVisible: "Create an account"
+- tapOn: "Create an account"
+- waitForAnimationToEnd
+- assertVisible: "Create your account"
+- assertVisible: "Full Name"

@@ -1,0 +1,16 @@
+# E2E: More menu + Sign out
+# Pre-condition: must be logged in
+appId: com.masaren.app
+---
+- waitForAnimationToEnd:
+    timeout: 3000
+# Open More menu (Tab 5 of 5)
+- tapOn: "Tab 5 of 5"
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: /tmp/e2e_04_more_menu
+# Tap Sign out (accessibilityText="Sign out" or "تسجيل الخروج")
+- tapOn: "Sign out"
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: /tmp/e2e_04_after_logout

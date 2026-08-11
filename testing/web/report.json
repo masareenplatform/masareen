@@ -1,0 +1,552 @@
+{
+  "generatedAt": "2026-07-10T19:36:43.281Z",
+  "routes": [
+    {
+      "route": "/login",
+      "name": "login",
+      "rendered": true,
+      "h1": "MASAREN",
+      "bodyLen": 63,
+      "loadMs": 1675,
+      "nodes": 89,
+      "jsHeapMb": 2,
+      "consoleErrors": [],
+      "screenshot": "route-login.png"
+    },
+    {
+      "route": "/register",
+      "name": "register",
+      "rendered": true,
+      "h1": "MASAREN",
+      "bodyLen": 159,
+      "loadMs": 1369,
+      "nodes": 231,
+      "jsHeapMb": 3,
+      "consoleErrors": [],
+      "screenshot": "route-register.png"
+    },
+    {
+      "route": "/dashboard",
+      "name": "dashboard",
+      "rendered": true,
+      "h1": "Dashboard",
+      "bodyLen": 544,
+      "loadMs": 1374,
+      "nodes": 494,
+      "jsHeapMb": 4,
+      "consoleErrors": [],
+      "screenshot": "route-dashboard.png"
+    },
+    {
+      "route": "/feed",
+      "name": "feed",
+      "rendered": true,
+      "h1": "Impact Discovery",
+      "bodyLen": 3030,
+      "loadMs": 1366,
+      "nodes": 1430,
+      "jsHeapMb": 6,
+      "consoleErrors": [],
+      "screenshot": "route-feed.png"
+    },
+    {
+      "route": "/programs",
+      "name": "programs",
+      "rendered": true,
+      "h1": "Programs",
+      "bodyLen": 459,
+      "loadMs": 1365,
+      "nodes": 1680,
+      "jsHeapMb": 7,
+      "consoleErrors": [],
+      "screenshot": "route-programs.png"
+    },
+    {
+      "route": "/tasks",
+      "name": "tasks",
+      "rendered": true,
+      "h1": "Tasks",
+      "bodyLen": 497,
+      "loadMs": 1361,
+      "nodes": 1938,
+      "jsHeapMb": 7,
+      "consoleErrors": [],
+      "screenshot": "route-tasks.png"
+    },
+    {
+      "route": "/evidence",
+      "name": "evidence",
+      "rendered": true,
+      "h1": "Evidence",
+      "bodyLen": 411,
+      "loadMs": 1358,
+      "nodes": 2184,
+      "jsHeapMb": 9,
+      "consoleErrors": [],
+      "screenshot": "route-evidence.png"
+    },
+    {
+      "route": "/passport",
+      "name": "passport",
+      "rendered": true,
+      "h1": "Impact Passport",
+      "bodyLen": 446,
+      "loadMs": 1375,
+      "nodes": 2421,
+      "jsHeapMb": 10,
+      "consoleErrors": [],
+      "screenshot": "route-passport.png"
+    },
+    {
+      "route": "/opportunities",
+      "name": "opportunities",
+      "rendered": true,
+      "h1": "Opportunity Marketplace",
+      "bodyLen": 570,
+      "loadMs": 1367,
+      "nodes": 2689,
+      "jsHeapMb": 11,
+      "consoleErrors": [],
+      "screenshot": "route-opportunities.png"
+    },
+    {
+      "route": "/collaborate",
+      "name": "collaborate",
+      "rendered": true,
+      "h1": "Host your service on MASAREN",
+      "bodyLen": 621,
+      "loadMs": 1372,
+      "nodes": 2962,
+      "jsHeapMb": 13,
+      "consoleErrors": [],
+      "screenshot": "route-collaborate.png"
+    },
+    {
+      "route": "/portfolio",
+      "name": "portfolio",
+      "rendered": true,
+      "h1": "Portfolio",
+      "bodyLen": 469,
+      "loadMs": 1363,
+      "nodes": 3208,
+      "jsHeapMb": 13,
+      "consoleErrors": [],
+      "screenshot": "route-portfolio.png"
+    },
+    {
+      "route": "/chat",
+      "name": "chat",
+      "rendered": true,
+      "h1": null,
+      "bodyLen": 405,
+      "loadMs": 1370,
+      "nodes": 3430,
+      "jsHeapMb": 14,
+      "consoleErrors": [],
+      "screenshot": "route-chat.png"
+    },
+    {
+      "route": "/admin",
+      "name": "admin",
+      "rendered": true,
+      "h1": "HITL Verification Queue",
+      "bodyLen": 434,
+      "loadMs": 1369,
+      "nodes": 3663,
+      "jsHeapMb": 15,
+      "consoleErrors": [],
+      "screenshot": "route-admin.png"
+    },
+    {
+      "route": "/notifications",
+      "name": "notifications",
+      "rendered": true,
+      "h1": "Notifications",
+      "bodyLen": 438,
+      "loadMs": 1372,
+      "nodes": 3890,
+      "jsHeapMb": 16,
+      "consoleErrors": [],
+      "screenshot": "route-notifications.png"
+    },
+    {
+      "route": "/reports",
+      "name": "reports",
+      "rendered": true,
+      "h1": "Platform Analytics",
+      "bodyLen": 560,
+      "loadMs": 1375,
+      "nodes": 4129,
+      "jsHeapMb": 16,
+      "consoleErrors": [],
+      "screenshot": "route-reports.png"
+    },
+    {
+      "route": "/billing",
+      "name": "billing",
+      "rendered": true,
+      "h1": "Billing & Subscription",
+      "bodyLen": 482,
+      "loadMs": 1372,
+      "nodes": 4374,
+      "jsHeapMb": 18,
+      "consoleErrors": [],
+      "screenshot": "route-billing.png"
+    },
+    {
+      "route": "/profile",
+      "name": "profile",
+      "rendered": true,
+      "h1": "Admin User",
+      "bodyLen": 581,
+      "loadMs": 1364,
+      "nodes": 4649,
+      "jsHeapMb": 19,
+      "consoleErrors": [],
+      "screenshot": "route-profile.png"
+    },
+    {
+      "route": "/wallet",
+      "name": "wallet",
+      "rendered": true,
+      "h1": "MASAREN Coin Wallet",
+      "bodyLen": 868,
+      "loadMs": 1371,
+      "nodes": 4999,
+      "jsHeapMb": 20,
+      "consoleErrors": [],
+      "screenshot": "route-wallet.png"
+    },
+    {
+      "route": "/ads",
+      "name": "ads",
+      "rendered": true,
+      "h1": "Ads Manager",
+      "bodyLen": 692,
+      "loadMs": 1374,
+      "nodes": 5300,
+      "jsHeapMb": 21,
+      "consoleErrors": [],
+      "screenshot": "route-ads.png"
+    },
+    {
+      "route": "/payments",
+      "name": "payments",
+      "rendered": true,
+      "h1": "Payments",
+      "bodyLen": 624,
+      "loadMs": 1362,
+      "nodes": 5608,
+      "jsHeapMb": 22,
+      "consoleErrors": [],
+      "screenshot": "route-payments.png"
+    },
+    {
+      "route": "/revenue",
+      "name": "revenue",
+      "rendered": true,
+      "h1": "Profit & Fees",
+      "bodyLen": 819,
+      "loadMs": 1367,
+      "nodes": 5674,
+      "jsHeapMb": 17,
+      "consoleErrors": [],
+      "screenshot": "route-revenue.png"
+    }
+  ],
+  "interactions": [
+    {
+      "name": "auth_login_flow",
+      "route": "/login",
+      "feature": "Auth / Login",
+      "status": "pass",
+      "detail": "logged in -> redirected to dashboard",
+      "screenshot": "interaction-auth_login_flow.png"
+    },
+    {
+      "name": "feed_compose",
+      "route": "/feed",
+      "feature": "Feed / Compose post",
+      "status": "pass",
+      "detail": "post authored and appeared in feed",
+      "screenshot": "interaction-feed_compose.png"
+    },
+    {
+      "name": "feed_react",
+      "route": "/feed",
+      "feature": "Feed / React (like)",
+      "status": "pass",
+      "detail": "react toggled (482 -> 483)",
+      "screenshot": "interaction-feed_react.png"
+    },
+    {
+      "name": "programs_create",
+      "route": "/programs",
+      "feature": "Programs / Create",
+      "status": "pass",
+      "detail": "program created via API and shown in web list",
+      "screenshot": "interaction-programs_create.png"
+    },
+    {
+      "name": "tasks_create",
+      "route": "/tasks",
+      "feature": "Tasks / Create",
+      "status": "pass",
+      "detail": "task created via API and shown in web list",
+      "screenshot": "interaction-tasks_create.png"
+    },
+    {
+      "name": "tasks_lifecycle",
+      "route": "/tasks",
+      "feature": "Tasks / Lifecycle",
+      "status": "pass",
+      "detail": "assign/start/submit/complete all 200 OK",
+      "screenshot": "interaction-tasks_lifecycle.png"
+    },
+    {
+      "name": "opportunities_apply",
+      "route": "/opportunities",
+      "feature": "Opportunities / Marketplace apply",
+      "status": "pass",
+      "detail": "applied to opportunity -> button shows 'Applied'",
+      "screenshot": "interaction-opportunities_apply.png"
+    },
+    {
+      "name": "collaborate_submit",
+      "route": "/collaborate",
+      "feature": "Collaborate / Partner submit",
+      "status": "pass",
+      "detail": "partner hosting request submitted",
+      "screenshot": "interaction-collaborate_submit.png"
+    },
+    {
+      "name": "chat_send",
+      "route": "/chat",
+      "feature": "Chat / Messaging",
+      "status": "pass",
+      "detail": "message sent and visible in conversation",
+      "screenshot": "interaction-chat_send.png"
+    },
+    {
+      "name": "notifications_read",
+      "route": "/notifications",
+      "feature": "Notifications / Mark read",
+      "status": "pass",
+      "detail": "notification marked read (button removed)",
+      "screenshot": "interaction-notifications_read.png"
+    },
+    {
+      "name": "wallet_convert",
+      "route": "/wallet",
+      "feature": "Wallet / Coin convert",
+      "status": "pass",
+      "detail": "converted 100 EGP -> MRC with platform brokerage fee deducted",
+      "screenshot": "interaction-wallet_convert.png"
+    },
+    {
+      "name": "wallet_transfer",
+      "route": "/wallet",
+      "feature": "Wallet / Coin transfer",
+      "status": "pass",
+      "detail": "transferred 50 MRC to u_vol with platform brokerage fee deducted",
+      "screenshot": "interaction-wallet_transfer.png"
+    },
+    {
+      "name": "ads_create",
+      "route": "/ads",
+      "feature": "Ads / Create campaign",
+      "status": "pass",
+      "detail": "campaign created (1000 MRC budget, 2.5% brokerage fee)",
+      "screenshot": "interaction-ads_create.png"
+    },
+    {
+      "name": "ads_impression",
+      "route": "/ads",
+      "feature": "Ads / Impression tracking",
+      "status": "pass",
+      "detail": "impression recorded against active campaign",
+      "screenshot": "interaction-ads_impression.png"
+    },
+    {
+      "name": "payments_intent",
+      "route": "/payments",
+      "feature": "Payments / Paymob intent",
+      "status": "pass",
+      "detail": "Paymob payment intent created (order 999)",
+      "screenshot": "interaction-payments_intent.png"
+    },
+    {
+      "name": "revenue_fee_update",
+      "route": "/revenue",
+      "feature": "Revenue / Admin fee update",
+      "status": "pass",
+      "detail": "admin updated brokerage fee to 5%",
+      "screenshot": "interaction-revenue_fee_update.png"
+    },
+    {
+      "name": "admin_hitl_resolve",
+      "route": "/admin",
+      "feature": "Admin / HITL verification",
+      "status": "pass",
+      "detail": "pending HITL review approved and cleared from queue",
+      "screenshot": "interaction-admin_hitl_resolve.png"
+    },
+    {
+      "name": "evidence_capture",
+      "route": "/evidence",
+      "feature": "Evidence / Capture",
+      "status": "pass",
+      "detail": "evidence capture submitted for task tk1",
+      "screenshot": "interaction-evidence_capture.png"
+    },
+    {
+      "name": "reports_analytics",
+      "route": "/reports",
+      "feature": "Reports / Analytics",
+      "status": "pass",
+      "detail": "platform analytics (evidence/programs/impact) rendered",
+      "screenshot": "interaction-reports_analytics.png"
+    },
+    {
+      "name": "billing_plans",
+      "route": "/billing",
+      "feature": "Billing / Subscription plans",
+      "status": "pass",
+      "detail": "billing page renders current plan + available plans",
+      "screenshot": "interaction-billing_plans.png"
+    },
+    {
+      "name": "profile_view",
+      "route": "/profile",
+      "feature": "Profile",
+      "status": "pass",
+      "detail": "personal profile rendered (name/email/role/PMS)",
+      "screenshot": "interaction-profile_view.png"
+    },
+    {
+      "name": "passport_view",
+      "route": "/passport",
+      "feature": "Passport / Impact",
+      "status": "pass",
+      "detail": "impact passport rendered (PMS score + tier)",
+      "screenshot": "interaction-passport_view.png"
+    },
+    {
+      "name": "portfolio_view",
+      "route": "/portfolio",
+      "feature": "Portfolio",
+      "status": "pass",
+      "detail": "portfolio metrics rendered (evidence/tasks/programs/impact)",
+      "screenshot": "interaction-portfolio_view.png"
+    }
+  ],
+  "features": [],
+  "featureMatrix": [
+    {
+      "feature": "Auth / Login",
+      "status": "pass"
+    },
+    {
+      "feature": "Dashboard",
+      "status": "pass"
+    },
+    {
+      "feature": "Feed / Compose post",
+      "status": "pass"
+    },
+    {
+      "feature": "Feed / React",
+      "status": "pass"
+    },
+    {
+      "feature": "Programs / Create",
+      "status": "pass"
+    },
+    {
+      "feature": "Tasks / Create",
+      "status": "pass"
+    },
+    {
+      "feature": "Tasks / Lifecycle",
+      "status": "pass"
+    },
+    {
+      "feature": "Opportunities / Marketplace apply",
+      "status": "pass"
+    },
+    {
+      "feature": "Collaborate / Partner submit",
+      "status": "pass"
+    },
+    {
+      "feature": "Chat / Messaging",
+      "status": "pass"
+    },
+    {
+      "feature": "Notifications / Mark read",
+      "status": "pass"
+    },
+    {
+      "feature": "Wallet / Coin convert",
+      "status": "pass"
+    },
+    {
+      "feature": "Wallet / Coin transfer",
+      "status": "pass"
+    },
+    {
+      "feature": "Ads / Create campaign",
+      "status": "pass"
+    },
+    {
+      "feature": "Ads / Impression tracking",
+      "status": "pass"
+    },
+    {
+      "feature": "Payments / Paymob intent",
+      "status": "pass"
+    },
+    {
+      "feature": "Revenue / Admin fee update",
+      "status": "pass"
+    },
+    {
+      "feature": "Admin / HITL verification",
+      "status": "pass"
+    },
+    {
+      "feature": "Evidence / Capture",
+      "status": "pass"
+    },
+    {
+      "feature": "Reports / Analytics",
+      "status": "pass"
+    },
+    {
+      "feature": "Billing / Subscription plans",
+      "status": "pass"
+    },
+    {
+      "feature": "Profile",
+      "status": "pass"
+    },
+    {
+      "feature": "Passport / Impact",
+      "status": "pass"
+    },
+    {
+      "feature": "Portfolio",
+      "status": "pass"
+    }
+  ],
+  "summary": {
+    "routesTotal": 21,
+    "routesRendered": 21,
+    "routesWithConsoleErrors": 0,
+    "interactionsTotal": 23,
+    "interactionsPassed": 23,
+    "featuresTotal": 24,
+    "featuresPassed": 24,
+    "overall": "GREEN"
+  }
+}

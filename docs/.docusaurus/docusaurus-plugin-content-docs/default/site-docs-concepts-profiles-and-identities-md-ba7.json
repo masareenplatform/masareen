@@ -1,0 +1,29 @@
+{
+  "id": "concepts/profiles-and-identities",
+  "title": "Profiles & Multiple Identities",
+  "description": "One of MASAREEN's most important design decisions is that identity is plural by default.",
+  "source": "@site/docs/concepts/profiles-and-identities.md",
+  "sourceDirName": "concepts",
+  "slug": "/concepts/profiles-and-identities",
+  "permalink": "/docs/concepts/profiles-and-identities",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/masareen/masareen-docs/tree/main/docs/concepts/profiles-and-identities.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 2,
+  "frontMatter": {
+    "id": "profiles-and-identities",
+    "title": "Profiles & Multiple Identities",
+    "sidebar_position": 2
+  },
+  "sidebar": "concepts",
+  "previous": {
+    "title": "Why MASAREEN Exists",
+    "permalink": "/docs/concepts/why-masareen"
+  },
+  "next": {
+    "title": "Opportunities, Tasks & the Marketplace",
+    "permalink": "/docs/concepts/opportunities"
+  }
+}

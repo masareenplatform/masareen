@@ -1,0 +1,28 @@
+# E2E: Create a post from the bottom nav + modal
+# Pre-condition: must be logged in
+appId: com.masaren.app
+---
+- waitForAnimationToEnd:
+    timeout: 3000
+# Tap the "+" button (Tab 3 of 5) to open create sheet
+- tapOn: "Tab 3 of 5"
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: /tmp/e2e_06_create_sheet
+# The create sheet shows post type cards with accessibilityText
+# Tap "Story" type card
+- tapOn: "Story"
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: /tmp/e2e_06_create_post_screen
+# The create post screen should have a text field - type content
+# Tap the content field area (center of screen, below the toolbar)
+- tapOn:
+    point: "540,600"
+- inputText: "E2E Test: Planted 100 mangrove seedlings in the Delta region"
+- takeScreenshot: /tmp/e2e_06_post_content
+# Tap Post button (accessibilityText should exist)
+- tapOn: "Post"
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: /tmp/e2e_06_post_submitted

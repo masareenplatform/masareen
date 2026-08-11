@@ -1,0 +1,157 @@
+{
+  "docusaurus-plugin-content-docs": {
+    "default": {
+      "path": "/docs/",
+      "versions": [
+        {
+          "name": "current",
+          "label": "Next",
+          "isLast": true,
+          "path": "/docs/",
+          "mainDocId": "intro/overview",
+          "docs": [
+            {
+              "id": "backend/api",
+              "path": "/docs/backend/api",
+              "sidebar": "backend"
+            },
+            {
+              "id": "backend/architecture",
+              "path": "/docs/backend/architecture",
+              "sidebar": "backend"
+            },
+            {
+              "id": "backend/auth",
+              "path": "/docs/backend/auth",
+              "sidebar": "backend"
+            },
+            {
+              "id": "backend/services",
+              "path": "/docs/backend/services",
+              "sidebar": "backend"
+            },
+            {
+              "id": "backend/verification-engine",
+              "path": "/docs/backend/verification-engine",
+              "sidebar": "backend"
+            },
+            {
+              "id": "concepts/opportunities",
+              "path": "/docs/concepts/opportunities",
+              "sidebar": "concepts"
+            },
+            {
+              "id": "concepts/profiles-and-identities",
+              "path": "/docs/concepts/profiles-and-identities",
+              "sidebar": "concepts"
+            },
+            {
+              "id": "concepts/verified-evidence",
+              "path": "/docs/concepts/verified-evidence",
+              "sidebar": "concepts"
+            },
+            {
+              "id": "concepts/why-masareen",
+              "path": "/docs/concepts/why-masareen",
+              "sidebar": "concepts"
+            },
+            {
+              "id": "frontend/mobile",
+              "path": "/docs/frontend/mobile",
+              "sidebar": "frontend"
+            },
+            {
+              "id": "frontend/overview",
+              "path": "/docs/frontend/overview",
+              "sidebar": "frontend"
+            },
+            {
+              "id": "frontend/web",
+              "path": "/docs/frontend/web",
+              "sidebar": "frontend"
+            },
+            {
+              "id": "guides/admin",
+              "path": "/docs/guides/admin",
+              "sidebar": "guides"
+            },
+            {
+              "id": "guides/individual-user",
+              "path": "/docs/guides/individual-user",
+              "sidebar": "guides"
+            },
+            {
+              "id": "guides/organization",
+              "path": "/docs/guides/organization",
+              "sidebar": "guides"
+            },
+            {
+              "id": "guides/quickstart",
+              "path": "/docs/guides/quickstart",
+              "sidebar": "guides"
+            },
+            {
+              "id": "guides/submit-evidence",
+              "path": "/docs/guides/submit-evidence",
+              "sidebar": "guides"
+            },
+            {
+              "id": "intro/overview",
+              "path": "/docs/",
+              "sidebar": "intro"
+            },
+            {
+              "id": "intro/vision",
+              "path": "/docs/intro/vision",
+              "sidebar": "intro"
+            },
+            {
+              "id": "intro/workflow-and-pipelines",
+              "path": "/docs/intro/workflow-and-pipelines",
+              "sidebar": "intro"
+            },
+            {
+              "id": "workflows",
+              "path": "/docs/workflows",
+              "sidebar": "intro"
+            }
+          ],
+          "draftIds": [],
+          "sidebars": {
+            "intro": {
+              "link": {
+                "path": "/docs/",
+                "label": "intro/overview"
+              }
+            },
+            "concepts": {
+              "link": {
+                "path": "/docs/concepts/why-masareen",
+                "label": "concepts/why-masareen"
+              }
+            },
+            "backend": {
+              "link": {
+                "path": "/docs/backend/architecture",
+                "label": "backend/architecture"
+              }
+            },
+            "frontend": {
+              "link": {
+                "path": "/docs/frontend/overview",
+                "label": "frontend/overview"
+              }
+            },
+            "guides": {
+              "link": {
+                "path": "/docs/guides/quickstart",
+                "label": "guides/quickstart"
+              }
+            }
+          }
+        }
+      ],
+      "breadcrumbs": true
+    }
+  }
+}

@@ -1,0 +1,29 @@
+# E2E: Feed sub-tabs switching
+# Pre-condition: must be logged in on feed screen
+appId: com.masaren.app
+---
+- waitForAnimationToEnd:
+    timeout: 3000
+# Verify "For You" is selected (accessibilityText="For You")
+- tapOn: "For You"
+- takeScreenshot: /tmp/e2e_05_for_you
+# Switch to Impact tab
+- tapOn: "Impact"
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: /tmp/e2e_05_impact
+# Switch to Programs tab
+- tapOn: "Programs"
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: /tmp/e2e_05_programs
+# Switch to Evidence tab
+- tapOn: "Evidence"
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: /tmp/e2e_05_evidence
+# Back to For You
+- tapOn: "For You"
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: /tmp/e2e_05_back_for_you

@@ -1,0 +1,432 @@
+MASAREN Sports Profiling
+Blueprint
+Verified Athlete, Team, Institution, and Opportunity Infrastructure
+Sector Architecture and Operating Model
+
+MASAREN Platform Architecture
+July 21, 2026
+
+Operating principle: A sports profile is valuable only when identity, eligibility,
+performance, evidence, rights, and context can be independently verified.
+Abstract
+This document defines a dedicated Sports Profiling capability for the MASAREN platform. It explains how ministries, federations, clubs, academies, schools, event organizers,
+athletes, coaches, medical teams, scouts, sponsors, broadcasters, and fans can work from
+a shared, permissioned record without collapsing their responsibilities into one database.
+The capability turns verified sporting activity into an athlete passport, team and institution profiles, competition records, performance evidence, development plans, opportunity
+matches, media packages, sponsor inventory, and impact reporting. Egyptian examples are
+used throughout, including the Ministry of Youth and Sports, the Egyptian Football Association, Al Ahly Sporting Club, Zamalek Sporting Club, national federations, academies,
+and illustrative profiles for Mohamed Salah, Ahmed Elgendy, Sara Ahmed, Farida Osman,
+Nour El Sherbini, and Ali Farag. These examples demonstrate profile design; they do not
+imply endorsement, platform participation, or transfer of oﬀicial data ownership.
+
+1
+
+Contents
+1 Sports Profiling Mission
+
+3
+
+2 Canonical Sports Profile
+
+3
+
+3 Sports Architecture on MASAREN
+
+5
+
+4 Egyptian Athlete Showcase Examples
+
+6
+
+5 Institutional Operating Models
+
+7
+
+6 End-to-End Athlete Workflow
+
+7
+
+7 Scores, Discovery, and Fairness
+
+8
+
+8 Revenue and Ecosystem Value
+
+9
+
+9 Governance, Delivery, and Acceptance
+
+10
+
+References
+
+11
+
+2
+
+1 Sports Profiling Mission
+The market problem. Egyptian sport produces large volumes of valuable information, but
+athlete identity, club registration, competition results, training evidence, medical restrictions,
+safeguarding decisions, media rights, sponsorship commitments, and social-impact activity are
+often held by different institutions in incompatible formats. This fragmentation makes it diﬀicult
+for a young athlete to prove development, for a federation to reconcile eligibility, for a club to
+discover talent, for a sponsor to verify exposure, or for a broadcaster to identify trustworthy
+stories. MASAREN addresses the coordination problem by preserving authoritative ownership
+while creating verified links among records.
+Institutional setting. The model is suitable for public bodies such as the Egyptian Ministry of
+Youth and Sports, governing organizations such as the Egyptian Football Association and sportspecific federations, multi-sport clubs such as Al Ahly and Zamalek, private academies, schools,
+universities, training centers, leagues, national teams, and event organizers. The Ministry portal illustrates the public-sector coordination role, the Egyptian Football Association publishes
+football regulations, clubs, competitions, and national-team information, and Al Ahly’s oﬀicial
+platform represents a club with football, academy, multi-sport, membership, and media functions (Al Ahly Sporting Club, 2026a, 2026b; Egyptian Football Association, 2026; Egyptian
+Ministry of Youth and Sports, 2026).
+Target outcomes. The Sports Profiling capability must make five outcomes measurable. Athletes should control a portable record of verified development. Institutions should reduce duplicate registration and improve roster, eligibility, and safeguarding decisions. Coaches and
+scouts should compare evidence without treating an opaque score as truth. Sponsors and media
+partners should buy rights and exposure against auditable inventory. Public bodies should
+evaluate participation, inclusion, facilities, pathways, and program impact without exposing
+private health or child data.
+
+2 Canonical Sports Profile
+Profile identity. Each person receives a stable MASAREN athlete identifier linked to verified
+identity, preferred public name, Arabic and English display names, date-of-birth assurance,
+nationality or representation data, guardian relationship when required, and the identifiers
+issued by authorized federations or clubs. Public pages never expose government identifiers,
+precise home location, or private contact details. The profile distinguishes a natural person
+from registrations, contracts, team memberships, and public personas so that a transfer or
+retirement does not create a second identity.
+Sport participation. A profile can contain multiple disciplines, classifications, positions,
+teams, competition levels, and seasonal registrations. A footballer may have an academy registration, club roster position, national-team call-up, and commercial representation agreement;
+a modern pentathlete may have discipline-specific training records and international competi-
+
+3
+
+tion credentials; a swimmer may have event-specific personal bests and qualification standards.
+Each relationship has an issuer, validity period, evidence, and revocation state.
+Performance record. Performance is represented as signed observations rather than manually
+edited achievements. Competition organizers or federations issue results; approved timing,
+scoring, or statistics providers issue event data; coaches issue assessments; athletes may submit
+training evidence that remains clearly distinguished from oﬀicial competition results. Every
+metric carries sport, event, unit, context, source, collection method, time, confidence, and
+correction history.
+Private welfare record. Medical status, injury information, rehabilitation, anti-doping data,
+safeguarding cases, and psychological support are separate protected records. A public profile
+may show only a safe availability statement such as “eligible,” “temporarily unavailable,” or
+“clearance required.” WADA standards demonstrate the sensitivity of anti-doping and athlete
+personal information, while IOC safeguarding guidance emphasizes institutional responsibility
+for preventing and responding to interpersonal violence (International Olympic Committee,
+2024; World Anti-Doping Agency, 2021a, 2021b).
+Public showcase record. The athlete chooses which verified achievements, biographies, media, community contributions, sponsor relationships, and contact routes are public. The platform attaches the issuer and verification date to every public claim. A profile can therefore
+say that a medal, result, ranking, or appearance is federation-verified, organizer-verified, clubconfirmed, athlete-submitted, or editorially produced rather than presenting all content with
+equal authority.
+
+4
+
+Profile domain
+
+Authoritative
+owner
+
+Representative content
+
+Identity and consent
+Registration and
+eligibility
+
+Identity Service /
+athlete
+Federation or competition owner
+
+Team and institution
+
+Club, academy,
+school, or national
+program
+Competition and
+Performance Services
+Coach and Athlete
+Development Services
+Authorized clinical
+or safeguarding
+owner
+Rights and Media
+Services
+
+Verified identity, guardian, language,
+consent, public visibility, contact policy
+License, club registration, age category,
+classification, transfer status, suspension
+Roster, role, season, coach, facility,
+pathway, responsible organization
+
+Performance
+
+Development
+
+Health and safeguarding
+Media and commercial
+Impact and reputation
+
+Results, appearances, minutes, times,
+rankings, verified tests, contextual
+statistics
+Goals, competency observations, training blocks, attendance, review notes,
+next actions
+Restricted clearance, treatment, returnto-play, case status, access log
+Approved biography, images, highlights,
+rights windows, sponsor inventory,
+campaign results
+Verified participation, mentoring, community contribution, reliability, explanation and appeals
+
+MASAREN Reputation and Reporting
+
+Table 1: Ownership and contents of the canonical sports profile
+
+3 Sports Architecture on MASAREN
+Bounded contexts. The sports capability extends the existing MASAREN architecture rather
+than creating a disconnected application. Identity owns people and consent; Sports Registry
+owns sport-specific identifiers and licenses; Institution owns clubs, federations, academies, facilities, and memberships; Competition owns events, entries, fixtures, and oﬀicial results; Performance owns observations and derived metrics; Development owns plans and coach reviews;
+Health and Safeguarding own restricted cases; Media and Rights own publishable assets and
+usage permissions; Marketplace owns trials, scholarships, contracts, camps, and sponsorship
+opportunities; Reputation produces explainable projections; and Reporting creates institution,
+sponsor, and public-sector views.
+Identity and
+Consent
+
+Sports Registry
+and Eligibility
+
+Institution, Team,
+and Facility
+
+Competition and
+Oﬀicial Results
+
+Performance and
+Development
+
+Health, Anti-Doping,
+and Safeguarding
+
+Athlete Passport
+and Portfolio
+
+Media, Rights,
+and Sponsorship
+
+Scouting, Marketplace,
+and Reporting
+
+Figure 1: MASAREN Sports Profiling bounded contexts
+Integration contracts. Synchronous APIs are used for immediate eligibility, roster, consent,
+and access decisions. Durable events announce athlete registration, roster confirmation, certified competition results, performance observations, clearance changes, profile publication, and
+5
+
+verified sponsor delivery. Every event uses a versioned machine-readable name and schema.
+HTTP, OpenAPI, AsyncAPI, CloudEvents, trace propagation, outbox publication, durable inboxes, and zero-trust access follow the same platform standards defined in the core MASAREN
+blueprint (AsyncAPI Initiative, 2023; Cloud Native Computing Foundation, 2024; Fielding et
+al., 2022; National Institute of Standards and Technology, 2020; OpenAPI Initiative, 2024;
+World Wide Web Consortium, 2021).
+
+4 Egyptian Athlete Showcase Examples
+Mohamed Salah. A profile example for Mohamed Salah would present a verified identity,
+national-team relationship, oﬀicial appearances and goals sourced from authorized competition
+data, position and role history, selected media, charitable or community activity when verified,
+languages, sponsor rights, and audience reach. FIFA’s oﬀicial material provides an authoritative
+source for national-team and World Cup context (FIFA, 2026). MASAREN would not copy
+unverified social-media statistics into the oﬀicial record; it would keep oﬀicial results, editorial
+stories, sponsor inventory, and fan engagement as separate linked domains.
+Ahmed Elgendy. Ahmed Elgendy’s profile would demonstrate a multi-discipline athlete
+model. Modern pentathlon results can be decomposed into competition, round, discipline,
+score, rank, qualification status, and medal evidence, while the public showcase explains the
+overall achievement without exposing private training or health data. The oﬀicial Olympic athlete profile supplies a verifiable source for his Olympic participation and results (International
+Olympic Committee, 2026a).
+Sara Ahmed. Sara Ahmed’s example would use weight category, bodyweight at competition,
+successful and unsuccessful attempts, snatch, clean and jerk, total, ranking, medal, and qualification cycle as structured evidence. Her Olympic profile can anchor verified Olympic claims,
+while training-load, injury, and weight-management records remain restricted to the athlete
+and authorized performance or medical teams (International Olympic Committee, 2026b).
+Farida Osman. Farida Osman’s profile would organize oﬀicial swimming results by pool
+length, stroke, distance, heat, reaction time, split, finish time, record status, competition, and
+date. World Aquatics provides an oﬀicial results and athlete source that can be linked rather
+than manually retyped (World Aquatics, 2026). MASAREN can add a verified media portfolio, clinics, appearances, and sponsor campaigns without mixing them into oﬀicial performance
+statistics.
+Nour El Sherbini and Ali Farag. Squash profiles would connect PSA identity and ranking
+evidence, tournament draws, match results, games, points, opponent context, season summaries,
+and approved highlights. The PSA rankings illustrate the authoritative tour source for players
+such as Nour El Sherbini and Ali Farag (Professional Squash Association, 2026). A scouting
+view could compare recent workload and opponent-adjusted form, but an explanation panel
+must show that the comparison is a decision aid rather than an oﬀicial ranking replacement.
+
+6
+
+Youth athlete example. Consider a 15-year-old swimmer from an Alexandria club. The
+guardian approves a private profile; the club verifies membership; the federation issues the
+athlete identifier; oﬀicial meet results arrive from the organizer; the coach records technique
+observations; the school verifies attendance support; and a sponsor sees only the public achievements and approved contact route. Precise health, school, and location data remain hidden.
+When the athlete changes clubs, the profile preserves history, records the new registration, and
+prevents either institution from rewriting prior results.
+
+5 Institutional Operating Models
+Ministry and national program. The Ministry of Youth and Sports can use aggregated,
+privacy-preserving dashboards to understand participation by governorate, gender, age band,
+discipline, facility, pathway stage, and program outcome. The Ministry should see program
+effectiveness and verified facility utilization, not unrestricted athlete dossiers. Grants can be
+linked to measurable outputs such as verified coaching hours, competitions delivered, athletes
+retained, accessibility improvements, and safeguarding readiness.
+Federation. The Egyptian Football Association or another national federation remains authoritative for licenses, competition rules, disciplinary status, oﬀicial fixtures, and results within its
+remit. MASAREN provides registration workflow, data validation, institution interfaces, audit
+history, and controlled public distribution. A club can submit a roster, but the federation signs
+the eligible roster; a broadcaster can consume fixtures, but it cannot edit them; a player can
+appeal a record, but the correction is issued by the owner.
+Club. A multi-sport club such as Al Ahly or Zamalek can operate institution, branch, academy,
+team, coach, facility, athlete, membership, competition, media, and sponsor views from one platform while preserving separate access domains. The football department may see contractual
+and performance data; a swimming coach sees only authorized swimmers; the media team sees
+approved public assets; the sponsor team sees inventory and delivery; and safeguarding oﬀicers
+receive cases without sharing them with commercial staff.
+Academy and school. Academies and schools can issue verified attendance, assessment, competition, and progression records. A parent can compare programs using coach credentials,
+safeguarding readiness, facility evidence, verified alumni outcomes, and transparent fees rather
+than promotional claims alone. Scouts can discover consented profiles that meet age, geography, position, performance, and availability criteria without receiving private school or family
+information.
+
+6 End-to-End Athlete Workflow
+Onboarding. An athlete or guardian creates an identity, selects privacy preferences, and requests aﬀiliation with a club or federation. The institution verifies the relationship, Sports
+Registry checks duplicates, and the authorized federation or competition body issues the rele-
+
+7
+
+vant registration. Safeguarding and consent rules determine who can see, contact, evaluate, or
+publish information.
+Development. A coach creates a development plan with measurable goals, training blocks,
+review dates, and evidence expectations. Wearable or test data can be ingested only through approved sources and never treated as oﬀicial competition performance. The athlete sees progress
+and explanations; the coach sees authorized training context; scouts see only consented, normalized summaries.
+Competition. Competition Service receives the entry, verifies registration and clearance status, records the start list, and ingests oﬀicial results. A result is certified by the authorized
+organizer or federation, stored with source and correction history, and projected into the athlete
+passport. Notification informs the athlete and club, while Reporting updates team and program
+outcomes.
+Opportunity. Marketplace matches the verified profile to trials, scholarships, camps, club
+needs, sponsor campaigns, media interviews, or community programs. Hard eligibility rules are
+applied before ranking. The recommendation explains decisive factors, supports rejection and
+appeal, and cannot use protected health, family, religion, or inferred socioeconomic traits.
+Commercial and media use. When the athlete accepts a sponsor or media opportunity,
+Rights Service records territory, channels, dates, asset types, exclusivity, approvals, and compensation terms. Media Service distributes only approved assets. Delivery evidence records
+publication, reach, completion, and correction, allowing Billing and Payment to reconcile the
+contract without exposing private athlete data.
+Identity, consent, guardian, registration
+
+Coach plan, training evidence, safeguarding
+
+Entry, eligibility, oﬀicial competition result
+
+Verified athlete passport and portfolio
+
+Trial, scholarship, contract, or camp
+
+Media, sponsor, fan, and impact opportunity
+
+Figure 2: Verified athlete development and opportunity workflow
+
+7 Scores, Discovery, and Fairness
+No single athlete score. MASAREN should not compress performance, health, character,
+popularity, and commercial value into one number. The platform instead maintains explainable
+dimensions: verified performance, consistency, development velocity, availability, competition
+strength, training reliability, teamwork observations, integrity status, public impact, audience
+
+8
+
+engagement, and commercial readiness. Each dimension has a purpose, source boundary, confidence, validity period, and appeal mechanism.
+Talent discovery. A scout specifies the role and evidence needed, such as age band, position, dominant foot, verified minutes, recent workload, technical observations, geographic availability, and consent. The matching engine first applies mandatory eligibility and then ranks
+candidates using transparent weights. It displays missing data and confidence intervals so a
+well-documented athlete is not automatically mistaken for a better athlete.
+Institution confidence. Club or academy confidence reflects evidence completeness, verified
+coaching credentials, safeguarding controls, result integrity, dispute handling, payment reliability, and data-quality responsiveness. It must not reward institutional size or social-media
+volume by default. Public bodies and families receive the explanation and supporting evidence
+rather than a badge with no accountable owner.
+Integrity and correction. Suspicious statistics, duplicate media, identity conflicts, manipulated tests, betting-related concerns, or result disputes create cases for authorized owners. The
+platform preserves original and corrected records, records the decision and evidence, and issues
+compensating events to downstream profiles. Anti-doping and safeguarding cases remain governed by their specialist processes and privacy standards (International Olympic Committee,
+2024; World Anti-Doping Agency, 2021a, 2021b).
+
+8 Revenue and Ecosystem Value
+Institution subscriptions. Federations, clubs, academies, schools, and event organizers can
+subscribe to roster, competition, development, safeguarding, media, and reporting modules.
+Pricing should scale with active participants, competitions, storage, and service level rather
+than charging athletes for basic ownership of their verified records.
+Opportunity transactions. MASAREN may charge transparent marketplace or workflow
+fees for trials, camps, scholarships, scouting projects, sponsorships, or media rights when a
+transaction is completed. The fee basis, payer, refund policy, and evidence of delivery must be
+visible before acceptance.
+Sponsor and broadcaster value. Sponsors receive verified inventory, consent status, audience segments, delivery evidence, brand-safety rules, and outcome reporting. Broadcasters
+receive authoritative biographies, results, rights windows, highlights, and contextual story packages. Athletes and institutions retain approval and compensation rights; popularity signals can
+improve discovery but cannot silently override safeguarding, rights, or editorial rules.
+Public value. Aggregated reporting supports national participation strategy, youth pathways,
+women’s sport, para-sport, facility investment, regional access, coach development, and program
+accountability. The platform should publish methodology and coverage gaps so a lack of digitized data is not misread as a lack of sporting activity.
+
+9
+
+9 Governance, Delivery, and Acceptance
+Decision rights. Federations own oﬀicial eligibility and results within their remit; clubs own
+rosters and internal development records; athletes own consent and public visibility; clinical
+and safeguarding professionals own restricted decisions; competition organizers own event operations; rights holders own media permissions; and MASAREN owns platform controls, auditability, contract enforcement, and derived-score methodology. Disputes route to the authoritative
+owner with an escalation and appeal path.
+Safeguarding and minors. Minor profiles are private by default, guardian authority is verified, direct contact is mediated, precise location is hidden, public media requires explicit approval, and suspicious contact or content is escalated. Safeguarding oﬀicers receive dedicated
+workflows, immutable access logs, and confidentiality controls aligned with IOC guidance (International Olympic Committee, 2024).
+Delivery phases. The foundation phase implements identity, institution, federation registration, athlete passport, consent, and audit. The pilot phase adds one sport, one federation or
+league, selected clubs and academies, oﬀicial competition ingestion, and a limited scouting workflow. The scale phase adds multi-sport schemas, media and sponsorship rights, public-sector
+dashboards, and cross-institution portability. Each phase exits only after data-owner sign-off,
+security testing, athlete and guardian usability testing, recovery exercises, score validation, and
+documented correction workflows.
+Acceptance scenario. A complete pilot must onboard an institution, register an athlete,
+verify guardian or athlete consent, issue eligibility, record a competition result, update the public
+passport, restrict private welfare data, match an opportunity, approve media usage, reconcile a
+sponsor deliverable, and reconstruct the complete history from audit and event records. Failure
+at any downstream projection must be recoverable without changing the authoritative identity,
+result, rights, or ledger record.
+
+10
+
+References
+Al Ahly Sporting Club. (2026a). Club history. Retrieved July 21, 2026, from https://www.
+alahlyegypt.com/en/club/history
+Al Ahly Sporting Club. (2026b). Oﬀicial website of al ahly sporting club. Retrieved July 21,
+2026, from https://www.alahlyegypt.com/en
+AsyncAPI Initiative. (2023). Asyncapi specification version 3.0.0. Retrieved July 21, 2026, from
+https://www.asyncapi.com/docs/reference/specification/v3.0.0
+Cloud Native Computing Foundation. (2024). Cloudevents specification. Retrieved July 21, 2026,
+from https://cloudevents.io/
+Egyptian Football Association. (2026). Oﬀicial portal. Retrieved July 21, 2026, from https :
+//www.efa.com.eg/
+Egyptian Ministry of Youth and Sports. (2026). Sports and youth portal. Retrieved July 21,
+2026, from https://www.emys.gov.eg/en
+Fielding, R. T., Nottingham, M., & Reschke, J. (2022). Http semantics (tech. rep. No. RFC
+9110). Internet Engineering Task Force. https://doi.org/10.17487/RFC9110
+FIFA. (2026). Mohamed salah: Egypt profile, records, and highlights. Retrieved July 21, 2026,
+from https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/
+articles/mohamed-salah-egypt-quotes-records
+International Olympic Committee. (2024). Consensus statement on safeguarding and interpersonal violence in sport. Retrieved July 21, 2026, from https://olympics.com/ioc/news/
+ioc-publishes-new-consensus-statement-on-safeguarding-and-interpersonal-violence-insport
+International Olympic Committee. (2026a). Ahmed elgendy athlete profile. Retrieved July 21,
+2026, from https://www.olympics.com/en/athletes/ahmed-elgendy
+International Olympic Committee. (2026b). Sara ahmed athlete profile. Retrieved July 21, 2026,
+from https://www.olympics.com/en/athletes/sara-ahmed
+National Institute of Standards and Technology. (2020). Zero trust architecture (tech. rep.
+No. NIST SP 800-207). U.S. Department of Commerce. https://doi.org/10.6028/NIST.
+SP.800-207
+OpenAPI Initiative. (2024). Openapi specification version 3.1.1. Retrieved July 21, 2026, from
+https://spec.openapis.org/oas/v3.1.1.html
+Professional Squash Association. (2026). Psa squash tour rankings. Retrieved July 21, 2026,
+from https://www.psaworldtour.com/rankings/
+World Anti-Doping Agency. (2021a). International standard for the protection of privacy and
+personal information. Retrieved July 21, 2026, from https : / / www . wada - ama . org /
+en / resources / world - anti - doping - program / guidelines - 2021 - international - standard protection-privacy-and
+World Anti-Doping Agency. (2021b). World anti-doping code. Retrieved July 21, 2026, from
+https://www.wada-ama.org/en/what-we-do/world-anti-doping-code
+World Aquatics. (2026). Farida osman athlete profile and results. Retrieved July 21, 2026, from
+https://www.worldaquatics.com/athletes/1020000/farida-osman
+
+11
+
+World Wide Web Consortium. (2021). Trace context (tech. rep.). World Wide Web Consortium.
+Retrieved July 21, 2026, from https://www.w3.org/TR/trace-context/
+
+12
+
+

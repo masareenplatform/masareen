@@ -1,0 +1,29 @@
+groups:
+  - name: masaren_alerts
+    rules:
+      - alert: ServiceDown
+        expr: up{job="masaren-services"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service {{ $labels.pod }} is down"
+          description: "The service {{ $labels.pod }} has been unavailable for more than 1 minute."
+
+      - alert: HighAiFailureRate
+        expr: rate(ai_verification_failures_total[5m]) / rate(ai_verification_requests_total[5m]) > 0.2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High AI Failure Rate"
+          description: "More than 20% of AI verifications are failing in the last 5 minutes."
+
+      - alert: LowBudgetWarning
+        expr: platform_ad_budget_remaining < 10.0
+        for: 0m
+        labels:
+          severity: info
+        annotations:
+          summary: "Ad Budget Low"
+          description: "A sponsored post budget has dropped below $10."

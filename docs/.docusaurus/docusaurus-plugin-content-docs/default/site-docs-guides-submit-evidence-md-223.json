@@ -1,0 +1,29 @@
+{
+  "id": "guides/submit-evidence",
+  "title": "Guide: Submitting Verified Evidence",
+  "description": "The single most important action on MASAREEN. Do it well and trust compounds.",
+  "source": "@site/docs/guides/submit-evidence.md",
+  "sourceDirName": "guides",
+  "slug": "/guides/submit-evidence",
+  "permalink": "/docs/guides/submit-evidence",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/masareen/masareen-docs/tree/main/docs/guides/submit-evidence.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 4,
+  "frontMatter": {
+    "id": "submit-evidence",
+    "title": "Guide: Submitting Verified Evidence",
+    "sidebar_position": 4
+  },
+  "sidebar": "guides",
+  "previous": {
+    "title": "Guide: Organizations",
+    "permalink": "/docs/guides/organization"
+  },
+  "next": {
+    "title": "Guide: Administrators",
+    "permalink": "/docs/guides/admin"
+  }
+}

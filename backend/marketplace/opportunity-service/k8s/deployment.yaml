@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opportunity-service
+  namespace: masaren
+  labels:
+    app: opportunity-service
+    domain: marketplace
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: opportunity-service
+  template:
+    metadata:
+      labels:
+        app: opportunity-service
+        domain: marketplace
+    spec:
+      containers:
+        - name: opportunity-service
+          image: masaren/opportunity-service:latest
+          ports:
+            - containerPort: 8018
+          envFrom:
+            - secretRef:
+                name: masaren-secrets
+            - configMapRef:
+                name: masaren-config
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8018
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8018
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: masaren-opportunity-service
+  namespace: masaren
+spec:
+  selector:
+    app: opportunity-service
+  ports:
+    - port: 80
+      targetPort: 8018
+  type: ClusterIP

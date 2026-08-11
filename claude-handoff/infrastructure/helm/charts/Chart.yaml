@@ -1,0 +1,14 @@
+apiVersion: v2
+name: masaren
+description: MASAREN Impact Infrastructure Platform — Helm chart
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - masaren
+  - impact
+  - infrastructure
+  - iiaaas
+maintainers:
+  - name: MASAREN Platform Team
+    email: platform@masaren.io

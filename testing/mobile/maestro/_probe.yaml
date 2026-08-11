@@ -1,0 +1,8 @@
+appId: com.masaren.app
+---
+- clearState
+- launchApp
+- scrollUntilVisible:
+    element:
+      text: "ZZZ_PROBE_MISSING"
+    timeout: 60000

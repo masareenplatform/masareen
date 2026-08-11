@@ -1,0 +1,22 @@
+# E2E: Login with valid credentials
+appId: com.masaren.app
+---
+- waitForAnimationToEnd:
+    timeout: 6000
+- tapOn:
+    point: "540,1157"
+- inputText: "admin@masaren.org"
+# Dismiss keyboard before tapping password
+- pressKey: Back
+- waitForAnimationToEnd:
+    timeout: 1000
+- tapOn:
+    point: "540,1325"
+- inputText: "Masaren@1234"
+# Dismiss keyboard before tapping Sign in
+- pressKey: Back
+- waitForAnimationToEnd:
+    timeout: 1000
+- tapOn: "Sign in"
+- waitForAnimationToEnd:
+    timeout: 15000

@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MASAREN - Documentation</title>
+  <style>
+    :root {
+      --navy: #0F2044;
+      --gold: #C9A84C;
+      --gold-light: #e0c56a;
+      --bg: #f8f9fc;
+      --card: #ffffff;
+      --text: #1e293b;
+      --text-muted: #475569;
+      --border: #e2e8f0;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+    }
+
+    nav {
+      position: sticky; top: 0;
+      background: var(--navy);
+      color: #fff;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 2rem;
+      height: 60px;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,.15);
+    }
+    nav .logo { font-size: 1.3rem; font-weight: 700; letter-spacing: .04em; }
+    nav .logo span { color: var(--gold); }
+    nav .nav-links { display: flex; gap: 1.5rem; }
+    nav a {
+      color: rgba(255,255,255,.8);
+      text-decoration: none;
+      font-size: .9rem;
+      transition: color .2s;
+    }
+    nav a:hover { color: var(--gold); }
+
+    .hero {
+      background: linear-gradient(135deg, var(--navy) 0%, #1a2f5a 100%);
+      color: #fff;
+      text-align: center;
+      padding: 5rem 2rem 4rem;
+    }
+    .hero h1 { font-size: 2.8rem; margin-bottom: .5rem; }
+    .hero h1 span { color: var(--gold); }
+    .hero p { font-size: 1.1rem; opacity: .8; max-width: 600px; margin: 0 auto; }
+
+    .container { max-width: 960px; margin: 0 auto; padding: 3rem 1.5rem; }
+
+    section { margin-bottom: 3rem; }
+    section h2 {
+      font-size: 1.6rem;
+      color: var(--navy);
+      border-bottom: 3px solid var(--gold);
+      padding-bottom: .4rem;
+      margin-bottom: 1.2rem;
+      display: inline-block;
+    }
+    section h3 {
+      font-size: 1.15rem;
+      color: var(--navy);
+      margin: 1.2rem 0 .5rem;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 10px;
+      padding: 1.5rem;
+      margin: 1rem 0;
+      box-shadow: 0 1px 4px rgba(0,0,0,.06);
+      border: 1px solid var(--border);
+    }
+
+    code {
+      background: #eef2f6;
+      padding: .15em .45em;
+      border-radius: 4px;
+      font-size: .85em;
+      color: #c7254e;
+    }
+    pre {
+      background: #1a1a2e;
+      color: #e6e6e6;
+      padding: 1rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: .85rem;
+      margin: .75rem 0;
+    }
+    pre code { background: transparent; color: inherit; padding: 0; }
+
+    ul, ol { padding-left: 1.3rem; }
+    li { margin-bottom: .3rem; }
+
+    .badge {
+      display: inline-block;
+      background: var(--gold);
+      color: var(--navy);
+      font-weight: 600;
+      font-size: .75rem;
+      padding: .15rem .55rem;
+      border-radius: 20px;
+    }
+    .badge-navy { background: var(--navy); color: #fff; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      font-size: .9rem;
+    }
+    th, td {
+      text-align: left;
+      padding: .65rem .8rem;
+      border-bottom: 1px solid var(--border);
+    }
+    th { background: var(--navy); color: #fff; font-weight: 600; }
+    tr:hover td { background: #f1f4fa; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+
+    .endpoint { font-family: monospace; font-size: .85rem; }
+    .endpoint .method {
+      display: inline-block; width: 5ch; font-weight: 700; text-align: center;
+      padding: .1rem .3rem; border-radius: 4px; color: #fff; font-size: .75rem;
+    }
+    .method-post { background: #2d8a4e; }
+    .method-get { background: #2563eb; }
+    .method-put { background: #d97706; }
+    .endpoint .path { margin-left: .5rem; }
+
+    .workflow-steps {
+      display: flex; flex-wrap: wrap; gap: .5rem;
+      list-style: none; padding: 0;
+    }
+    .workflow-steps li {
+      background: var(--navy);
+      color: #fff;
+      padding: .45rem 1rem;
+      border-radius: 30px;
+      font-size: .85rem;
+      font-weight: 500;
+    }
+    .workflow-steps li::after { content: " →"; color: var(--gold); margin-left: .2rem; }
+    .workflow-steps li:last-child::after { content: ""; }
+
+    footer {
+      background: var(--navy);
+      color: rgba(255,255,255,.7);
+      text-align: center;
+      padding: 2rem;
+      font-size: .85rem;
+    }
+    footer a { color: var(--gold); text-decoration: none; }
+
+    @media (max-width: 700px) {
+      .hero h1 { font-size: 2rem; }
+      nav { flex-wrap: wrap; height: auto; padding: .8rem 1rem; gap: .5rem; }
+      .grid-2 { grid-template-columns: 1fr; }
+      .workflow-steps li { width: 100%; text-align: center; }
+      .workflow-steps li::after { content: " ↓"; }
+      .workflow-steps li:last-child::after { content: ""; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="logo"><a href="/" style="color:#fff;text-decoration:none;"><span>M</span>ASAREN</a></div>
+  <div class="nav-links">
+    <a href="/">App</a>
+    <a href="/api/docs">API Docs</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <h1><span>MASAREN</span> Documentation</h1>
+  <p>Impact Infrastructure Platform — Performance Measurement System for social and environmental programs.</p>
+</section>
+
+<div class="container">
+
+  <!-- Getting Started -->
+  <section id="getting-started">
+    <h2>Getting Started</h2>
+    <p>Log in with one of the demo accounts. All accounts use the password <code>demo1234</code>.</p>
+    <div class="card">
+      <table>
+        <tr><th>Role</th><th>Email</th><th>Password</th></tr>
+        <tr><td>Standard User</td><td><code>sara@masaren.io</code></td><td><code>demo1234</code></td></tr>
+        <tr><td>Program Manager</td><td><code>khalid@masaren.io</code></td><td><code>demo1234</code></td></tr>
+        <tr><td>Administrator</td><td><code>admin@masaren.io</code></td><td><code>demo1234</code></td></tr>
+      </table>
+      <p style="margin-top:.75rem">After logging in, seed demo data by visiting <a href="/">the app</a> and clicking <strong>Seed Demo Data</strong>, or calling <code>POST /api/demo/seed</code>.</p>
+    </div>
+  </section>
+
+  <!-- Architecture -->
+  <section id="architecture">
+    <h2>Architecture</h2>
+    <div class="card">
+      <p>MASAREN follows a clean separation between a <strong>FastAPI</strong> backend and a <strong>static frontend</strong> served directly from disk.</p>
+      <h3>Frontend</h3>
+      <ul>
+        <li><code>index.html</code> — Single-page application shell</li>
+        <li><code>static/app.js</code> — Application logic (auth, routing, API calls, UI rendering)</li>
+        <li><code>static/styles.css</code> — All styling, including light/dark mode variables</li>
+      </ul>
+      <h3>Backend</h3>
+      <ul>
+        <li><strong>FastAPI</strong> application with JWT-based authentication</li>
+        <li>SQLite database (auto-created at startup)</li>
+        <li>AI verification endpoint for assessing impact evidence</li>
+        <li>RESTful API — all routes are prefixed with <code>/api</code></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- API Reference -->
+  <section id="api">
+    <h2>API Reference</h2>
+    <p>All endpoints are relative to <code>http://localhost:8000</code>. Interactive docs available at <a href="/api/docs"><code>/api/docs</code></a>.</p>
+
+    <h3>Authentication</h3>
+    <div class="card">
+      <div class="endpoint"><span class="method method-post">POST</span><span class="path">/api/auth/register</span></div>
+      <div class="endpoint"><span class="method method-post">POST</span><span class="path">/api/auth/login</span></div>
+    </div>
+
+    <h3>Users</h3>
+    <div class="card">
+      <div class="endpoint"><span class="method method-get">GET</span><span class="path">/api/users/me</span></div>
+      <div class="endpoint"><span class="method method-get">GET</span><span class="path">/api/users</span></div>
+      <div class="endpoint"><span class="method method-get">GET</span><span class="path">/api/users/{id}/impact-passport</span></div>
+      <div class="endpoint"><span class="method method-get">GET</span><span class="path">/api/users/{id}/profile</span> <span class="badge badge-navy">NEW</span></div>
+    </div>
+
+    <h3>Organizations</h3>
+    <div class="card">
+      <div class="endpoint"><span class="method method-post">POST</span><span class="path">/api/organizations</span></div>
+      <div class="endpoint"><span class="method method-get">GET</span><span class="path">/api/organizations</span></div>
+    </div>
+
+    <h3>Programs</h3>
+    <div class="card">
+      <div class="endpoint"><span class="method method-post">POST</span><span class="path">/api/programs</span></div>
+      <div class="endpoint"><span class="method method-get">GET</span><span class="path">/api/programs</span></div>
+      <div class="endpoint"><span class="method method-get">GET</span><span class="path">/api/programs/{id}</span> <span class="badge badge-navy">NEW</span></div>
+    </div>
+
+    <h3>Tasks</h3>
+    <div class="card">
+      <div class="endpoint"><span class="method method-post">POST</span><span class="path">/api/tasks</span></div>
+      <div class="endpoint"><span class="method method-get">GET</span><span class="path">/api/tasks</span></div>
+      <div class="endpoint"><span class="method method-get">GET</span><span class="path">/api/tasks/{id}</span> <span class="badge badge-navy">NEW</span></div>
+      <div class="endpoint"><span class="method method-post">POST</span><span class="path">/api/tasks/{id}/assign</span></div>
+      <div class="endpoint"><span class="method method-post">POST</span><span class="path">/api/tasks/{id}/start</span></div>
+      <div class="endpoint"><span class="method method-post">POST</span><span class="path">/api/tasks/{id}/submit</span></div>
+      <div class="endpoint"><span class="method method-post">POST</span><span class="path">/api/tasks/{id}/complete</span></div>
+    </div>
+
+    <h3>Evidence</h3>
+    <div class="card">
+      <div class="endpoint"><span class="method method-post">POST</span><span class="path">/api/evidence</span></div>
+      <div class="endpoint"><span class="method method-get">GET</span><span class="path">/api/evidence</span></div>
+    </div>
+
+    <h3>Feed, Leaderboard &amp; Stats</h3>
+    <div class="card">
+      <div class="endpoint"><span class="method method-get">GET</span><span class="path">/api/feed</span> <span class="badge">Adjustable</span></div>
+      <div class="endpoint"><span class="method method-get">GET</span><span class="path">/api/leaderboard</span></div>
+      <div class="endpoint"><span class="method method-get">GET</span><span class="path">/api/sdg-impact</span></div>
+      <div class="endpoint"><span class="method method-get">GET</span><span class="path">/api/stats</span></div>
+    </div>
+
+    <h3>Comments</h3>
+    <div class="card">
+      <div class="endpoint"><span class="method method-post">POST</span><span class="path">/api/comments</span></div>
+      <div class="endpoint"><span class="method method-get">GET</span><span class="path">/api/comments/{post_id}</span></div>
+    </div>
+
+    <h3>Platform Algorithm</h3>
+    <div class="card">
+      <div class="endpoint"><span class="method method-get">GET</span><span class="path">/api/algo-params</span> <span class="badge badge-navy">NEW</span></div>
+      <div class="endpoint"><span class="method method-put">PUT</span><span class="path">/api/algo-params</span> <span class="badge badge-navy">NEW</span></div>
+      <p style="margin-top:.5rem;font-size:.85rem;color:var(--text-muted)">Modify feed ranking weights in real-time. Parameters: verified_weight, value_weight, confidence_weight, pms_weight, recency_boost, reaction_weight, content_diversity.</p>
+    </div>
+
+    <h3>Social Network</h3>
+    <div class="card">
+      <div class="endpoint"><span class="method method-get">GET</span><span class="path">/api/network</span> <span class="badge badge-navy">NEW</span></div>
+      <p style="margin-top:.5rem;font-size:.85rem;color:var(--text-muted)">Returns nodes (users) and edges (shared program connections) for the user collaboration graph visualization.</p>
+    </div>
+
+    <h3>Demo</h3>
+    <div class="card">
+      <div class="endpoint"><span class="method method-post">POST</span><span class="path">/api/demo/seed</span></div>
+    </div>
+  </section>
+
+  <!-- Workflow -->
+  <section id="workflow">
+    <h2>Workflow</h2>
+    <p>The end-to-end flow for creating and verifying impact:</p>
+    <div class="card">
+      <ol class="workflow-steps">
+        <li>Login</li>
+        <li>Seed Demo Data</li>
+        <li>Create Organization</li>
+        <li>Create Program</li>
+        <li>Create Task</li>
+        <li>Assign Task</li>
+        <li>Submit Evidence</li>
+        <li>AI Verification</li>
+        <li>Impact Asset</li>
+      </ol>
+    </div>
+    <p>Users submit evidence for assigned tasks. The system runs AI-based verification to assess authenticity and relevance. Verified submissions are minted as <strong>Impact Assets</strong> and reflected on the leaderboard, SDG impact tracking, and the user's <strong>Impact Passport</strong>.</p>
+  </section>
+
+  <!-- PMS System -->
+  <section id="pms">
+    <h2>Performance Measurement System</h2>
+    <div class="card">
+      <p>The PMS evaluates contributions across multiple dimensions and assigns a tiered rating.</p>
+      <h3>Dimensions</h3>
+      <ul>
+        <li><strong>Quality</strong> — Completeness, accuracy, and relevance of evidence</li>
+        <li><strong>Consistency</strong> — Sustained participation over time</li>
+        <li><strong>Impact</strong> — SDG alignment and measurable outcomes</li>
+        <li><strong>Collaboration</strong> — Team engagement and peer feedback</li>
+        <li><strong>Innovation</strong> — Novel approaches and problem-solving</li>
+      </ul>
+      <h3>Tiers</h3>
+      <table>
+        <tr><th>Tier</th><th>Score Range</th><th>Badge</th></tr>
+        <tr><td>Bronze</td><td>0 – 249</td><td><span class="badge badge-navy">Bronze</span></td></tr>
+        <tr><td>Silver</td><td>250 – 499</td><td><span class="badge" style="background:#c0c0c0;color:#1e293b;">Silver</span></td></tr>
+        <tr><td>Gold</td><td>500 – 999</td><td><span class="badge">Gold</span></td></tr>
+        <tr><td>Platinum</td><td>1000+</td><td><span class="badge" style="background:#e5e4e2;color:#0F2044;border:1px solid var(--gold);">Platinum</span></td></tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section id="features">
+    <h2>Features</h2>
+    <div class="grid-2">
+      <div class="card"><strong>Light / Dark Mode</strong><br>Toggleable theme persisted in localStorage.</div>
+      <div class="card"><strong>Responsive Design</strong><br>Works on desktop, tablet, and mobile.</div>
+      <div class="card"><strong>Infinite Scroll</strong><br>Feed loads more posts as you scroll with staggered entrance animations.</div>
+      <div class="card"><strong>Reactions</strong><br>Like and react to posts and evidence (fire, star, clap).</div>
+      <div class="card"><strong>Inline Comments</strong><br>Expand comments directly under each post, no modal popup.</div>
+      <div class="card"><strong>AI Verification</strong><br>Automated evidence quality assessment with confidence scoring.</div>
+      <div class="card"><strong>Impact Passport</strong><br>Personal profile showing all verified contributions and PMS dimensions.</div>
+      <div class="card"><strong>User Profiles</strong><br>Click any user avatar or name to view their full profile with cover photo, activity, and PMS.</div>
+      <div class="card"><strong>Leaderboard</strong><br>Gamified rankings based on PMS score.</div>
+      <div class="card"><strong>SDG Tracking</strong><br>Map contributions to Sustainable Development Goals.</div>
+      <div class="card"><strong>User Network Graph</strong><br>Interactive force-directed graph showing user connections through shared programs.</div>
+      <div class="card"><strong>Adjustable Algorithm</strong><br>Live tweakable feed ranking parameters (verified weight, PMS influence, recency, engagement, etc.).</div>
+      <div class="card"><strong>Rich Media Evidence</strong><br>Photos and videos with lazy loading, clickable to view full size.</div>
+      <div class="card"><strong>Detailed Modals</strong><br>Click on any program title, task, or evidence to view full details.</div>
+      <div class="card"><strong>Scroll to Top</strong><br>Floating button appears after scrolling down, smooth scrolls back up.</div>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  &copy; 2026 <a href="/">MASAREN</a> - Impact Infrastructure Platform. All rights reserved.
+</footer>
+
+</body>
+</html>

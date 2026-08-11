@@ -1,0 +1,79 @@
+# E2E: Full setup - clear state, permissions, onboarding, login
+appId: com.masaren.app
+---
+# Permissions rounds
+- extendedWaitUntil:
+    visible: "While using the app"
+    timeout: 5000
+- tapOn: "While using the app"
+- waitForAnimationToEnd:
+    timeout: 2000
+- extendedWaitUntil:
+    visible: "Allow all"
+    timeout: 5000
+- tapOn: "Allow all"
+- waitForAnimationToEnd:
+    timeout: 2000
+- extendedWaitUntil:
+    visible: "While using the app"
+    timeout: 3000
+- tapOn: "While using the app"
+- waitForAnimationToEnd:
+    timeout: 2000
+- extendedWaitUntil:
+    visible: "Allow"
+    timeout: 3000
+- tapOn: "Allow"
+- waitForAnimationToEnd:
+    timeout: 2000
+- extendedWaitUntil:
+    visible: "While using the app"
+    timeout: 3000
+- tapOn: "While using the app"
+- waitForAnimationToEnd:
+    timeout: 2000
+- extendedWaitUntil:
+    visible: "Allow"
+    timeout: 3000
+- tapOn: "Allow"
+- waitForAnimationToEnd:
+    timeout: 2000
+# Onboarding
+- extendedWaitUntil:
+    visible: "Get Started"
+    timeout: 15000
+- swipe:
+    start: "800,1200"
+    end: "200,1200"
+- waitForAnimationToEnd:
+    timeout: 1000
+- swipe:
+    start: "800,1200"
+    end: "200,1200"
+- waitForAnimationToEnd:
+    timeout: 1000
+- swipe:
+    start: "800,1200"
+    end: "200,1200"
+- waitForAnimationToEnd:
+    timeout: 1000
+- tapOn: "Get Started"
+- waitForAnimationToEnd:
+    timeout: 5000
+# Login
+- tapOn:
+    point: "540,1157"
+- inputText: "admin@masaren.org"
+- pressKey: Back
+- waitForAnimationToEnd:
+    timeout: 1000
+- tapOn:
+    point: "540,1325"
+- inputText: "Masaren@1234"
+- pressKey: Back
+- waitForAnimationToEnd:
+    timeout: 1000
+- tapOn: "Sign in"
+- waitForAnimationToEnd:
+    timeout: 15000
+- takeScreenshot: /tmp/e2e_00_setup_done

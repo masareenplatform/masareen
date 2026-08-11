@@ -1,0 +1,12 @@
+appId: com.masaren.app
+---
+- clearState
+- launchApp
+- waitForAnimationToEnd
+- tapOn: "Sign in"
+- waitForAnimationToEnd
+- runFlow: login.yaml
+- tapOn: "Open navigation menu"
+- tapOn: "MASAREN Coin"
+- waitForAnimationToEnd
+- waitForAnimationToEnd

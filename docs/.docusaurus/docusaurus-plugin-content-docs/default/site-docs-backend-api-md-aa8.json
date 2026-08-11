@@ -1,0 +1,25 @@
+{
+  "id": "backend/api",
+  "title": "REST API Reference",
+  "description": "Base URL (public)//masareen.mediahubnetwork.net — all routes are under /api/v1.",
+  "source": "@site/docs/backend/api.md",
+  "sourceDirName": "backend",
+  "slug": "/backend/api",
+  "permalink": "/docs/backend/api",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/masareen/masareen-docs/tree/main/docs/backend/api.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 5,
+  "frontMatter": {
+    "id": "api",
+    "title": "REST API Reference",
+    "sidebar_position": 5
+  },
+  "sidebar": "backend",
+  "previous": {
+    "title": "The Verification Engine",
+    "permalink": "/docs/backend/verification-engine"
+  }
+}

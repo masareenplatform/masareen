@@ -1,0 +1,2136 @@
+{
+  "config": {
+    "argv": [
+      "/home/sms/.nvm/versions/node/v24.6.0/bin/node",
+      "/home/sms/masarenfinal/testing/web-e2e/node_modules/.bin/playwright",
+      "test",
+      "--list"
+    ],
+    "configFile": "/home/sms/masarenfinal/testing/web-e2e/playwright.config.ts",
+    "rootDir": "/home/sms/masarenfinal/testing/web-e2e/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {},
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/sms/masarenfinal/testing/web-e2e/test-results/artifacts",
+        "repeatEach": 1,
+        "retries": 1,
+        "metadata": {},
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/home/sms/masarenfinal/testing/web-e2e/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results/report.json"
+        }
+      ],
+      [
+        "html",
+        {
+          "outputFolder": "test-results/html-report",
+          "open": "never"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "admin.spec.ts",
+      "file": "admin.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Admin Page",
+          "file": "admin.spec.ts",
+          "line": 14,
+          "column": 6,
+          "specs": [
+            {
+              "title": "admin page loads with title",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "d4043a9dd1ab94463227-f280b8aa99f449736395",
+              "file": "admin.spec.ts",
+              "line": 21,
+              "column": 7
+            },
+            {
+              "title": "admin page has tab navigation",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "d4043a9dd1ab94463227-1e607d1710da2f0734d5",
+              "file": "admin.spec.ts",
+              "line": 25,
+              "column": 7
+            },
+            {
+              "title": "admin page has KPI cards on Overview tab",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "d4043a9dd1ab94463227-cff0c5fc456b6459b1f2",
+              "file": "admin.spec.ts",
+              "line": 35,
+              "column": 7
+            },
+            {
+              "title": "admin page shows Users tab with user directory",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "d4043a9dd1ab94463227-6ce6a0d866bf3e9a7891",
+              "file": "admin.spec.ts",
+              "line": 42,
+              "column": 7
+            },
+            {
+              "title": "admin page shows Programs tab",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "d4043a9dd1ab94463227-1959ca8caa4f49351b3d",
+              "file": "admin.spec.ts",
+              "line": 48,
+              "column": 7
+            },
+            {
+              "title": "admin page shows Verification tab",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "d4043a9dd1ab94463227-ebf927d4ba8b2b1e5867",
+              "file": "admin.spec.ts",
+              "line": 54,
+              "column": 7
+            },
+            {
+              "title": "admin page shows Revenue tab",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "d4043a9dd1ab94463227-3c43b841aef5b8774e6d",
+              "file": "admin.spec.ts",
+              "line": 60,
+              "column": 7
+            },
+            {
+              "title": "admin page shows Reports tab",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "d4043a9dd1ab94463227-612cde3c9b85fcdc8191",
+              "file": "admin.spec.ts",
+              "line": 66,
+              "column": 7
+            },
+            {
+              "title": "non-admin user cannot access admin page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "d4043a9dd1ab94463227-473f42995d30cd9cc183",
+              "file": "admin.spec.ts",
+              "line": 72,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "auth.spec.ts",
+      "file": "auth.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Authentication",
+          "file": "auth.spec.ts",
+          "line": 15,
+          "column": 6,
+          "specs": [
+            {
+              "title": "login with valid admin credentials redirects to /feed or /dashboard",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "d748ac400d08b85935ef-bf3148c3df1e3cb8fbd1",
+              "file": "auth.spec.ts",
+              "line": 16,
+              "column": 7
+            },
+            {
+              "title": "login with valid regular user credentials redirects to /feed",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "d748ac400d08b85935ef-047bb4e5d6daace9c77b",
+              "file": "auth.spec.ts",
+              "line": 22,
+              "column": 7
+            },
+            {
+              "title": "login with invalid credentials shows error",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "d748ac400d08b85935ef-96c2824cd60a845e753d",
+              "file": "auth.spec.ts",
+              "line": 28,
+              "column": 7
+            },
+            {
+              "title": "login with empty credentials shows validation",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "d748ac400d08b85935ef-e8340aaf993d867ad7cb",
+              "file": "auth.spec.ts",
+              "line": 36,
+              "column": 7
+            },
+            {
+              "title": "login page has register link",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "d748ac400d08b85935ef-2e0efdaf6d789f22bb8b",
+              "file": "auth.spec.ts",
+              "line": 42,
+              "column": 7
+            },
+            {
+              "title": "register page has login link",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "d748ac400d08b85935ef-fab08fee218c51707678",
+              "file": "auth.spec.ts",
+              "line": 50,
+              "column": 7
+            },
+            {
+              "title": "unauthenticated user visiting /dashboard redirects to /login",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "d748ac400d08b85935ef-3f68d47e14694f1817f7",
+              "file": "auth.spec.ts",
+              "line": 58,
+              "column": 7
+            },
+            {
+              "title": "unauthenticated user visiting /feed redirects to /login",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "d748ac400d08b85935ef-33da815019006e46185c",
+              "file": "auth.spec.ts",
+              "line": 63,
+              "column": 7
+            },
+            {
+              "title": "unauthenticated user visiting /admin redirects to /login",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "d748ac400d08b85935ef-844d9ac399be1705fb19",
+              "file": "auth.spec.ts",
+              "line": 68,
+              "column": 7
+            },
+            {
+              "title": "logout from authenticated session redirects to landing",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "d748ac400d08b85935ef-f0e50eb444cbb16258f2",
+              "file": "auth.spec.ts",
+              "line": 73,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "docs.spec.ts",
+      "file": "docs.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Docs Page",
+          "file": "docs.spec.ts",
+          "line": 3,
+          "column": 6,
+          "specs": [
+            {
+              "title": "has sidebar navigation",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "d1b7b038ec79048035c3-eddcfc557c5e5ee35adf",
+              "file": "docs.spec.ts",
+              "line": 9,
+              "column": 7
+            },
+            {
+              "title": "shows all 11 sections in sidebar",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "d1b7b038ec79048035c3-daa70466f19a0bf7d540",
+              "file": "docs.spec.ts",
+              "line": 15,
+              "column": 7
+            },
+            {
+              "title": "default section is Overview",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "d1b7b038ec79048035c3-41e8e2c3e39d37a3f5da",
+              "file": "docs.spec.ts",
+              "line": 34,
+              "column": 7
+            },
+            {
+              "title": "clicking sidebar section scrolls to it",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "d1b7b038ec79048035c3-791f6de01a5171e2b099",
+              "file": "docs.spec.ts",
+              "line": 38,
+              "column": 7
+            },
+            {
+              "title": "clicking Getting Started shows content",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "d1b7b038ec79048035c3-410f9a4490f199640b08",
+              "file": "docs.spec.ts",
+              "line": 45,
+              "column": 7
+            },
+            {
+              "title": "clicking Feed section shows feed docs",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "d1b7b038ec79048035c3-8123c8cf6d9dfba26f24",
+              "file": "docs.spec.ts",
+              "line": 51,
+              "column": 7
+            },
+            {
+              "title": "clicking Verification Pipeline shows verification docs",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "d1b7b038ec79048035c3-613da0c6b825fcc042b5",
+              "file": "docs.spec.ts",
+              "line": 57,
+              "column": 7
+            },
+            {
+              "title": "clicking MASAREEN Coin shows coin docs",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "d1b7b038ec79048035c3-797d4144fc7f0620658e",
+              "file": "docs.spec.ts",
+              "line": 63,
+              "column": 7
+            },
+            {
+              "title": "clicking Programs & Tasks shows programs docs",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "d1b7b038ec79048035c3-f22de12369d93e578ee1",
+              "file": "docs.spec.ts",
+              "line": 69,
+              "column": 7
+            },
+            {
+              "title": "clicking API Reference shows API docs",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "d1b7b038ec79048035c3-b4012c8407e77d293fbf",
+              "file": "docs.spec.ts",
+              "line": 75,
+              "column": 7
+            },
+            {
+              "title": "clicking Architecture shows architecture docs",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "d1b7b038ec79048035c3-b697ba3c863732bfac69",
+              "file": "docs.spec.ts",
+              "line": 81,
+              "column": 7
+            },
+            {
+              "title": "has marketing navigation",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "d1b7b038ec79048035c3-9df2e51416890d716882",
+              "file": "docs.spec.ts",
+              "line": 87,
+              "column": 7
+            },
+            {
+              "title": "has marketing footer",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "d1b7b038ec79048035c3-0a77ade60ff00cdb005e",
+              "file": "docs.spec.ts",
+              "line": 92,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "feed.spec.ts",
+      "file": "feed.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Feed Page",
+          "file": "feed.spec.ts",
+          "line": 18,
+          "column": 6,
+          "specs": [
+            {
+              "title": "feed page loads with title",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "02288723d35f41b5ad69-2fd5b3bdf8e444b40cf6",
+              "file": "feed.spec.ts",
+              "line": 23,
+              "column": 7
+            },
+            {
+              "title": "feed page has search bar",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "02288723d35f41b5ad69-7242f07c32bdd4bc5655",
+              "file": "feed.spec.ts",
+              "line": 27,
+              "column": 7
+            },
+            {
+              "title": "feed page has filter tabs",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "02288723d35f41b5ad69-b9586f88095d8d492490",
+              "file": "feed.spec.ts",
+              "line": 32,
+              "column": 7
+            },
+            {
+              "title": "feed page has composer",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "02288723d35f41b5ad69-6782f9ef98a0713d82ed",
+              "file": "feed.spec.ts",
+              "line": 42,
+              "column": 7
+            },
+            {
+              "title": "feed loads posts or shows empty state",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "02288723d35f41b5ad69-88b2f6833f0ee71ba531",
+              "file": "feed.spec.ts",
+              "line": 46,
+              "column": 7
+            },
+            {
+              "title": "clicking Impact tab filters feed",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "02288723d35f41b5ad69-6a938a01fd2ceda59a74",
+              "file": "feed.spec.ts",
+              "line": 55,
+              "column": 7
+            },
+            {
+              "title": "clicking Programs tab filters feed",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "02288723d35f41b5ad69-c05086d4e87e77190a66",
+              "file": "feed.spec.ts",
+              "line": 62,
+              "column": 7
+            },
+            {
+              "title": "clicking Evidence tab filters feed",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "02288723d35f41b5ad69-ab4e928b8ffc74b41255",
+              "file": "feed.spec.ts",
+              "line": 69,
+              "column": 7
+            },
+            {
+              "title": "clicking Saved tab shows saved posts",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "02288723d35f41b5ad69-7e1d30ccd4259f7c3849",
+              "file": "feed.spec.ts",
+              "line": 76,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "navigation.spec.ts",
+      "file": "navigation.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Navigation",
+          "file": "navigation.spec.ts",
+          "line": 14,
+          "column": 6,
+          "specs": [
+            {
+              "title": "landing page top nav has correct links",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5d2868f7d23420c27cca-7b3dda4d8986cbd93a57",
+              "file": "navigation.spec.ts",
+              "line": 15,
+              "column": 7
+            },
+            {
+              "title": "marketing nav has Platform, Solutions, Resources dropdowns",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5d2868f7d23420c27cca-d35d9eadc5f612a00a63",
+              "file": "navigation.spec.ts",
+              "line": 24,
+              "column": 7
+            },
+            {
+              "title": "authenticated top nav has search, language toggle, notifications",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5d2868f7d23420c27cca-1ce5e1ff0c1bf56e5967",
+              "file": "navigation.spec.ts",
+              "line": 32,
+              "column": 7
+            },
+            {
+              "title": "language toggle exists and switches locale",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5d2868f7d23420c27cca-8195d7f608236f8a65de",
+              "file": "navigation.spec.ts",
+              "line": 40,
+              "column": 7
+            },
+            {
+              "title": "language toggle changes text direction for Arabic",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5d2868f7d23420c27cca-ff57d0c3a65bf29575c6",
+              "file": "navigation.spec.ts",
+              "line": 53,
+              "column": 7
+            },
+            {
+              "title": "authenticated user menu has profile and sign out",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5d2868f7d23420c27cca-7adc0271bb15715d4578",
+              "file": "navigation.spec.ts",
+              "line": 72,
+              "column": 7
+            },
+            {
+              "title": "mobile bottom nav is hidden on desktop",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5d2868f7d23420c27cca-4d136f90dc525ce4bd7b",
+              "file": "navigation.spec.ts",
+              "line": 80,
+              "column": 7
+            },
+            {
+              "title": "landing page nav Sign In link goes to /login",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5d2868f7d23420c27cca-bb01b1b20a7d5839b57c",
+              "file": "navigation.spec.ts",
+              "line": 90,
+              "column": 7
+            },
+            {
+              "title": "landing page nav Get the app scrolls to download section",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5d2868f7d23420c27cca-70efa7f4bdad86257363",
+              "file": "navigation.spec.ts",
+              "line": 97,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "notifications.spec.ts",
+      "file": "notifications.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Notifications Page",
+          "file": "notifications.spec.ts",
+          "line": 14,
+          "column": 6,
+          "specs": [
+            {
+              "title": "notifications page loads after login",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "be7d0958780d1a4666e5-bb134ac91aae65ff58f5",
+              "file": "notifications.spec.ts",
+              "line": 15,
+              "column": 7
+            },
+            {
+              "title": "notifications page has notification bell in top nav",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "be7d0958780d1a4666e5-c611e287c01afc61abe8",
+              "file": "notifications.spec.ts",
+              "line": 25,
+              "column": 7
+            },
+            {
+              "title": "notifications page shows list or empty state",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "be7d0958780d1a4666e5-d4e8d6e30d3f16061c6c",
+              "file": "notifications.spec.ts",
+              "line": 33,
+              "column": 7
+            },
+            {
+              "title": "unauthenticated user cannot access notifications",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "be7d0958780d1a4666e5-8471cec8b6032f140d9a",
+              "file": "notifications.spec.ts",
+              "line": 42,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "presentation.spec.ts",
+      "file": "presentation.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Presentation Page",
+          "file": "presentation.spec.ts",
+          "line": 3,
+          "column": 6,
+          "specs": [
+            {
+              "title": "has hero section with tagline",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "57a964c83dbf6a737e02-00d454948b081bf83d24",
+              "file": "presentation.spec.ts",
+              "line": 4,
+              "column": 7
+            },
+            {
+              "title": "has feature cards section",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "57a964c83dbf6a737e02-63a03f357c525b180fa2",
+              "file": "presentation.spec.ts",
+              "line": 11,
+              "column": 7
+            },
+            {
+              "title": "has verification flow section",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "57a964c83dbf6a737e02-9de1a1cc3476151f15ae",
+              "file": "presentation.spec.ts",
+              "line": 22,
+              "column": 7
+            },
+            {
+              "title": "has architecture section",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "57a964c83dbf6a737e02-3fa510d1677a100293f3",
+              "file": "presentation.spec.ts",
+              "line": 28,
+              "column": 7
+            },
+            {
+              "title": "has user roles section",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "57a964c83dbf6a737e02-e657be0b09d224084341",
+              "file": "presentation.spec.ts",
+              "line": 34,
+              "column": 7
+            },
+            {
+              "title": "has CTA to register and sign in",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "57a964c83dbf6a737e02-6d953951d4a6941d5684",
+              "file": "presentation.spec.ts",
+              "line": 40,
+              "column": 7
+            },
+            {
+              "title": "has marketing navigation",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "57a964c83dbf6a737e02-eabe094f8612a2ca5883",
+              "file": "presentation.spec.ts",
+              "line": 48,
+              "column": 7
+            },
+            {
+              "title": "has marketing footer",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "57a964c83dbf6a737e02-eeedb21d5f0a49454433",
+              "file": "presentation.spec.ts",
+              "line": 55,
+              "column": 7
+            },
+            {
+              "title": "has stats section",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "57a964c83dbf6a737e02-5efa91799385d4e9ac67",
+              "file": "presentation.spec.ts",
+              "line": 61,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "public-pages.spec.ts",
+      "file": "public-pages.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Public Pages",
+          "file": "public-pages.spec.ts",
+          "line": 3,
+          "column": 6,
+          "specs": [
+            {
+              "title": "landing page loads with title and navigation",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "e87f96acaad393366f41-c7ab1e93d59f2aa0f1fe",
+              "file": "public-pages.spec.ts",
+              "line": 4,
+              "column": 7
+            },
+            {
+              "title": "landing page has hero section",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "e87f96acaad393366f41-72a37aa6ba0218a6ceea",
+              "file": "public-pages.spec.ts",
+              "line": 12,
+              "column": 7
+            },
+            {
+              "title": "landing page has footer",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "e87f96acaad393366f41-bac7f30240615cf83523",
+              "file": "public-pages.spec.ts",
+              "line": 18,
+              "column": 7
+            },
+            {
+              "title": "login page renders form fields",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "e87f96acaad393366f41-2b44750373d1c44cbd3f",
+              "file": "public-pages.spec.ts",
+              "line": 25,
+              "column": 7
+            },
+            {
+              "title": "register page renders form fields",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "e87f96acaad393366f41-559c3c5a4b40be1aceda",
+              "file": "public-pages.spec.ts",
+              "line": 35,
+              "column": 7
+            },
+            {
+              "title": "presentation page loads with hero section",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "e87f96acaad393366f41-e890fba4f1f9f9827b67",
+              "file": "public-pages.spec.ts",
+              "line": 45,
+              "column": 7
+            },
+            {
+              "title": "presentation page has feature cards",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "e87f96acaad393366f41-4de192f5f8aca8af0b1c",
+              "file": "public-pages.spec.ts",
+              "line": 51,
+              "column": 7
+            },
+            {
+              "title": "presentation page has CTA to register",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "e87f96acaad393366f41-cfd5cf0064cece42c97c",
+              "file": "public-pages.spec.ts",
+              "line": 58,
+              "column": 7
+            },
+            {
+              "title": "docs page loads with sidebar navigation",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "e87f96acaad393366f41-32db97415c60d9735015",
+              "file": "public-pages.spec.ts",
+              "line": 64,
+              "column": 7
+            },
+            {
+              "title": "docs page shows all 11 sections in sidebar",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "e87f96acaad393366f41-fc36adfaa7cfa35ffe4d",
+              "file": "public-pages.spec.ts",
+              "line": 70,
+              "column": 7
+            },
+            {
+              "title": "about page loads",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "e87f96acaad393366f41-5907c893354b7e264ad9",
+              "file": "public-pages.spec.ts",
+              "line": 90,
+              "column": 7
+            },
+            {
+              "title": "pricing page loads",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "e87f96acaad393366f41-f0e524f1fa9e5434abda",
+              "file": "public-pages.spec.ts",
+              "line": 96,
+              "column": 7
+            },
+            {
+              "title": "how it works page loads",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "e87f96acaad393366f41-f4a7f3afbaafade24ecc",
+              "file": "public-pages.spec.ts",
+              "line": 104,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "responsive.spec.ts",
+      "file": "responsive.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Responsive Design",
+          "file": "responsive.spec.ts",
+          "line": 3,
+          "column": 6,
+          "specs": [],
+          "suites": [
+            {
+              "title": "Mobile viewport (375px)",
+              "file": "responsive.spec.ts",
+              "line": 4,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "landing page renders correctly on mobile",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [],
+                      "status": "skipped"
+                    }
+                  ],
+                  "id": "e0223b006feb3d306446-73bd659d3abf1133bb13",
+                  "file": "responsive.spec.ts",
+                  "line": 7,
+                  "column": 9
+                },
+                {
+                  "title": "login page renders correctly on mobile",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [],
+                      "status": "skipped"
+                    }
+                  ],
+                  "id": "e0223b006feb3d306446-19209a72a64cdbfedc87",
+                  "file": "responsive.spec.ts",
+                  "line": 13,
+                  "column": 9
+                },
+                {
+                  "title": "register page renders correctly on mobile",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [],
+                      "status": "skipped"
+                    }
+                  ],
+                  "id": "e0223b006feb3d306446-ff0139d5b493a94db965",
+                  "file": "responsive.spec.ts",
+                  "line": 20,
+                  "column": 9
+                },
+                {
+                  "title": "presentation page renders correctly on mobile",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [],
+                      "status": "skipped"
+                    }
+                  ],
+                  "id": "e0223b006feb3d306446-c2574da28930b03b2ce5",
+                  "file": "responsive.spec.ts",
+                  "line": 26,
+                  "column": 9
+                },
+                {
+                  "title": "pricing page renders correctly on mobile",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [],
+                      "status": "skipped"
+                    }
+                  ],
+                  "id": "e0223b006feb3d306446-33abab60e2ec105f1c1c",
+                  "file": "responsive.spec.ts",
+                  "line": 31,
+                  "column": 9
+                },
+                {
+                  "title": "how it works page renders correctly on mobile",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [],
+                      "status": "skipped"
+                    }
+                  ],
+                  "id": "e0223b006feb3d306446-d29df0c928027ac7c7f7",
+                  "file": "responsive.spec.ts",
+                  "line": 37,
+                  "column": 9
+                }
+              ]
+            },
+            {
+              "title": "Tablet viewport (768px)",
+              "file": "responsive.spec.ts",
+              "line": 43,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "landing page renders correctly on tablet",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [],
+                      "status": "skipped"
+                    }
+                  ],
+                  "id": "e0223b006feb3d306446-29cb86082e4d2f18835d",
+                  "file": "responsive.spec.ts",
+                  "line": 46,
+                  "column": 9
+                },
+                {
+                  "title": "login page renders correctly on tablet",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [],
+                      "status": "skipped"
+                    }
+                  ],
+                  "id": "e0223b006feb3d306446-34d450f3b2f4a9d11d3d",
+                  "file": "responsive.spec.ts",
+                  "line": 51,
+                  "column": 9
+                },
+                {
+                  "title": "presentation page renders correctly on tablet",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [],
+                      "status": "skipped"
+                    }
+                  ],
+                  "id": "e0223b006feb3d306446-3f350c426cb4964de9f6",
+                  "file": "responsive.spec.ts",
+                  "line": 56,
+                  "column": 9
+                },
+                {
+                  "title": "docs page renders correctly on tablet",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [],
+                      "status": "skipped"
+                    }
+                  ],
+                  "id": "e0223b006feb3d306446-00951dbc6e3619320f28",
+                  "file": "responsive.spec.ts",
+                  "line": 61,
+                  "column": 9
+                }
+              ]
+            },
+            {
+              "title": "Desktop viewport (1440px)",
+              "file": "responsive.spec.ts",
+              "line": 67,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "landing page renders correctly on desktop",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [],
+                      "status": "skipped"
+                    }
+                  ],
+                  "id": "e0223b006feb3d306446-906e65e24e28274f4f6b",
+                  "file": "responsive.spec.ts",
+                  "line": 70,
+                  "column": 9
+                },
+                {
+                  "title": "login page renders correctly on desktop",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [],
+                      "status": "skipped"
+                    }
+                  ],
+                  "id": "e0223b006feb3d306446-f88cc6305a2f74fbee21",
+                  "file": "responsive.spec.ts",
+                  "line": 77,
+                  "column": 9
+                },
+                {
+                  "title": "presentation page renders correctly on desktop",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [],
+                      "status": "skipped"
+                    }
+                  ],
+                  "id": "e0223b006feb3d306446-bc1f23399fe4438df5ac",
+                  "file": "responsive.spec.ts",
+                  "line": 82,
+                  "column": 9
+                },
+                {
+                  "title": "docs page sidebar visible on desktop",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [],
+                      "status": "skipped"
+                    }
+                  ],
+                  "id": "e0223b006feb3d306446-13c9cb9f9d6123093bfb",
+                  "file": "responsive.spec.ts",
+                  "line": 87,
+                  "column": 9
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "wallet.spec.ts",
+      "file": "wallet.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Wallet Page",
+          "file": "wallet.spec.ts",
+          "line": 14,
+          "column": 6,
+          "specs": [
+            {
+              "title": "wallet page loads after login",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "27e87c8ff6887d69f80e-acb7839b3338578819fb",
+              "file": "wallet.spec.ts",
+              "line": 15,
+              "column": 7
+            },
+            {
+              "title": "wallet page has balance information",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "27e87c8ff6887d69f80e-b5cd409b0258d0ef8fa2",
+              "file": "wallet.spec.ts",
+              "line": 27,
+              "column": 7
+            },
+            {
+              "title": "unauthenticated user cannot access wallet",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "27e87c8ff6887d69f80e-53641eb5bfe9f2022dc7",
+              "file": "wallet.spec.ts",
+              "line": 36,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-07-27T02:38:15.801Z",
+    "duration": 62.77999999999997,
+    "expected": 0,
+    "skipped": 93,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

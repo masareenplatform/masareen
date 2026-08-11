@@ -1,0 +1,2630 @@
+MASAREN ( ‫ﺭ‬
+
+)
+
+Impact Infrastructure as a Service
+Technical Architecture Documentation
+Version 2.0.0
+
+The MASAREN Engineering Team
+July 21, 2026
+
+Core Principle: If an action cannot be verified, it cannot become an economic
+asset.
+
+Abstract
+MASAREN ( ‫ ) ﺭ‬is an Impact Infrastructure as a Service (IIaaS) platform
+that converts verified real-world actions into traceable records, measurable outcomes, and
+governable digital assets. The architecture combines domain-oriented services, event-driven
+integration, geospatial evidence, human review, and cloud-hosted machine intelligence. Its
+purpose is not merely to operate software at scale; it is to preserve the chain of custody
+between an intended activity, the evidence that an activity occurred, the decision that
+validates it, and the economic or reputational value assigned to the result.
+This document provides the comprehensive technical architecture, implementation patterns, and operational guidelines for the MASAREN platform. It serves as the definitive
+reference for technical implementation, deployment strategies, and system integration.
+Blueprint scope. This document aligns product, engineering, data, security, operations, finance, compliance, and partner-integration teams around one target architecture.
+It defines bounded contexts, authoritative data ownership, event contracts, trust boundaries, deployment topology, reliability targets, control evidence, and decision rights. The
+differentiating design is a verification-first operating model delivered consistently through
+React/TypeScript and Flutter clients, supported by durable event streams, policy-enforced
+access, independently deployable services, and a combined backend used only as a development convenience rather than as the production topology.
+
+1
+
+Contents
+1 Introduction
+
+3
+
+2 System Architecture Overview
+
+7
+
+3 Technology Stack
+
+9
+
+4 Service Domain Architecture
+
+11
+
+5 Combined Backend Architecture
+
+20
+
+6 Web Application Architecture
+
+23
+
+7 Mobile Application Architecture
+
+26
+
+8 Event-Driven Architecture
+
+29
+
+9 Shared Kernel
+
+32
+
+10 Infrastructure and Deployment
+
+34
+
+11 Testing Strategy
+
+39
+
+12 Security Architecture
+
+42
+
+13 Environment Configuration
+
+45
+
+14 Development Workflow
+
+46
+
+15 Known Gaps and Future Work
+
+48
+
+References
+
+49
+
+16 Appendices
+
+52
+
+2
+
+1 Introduction
+Mission and Purpose MASAREN stands as a verification-centered Impact Infrastructure
+Platform that transforms real-world field activity into digitally verifiable and economically
+interpretable records. The platform addresses a recurring market problem: sponsors, organizations, field participants, auditors, and beneficiaries often hold different fragments of evidence
+and use different definitions of success. MASAREN provides a shared chain of custody from
+intention to execution, from field evidence to a verification decision, and from that decision to
+a reportable impact asset. The platform therefore connects planned outcomes with field-level
+actions, physical evidence with governed digital records, and demonstrated performance with
+measurable reputation.
+Platform Vision Verification-Centric Architecture. Every asset creation requires multilayered verification through AI, GPS, and human-in-the-loop review. Cross-Platform Consistency. Web and mobile experiences preserve parity for core journeys while adapting interaction patterns to each channel through shared backend contracts. Event-Driven Data
+Consistency. Transactional systems remain authoritative for current aggregate state, while
+Kafka provides the durable integration history and distribution backbone. Event envelopes
+conform to a common contract inspired by CloudEvents so that producers and consumers share
+identifiers, timestamps, types, subjects, versions, and trace context (Apache Software Foundation, 2026; Cloud Native Computing Foundation, 2024). Cloud-First AI Strategy. No
+production inference runs on application nodes; approved cloud providers are selected through
+security, privacy, quality, residency, availability, and cost evaluation. Enterprise-Grade Security. Every access request is evaluated using identity, device, workload, resource, and policy
+context rather than trusted solely because it originates inside a network boundary. This follows
+the resource-centered principles of zero-trust architecture (National Institute of Standards and
+Technology, 2020). Developer-First Design. The shared kernel contains only stable crosscutting primitives, while business models remain owned by bounded contexts. The combined
+backend shortens local feedback cycles, but production releases preserve independent ownership,
+scaling, and rollback.
+Core Architecture Principles The MASAREN platform is built on the following engineering
+principles. These principles are decision constraints: an implementation that violates them
+requires a recorded architecture decision, named owner, expiry or review date, and migration
+plan.
+Domain-Driven Design: Complex business logic is organized into bounded contexts with
+ubiquitous language, aggregate patterns, and domain events. Clean/Hexagonal Architecture: Separation of concerns places core business logic at the center, surrounded by infrastructure adapters. CQRS where it reduces coupling: Commands and queries may use separate
+models when read and write concerns differ materially. Event sourcing is reserved for aggregates
+that require full state reconstruction; it is not a blanket requirement for every service. Transactional Outbox Pattern: Aggregate changes and publication intent commit atomically in one
+database transaction; a retryable relay publishes the event afterward. Evolutionary service
+
+3
+
+boundaries: Services communicate through versioned APIs or events. A deployable boundary
+is justified by ownership, scaling, security, reliability, or release independence rather than by
+an arbitrary service count. Repository Pattern: Abstract data access with domain-specific
+repositories ensures persistence ignorance. Specification Pattern: Query building and filtering for complex data retrieval across bounded contexts.
+Document Authority and Team Alignment This blueprint is the normative technical reference for product planning, solution design, implementation, security review, data governance,
+deployment, incident response, and partner onboarding. Product teams use it to connect market outcomes to capabilities; domain teams use it to identify ownership and contracts; platform
+teams use it to define paved roads and runtime controls; security and privacy teams use it to
+map threats and evidence; data teams use it to govern lineage and metric definitions; and operations teams use it to derive service-level objectives, runbooks, and recovery exercises. Source
+code and deployed configuration remain the executable truth, while any material divergence
+from this blueprint must be captured in an architecture decision record and reconciled during
+the next review cycle.
+Architecture decisions are approved by a small architecture council consisting of the chief
+architect, product lead, platform lead, security lead, and the accountable domain owner. The
+council owns cross-domain standards but does not centralize routine implementation choices.
+Each bounded context has one accountable team, one named technical owner, one data steward, and one operational on-call rotation. Interfaces have explicit producers and consumers,
+compatibility rules, deprecation dates, and measurable acceptance criteria.
+Market and Product Outcomes The design addresses six market expectations that determine platform viability. Trust is supported through evidence provenance, explainable decisions, tamper-evident audit history, and separation of duties. Speed is supported through
+guided mobile capture, asynchronous verification, and predictable partner APIs. Scale is supported through independently scalable workloads, partitioned event streams, and object storage
+for large evidence. Enterprise readiness is supported through tenant isolation, identity federation, policy-based authorization, audit exports, retention controls, and regional deployment
+options. Economic sustainability is supported through workload-level cost attribution and unit
+economics, consistent with the FinOps emphasis on connecting technology spend to business
+value (FinOps Foundation, 2026). Ecosystem growth is supported through stable contracts,
+developer documentation, sandbox environments, and consent-aware data sharing.
+Quality Attributes and Acceptance Targets Quality attributes are treated as testable
+product requirements rather than aspirations. The initial targets below define the production launch gate and are refined per service through service-level indicators and error budgets,
+following the iterative SLO method described by Sloss et al. (2018).
+Availability. Tier-1 user journeys target 99.9% monthly availability, while lower tiers publish
+explicit objectives. Acceptance requires synthetic journey checks, server-side success ratios, a
+dependency-aware SLO dashboard, and an approved error-budget policy.
+
+4
+
+Latency. Read APIs target 300 ms p95 server latency and command APIs target 700 ms p95,
+excluding declared asynchronous work. Acceptance requires production histograms segmented
+by tenant, region, endpoint, and release.
+Durability and recovery. Accepted evidence and ledger records permit no acknowledged data
+loss, with a recovery point objective of five minutes or less. Tier-1 regional service recovery
+targets 60 minutes, and individual stateless-service recovery targets 15 minutes. Acceptance
+requires automated backups, object versioning, rollback tests, quarterly restoration exercises,
+and recorded recovery results.
+Security and privacy. Internet-facing applications use OWASP ASVS Level 2 as the baseline, with risk-selected Level 3 controls for high-value verification and administrative functions.
+Collection, purpose, access, retention, export, deletion, and consent must be policy-enforceable
+and observable. Acceptance requires threat models, automated control tests, penetration reports, dependency attestations, data inventories, retention tests, and privacy review (European
+Parliament and Council of the European Union, 2016; OWASP Foundation, 2025a).
+Operability and cost eﬀiciency. Every production workload emits correlated logs, metrics,
+and traces through a vendor-neutral telemetry pipeline, propagates the W3C trace context
+across synchronous and asynchronous boundaries, and exposes service-level indicators through
+Prometheus-compatible metrics and governed Grafana dashboards. Each tenant, product journey, and major workload has attributable infrastructure and AI cost. Acceptance requires OpenTelemetry conformance, actionable alerts, owned runbooks, cost-allocation metadata, budget
+alerts, and quarterly unit-economics review (FinOps Foundation, 2026; Grafana Labs, 2026;
+OpenTelemetry Authors, 2026; Prometheus Authors, 2026; World Wide Web Consortium,
+2021).
+System Context and Trust Boundary Figure 1 establishes the external actors and systems
+that define the platform boundary. A field participant submits evidence; an organization designs and supervises programs; sponsors fund outcomes; reviewers resolve ambiguous decisions;
+auditors inspect lineage; and partners integrate through controlled APIs. Identity providers,
+payment processors, mapping services, notification providers, and cloud AI providers remain external dependencies and are therefore wrapped by adapters, timeouts, circuit breakers, consent
+checks, and provider-specific failure policies.
+
+5
+
+Identity provider
+
+Field participant
+evi
+d
+
+enc
+
+ea
+
+nd
+
+ns
+
+con
+
+io
+ecis
+
+sen
+t
+
+Reviewer or auditor
+it
+d
+u
+da
+
+an
+
+d
+
+MASAREN Platform
+program controls
+versioned API
+Program organization
+Partner application
+verification, programs, reputation,
+marketplace, reporting, and governance
+
+com
+
+ut
+do
+
+rep
+
+n
+ga
+
+n
+
+di
+fun
+Sponsor or funder
+
+es
+
+Payments, maps, messaging,
+storage, and cloud AI
+
+ort
+s
+
+and
+
+cla
+ims
+Beneficiary or public
+
+Figure 1: System context, external actors, and dependency boundary
+Canonical Business Entities and Ownership The entity model provides a shared vocabulary for APIs, events, analytics, and governance. An entity name has one semantic definition
+even when individual services maintain projections. The owning context is the only context
+allowed to change the authoritative state; other contexts consume a versioned contract and
+retain only the fields needed for their purpose.
+Identity entities. The Identity context owns a natural person or service principal, organization membership, credentials, assurance level, consent, and lifecycle status. No other context
+stores credentials or independently redefines identity state.
+Execution entities. The Execution context owns the Organization as a tenant or delivery
+institution; the Program and Outcome as a funded intervention with geography, eligibility,
+indicators, controls, schedule, and budget; and the Task and Assignment as an authorized unit
+of work linked to a participant and workflow.
+Verification entities. The Verification context owns the Submission and Evidence record,
+including captured media or sensor data, provenance, checksums, retention class, and chain of
+custody. It also owns the Verification Case, which contains automated signals, reviewer actions,
+policy version, confidence, exceptions, appeal history, and final disposition.
+Value and market entities. The Reputation context owns the Impact Asset and Reputation Profile. An impact asset is a governed representation of a verified outcome with quantity,
+methodology, ownership, validity period, and revocation state. A reputation profile is a timebounded, explainable aggregation and never replaces raw evidence or appeal rights. The Marketplace context owns Opportunities, Applications, and Matches, while the Economic context
+owns ledger entries and settlements linked to contractual bases and verification cases.
+Governance entities. Platform Governance owns the Audit Record as an append-only account of security-sensitive and business-critical decisions with actor, action, resource, reason,
+time, tenant, policy, and trace identifiers. Data stewards maintain the canonical entity glossary
+and approve semantic changes before contract release.
+6
+
+2 System Architecture Overview
+High-Level Architecture Layers The MASAREN architecture follows a layered design with
+seven distinct layers:
+Presentation Layer: React/TypeScript web applications and Flutter mobile app serving
+as the user-facing interfaces. Experience Layer: API Gateway (BFF pattern) at port 8080
+providing routing, JWT authentication, rate limiting, and aggregation. Business Layer: 35+
+domain services organized into bounded contexts (Identity, Execution, Verification, Reputation,
+Marketplace, etc.). AI Layer: Cloud-based AI agents for vision verification, fraud detection,
+economist analysis, and graph synthesis. Knowledge Layer: Neo4j knowledge graph storing
+complex relationships between entities, programs, and impact assets. Data Layer: PostgreSQL+PostGIS for transactional data, Redis for caching/sessions, MinIO/S3 for evidence
+blobs. Infrastructure Layer: Docker/Kubernetes orchestration, Kafka event bus, monitoring
+with Prometheus/Grafana.
+
+Presentation Web application | Admin workspace
+| Flutter mobile application | Partner clients
+Experience and Edge CDN/WAF | API gateway
+and BFF | Identity federation | Partner API management
+Business Domains Identity | Execution | Verification | Reputation | Marketplace | Economic
+Decision Support Vision and extraction | Fraud signals | Valuation assistance | Human review and policy
+Knowledge and Reporting Knowledge graph |
+Read projections | Analytics | Sponsor and audit reports
+Service-Owned Data PostgreSQL/PostGIS |
+Redis | Versioned object storage | Search indexes
+Platform Foundation Kubernetes | Kafka and NATS
+| Workload identity and KMS | OpenTelemetry | CI/CD
+
+Figure 2: MASAREN logical layered architecture
+Architecture Diagram The layered view in Figure 2 is a logical dependency model rather
+than a mandate that every layer be deployed separately. Presentation channels may call only the
+experience layer. Domain services own business decisions and transactional state. AI services
+produce evidence and recommendations but do not autonomously create irreversible financial
+or reputational outcomes. Knowledge and analytical projections are derived and rebuildable.
+Infrastructure concerns are accessed through adapters so domain logic remains portable.
+Verification and Asset-Creation Flow Figure 3 is the authoritative happy-path sequence
+for creating an impact asset. Every transition carries the same correlation identifier, tenant
+identifier, policy version, and actor context. Negative, uncertain, duplicate, or policy-conflicting
+7
+
+results route to a review case instead of silently failing or automatically creating value. This
+human-governed model applies the risk-management principle that AI controls must be proportional to the consequence of the decision (National Institute of Standards and Technology,
+2023; OWASP Foundation, 2026).
+Capture evidence
+and consent
+
+Ingest, hash,
+scan, and store
+
+Policy, GPS, media,
+and fraud checks
+
+Suﬀicient
+confidence?
+
+yes Signed verification
+decision
+
+Create or update
+impact asset
+
+no
+Human review,
+appeal, or rejection
+
+Project reputation,
+ledger, and reports
+
+Figure 3: Evidence-to-impact-asset control flow
+Sync and Async Communication The platform employs a dual-transport strategy. Synchronous REST is used when a caller requires an immediate answer, a bounded timeout, and
+an explicit error contract, with HTTP semantics and each operation described through OpenAPI. Asynchronous events distribute facts, isolate failure domains, absorb bursts, and support
+independent downstream processing, with channels, operations, and message schemas described
+through AsyncAPI. Neither transport is universally preferred; the choice and its compatibility
+policy are recorded in the interface contract (AsyncAPI Initiative, 2023; Fielding et al., 2022;
+OpenAPI Initiative, 2024).
+Synchronous communication. Client and service requests use resource-oriented HTTP
+through FastAPI and the gateway, which performs routing, authentication, quotas, response
+aggregation, and standardized error mapping without taking ownership of domain decisions.
+Asynchronous communication. Durable domain facts are published to Kafka with atleast-once delivery and idempotent consumers, while the Transactional Outbox aligns database
+commits with eventual publication. Kafka transactions or exactly-once stream processing are
+reserved for bounded Kafka-to-Kafka workflows where their guarantees justify the operational
+cost. NATS supplies ephemeral, low-latency fan-out for chat presence, typing indicators, and
+live-feed hints, but authoritative facts remain in domain stores and Kafka (Apache Software
+Foundation, 2026; Synadia Communications, 2026).
+Database Strategy The platform uses a polyglot persistence approach:
+Relational and geospatial state. PostgreSQL is the primary relational technology for
+service-owned transactional data, with isolation selected according to invariant and concurrency requirements; PostGIS provides indexed spatial relationships for geofence and proximity
+decisions. Graph state. Neo4j stores governed relationship projections among organizations,
+programs, tasks, participants, evidence, and impact assets, with operational procedures for
+backup, upgrade, security, and monitoring. Ephemeral and cached state. Redis supports
+sessions, rate limits, and caches, but durability-dependent use cases explicitly select and test
+an appropriate persistence mode. Object and search state. Versioned S3-compatible storage holds large evidence objects behind service-owned metadata and policy, while OpenSearch
+remains an optional derived index that must be rebuildable from authoritative sources (Neo4j,
+Inc., 2026; PostGIS Project Steering Committee, 2026; PostgreSQL Global Development Group,
+2026; Redis Ltd., 2026).
+8
+
+3 Technology Stack
+Backend Technologies
+Technology
+Python 3.11+
+
+Layer
+Runtime
+
+FastAPI
+
+Web Framework
+
+PostgreSQL 16 +
+PostGIS
+Neo4j 5 + APOC +
+GDS
+Redis 7
+
+Database
+
+Apache Kafka
+
+Event Streaming
+
+NATS
+
+Real-time
+
+MinIO / S3
+
+Object Storage
+
+Approved cloud
+models
+
+AI Inference
+
+Details
+Type-hinted, async-capable runtime for
+all microservices
+OpenAPI 3.1 auto-documentation, dependency injection, async support
+ACID-compliant relational data with
+spatial query extensions
+Knowledge graph, graph algorithms for
+scoring and matching
+Session management, rate limiting,
+pub/sub messaging
+Pinned supported release in KRaft
+mode with governed topics and schemas
+Fan-out messaging for social features
+and live updates
+Blob storage for evidence media and
+attachments
+Registry-controlled providers for multimodal analysis, extraction, and decision
+support
+
+Graph Database
+Cache
+
+Web Application (apps/web)
+Technology
+React 18.2 + TypeScript 5.3
+Vite 5.1
+React Router v6
+TanStack Query
+React Context
+Tailwind CSS 3.4
+Axios
+i18n
+Google OAuth
+Vitest + RTL + Playwright
+
+Details
+Component-based UI framework with static typing
+Fast build tool with HMR and optimized production
+bundling
+Client-side routing with protected routes and role-based
+access
+Server state management with caching, refetching, and
+mutations
+Client state management for auth, theme, and UI state
+Utility-first CSS framework with responsive design
+HTTP client with interceptors for automatic JWT refresh
+Internationalization for English and Arabic (RTL) support
+Popup-based authentication flow with secure token handling
+Unit, component, and E2E testing frameworks
+
+Admin Panel (apps/admin)
+Technology
+React + TypeScript
+Mantine UI
+Vite
+nginx
+
+Details
+Same stack as web app with Mantine component library
+Rich component library for admin interfaces (tables, forms,
+modals)
+Optimized build with separate configuration
+Production serving with reverse proxy configuration
+
+9
+
+Mobile Application (apps/mobile)
+Technology
+Flutter 3.22+
+MVVM Pattern
+Provider Package
+Flutter Navigator
+http Package
+shared_preferences
+flutter_secure_
+storage
+Material Design 3
+Flutter Test + Maestro
+
+Details
+Cross-platform mobile framework with Dart 3
+Architecture pattern with Provider for state management
+State management with ChangeNotifier and MultiProvider
+Custom bottom navigation with drawer for deep navigation
+Pure Dart HTTP client with automatic JWT handling
+Local persistence for user preferences and cached data
+Secure token storage using platform keychains
+Custom theme with responsive layouts and bilingual support
+Unit, widget, and E2E integration testing
+
+DevOps and Infrastructure
+Tool
+Docker
+Docker Compose
+Kubernetes
+Prometheus +
+Grafana
+OpenTelemetry
+GitHub Actions
+Terraform
+nginx
+
+Purpose
+Containerization for all services and infrastructure components
+Local development orchestration with 30+ services
+Production deployment with Helm charts and Kustomize
+Metrics collection, monitoring dashboards, and alerting
+Distributed tracing across microservices
+CI/CD pipelines for build, test, and deployment automation
+Infrastructure as Code for cloud resource provisioning
+Reverse proxy for frontend serving and API routing
+
+10
+
+4 Service Domain Architecture
+The MASAREN platform is organized into bounded contexts that may contain one or more
+deployable workloads. Each context encapsulates a distinct business capability with explicit
+data ownership, event contracts, and API surfaces. The target is not a fixed number of microservices; the target is independently understandable ownership with deployment boundaries
+justified by measurable operational needs.
+Bounded-Context Collaboration Map The service catalog is organized around business
+capabilities rather than technical layers. Figure 4 identifies the permitted direction of highvalue business facts. Identity supplies principals and assurance; Execution supplies programs,
+tasks, and assignments; Verification supplies decisions and provenance; Reputation supplies
+impact assets and scores; Marketplace consumes eligibility and reputation without becoming
+their owner; and Reporting builds read-optimized projections. Economic settlement references
+verified outcomes but cannot modify the underlying evidence or decision.
+Identity
+
+Execution
+
+Verification
+
+Reputation
+
+Marketplace
+
+Economic
+
+Knowledge graph
+
+Reporting
+
+Figure 4: Bounded-context ownership and collaboration map
+Each arrow represents a versioned API or event contract, not permission to access another
+context’s database. Cycles are resolved through orchestration, process managers, or compensating actions rather than synchronous call chains. A domain service may begin as a module in
+a modular deployment and later become an independent workload when scale, risk, ownership,
+or release cadence proves the need. This avoids unnecessary microservice fragmentation while
+preserving clear seams for growth.
+Service Integration Playbook Every integration follows the same contract template. The
+owning service is authoritative for its aggregate and exposes a synchronous API only when
+the caller needs an immediate decision. HTTP interfaces are described with OpenAPI, eventdriven interfaces with AsyncAPI and CloudEvents-compatible envelopes, and distributed requests propagate a standard trace context. Material facts include an event identifier, tenant,
+subject, schema version, correlation identifier, causation identifier, and occurrence time. Callers
+apply deadlines, retry only safe operations, attach idempotency keys to commands, and use circuit breakers for remote dependencies; consumers use a durable inbox and commit the event
+identifier with the business-side effect. These conventions make the boundary understandable
+to humans and tools without granting database access (AsyncAPI Initiative, 2023; Cloud Native
+Computing Foundation, 2024; OpenAPI Initiative, 2024; World Wide Web Consortium, 2021).
+The examples below name the normal upstream caller, downstream consumer, and concrete
+transaction for each service.
+API Gateway. The gateway receives HTTPS requests from the web, admin, mobile,
+11
+
+and partner channels; validates the access token with Authentication and Authorization; and
+routes the request to the owning domain service. For example, POST /programs/P-42/tasks
+is authenticated, tenant-scoped, rate-limited, assigned a correlation identifier, and forwarded
+to Task Service; the gateway returns Task Service’s response without reproducing its business
+rules.
+Identity Service. Identity receives registration or profile commands from the gateway
+and identity-provider claims from Authentication. It supplies stable person, service-principal,
+membership, consent, and assurance references to Organization, Program, Task, Verification,
+Reputation, Billing, Chat, and Reporting. For example, after a participant verifies an email
+address, Identity publishes identity_verified; Task Service may then permit assignment
+while Reporting updates the verified-participant projection.
+Authentication Service.
+
+Authentication integrates with external OpenID Connect
+
+providers, Identity, the gateway, and the audit pipeline. It creates short-lived sessions and
+standards-conformant JSON Web Tokens but does not decide resource-level permission. For
+example, a mobile authorization-code exchange validates PKCE, maps the provider subject
+to an Identity record, rotates the refresh token, records the session, and returns an audiencebound access token; higher-risk clients may sender-constrain tokens with proof of possession.
+The assurance level, authenticator choice, and federation controls are selected through the
+platform’s identity risk assessment (Fett et al., 2023; Jones et al., 2015; Lodderstedt et al., 2025;
+National Institute of Standards and Technology, 2025; OpenID Foundation, 2023; Sakimura
+et al., 2015).
+Authorization Service. Authorization consumes identity, tenant membership, role, resource relationship, policy version, and assurance signals and returns an allow, deny, or step-up
+decision. It is called by the gateway for coarse checks and by domain services for high-value
+resource decisions. For example, Verification Service asks whether reviewer R-17 may override
+case VC-900; Authorization checks the reviewer assignment and separation-of-duties policy and
+returns the policy identifier with the decision.
+Organization Service. Organization owns tenant institutions, memberships, delivery capacity, and accountable administrators. It consumes verified identities and supplies organization
+references to Program, Billing, Partner, Reputation, and Reporting. For example, approving
+organization ORG-8 publishes organization_approved, allowing Program Service to accept a
+funded program and Billing Service to open the correct customer account.
+Program Service. Program receives program-design commands from authorized organization users and validates sponsor, geography, indicator, budget, and policy references. It
+sends outcome definitions to Workflow, Task, Verification, Opportunity, Billing, and Reporting. For example, activating a reforestation program publishes program_activated; Workflow
+creates the approved process template, Task opens field work, and Reporting initializes outcome
+baselines.
+Task Service. Task consumes active programs, identity eligibility, organization membership, and workflow rules and owns task and assignment state. It publishes assignment and
+completion facts to Workflow, Notification, Submission, Reputation projections, and Reporting. For example, accepting task T-51 uses an idempotency key, verifies capacity with Program,
+
+12
+
+stores the assignment, and publishes task_assigned for Notification to alert the participant.
+Workflow Service. Workflow coordinates long-running program processes without owning
+the underlying domain entities. It consumes events from Program, Task, Submission, Verification, Billing, and Partner services, persists process state, and issues explicit commands to
+the next owner. For example, task_completed advances a workflow from field execution to
+evidence review and commands Submission Service to open a submission window; a timeout
+creates an escalation rather than silently skipping the step.
+Verification Service. Verification owns the case state machine and combines policy,
+GPS, media, fraud, model, and human-review signals. It consumes submission_finalized
+and evidence-analysis events, calls Authorization for reviewer actions, and publishes signed decisions to Economist, Impact Score, Audit, Billing, Graph, and Reporting. For example, a
+case with valid location and media but low model confidence moves to human review; approval
+publishes verification_approved with the policy version and evidence hashes.
+Evidence Service. Evidence owns evidence metadata, checksums, provenance, retention
+class, access policy, and object references while binary content resides in versioned object storage.
+It integrates with Submission, Media, GPS, Verification, Audit, and privacy workflows. For
+example, an image upload is malware-scanned, hashed, stored under a tenant-scoped key, and
+acknowledged to Submission only after the metadata and object version are durably linked.
+GPS Service. GPS receives device coordinates and capture metadata through Submission,
+evaluates geofence, accuracy, time, motion, and spoofing signals, and returns a signed location
+assessment to Verification and Fraud Detection. For example, a capture 18 meters inside the
+approved project polygon with acceptable accuracy publishes location_validated; a mocklocation signal publishes location_flagged instead.
+Media Service. Media creates safe derivatives, extracts technical metadata, performs
+format validation, and prepares images, audio, or video for Vision AI and authorized viewers.
+It consumes Evidence object references and publishes derivative readiness or quarantine results.
+For example, a submitted video is transcoded to a review format, stripped of unsafe metadata,
+assigned preview thumbnails, and then released to Vision AI through a time-limited object
+reference.
+Audit Service. Audit receives append-only security and business decision records from
+every service and exports them to immutable archival storage and the security monitoring
+system. It never becomes the owner of domain state. For example, a verification override records
+the actor, before and after state, justification, policy, device, trace identifier, and evidence hashes
+so an auditor can reconstruct the decision without querying application logs.
+Submission Service. Submission owns the participant’s draft, required evidence checklist,
+declaration, and finalization state. It integrates with Task, Evidence, GPS, Media, Workflow,
+Verification, and Notification. For example, finalization confirms that the assigned task is active,
+all required evidence objects are durable, consent is current, and the declaration is signed before
+publishing submission_finalized.
+Vision AI Service. Vision AI consumes approved media derivatives and the program’s
+evidence rubric, invokes a registered multimodal model, validates the structured output, and
+publishes observations to Verification rather than a final business decision. For example, it may
+
+13
+
+report that 47 tree seedlings are visible with confidence intervals and identify blurred regions;
+Verification compares this with the task requirement and other signals.
+Fraud Detection Service. Fraud Detection consumes identity risk, device, timing, GPS,
+media similarity, submission velocity, and prior-case signals and returns explainable risk indicators to Verification and Audit. For example, the same photograph appearing in three tenants produces duplicate_evidence_suspected with the matching hashes; Verification decides
+whether review or rejection is appropriate.
+Economist Agent. The Economist Agent consumes an approved verification case, outcome
+methodology, market or sponsor coeﬀicients, and program budget constraints and proposes a
+valuation record. The Reputation or Economic owner validates deterministic rules before an
+asset or ledger movement is created. For example, an approved water-delivery outcome is
+translated into a proposed quantity and value with the methodology version and calculation
+inputs attached for reviewer inspection.
+Graph Synthesis Agent. Graph Synthesis consumes verified entity and relationship facts,
+proposes normalized graph mutations, and sends them to Graph Service through a schemavalidated command. It cannot write Neo4j directly. For example, impact_asset_created
+yields a proposed relationship among participant, organization, program, location, outcome,
+and methodology; Graph Service checks identifiers and applies the idempotent mutation.
+AI Orchestrator. The orchestrator selects registered models and tools, enforces dataclassification and budget policy, manages timeouts and fallbacks, and records inference lineage.
+It coordinates Vision, Fraud, Economist, Auditor, Planner, Broker, Recommendation, Speech,
+and Compliance modules without becoming the owner of their business outcomes. For example,
+a provider timeout can route an eligible request to a second approved model while preserving
+the same correlation identifier and recording the fallback reason.
+Auditor Agent. Auditor Agent reads a bounded evidence package from Audit, Verification,
+Program, and policy stores and proposes control findings for a human auditor. For example, it
+can identify that a review occurred after the service-level deadline or that a policy version was
+superseded, but only Audit or Compliance owners can close the finding.
+Broker Agent. Broker Agent consumes approved opportunities, participant eligibility,
+reputation, geography, capacity, and declared preferences and proposes candidate matches to
+Matching Service. For example, it can rank three qualified field teams for an opportunity
+while exposing the factors used; Matching applies hard policy constraints and records the final
+recommendation.
+Planner Agent. Planner Agent consumes program objectives, resource capacity, calendars,
+geography, risk, and historical throughput and proposes schedules or task decomposition to
+Program and Workflow. For example, it may propose dividing a regional survey into ten tasks
+with travel-eﬀicient sequencing; an authorized program manager approves the plan before tasks
+are created.
+Recommendation Agent. Recommendation Agent consumes consented profile, behavior,
+eligibility, and opportunity projections and proposes personalized content to Marketplace or the
+user experience layer. For example, it recommends an Arabic-language training program to an
+eligible participant but suppresses sensitive inferences and records why the item was selected.
+
+14
+
+Speech AI Service. Speech AI consumes an authorized audio evidence derivative, performs
+transcription and language detection, and returns timestamped text and confidence to Evidence
+and Verification. For example, a participant’s Arabic field statement is transcribed, linked to the
+original audio hash, and routed for human confirmation when confidence is below the configured
+threshold.
+Compliance Service. Compliance maps program, partner, privacy, evidence, and transaction facts to jurisdictional and contractual rules and raises blocking or advisory findings. For
+example, a proposed cross-region evidence transfer is denied when the data classification and
+tenant policy require regional residency; the denial and policy reference are sent to Audit and
+Workflow.
+Media Distribution Service. Media Distribution receives explicitly approved public
+assets from Reporting or Program, creates channel-specific renditions, and publishes through
+configured external channels. It never publishes raw evidence. For example, an approved impact
+story is resized, localized, watermarked, scheduled, and posted after consent and brand checks
+pass.
+Impact Score Service. Impact Score consumes approved impact assets, reversals, methodology versions, and time-decay rules and owns the participant score projection. It publishes an
+explainable score change to Portfolio, Matching, Graph, Notification, and Reporting. For example, an approved asset increases a participant’s environmental score; a later revocation produces
+a compensating score event rather than rewriting history.
+Organization Score Service. Organization Score aggregates verified program outcomes,
+quality, timeliness, disputes, and reversals for an organization. It consumes Organization,
+Program, Verification, and Impact Score facts and supplies explainable indicators to Marketplace, Partner, Graph, and Reporting. For example, repeated late evidence reviews reduce an
+operational-quality component while leaving unrelated impact quantities unchanged.
+Portfolio Service. Portfolio owns the user’s or organization’s read model of impact assets,
+certificates, score explanations, and visibility settings. It consumes Reputation and Verification events and serves the web, mobile, partner export, and reporting channels. For example,
+impact_asset_created adds a pending-visible asset, while certificate generation later attaches
+a signed document reference.
+Opportunity Service. Opportunity owns sponsor demand, eligibility, geography, capacity,
+application window, and commercial terms. It consumes approved organization and program
+references and publishes opportunity lifecycle events to Matching, Notification, Partner, Billing,
+and Reporting. For example, publishing a coastal-cleanup opportunity triggers Matching to
+evaluate qualified organizations and Notification to alert opted-in users.
+Matching Service. Matching combines Opportunity constraints with Identity, Organization, Reputation, Portfolio, and consented preference projections. It stores the explainable
+match result and supports acceptance, rejection, and appeal. For example, a high-scoring candidate is excluded when required regional certification is absent, while the next eligible candidate
+is returned with the decisive factors.
+Billing Service. Billing owns customer accounts, invoices, credits, tax context, and receivables while referencing programs, subscriptions, and verified outcomes. It integrates with
+
+15
+
+Organization, Program, Subscription, Payment, Verification, Partner, and Reporting. For example, an outcome-based contract creates an invoice line only after verification_approved
+and the relevant contractual milestone are both present.
+Payment Service. Payment isolates payment-provider APIs, tokenized payment methods,
+intents, captures, refunds, webhooks, and reconciliation. It consumes payable invoices from
+Billing and publishes settlement facts back to Billing, Audit, Notification, and Reporting. For
+example, a provider webhook is signature-validated and deduplicated before payment_settled
+closes the invoice.
+Subscription Service. Subscription owns plans, entitlements, renewal state, usage allowances, trials, and cancellation timing. It integrates with Billing, Payment, Organization,
+Platform, and the gateway’s entitlement checks. For example, a successful renewal publishes
+subscription_renewed; Platform updates tenant limits and Billing records the next cycle.
+Coin Service. Coin owns the MASAREN internal-unit ledger, issuance policy, transfer
+constraints, and redemption references; it does not masquerade as legal tender or replace the
+financial ledger. It consumes authorized reward or settlement commands from Economic services and publishes balances to Portfolio, Notification, Audit, and Reporting. For example, an
+approved incentive creates balanced debit and credit entries tied to the verification case and
+idempotency key.
+Notification Service. Notification consumes user-facing events from Task, Workflow, Verification, Marketplace, Billing, Payment, Subscription, Chat, and Reputation. It applies preference, consent, urgency, localization, and quiet-hour policy before delivering through push, email,
+SMS, or in-app channels. For example, task_assigned produces an Arabic push notification
+and an in-app record, while delivery failure is retried without replaying the task command.
+Chat Service. Chat owns conversations, membership, messages, moderation state, and
+delivery receipts and uses NATS or WebSocket fan-out for live presence. It integrates with
+Identity, Organization, Program, Task, Media, Notification, Compliance, and Audit. For example, a program team opens a task-linked conversation; attachments are routed through Media
+and Evidence controls, and an offline recipient receives a notification.
+Reporting Services. Reporting consumes governed events and snapshots from every
+bounded context into versioned analytical projections. It produces operational dashboards,
+sponsor reports, audit extracts, and public impact summaries without issuing domain commands. For example, a sponsor report joins program targets, approved verification cases, payments, and methodology versions and exposes drill-through links to authorized evidence.
+Partner Service. Partner owns partner registration, credentials, scopes, webhook subscriptions, quotas, sandbox access, and data-sharing agreements. It integrates with Identity,
+Authorization, Program, Opportunity, Billing, Audit, and the gateway. For example, a partner
+subscribes to opportunity_published; Partner signs the webhook, retries with backoff, and
+disables delivery after repeated failures without blocking Opportunity Service.
+Ads Service. Ads owns campaign, placement, creative approval, budget, targeting constraints, and delivery measurement. It consumes only consented and policy-approved audience
+segments from Reporting or Recommendation and sends billing facts to Billing. For example, a sponsor campaign targets organizations interested in a public program category without
+
+16
+
+exposing individual evidence or sensitive attributes.
+Platform Service. Platform owns tenant configuration, feature flags, service catalog
+metadata, maintenance windows, usage limits, and operational policy references. It integrates
+with Subscription, Organization, gateway, deployment automation, and all services that consume configuration. For example, enabling a verification feature for one pilot tenant publishes
+tenant_configuration_changed; services refresh the versioned configuration without redeployment.
+Graph Service. Graph Service is the sole writer to the knowledge graph and validates
+entity identifiers, relationship types, provenance, and replay safety. It consumes approved
+mutations from domain events and Graph Synthesis and supplies relationship queries to Reputation, Matching, Reporting, and authorized investigators. For example, a revoked impact
+asset marks the relationship as invalid from the revocation time instead of deleting historical
+lineage.
+Authentication compatibility adapter. If the separate Python authentication workload
+on development port 8093 remains necessary, it acts only as a compatibility adapter behind
+Authentication Service and may not create a second identity or token authority. For example,
+a legacy client request is translated to the canonical OpenID Connect flow and the resulting
+session is still owned and audited by Authentication Service.
+Integration acceptance. Each service team must provide an OpenAPI or event schema,
+producer and consumer ownership, example request and event payloads, authorization policy,
+idempotency behavior, timeout and retry policy, data classification, observability fields, compatibility tests, and a failure-mode test. A service is not considered integrated merely because
+another service can call it in a development environment.
+End-to-End Program-to-Impact Workflow Figure 5 shows the reference workflow that
+every team can use for contract tests and production tracing. The example begins when an
+approved organization launches a tree-planting program and ends when the verified result appears in a portfolio, sponsor report, marketplace eligibility projection, and financial record. The
+same correlation identifier follows the entire journey, while each service creates its own local
+transaction and publishes the next fact through the outbox.
+Program
+
+Workflow
+
+Marketplace, Billing,
+and Payment
+
+Scores, Graph,
+and Portfolio
+
+Organization
+
+Reporting, Partner,
+and Notification
+
+Task
+
+Economist and
+Impact Asset
+
+Submission
+
+Evidence, GPS,
+and Media
+
+Verification and
+human review
+
+Vision and Fraud
+signals
+
+Figure 5: Reference program-to-impact service workflow
+Step 1: organization and program authorization. An organization administrator
+signs in through Authentication. The gateway asks Authorization whether the administrator
+may create a program for ORG-8. Organization confirms the tenant is active, and Program stores
+the program definition, outcome methodology, evidence rubric, budget reference, and sponsor
+terms before publishing program_activated.
+Step 2: workflow and task creation. Workflow consumes program_activated, instantiates the approved process version, and commands Task to create field assignments. Task
+17
+
+validates the program state and participant eligibility with Identity and Authorization, stores
+task T-51, and publishes task_assigned. Notification delivers the assignment without participating in the task transaction.
+Step 3: field execution and draft capture. The mobile client loads the task through the
+gateway and works offline if required. Submission opens a draft linked to the task. Evidence
+issues controlled upload references, Media prepares derivatives, and GPS creates a location
+assessment. A client retry uses the same idempotency key, so duplicate uploads or finalization
+commands do not create duplicate submissions.
+Step 4: submission finalization. Submission confirms the required evidence types, declarations, consent version, task status, evidence hashes, and location result. It commits the
+finalized state and outbox row together, then publishes submission_finalized. Workflow
+advances the process to verification, and Audit records the participant action.
+Step 5: automated analysis. Verification opens case VC-900 and requests bounded
+analyses through AI Orchestrator. Vision AI returns observations against the program rubric;
+Fraud Detection returns device, duplication, timing, and geospatial risk indicators; Compliance
+checks residency and contractual rules. Each result is stored with model, prompt, policy, and
+input hashes before it is attached to the case.
+Step 6: policy decision and human review. Verification applies deterministic policy to the evidence package. If confidence and risk meet the automation threshold, the case
+can proceed under the approved policy; otherwise Workflow assigns a reviewer and Notification alerts that reviewer.
+
+Authorization checks the reviewer relationship and assurance
+
+level. The final signed decision publishes verification_approved, verification_rejected,
+or verification_flagged with reason codes and appeal rights.
+Step 7: value creation. Economist Agent consumes only an approved case and proposes
+outcome quantity and value using the governed methodology. The owning Reputation or Economic service validates the deterministic calculation, creates the impact asset, and publishes
+impact_asset_created. A later appeal never deletes history; reversal creates a compensating
+event and revokes the asset from the effective time.
+Step 8: reputation and knowledge projection. Impact Score and Organization Score
+update explainable projections from the asset event. Portfolio attaches the asset to the authorized holder. Graph Service records relationships among participant, organization, program,
+evidence, location, methodology, and asset. Because these are projections, they can be rebuilt
+from authoritative facts and reconciliation checkpoints.
+Step 9: market and economic effects. Matching reevaluates opportunities that depend
+on the new score or asset type. Billing checks whether the sponsor contract contains a verifiedoutcome milestone and, if so, creates an invoice line. Payment later processes the payable
+invoice through an external provider, while Coin may create a separately governed internal
+reward entry. Every movement references the originating verification case and contract.
+Step 10: communication and reporting. Notification tells the participant and organization that the outcome is approved. Reporting updates operational, sponsor, and audit
+projections; Partner sends subscribed webhooks; Media Distribution may publish only an explicitly approved public story. No reporting, notification, or partner failure rolls back the verified
+
+18
+
+case; failed consumers retry from their durable positions.
+Failure and replay behavior. If Vision AI is unavailable, AI Orchestrator uses an approved fallback or routes the case to manual review. If Kafka is unavailable after a domain commit, the outbox retains the publication intent until the relay succeeds. If a consumer crashes
+after applying its change, the durable inbox prevents the redelivered event from applying the
+effect twice. If a downstream projection becomes corrupt, its owner rebuilds from a checkpoint
+and replay without changing the authoritative Program, Task, Submission, Verification, Asset,
+or Ledger records.
+Workflow acceptance test. A release candidate must run this journey with a fixed
+correlation identifier through the web or mobile client, API gateway, every participating domain,
+Kafka, object storage, databases, telemetry, and audit archive. The test passes only when the
+final portfolio, report, graph, invoice state, notifications, and trace can all be reconciled to the
+same program, task, submission, verification case, and impact asset.
+The service-specific responsibilities, upstream and downstream dependencies, example transactions, and failure expectations are consolidated in the Service Integration Playbook and the
+reference workflow above. This consolidation is intentional: teams should use one integration
+contract rather than reconcile a second catalog of isolated feature lists.
+
+19
+
+5 Combined Backend Architecture
+Purpose and Design The Combined Backend is a design pattern unique to the MASAREN
+platform that merges all 35+ microservices into a single FastAPI process for local development
+eﬀiciency. This approach eliminates the overhead of running 30+ separate Docker containers
+during development while maintaining complete service compatibility.
+Purpose. Single-process backend that merges all microservices for local development. Architecture. Imports each service as a uniquely-named package and routes requests to appropriate handlers. Benefits. Local development on a laptop or small cloud droplet without running
+the full Docker stack. Complexity. Duplicate table registration requires SQLAlchemy Table.__new__ patching. Performance. Single process eliminates network overhead between
+services.
+Service Registration Mechanism The combined backend programmatically registers each
+service package at runtime. Each service is given a unique alias and its source directory is added
+to Python’s module path:
+SERVICES = [
+("ms_identity",
+("ms_auth",
+("ms_authz",
+("ms_organization",
+("ms_program",
+("ms_task",
+("ms_workflow",
+("ms_verification",
+("ms_evidence",
+("ms_gps",
+("ms_audit",
+("ms_media",
+("ms_submission",
+("ms_graph",
+("ms_reputation",
+("ms_impact_score",
+("ms_org_score",
+("ms_marketplace",
+("ms_matching",
+("ms_report",
+("ms_analytics",
+("ms_forecast",
+("ms_notification",
+("ms_chat",
+("ms_billing",
+("ms_payment",
+("ms_subscription",
+("ms_partner",
+("ms_coin",
+("ms_ads",
+("ms_platform",
+]
+
+"identity/identity-service"),
+"identity/authentication-service"),
+"identity/authorization-service"),
+"execution/organization-service"),
+"execution/program-service"),
+"execution/task-service"),
+"execution/workflow-service"),
+"verification/verification-service"),
+"verification/evidence-service"),
+"verification/gps-service"),
+"verification/audit-service"),
+"verification/media-service"),
+"verification/submission-service"),
+"graph/graph-service"),
+"reputation/portfolio-service"),
+"reputation/impact-score-service"),
+"reputation/organization-score-service"),
+"marketplace/opportunity-service"),
+"marketplace/matching-service"),
+"reporting/report-service"),
+"reporting/analytics-service"),
+"reporting/forecast-service"),
+"notifications/notification-service"),
+"chat-service"),
+"billing/billing-service"),
+"billing/payment-service"),
+"billing/subscription-service"),
+"partners/partner-service"),
+"coin/coin-service"),
+"ads/ads-service"),
+"platform/platform-service"),
+
+20
+
+Listing 1: Service Registration in combined/main.py
+Package Registration Function Each service is dynamically registered as a top-level Python
+package. This allows standard Python imports to resolve service modules correctly:
+def _register_service_package(alias: str, rel: str) -> None:
+\"\"\"Register backend/<rel> as a top-level package named alias.\"\"\"
+svc_root = os.path.join(BACKEND, rel)
+pkg = types.ModuleType(alias)
+pkg.__path__ = [svc_root]
+pkg.__package__ = alias
+sys.modules[alias] = pkg
+
+Listing 2: Dynamic Package Registration
+Duplicate Table Resolution A critical challenge of merging 30+ independent services is that
+many define the same SQLAlchemy ORM tables (e.g., users, organizations). The solution
+is a monkey-patch on Table.__new__ that deduplicates table registrations:
+import sqlalchemy as _sa
+from sqlalchemy import Table as _Table
+_orig_table_new = _Table.__new__
+def _patched_table_new(cls, *args, **kwargs):
+metadata = kwargs.get("metadata") or \
+(args[1] if len(args) >= 2 else None)
+name = kwargs.get("name") or \
+(args[0] if args else None)
+schema = kwargs.get("schema")
+if metadata is not None and name is not None:
+key = (schema, name) if schema else name
+if key in metadata.tables:
+return metadata.tables[key]
+return _orig_table_new(cls, *args, **kwargs)
+_Table.__new__ = staticmethod(_patched_table_new)
+
+Listing 3: SQLAlchemy Table Deduplication
+Route Merging After registering packages and patching tables, the combined backend iterates
+through all services and merges their FastAPI routes into a single application:
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+app = FastAPI(
+title="MASAREN Combined Backend",
+
+21
+
+version="0.1.0"
+)
+for alias, rel in SERVICES:
+try:
+_register_service_package(alias, rel)
+mod = importlib.import_module(f"{alias}.src.main")
+svc = getattr(mod, "app", None)
+if svc is None:
+continue
+for r in list(svc.routes):
+if getattr(r, "path", None) in SKIP:
+svc.routes.remove(r)
+app.include_router(svc.router)
+for exc_type, handler in \
+svc.exception_handlers.items():
+if exc_type not in app.exception_handlers:
+app.add_exception_handler(exc_type, handler)
+_included.append(alias)
+print(f"[combined] OK included {alias}", flush=True)
+except Exception as e:
+print(f"[combined] FAIL {alias}: {e!r}", flush=True)
+app.add_middleware(
+CORSMiddleware,
+allow_origins=os.getenv(
+"CORS_ORIGINS",
+"http://localhost:3000,http://localhost:3001"
+).split(","),
+allow_credentials=True,
+allow_methods=["*"],
+allow_headers=["*"],
+)
+
+Listing 4: Route Merging
+Service Skip List Certain routes are excluded from the combined backend to avoid conflicts:
+Gateway routes (/api/v1/*) – the gateway should not proxy to itself. Duplicate health
+check endpoints (only one /health is kept). OpenAPI documentation endpoints (only the
+combined app’s docs are exposed).
+
+22
+
+6 Web Application Architecture
+Component Architecture The web application at apps/web uses React and TypeScript with
+Vite as its build system. Layout components establish navigation and responsive page structure;
+reusable common components provide branding, errors, and shared interaction behavior; feature
+pages compose those elements around user journeys; the service layer isolates HTTP contracts;
+and stores, hooks, types, tests, and localization modules keep state, behavior, schemas, verification, and language concerns separate. This organization prevents page components from
+becoming collections of unrelated network, authorization, and presentation logic.
+Directory Structure
+apps/web/src/
+components/
+layout/
+
+TopNav, Sidebar, Header, RightRail
+
+common/
+
+Branding, ErrorBoundary, Icons
+
+pages/
+
+30+ page components
+
+services/
+
+API client layer
+
+store/
+
+React Context providers
+
+hooks/
+
+Custom React hooks
+
+types/
+
+TypeScript type definitions
+
+test/
+
+Test utilities and setup
+
+i18n.tsx
+
+Internationalization configuration
+
+Page Structure The application groups routes by user journey rather than treating each
+screen as an isolated feature. Public acquisition uses / and /landing; registration and signin use /register and /login; the authenticated workspace begins at /dashboard; and program execution uses /programs, /tasks, and /evidence. Verified outcomes are communicated
+through /passport, /portfolio, /reports, and the public personnel or institution profile
+routes. Marketplace and economic journeys use /opportunities, /billing, and /wallet,
+while collaboration uses /notifications, /chat, and /feed. Administrative functions are isolated below /admin and require explicit tenant-scoped policy, elevated assurance, and audit
+logging. The route registry records ownership, permissions, data dependencies, loading and
+error behavior, analytics events, keyboard operation, focus management, contrast, language
+direction, and testable WCAG 2.2 acceptance criteria (World Wide Web Consortium, 2024).
+Routing Architecture Protected routing is implemented as a presentation-layer guard that
+improves navigation and prevents accidental access, while the gateway and domain services
+remain responsible for authoritative authorization. The route component checks session state,
+redirects unauthenticated users to sign-in, and sends users without the required presentation
+role to a safe landing page; server-side policy still reevaluates tenant, resource, and action
+permissions on every protected request.
+function RequireRole({
+roles,
+
+23
+
+children
+}: {
+roles: string[];
+children: ReactElement;
+}) {
+const { user, isAuthenticated } = useAuth();
+if (!isAuthenticated) return <Navigate to="/login" replace />;
+if (user && !roles.includes(user.role))
+return <Navigate to="/dashboard" replace />;
+return children;
+}
+
+Listing 5: Protected Route Implementation
+State Management The application separates client-owned state from server-owned state.
+React Context retains small, process-local concerns such as the authenticated-session view,
+theme, language direction, and transient interface state, whereas TanStack Query owns remote
+data, caching, invalidation, background refresh, request status, and carefully bounded optimistic
+updates. Keeping these responsibilities distinct avoids duplicating authoritative domain data
+inside global client stores and gives every mutation an explicit reconciliation path.
+Internationalization The application supports bilingual English/Arabic operation:
+// apps/web/src/i18n.tsx
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+i18n.use(initReactI18next).init({
+resources: {
+en: { translation: enTranslations },
+ar: { translation: arTranslations }
+},
+lng: 'en',
+fallbackLng: 'en',
+interpolation: { escapeValue: false }
+});
+
+Listing 6: i18n Configuration
+Authentication Flow The authentication journey begins when the user opens the sign-in
+route and is redirected to the configured OpenID Connect authorization endpoint. After the
+authorization-code and PKCE exchange succeeds, Authentication Service creates the session
+and returns a short-lived access token through the approved browser session pattern. The API
+client attaches the token only to the intended gateway audience; when the gateway reports an
+expired session, a single coordinated refresh attempt prevents parallel refresh storms, replays
+only safe requests, and returns the user to sign-in if rotation, risk, or account state prevents
+renewal (Lodderstedt et al., 2025; OpenID Foundation, 2023; Sakimura et al., 2015).
+
+24
+
+API Client Layer The services layer provides typed API interaction and centralizes base
+URLs, authentication headers, correlation identifiers, error normalization, cancellation, and
+retry rules. Generated or reviewed types remain aligned with the OpenAPI contract, while
+interceptors are limited to transport concerns so they cannot conceal business errors or retry
+unsafe commands without an idempotency key (Fielding et al., 2022; OpenAPI Initiative, 2024).
+// apps/web/src/services/
+import axios from 'axios';
+const api = axios.create({
+baseURL: import.meta.env.VITE_API_URL ||
+'http://localhost:8080/api/v1',
+});
+api.interceptors.request.use((config) => {
+const token = getAccessToken();
+if (token) {
+config.headers.Authorization = `Bearer ${token}`;
+}
+return config;
+});
+api.interceptors.response.use(
+(response) => response,
+async (error) => {
+if (error.response?.status === 401) {
+await refreshToken();
+return api.request(error.config);
+}
+return Promise.reject(error);
+}
+);
+
+Listing 7: API Client Structure
+
+25
+
+7 Mobile Application Architecture
+Architecture Overview The mobile application at apps/mobile is built with Flutter and
+follows the MVVM (Model-View-ViewModel) architecture pattern with Provider for state management. It preserves parity for core journeys while adapting navigation, capture, offline synchronization, accessibility, and secure local storage to mobile constraints. Mobile acceptance
+applies WCAG guidance to native interaction and uses the OWASP Mobile Application Security Verification Standard for storage, authentication, network, platform, code, resilience, and
+privacy controls (OWASP Foundation, 2024; World Wide Web Consortium, 2025).
+Directory Structure
+apps/mobile/lib/
+features/
+
+Feature-specific modules
+
+providers/
+
+ChangeNotifier providers
+
+services/
+
+API client and service layer
+
+widgets/
+
+Reusable UI components
+
+models/
+
+Data models and DTOs
+
+screens/
+
+Full-page screen widgets
+
+utils/
+
+Utility functions and helpers
+
+main.dart
+
+Application entry point
+
+Screen Structure The Flutter experience is organized around connected journeys rather than
+an inventory of isolated screens. Registration and sign-in establish a secure session and lead to
+a dashboard that summarizes assignments, deadlines, verification decisions, and quick actions.
+Program discovery flows into enrollment, task acceptance, guided execution, and evidence capture with camera and location binding; approved results then appear in the digital passport,
+portfolio, reports, and marketplace eligibility. Profile, chat, feed, and notifications support collaboration around those journeys, while billing, subscription, and wallet views expose economic
+state without embedding payment or ledger logic in the client.
+State Management The app uses the Provider package for state management:
+// main.dart
+void main() {
+runApp(
+MultiProvider(
+providers: [
+ChangeNotifierProvider(create: (_) => AuthProvider()),
+ChangeNotifierProvider(create: (_) => ThemeProvider()),
+ChangeNotifierProvider(create: (_) => ProgramProvider()),
+ChangeNotifierProvider(create: (_) => TaskProvider()),
+ChangeNotifierProvider(create: (_) => EvidenceProvider()),
+ChangeNotifierProvider(create: (_) => NotificationProvider()),
+],
+child: const MasarenApp(),
+),
+);
+
+26
+
+}
+
+Listing 8: Provider Setup
+Navigation Architecture Navigation combines a stable bottom bar for the highest-frequency
+destinations with a secondary drawer for settings, help, product information, and session termination. Typed deep links translate verified notification payloads into a permitted destination,
+and modal routes are reserved for short, interruptible actions such as evidence capture, chat
+composition, and focused forms. The navigation state preserves unsent work, restores safely
+after process termination, and never treats possession of a deep link as authorization.
+Mobile-Specific Features Device capabilities are composed into the evidence workflow rather
+than exposed as unrelated features. Camera or gallery capture creates a local evidence draft,
+location binding adds an accuracy- and timestamp-aware assessment, and the offline queue
+preserves the command and object-upload state until connectivity returns. Push notifications
+direct the user to assignments or decisions, local biometrics may unlock an already established device session, and file handling opens signed certificates or reports through controlled
+storage. Permission denial, stale location, upload interruption, duplicate synchronization, and
+device compromise are treated as explicit states and tested against the mobile security baseline
+(OWASP Foundation, 2024; World Wide Web Consortium, 2025).
+API Integration
+class ApiService {
+static const String baseUrl =
+'http://localhost:8080/api/v1';
+Future<Map<String, dynamic>> get(
+String endpoint, {
+Map<String, String>? headers,
+}) async {
+final response = await http.get(
+Uri.parse('$baseUrl/$endpoint'),
+headers: {
+'Content-Type': 'application/json',
+'Authorization': 'Bearer ${await getToken()}',
+...?headers,
+},
+);
+return json.decode(response.body);
+}
+Future<Map<String, dynamic>> post(
+String endpoint, {
+Map<String, dynamic>? body,
+}) async {
+final response = await http.post(
+Uri.parse('$baseUrl/$endpoint'),
+headers: {
+'Content-Type': 'application/json',
+'Authorization': 'Bearer ${await getToken()}',
+
+27
+
+},
+body: json.encode(body),
+);
+return json.decode(response.body);
+}
+}
+
+Listing 9: API Service Layer
+Bilingual Support The mobile app provides full bilingual support similar to the web:
+class MasarenLocalizations {
+static const Map<String, Map<String, String>> _localized = {
+'en': {
+'app.title': 'MASAREN',
+'nav.home': 'Home',
+'nav.programs': 'Programs',
+'nav.tasks': 'Tasks',
+'nav.profile': 'Profile',
+},
+'ar': {
+'app.title': '\u0645\u0633\u0627\u0631\u064a\u0646',
+'nav.home': '\u0627\u0644\u0631\u0626\u064a\u0633\u064a\u0629',
+'nav.programs': '\u0627\u0644\u0628\u0631\u0627\u0645\u062c',
+'nav.tasks': '\u0627\u0644\u0645\u0647\u0627\u0645',
+'nav.profile': '\u0627\u0644\u0645\u0644\u0641 \u0627\u0644\u0634\u062e\u0635\u064a',
+},
+};
+}
+
+Listing 10: Internationalization Setup
+
+28
+
+8 Event-Driven Architecture
+Kafka Event Bus Apache Kafka serves as the durable integration backbone for domain facts
+and high-volume processing. The platform pins a supported Kafka release through an infrastructure bill of materials, runs KRaft mode, and upgrades through tested compatibility stages rather
+than embedding a version assumption in application contracts. Production uses at least three
+brokers across failure zones, replication appropriate to the durability tier, minimum in-sync
+replica enforcement, authenticated and encrypted clients, quotas, lag monitoring, and tested
+broker recovery. Kafka’s ordering guarantee applies within a partition, so aggregate identifiers
+are used as partition keys when per-aggregate order matters (Apache Software Foundation,
+2026).
+Event Catalog The event catalog records business facts rather than implementation commands. Each name uses past tense, belongs to one producing context, identifies its supported
+consumers, carries a compatibility policy, and links to an AsyncAPI channel and schema. The
+catalog below illustrates the core flow from organization and program creation through task
+execution, evidence verification, asset creation, reputation projection, and graph updates; it is
+governed as a contract registry rather than copied independently into consumer code (AsyncAPI
+Initiative, 2023; Cloud Native Computing Foundation, 2024).
+Event
+organization_created
+program_created
+task_created
+task_assigned
+task_started
+task_completed
+location_reached
+submission_uploaded
+evidence_uploaded
+evidence_verified
+fraud_detected
+impact_asset_created
+impact_score_updated
+organization_score_
+updated
+portfolio_updated
+graph_updated
+
+Domain
+Execution
+Execution
+Execution
+Execution
+Execution
+Execution
+Verification
+Verification
+Verification
+AI/Vision
+AI/Fraud
+AI/Economist
+Reputation
+Reputation
+
+Description
+A new organization has been registered
+A new program has been launched
+A new task has been defined
+Task assigned to a volunteer
+Volunteer began task execution
+Volunteer marked task as done
+GPS confirms arrival at target location
+Evidence submitted for verification
+Media evidence uploaded
+AI completed verification analysis
+Suspicious pattern identified
+New impact asset minted
+PMS recalculated
+OII recalculated
+
+Reputation
+Graph
+
+User portfolio changed
+Neo4j knowledge graph updated
+
+Event Schema Each domain event follows a standardized schema:
+from pydantic import BaseModel, Field
+from datetime import datetime, timezone
+from uuid import UUID, uuid4
+class DomainEvent(BaseModel):
+specversion: str = "1.0"
+event_id: UUID = Field(default_factory=uuid4)
+event_type: str
+
+29
+
+subject: str
+source: str
+tenant_id: UUID
+schema_version: int = 1
+occurred_at: datetime = Field(
+default_factory=lambda: datetime.now(timezone.utc)
+)
+correlation_id: UUID
+causation_id: UUID | None = None
+data: dict = Field(default_factory=dict)
+metadata: dict = Field(default_factory=dict)
+
+Listing 11: Domain Event Base Class
+Transactional Outbox Pattern To ensure atomicity between an aggregate change and the
+intent to publish its event, a service writes both records in one local database transaction. A
+separate relay claims unpublished rows, publishes with idempotent producer settings, records
+the broker result, and retries with bounded backoff. Consumers still assume duplicates because
+a crash can occur between publication and marking an outbox row as sent.
+from sqlalchemy import Column, String, JSON, DateTime, Enum
+from sqlalchemy.ext.declarative import declarative_base
+class OutboxMessage(Base):
+__tablename__ = "outbox_messages"
+id = Column(String, primary_key=True, default=uuid4)
+event_type = Column(String, nullable=False)
+aggregate_id = Column(String, nullable=False)
+aggregate_type = Column(String, nullable=False)
+payload = Column(JSON, nullable=False)
+status = Column(
+Enum("PENDING", "PUBLISHED", "FAILED"),
+default="PENDING"
+)
+created_at = Column(DateTime, default=datetime.utcnow)
+published_at = Column(DateTime, nullable=True)
+def save_aggregate_and_event(session, aggregate, event: DomainEvent) -> None:
+outbox = OutboxMessage(
+event_type=event.event_type,
+aggregate_id=str(event.subject),
+aggregate_type=event.source,
+payload=event.model_dump(mode="json")
+)
+session.add(aggregate)
+session.add(outbox)
+
+Listing 12: Transactional Outbox Implementation
+
+30
+
+Event Processing Pipeline A domain command first validates invariants and changes the
+aggregate inside a local PostgreSQL transaction. That same transaction inserts the corresponding outbox record, ensuring that committed state always retains its publication intent. A relay
+then claims pending rows, serializes the governed event envelope, publishes to the correct Kafka
+topic, and records the broker acknowledgement; failures leave the row available for bounded
+retry and operational escalation. Downstream consumers assume at-least-once delivery, insert
+the event identifier into a durable inbox, apply the business-side effect in the same transaction,
+and advance their consumer position only after commit. This sequence prevents a lost event
+from being mistaken for a successful command and prevents a redelivery from applying the
+same effect twice (Apache Software Foundation, 2026; PostgreSQL Global Development Group,
+2026).
+Consumer Implementation
+from sqlalchemy.exc import IntegrityError
+from shared.utils.kafka_consumer import KafkaConsumer
+class VerificationEventConsumer(KafkaConsumer):
+def __init__(self):
+super().__init__(
+topic="evidence_verified",
+group_id="verification-service-group"
+)
+async def process(self, event: DomainEvent) -> None:
+async with database.transaction() as tx:
+try:
+await tx.insert_inbox(event.event_id)
+except IntegrityError:
+return
+if event.data.get("status") == "APPROVED":
+await tx.enqueue_asset_creation(event)
+
+Listing 13: Idempotent Kafka Consumer
+
+31
+
+9 Shared Kernel
+The shared kernel at backend/shared provides reusable infrastructure code imported by all
+services as shared.*. It eliminates code duplication and ensures consistent patterns across the
+entire platform.
+Kernel Modules
+Module
+events/
+utils/cqrs.py
+utils/kafka_
+producer.py
+utils/kafka_
+consumer.py
+utils/outbox.py
+utils/cloud_llm_
+client.py
+utils/app_factory.
+py
+utils/health.py
+utils/logging.py
+middleware/
+base_entity.py
+base_repository.py
+constants.py
+dtos.py
+exceptions.py
+testing/
+types.py
+
+Purpose
+Domain event base classes and all 20+ event contract
+definitions
+CommandBus and QueryBus with middleware support
+for cross-cutting concerns
+Idempotent Kafka publisher with retry logic and error
+handling
+At-least-once consumer base with explicit offset management
+Transactional Outbox pattern implementation
+Unified abstraction for approved cloud AI provider APIs
+Shared FastAPI app factory with standardized configuration
+Composable health check system with Redis, PostgreSQL,
+Kafka checks
+Structured JSON logging with request ID propagation
+JWT validation, RBAC enforcement, bcrypt password
+hashing
+Abstract base for all domain entities with common fields
+Generic repository primitives with filtering and pagination
+Platform-wide constants, enums, and configuration
+Shared Data Transfer Objects for cross-service communication
+Standardized exception hierarchy with HTTP mapping
+Test fixtures, factories, and utilities
+Custom type definitions and generic aliases
+
+CQRS Pattern
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+class Command(ABC):
+pass
+class Query(ABC):
+pass
+class CommandBus:
+def __init__(self):
+self._handlers = {}
+def register(self, command_type, handler):
+self._handlers[command_type] = handler
+
+32
+
+async def dispatch(self, command: Command):
+handler = self._handlers.get(type(command))
+if not handler:
+raise ValueError(
+f"No handler for {type(command).__name__}"
+)
+return await handler.handle(command)
+class QueryBus:
+def __init__(self):
+self._handlers = {}
+def register(self, query_type, handler):
+self._handlers[query_type] = handler
+async def ask(self, query: Query):
+handler = self._handlers.get(type(query))
+if not handler:
+raise ValueError(
+f"No handler for {type(query).__name__}"
+)
+return await handler.handle(query)
+
+Listing 14: Command and Query Bus
+Health Check System
+from shared.utils.health import (
+HealthCheck,
+RedisHealthCheck,
+PostgresHealthCheck,
+KafkaHealthCheck,
+)
+async def health_check():
+checks = HealthCheck([
+PostgresHealthCheck(),
+RedisHealthCheck(),
+KafkaHealthCheck(),
+])
+return await checks.run()
+
+Listing 15: Health Check Implementation
+
+33
+
+10 Infrastructure and Deployment
+Production Reference Topology Production runs on a managed or conformance-tested Kubernetes platform distributed across at least three failure zones in the primary region. Stateless
+workloads use topology spread constraints, disruption budgets, readiness and startup probes,
+resource requests and limits, and horizontal autoscaling. Stateful data platforms use managed services where practical; self-managed stateful systems require documented quorum, antiaﬀinity, backup, upgrade, and restore procedures. Kubernetes guidance explicitly distinguishes
+a learning cluster from a resilient production environment, so a successful local Docker Compose
+launch is not considered evidence of production readiness (Kubernetes Authors, 2026a, 2026b).
+Figure 6 shows the reference runtime. Internet traﬀic passes through managed denial-ofservice protection, a web application firewall, and an ingress gateway. Public workloads do not
+directly expose domain services or databases. Each workload receives a short-lived workload
+identity, is constrained by default-deny network policy, and retrieves secrets dynamically from
+an approved secret manager. Telemetry leaves application namespaces through OpenTelemetry
+collectors. Backups and immutable audit copies cross the primary failure boundary, and recovery
+is proven by restoration rather than inferred from backup-job success.
+Web, mobile, admin,
+and partner clients
+
+DNS, DDoS, CDN,
+WAF, and rate limits
+
+Zone A
+domain and worker pods
+
+Workload identity, KMS,
+and secret manager
+
+Multi-zone PostgreSQL,
+Redis, Kafka, and graph
+
+Regional ingress
+and API gateway
+
+Zone B
+domain and worker pods
+
+Zone C
+domain and worker pods
+
+Cross-region backups,
+audit archive, and restore environment
+
+Versioned evidence
+object storage
+
+OpenTelemetry, metrics,
+logs, traces, and SIEM
+
+Figure 6: Multi-zone production deployment and recovery topology
+The minimum production launch gate requires a multi-zone control plane and worker pool,
+separate production accounts or subscriptions, private data endpoints, encrypted transport and
+storage, tested autoscaling, image signing and admission policy, vulnerability and secret scanning, progressive delivery with automatic rollback, database migration safety checks, centralized
+audit logging, on-call ownership, and completed restore and failover exercises. Builds generate
+verifiable provenance and a machine-readable bill of materials using an approved SPDX or CycloneDX profile; Terraform changes are reviewed and planned, container behavior follows the
+approved Docker baseline, and GitHub Actions workflows use pinned, least-privilege dependencies. These controls support traceability from source to deployed artifact rather than relying on
+image tags or informal release notes (Docker, Inc., 2026; GitHub, Inc., 2026; HashiCorp, 2026;
+OWASP Foundation, 2025b; SLSA Community, 2025; SPDX Project, 2024). Regional activepassive recovery is the default cost-conscious posture; active-active deployment is adopted only
+when business impact analysis shows that the tighter recovery objective justifies the additional
+consistency, testing, and operational complexity.
+Docker Compose Architecture The docker-compose.yml file defines services and infrastructure components for integration testing and full-stack local development. It is intentionally
+34
+
+non-production: it does not prove zone resilience, workload identity, managed key custody,
+policy enforcement, or disaster recovery.
+Component
+Gateway
+
+Web Frontend
+Admin Frontend
+Identity
+
+Auth
+
+Authz
+
+Organization
+
+Program
+
+Task
+
+Workflow
+
+Verification
+
+Evidence
+
+PostgreSQL
+Neo4j
+Redis
+Kafka
+MinIO
+NATS
+
+Image
+backend/
+Dockerfile.
+service
+apps/web/
+Dockerfile
+apps/admin/
+Dockerfile
+backend/
+Dockerfile.
+service
+backend/
+Dockerfile.
+service
+backend/
+Dockerfile.
+service
+backend/
+Dockerfile.
+service
+backend/
+Dockerfile.
+service
+backend/
+Dockerfile.
+service
+backend/
+Dockerfile.
+service
+backend/
+Dockerfile.
+service
+backend/
+Dockerfile.
+service
+postgis/postgis:
+16-3.4
+neo4j:5-community
+redis:7-alpine
+apache/kafka:
+<pinned>
+minio/minio
+nats:latest
+
+Port
+8080
+
+Purpose
+BFF API Gateway
+
+3000
+
+React web application
+
+3001
+
+Admin panel
+
+8001
+
+Identity management
+
+8002
+
+Authentication
+
+8003
+
+Authorization
+
+8004
+
+Organization management
+
+8005
+
+Program management
+
+8006
+
+Task management
+
+8007
+
+Workflow orchestration
+
+8008
+
+Verification engine
+
+8009
+
+Evidence management
+
+5432
+
+Primary database
+
+7687
+6379
+9092
+
+Knowledge graph
+Cache and sessions
+Event bus
+
+9000
+4222
+
+Blob storage
+Real-time messaging
+
+Dockerfile Pattern
+FROM python:3.11-slim
+WORKDIR /app
+RUN apt-get update && apt-get install -y gcc libpq-dev \\
+&& rm -rf /var/lib/apt/lists/*
+COPY backend/shared /app/shared
+
+35
+
+ARG SERVICE_PATH
+COPY \${SERVICE_PATH} /app/service
+WORKDIR /app/service
+RUN pip install --no-cache-dir -r requirements.txt
+EXPOSE 8000
+CMD ["uvicorn", "src.main:app", \\
+"--host", "0.0.0.0", "--port", "8000"]
+
+Listing 16: Dockerfile.service Template
+Database Migrations
+CREATE EXTENSION IF NOT EXISTS postgis;
+CREATE TABLE users (
+id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+email VARCHAR(255) UNIQUE NOT NULL,
+password_hash VARCHAR(255) NOT NULL,
+display_name VARCHAR(255),
+role VARCHAR(50) DEFAULT 'VOLUNTEER',
+email_verified BOOLEAN DEFAULT FALSE,
+created_at TIMESTAMPTZ DEFAULT NOW(),
+updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE TABLE organizations (
+id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+name VARCHAR(255) NOT NULL,
+description TEXT,
+logo_url TEXT,
+created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+Listing 17: Migration Example (V001__initial.sql)
+Kubernetes Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+name: identity-service
+spec:
+replicas: 3
+selector:
+matchLabels:
+app: identity-service
+template:
+metadata:
+labels:
+app: identity-service
+spec:
+
+36
+
+containers:
+- name: identity
+image: masaren/identity-service:latest
+ports:
+- containerPort: 8000
+livenessProbe:
+httpGet:
+path: /health
+port: 8000
+readinessProbe:
+httpGet:
+path: /health/ready
+port: 8000
+
+Listing 18: Service Deployment Template
+CI/CD Pipeline
+name: MASAREN CI
+on:
+push:
+branches: [main, develop]
+pull_request:
+branches: [main]
+jobs:
+test-shared:
+runs-on: ubuntu-latest
+steps:
+- uses: actions/checkout@v4
+- run: |
+cd backend/shared
+pip install -r requirements.txt
+pytest --cov=shared --cov-report=xml
+test-services:
+strategy:
+matrix:
+service: [identity, auth, organization, program, task]
+runs-on: ubuntu-latest
+steps:
+- uses: actions/checkout@v4
+- run: |
+cd backend/\${{ matrix.service }}
+pip install -r requirements.txt
+pytest
+build-docker:
+needs: [test-shared, test-services]
+runs-on: ubuntu-latest
+steps:
+- uses: actions/checkout@v4
+- run: |
+
+37
+
+docker build -t masaren/app:latest .
+docker push masaren/app:latest
+deploy:
+needs: [build-docker]
+runs-on: ubuntu-latest
+if: github.ref == 'refs/heads/main'
+steps:
+- run: |
+kubectl set image deployment/app app=masaren/app:\${{ github.sha }}
+
+Listing 19: CI Pipeline Structure
+
+38
+
+11 Testing Strategy
+The MASAREN platform uses risk-based, layered verification. Code coverage is monitored as a
+diagnostic signal, not used as the primary quality target: a high percentage cannot demonstrate
+correct authorization, safe migrations, consumer idempotency, recovery, or business outcomes.
+Release gates prioritize critical-journey behavior, changed-code coverage, mutation or property testing for high-risk domain rules, contract compatibility, security controls, performance
+budgets, and recoverability.
+Testing Pyramid Testing is organized as a connected body of evidence rather than a stack
+of independent checkboxes. Fast unit and property tests protect domain invariants, while integration tests exercise real PostgreSQL, Kafka, Redis, object-storage, and provider adapters and
+prove the outbox and inbox behavior end to end. Contract suites validate HTTP operations
+against OpenAPI and event channels against AsyncAPI, including backward compatibility and
+consumer-driven examples. Browser and mobile journey tests cover the participant and reviewer workflows, resilience exercises inject dependency timeouts, broker or database failover,
+retry storms, zone loss, restoration, replay, and rollback, and security and privacy suites verify
+tenant isolation, authorization, abuse controls, secret handling, audit completeness, retention,
+export, deletion, and consent transitions (AsyncAPI Initiative, 2023; OpenAPI Initiative, 2024;
+OWASP Foundation, 2023, 2024, 2025a).
+Test Configuration
+import pytest
+from shared.testing import (
+DatabaseFixture,
+KafkaFixture,
+RedisFixture,
+AuthFixture,
+)
+@pytest.fixture
+async def db():
+async with DatabaseFixture() as fixture:
+await fixture.create_tables()
+yield fixture
+await fixture.drop_tables()
+@pytest.fixture
+async def kafka():
+async with KafkaFixture() as fixture:
+yield fixture
+@pytest.fixture
+def auth_token():
+return AuthFixture().generate_token(
+user_id="test-user",
+roles=["VOLUNTEER"]
+)
+
+39
+
+Listing 20: Test Fixtures
+Example Unit Test
+import pytest
+from datetime import datetime
+from uuid import uuid4
+class TestTaskService:
+async def test_create_task_success(self, db, auth_token):
+service = TaskService(db.session)
+command = CreateTaskCommand(
+program_id=str(uuid4()),
+title="Plant 50 trees",
+description="Reforestation task",
+location={"lat": 30.0, "lng": 31.0},
+deadline=datetime(2026, 12, 31),
+)
+result = await service.create_task(command, auth_token)
+assert result.status == "CREATED"
+assert result.title == "Plant 50 trees"
+async def test_create_task_missing_title(self, db, auth_token):
+with pytest.raises(ValidationError):
+command = CreateTaskCommand(
+program_id=str(uuid4()),
+title="",
+description="",
+)
+await service.create_task(command, auth_token)
+
+Listing 21: Unit Test Example
+E2E Testing with Playwright
+import { test, expect } from '@playwright/test';
+test('volunteer can complete task flow', async ({ page }) => {
+await page.goto('/login');
+await page.fill('[name=email]', 'volunteer@test.com');
+await page.fill('[name=password]', 'password123');
+await page.click('button[type=submit]');
+await expect(page).toHaveURL('/dashboard');
+await page.click('text=Tasks');
+await expect(page).toHaveURL('/tasks');
+await page.click('text=Plant 50 trees');
+await page.click('text=Accept Task');
+await page.click('text=Submit Evidence');
+await page.setInputFiles('input[type=file]', 'test-assets/trees.jpg');
+await page.click('text=Submit');
+
+40
+
+await expect(page.locator('text=Evidence Submitted')).toBeVisible();
+});
+
+Listing 22: Web E2E Test
+Mobile E2E Testing with Maestro
+appId: com.masaren.app
+--- launchApp
+- tapOn: "Login"
+- inputText: "volunteer@test.com"
+- tapOn: "Next"
+- inputText: "password123"
+- tapOn: "Sign In"
+- assertVisible: "Dashboard"
+- tapOn: "Tasks"
+- assertVisible: "Plant 50 trees"
+- tapOn: "Accept Task"
+- tapOn: "Capture Evidence"
+- takeScreenshot: "evidence_capture"
+- tapOn: "Submit"
+- assertVisible: "Evidence Submitted"
+
+Listing 23: Mobile E2E Flow
+
+41
+
+12 Security Architecture
+Authentication and Authorization The platform implements defense in depth and treats
+identity as a continuously evaluated control plane. Network location does not confer trust.
+Human users authenticate through an OpenID Connect provider with phishing-resistant multifactor authentication required for administrators and reviewers. Services authenticate through
+short-lived workload identities and mutually authenticated transport, not shared API keys
+copied into environment files. Authorization combines tenant membership, role, resource relationship, data sensitivity, geography, assurance level, and explicit policy; coarse RBAC remains
+useful but is insuﬀicient on its own for evidence, financial, and administrative decisions. The
+control baseline combines NIST zero-trust and digital-identity guidance with OWASP ASVS
+for web applications, the API Security Top 10 for service boundaries, and MASVS for mobilespecific threats (National Institute of Standards and Technology, 2020, 2025; OWASP Foundation, 2023, 2024, 2025a).
+User authentication and sessions. Browser and mobile clients use the authorizationcode flow with PKCE. Access tokens are JSON Web Tokens that are audience-bound and
+short lived; refresh tokens rotate, are sender-constrained where supported, and are revoked
+on reuse, risk, or account-state change. Authorization policy. Roles such as participant,
+organization administrator, reviewer, finance operator, auditor, and platform administrator
+are scoped to tenants and resources, while sensitive actions require step-up authentication,
+separation of duties, and policy-decision logging. Workload identity. Services receive shortlived credentials from the runtime identity plane, and mutual TLS plus policy identify both caller
+and destination so no permanent shared service credential is embedded in an image or repository.
+Abuse and boundary controls. The edge applies origin checks, schema validation, requestsize limits, quotas, bot and credential-stuﬀing controls, and risk-based rate limits keyed by
+identity, tenant, route, and network attributes. Secure data access. Parameterized queries,
+least-privilege database roles, tenant scoping, row-level controls where appropriate, and serviceowned schemas reduce injection and lateral-access risk (Fett et al., 2023; Jones et al., 2015;
+Lodderstedt et al., 2025; OpenID Foundation, 2023; Sakimura et al., 2015).
+Token Management
+from datetime import datetime, timedelta, timezone
+import jwt
+class TokenManager:
+def __init__(self, private_key: str, public_key: str, issuer: str):
+self.private_key = private_key
+self.public_key = public_key
+self.issuer = issuer
+self.access_expiry = timedelta(minutes=15)
+def create_access_token(self, user_id: str, roles: list[str]) -> str:
+now = datetime.now(timezone.utc)
+payload = {
+"sub": user_id,
+"roles": roles,
+
+42
+
+"iss": self.issuer,
+"aud": "masaren-api",
+"iat": now,
+"exp": now + self.access_expiry,
+}
+return jwt.encode(payload, self.private_key, algorithm="RS256")
+def verify_token(self, token: str) -> dict:
+return jwt.decode(
+token,
+self.public_key,
+algorithms=["RS256"],
+audience="masaren-api",
+issuer=self.issuer,
+options={"require": ["sub", "iss", "aud", "iat", "exp"]},
+)
+
+Listing 24: JWT Token Management
+RBAC Middleware
+from fastapi import Request, HTTPException
+from functools import wraps
+def require_roles(allowed_roles: list[str]):
+def decorator(func):
+@wraps(func)
+async def wrapper(request: Request, *args, **kwargs):
+user = request.state.user
+if not user:
+raise HTTPException(status_code=401, detail="Authentication required")
+if not any(role in user.get("roles", []) for role in allowed_roles):
+raise HTTPException(status_code=403, detail="Insufficient permissions")
+return await func(request, *args, **kwargs)
+return wrapper
+return decorator
+
+Listing 25: Role-Based Access Control Middleware
+Data Privacy Privacy is implemented through a governed data lifecycle rather than a general statement of compliance. Every collected field is assigned a purpose, lawful basis where
+applicable, data owner, sensitivity, residency requirement, retention period, and deletion behavior. Consent records are versioned and linked to the capture context. Evidence access uses
+program policy, participant relationship, reviewer assignment, and purpose limitation. Export
+and deletion workflows are tested end to end, while legal holds and immutable financial or audit
+obligations are represented as explicit exceptions. Encryption uses centrally governed keys with
+rotation, access logging, and separation between key administration and data administration.
+These controls support GDPR obligations where the regulation applies (European Parliament
+and Council of the European Union, 2016).
+
+43
+
+Security Best Practices Secrets are created, rotated, and audited in a managed secret system
+and delivered to authorized workloads at runtime. Production images are immutable, signed,
+scanned, and accompanied by software bills of materials and provenance attestations. Public
+access terminates at the approved edge; domain services use private networking and defaultdeny policy. Health endpoints disclose only the minimum state required by the orchestrator.
+Administrative actions, verification overrides, policy changes, exports, and financial movements
+generate tamper-evident audit records. Security acceptance requires automated tests, threatmodel review, dependency analysis, abuse-case testing, and independent penetration testing
+before launch and after material boundary changes.
+
+44
+
+13 Environment Configuration
+Required Environment Variables
+Variable
+OIDC_ISSUER_URL
+DATABASE_URL
+
+Required
+Yes
+Yes
+
+REDIS_URL
+KAFKA_BOOTSTRAP_SERVERS
+NEO4J_URL
+AI_PROVIDER_SECRET_REF
+
+Yes
+Yes
+Yes
+Conditional
+
+PUBLIC_GATEWAY_URL
+STRIPE_SECRET_REF
+
+Yes
+No
+
+STRIPE_WEBHOOK_SECRET_REF
+
+No
+
+PAYMOB_SECRET_REF
+
+No
+
+PAYMOB_INTEGRATION_ID
+FCM_SERVICE_ACCOUNT_REF
+
+No
+No
+
+MRC_PER_EGP
+
+No
+
+AI_ORCHESTRATOR_BROKER_URL
+CORS_ORIGINS
+
+No
+No
+
+Description
+Trusted identity-provider issuer
+PostgreSQL connection reference
+Redis connection reference
+Kafka broker addresses
+Neo4j connection reference
+Secret-manager reference for the
+approved AI provider
+Public API Gateway URL
+Secret-manager reference for
+Stripe
+Secret-manager reference for
+webhook verification
+Secret-manager reference for
+Paymob
+Paymob integration identifier
+Workload or secret reference for
+messaging
+Governed exchange-rate configuration
+AI orchestrator broker URL
+Allowed CORS origins
+
+Environment Configuration File
+OIDC_ISSUER_URL=https://identity.example.com/
+DATABASE_URL=postgresql://masaren:password@localhost:5432/masaren
+REDIS_URL=redis://localhost:6379/0
+KAFKA_BOOTSTRAP_SERVERS=localhost:9092
+NEO4J_URL=bolt://neo4j:password@localhost:7687
+AI_PROVIDER_SECRET_REF=local-dev-secret-name
+PUBLIC_GATEWAY_URL=http://localhost:8080/api/v1
+
+Listing 26: .env.example
+
+45
+
+14 Development Workflow
+Local Development Setup Local development begins by cloning the repository and creating
+a non-production configuration from the documented example. Docker Compose starts only the
+shared dependencies needed for the current task, after which a developer may run one service
+natively with uvicorn or use the combined backend for cross-domain debugging. Web and
+mobile clients then connect to the same gateway contract with Vite and Flutter hot reload.
+This workflow is optimized for feedback speed, but it deliberately excludes production claims
+such as multi-zone resilience, workload identity, managed key custody, policy admission, and
+disaster recovery (Docker, Inc., 2026; Kubernetes Authors, 2026b).
+cp .env.example .env
+docker compose up -d postgres neo4j redis kafka minio
+cd backend/identity/identity-service
+pip install -r requirements.txt
+uvicorn src.main:app --reload --port 8001
+cd apps/web && npm install && npm run dev
+cd apps/mobile && flutter pub get && flutter run
+
+Listing 27: Development Setup Commands
+Native Development Script
+gateway
+identity
+auth
+organization
+program
+task
+workflow
+verification
+evidence
+graph
+opportunity
+matching
+billing
+notification
+orchestrator
+fraud-python
+auth-python
+impact-score
+
+:8080
+:8001
+:8002
+:8004
+:8005
+:8006
+:8007
+:8008
+:8009
+:8011
+:8013
+:8014
+:8050
+:8060
+:8070
+:8090
+:8093
+:8094
+
+Listing 28: Native Port Assignments
+Engineering Rules Engineering rules are expressed as one coherent boundary policy. A service owns its database and never reads or writes another service’s schema; cross-context communication uses a versioned API or governed event, and material events are recorded through
+the transactional outbox with idempotent consumers on the receiving side. Controllers and
+transport handlers remain thin because domain logic belongs in framework-independent models
+and command or query handlers, while repositories isolate persistence and validated DTOs protect boundaries. Every deployable unit provides structured telemetry, health behavior, unit,
+46
+
+integration, contract, security, and recovery evidence, and an independently testable rollback
+path. AI inference uses only approved provider pathways with recorded lineage, and exceptions
+to these rules require an architecture decision, named owner, expiry date, and migration plan.
+Implementation Evidence Register The following entries summarize the implementation
+claims present in the source material. They are not production-readiness attestations. A capability becomes verified only when its owner links source, tests, deployed configuration, telemetry,
+runbook, threat model, and recovery evidence in the delivery system.
+Specification and repository. The project specification, monorepo structure, and sharedkernel modules are reported complete. Verification requires architecture review, repository
+links, dependency ownership, and confirmation that shared APIs remain intentionally small
+and stable.
+Identity, execution, and verification. These domains are reported implemented with tests.
+Verification requires control tests for authentication and tenant isolation, end-to-end program
+and task journeys, evidence provenance, deterministic policy decisions, reviewer workflows,
+appeal behavior, and complete decision lineage.
+AI, reputation, and marketplace. AI agents are partly integrated, while reputation and
+marketplace capabilities are reported complete. Verification requires model evaluation, provider
+and fallback tests, methodology governance, explainability, fairness review, eligibility-policy
+tests, and measurable user outcomes.
+Data, clients, and operations. Reporting, the knowledge graph, and the React and Flutter
+clients are reported complete. Verification requires metric lineage, projection rebuild and reconciliation, accessibility review, offline-conflict testing, and critical-journey evidence. Production
+infrastructure is not attested until multi-zone resilience, workload identity, progressive delivery,
+observability, security, backup restoration, and regional recovery gates pass.
+
+47
+
+15 Known Gaps and Future Work
+Current Gaps The current design still requires evidence-based dead-code and dependency
+analysis across deployable units, complete wiring and evaluation of approved AI use cases, and
+a decision on whether full-text search demand justifies operating OpenSearch. Go, Rust, and
+gRPC remain options rather than commitments; Python, REST, and Kafka are the present
+implementation baseline. The highest-priority gaps are not language choices but tenant isolation, verified recovery, workload identity, service ownership, production SLOs, data-retention
+enforcement, AI evaluation, and contract compatibility.
+The roadmap is organized as a sequence of evidence-based phases rather than a collection of disconnected feature requests. Foundation phase. Establish tenant and workload
+identity, the contract registry, data classification, retention enforcement, trace propagation,
+SLO dashboards, cost allocation, deployment policy, and tested backups. Exit requires one
+production-like environment and evidence for every Tier-1 control.
+Verification-market fit phase. Complete the evidence-to-asset journey, reviewer tooling,
+appeals, sponsor reporting, partner sandbox, mobile offline conflict handling, and governed
+reputation methodology. Exit requires pilot customers to complete representative journeys
+with measured trust, latency, cost, and reviewer-effort outcomes.
+Scale phase. Introduce search, additional projections, data partitioning, regional recovery,
+and selective service extraction only where measurements demonstrate need. Event sourcing
+and saga orchestration are adopted per workflow when audit reconstruction or distributed compensation requires them; they are not platform-wide goals.
+Ecosystem phase. Publish stable partner APIs, consent-aware data-sharing products, certification evidence, developer tooling, and commercial service tiers. Expansion to additional
+regions or AI providers occurs only after legal, privacy, operational, and unit-economics review.
+
+48
+
+References
+Apache Software Foundation. (2026). Apache kafka documentation. Retrieved July 21, 2026,
+from https://kafka.apache.org/documentation/
+AsyncAPI Initiative. (2023). Asyncapi specification version 3.0.0. Retrieved July 21, 2026, from
+https://www.asyncapi.com/docs/reference/specification/v3.0.0
+Cloud Native Computing Foundation. (2024). Cloudevents specification. Retrieved July 21, 2026,
+from https://cloudevents.io/
+Docker, Inc. (2026). Docker documentation. Retrieved July 21, 2026, from https://docs.docker.
+com/
+Regulation (EU) 2016/679 (General Data Protection Regulation) (2016). Retrieved July 21,
+2026, from https://eur-lex.europa.eu/eli/reg/2016/679/oj
+Fett, D., Campbell, B., Bradley, J., Lodderstedt, T., Jones, M., & Waite, D. (2023). Oauth 2.0
+demonstrating proof of possession (tech. rep. No. RFC 9449). Internet Engineering Task
+Force. https://doi.org/10.17487/RFC9449
+Fielding, R. T., Nottingham, M., & Reschke, J. (2022). Http semantics (tech. rep. No. RFC
+9110). Internet Engineering Task Force. https://doi.org/10.17487/RFC9110
+FinOps Foundation. (2026). Finops framework. Retrieved July 21, 2026, from https://www.
+finops.org/framework/
+GitHub, Inc. (2026). Github actions documentation. Retrieved July 21, 2026, from https://docs.
+github.com/actions
+Grafana Labs. (2026). Grafana documentation. Retrieved July 21, 2026, from https://grafana.
+com/docs/grafana/latest/
+HashiCorp. (2026). Terraform documentation. Retrieved July 21, 2026, from https://developer.
+hashicorp.com/terraform/docs
+Jones, M., Bradley, J., & Sakimura, N. (2015). Json web token (jwt) (tech. rep. No. RFC 7519).
+Internet Engineering Task Force. https://doi.org/10.17487/RFC7519
+Kubernetes Authors. (2026a). Best practices. Retrieved July 21, 2026, from https://kubernetes.
+io/docs/setup/best-practices/
+Kubernetes Authors. (2026b). Production environment. Retrieved July 21, 2026, from https:
+//kubernetes.io/docs/setup/production-environment/
+Lodderstedt, T., Bradley, J., Labunets, A., & Fett, D. (2025). Best current practice for oauth
+2.0 security (tech. rep. No. RFC 9700). Internet Engineering Task Force. https://doi.
+org/10.17487/RFC9700
+National Institute of Standards and Technology. (2020). Zero trust architecture (tech. rep.
+No. NIST SP 800-207). U.S. Department of Commerce. https://doi.org/10.6028/NIST.
+SP.800-207
+National Institute of Standards and Technology. (2023). Artificial intelligence risk management
+framework (ai rmf 1.0) (tech. rep. No. NIST AI 100-1). U.S. Department of Commerce.
+https://doi.org/10.6028/NIST.AI.100-1
+
+49
+
+National Institute of Standards and Technology. (2025). Digital identity guidelines (tech. rep.
+No. NIST SP 800-63-4). U.S. Department of Commerce. Retrieved July 21, 2026, from
+https://pages.nist.gov/800-63-4/
+Neo4j, Inc. (2026). Neo4j operations manual. Retrieved July 21, 2026, from https://neo4j.com/
+docs/operations-manual/current/
+OpenAPI Initiative. (2024). Openapi specification version 3.1.1. Retrieved July 21, 2026, from
+https://spec.openapis.org/oas/v3.1.1.html
+OpenID Foundation. (2023). Openid connect core 1.0 incorporating errata set 2. Retrieved July
+21, 2026, from https://openid.net/specs/openid-connect-core-1_0.html
+OpenTelemetry Authors. (2026). Opentelemetry documentation. Retrieved July 21, 2026, from
+https://opentelemetry.io/docs/
+OWASP Foundation. (2023). Owasp api security top 10—2023. Retrieved July 21, 2026, from
+https://owasp.org/API-Security/editions/2023/en/0x11-t10/
+OWASP Foundation. (2024). Mobile application security verification standard. Retrieved July
+21, 2026, from https://mas.owasp.org/MASVS/
+OWASP Foundation. (2025a). Application security verification standard 5.0. Retrieved July 21,
+2026, from https://owasp.org/www-project-application-security-verification-standard/
+OWASP Foundation. (2025b). Cyclonedx bill of materials standard. Retrieved July 21, 2026,
+from https://cyclonedx.org/specification/overview/
+OWASP Foundation. (2026). Artificial intelligence security verification standard. Retrieved
+July 21, 2026, from https://owasp.org/www- project- artificial- intelligence- securityverification-standard-aisvs-docs/
+PostGIS Project Steering Committee. (2026). Postgis manual: Spatial queries. Retrieved July
+21, 2026, from https://postgis.net/docs/using_postgis_query.html
+PostgreSQL Global Development Group. (2026). Postgresql documentation: Transactions and
+transaction isolation. Retrieved July 21, 2026, from https://www.postgresql.org/docs/
+current/transaction-iso.html
+Prometheus Authors. (2026). Prometheus documentation. Retrieved July 21, 2026, from https:
+//prometheus.io/docs/introduction/overview/
+Redis Ltd. (2026). Redis persistence documentation. Retrieved July 21, 2026, from https : / /
+redis.io/docs/latest/operate/oss_and_stack/management/persistence/
+Sakimura, N., Bradley, J., & Agarwal, N. (2015). Proof key for code exchange by oauth public
+clients (tech. rep. No. RFC 7636). Internet Engineering Task Force. https://doi.org/10.
+17487/RFC7636
+Sloss, D., Herber, A., & Betz, D. (2018). Implementing slos. In The site reliability workbook. O’Reilly Media. Retrieved July 21, 2026, from https : / / sre . google / workbook /
+implementing-slos/
+SLSA Community. (2025). Supply-chain levels for software artifacts specification version 1.1.
+Retrieved July 21, 2026, from https://slsa.dev/spec/v1.1/
+SPDX Project. (2024). Spdx specification version 3.0. Retrieved July 21, 2026, from https :
+//spdx.dev/use/specifications/
+
+50
+
+Synadia Communications. (2026). Nats documentation. Retrieved July 21, 2026, from https:
+//docs.nats.io/
+World Wide Web Consortium. (2021). Trace context (tech. rep.). World Wide Web Consortium.
+Retrieved July 21, 2026, from https://www.w3.org/TR/trace-context/
+World Wide Web Consortium. (2024). Web content accessibility guidelines (wcag) 2.2 (tech.
+rep.). World Wide Web Consortium. Retrieved July 21, 2026, from https://www.w3.
+org/TR/WCAG22/
+World Wide Web Consortium. (2025). Guidance on applying wcag 2.2 to mobile applications.
+Retrieved July 21, 2026, from https://www.w3.org/TR/wcag2mobile-22/
+
+51
+
+16 Appendices
+Appendix A: Service Port Map
+Service
+API Gateway
+Identity Service
+Authentication Service
+Authorization Service
+Organization Service
+Program Service
+Task Service
+Workflow Service
+Verification Service
+Evidence Service
+Graph Service
+Opportunity Service
+Matching Service
+Billing Service
+Notification Service
+AI Orchestrator
+Fraud Detection (Python)
+Auth (Python)
+Impact Score (Python)
+Web Frontend
+Admin Frontend
+
+Port
+8080
+8001
+8002
+8003
+8004
+8005
+8006
+8007
+8008
+8009
+8011
+8013
+8014
+8050
+8060
+8070
+8090
+8093
+8094
+3000
+3001
+
+Docker Compose Key
+gateway
+identity
+auth
+authz
+organization
+program
+task
+workflow
+verification
+evidence
+graph
+marketplace
+matching
+billing
+notification
+orchestrator
+fraud-python
+auth-python
+impact-score-python
+web
+admin
+
+Appendix B: Repository Layout
+MASAREN/
+README.md
+PLATFORM_GENOME.md
+platform-genome.json
+docker-compose.yml
+.env.example
+apps/
+web/
+
+React + TypeScript (port 3000)
+
+admin/
+
+React + TypeScript (Mantine, port 3001)
+
+mobile/
+
+Flutter (Android/iOS)
+
+backend/
+shared/
+
+Shared kernel package
+
+combined/main.py
+
+All models loader
+
+identity/
+
+Identity domain (3 services)
+
+execution/
+
+Execution domain (4 services)
+
+verification/
+
+Verification domain (6 services)
+
+ai/
+
+AI agents + orchestrator
+
+graph/
+
+Graph service
+
+reputation/
+
+Reputation domain (3 services)
+52
+
+marketplace/
+
+Marketplace domain (2 services)
+
+reporting/
+
+Reporting domain (3 services)
+
+notifications/
+
+Notification service
+
+billing/
+
+Billing domain (3 services)
+
+partners/
+
+Partner service
+
+coin/
+
+Coin service
+
+ads/
+
+Ads service
+
+platform/
+
+Platform service
+
+gateway/
+
+API Gateway
+
+chat-service/
+
+Chat service
+
+docs/
+
+Documentation
+
+infrastructure/
+
+DB migrations, K8s, CI/CD
+
+testing/
+
+Test harnesses
+
+analytics/
+
+R report scripts
+
+logo/
+
+Brand assets
+
+Appendix C: Quick Reference
+docker compose up -d
+docker compose logs -f <service-name>
+cd backend/combined && python main.py
+cd backend && pytest
+cd apps/web && npm run dev
+cd apps/mobile && flutter run
+cd apps/mobile && flutter build apk
+
+Listing 29: Common Development Commands
+
+53
+
+

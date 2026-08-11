@@ -1,0 +1,44 @@
+# E2E Simulation: Theme and language switching
+# Pre-condition: must be logged in
+appId: com.masaren.app
+---
+- waitForAnimationToEnd:
+    timeout: 3000
+# Open More menu
+- tapOn: "Tab 5 of 5"
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: /tmp/e2e_16_more_before_theme
+# Tap Theme toggle
+- tapOn: "Theme"
+- waitForAnimationToEnd:
+    timeout: 2000
+- takeScreenshot: /tmp/e2e_16_after_theme_toggle
+
+# Open More menu again for language
+- tapOn: "Tab 5 of 5"
+- waitForAnimationToEnd:
+    timeout: 3000
+# Tap language toggle (shows "العربية" when in English)
+- tapOn: "العربية"
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: /tmp/e2e_16_after_arabic
+
+# Switch back to English
+- tapOn: "Tab 5 of 5"
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn: "English"
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: /tmp/e2e_16_after_english
+
+# Toggle theme back
+- tapOn: "Tab 5 of 5"
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn: "Theme"
+- waitForAnimationToEnd:
+    timeout: 2000
+- takeScreenshot: /tmp/e2e_16_theme_restored

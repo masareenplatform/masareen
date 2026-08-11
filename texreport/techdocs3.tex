@@ -1,0 +1,415 @@
+
+% ============================================================
+% SECTION 4: SERVICE DOMAIN ARCHITECTURE
+% ============================================================
+\section{Service Domain Architecture}
+
+The MASAREN platform comprises 35+ microservices organized into bounded contexts. Each domain encapsulates a distinct area of business capability with its own database schema, event contracts, and API surface.
+
+\subsection{Gateway Service}
+
+The API Gateway at port 8080 serves as the single entry point for all client requests. It implements the Backend-for-Frontend (BFF) pattern with the following responsibilities:
+
+\begin{itemize}
+  \item \textbf{Routing:} Proxies requests to appropriate backend services based on URL paths
+  \item \textbf{JWT Authentication:} Validates and decodes JWT tokens before forwarding requests
+  \item \textbf{Rate Limiting:} Redis-backed rate limiting per client IP and user
+  \item \textbf{Response Aggregation:} Combines responses from multiple services when needed
+  \item \textbf{CORS Management:} Handles cross-origin requests from web and mobile clients
+  \item \textbf{Error Mapping:} Standardizes error responses across all services
+\end{itemize}
+
+\subsection{Identity Domain}
+
+The Identity domain manages all user authentication, authorization, and profile management. It is the foundation of the platform's security model.
+
+\subsubsection{Identity Service (port 8001)}
+
+The core user management service handling:
+\begin{itemize}
+  \item User registration with email verification
+  \item Profile creation and management (personal, personnel, institution)
+  \item Email and phone verification workflows
+  \item Password management and recovery
+  \item User preference management
+\end{itemize}
+
+Key database tables: \texttt{users}, \texttt{user\_profiles}, \texttt{verification\_attempts}
+
+\subsubsection{Authentication Service (port 8002)}
+
+Handles all authentication flows:
+\begin{itemize}
+  \item JWT token issuance and validation
+  \item OAuth2 integration (Google OAuth with popup flow)
+  \item Session management with refresh token rotation
+  \item Multi-factor authentication support
+  \item Token blacklisting for logout
+\end{itemize}
+
+Key database tables: \texttt{oauth\_sessions}, \texttt{tokens}, \texttt{refresh\_tokens}
+
+\subsubsection{Authorization Service (port 8003)}
+
+Role-based access control (RBAC) management:
+\begin{itemize}
+  \item Role definitions (VOLUNTEER, ORG\_ADMIN, ADMIN, SUPER\_ADMIN)
+  \item Permission assignment per role
+  \item Resource-level authorization checks
+  \item Organization-specific role scoping
+  \item Permission inheritance and hierarchy
+\end{itemize}
+
+Key database tables: \texttt{roles}, \texttt{permissions}, \texttt{role\_permissions}
+
+\subsection{Execution Domain}
+
+The Execution domain manages the core operational workflow of the platform: organizations create programs, programs contain tasks, and tasks are assigned to volunteers for execution.
+
+\subsubsection{Organization Service (port 8004)}
+
+Manages organizational entities and hierarchies:
+\begin{itemize}
+  \item Organization creation and verification
+  \item Organizational hierarchy (parent/child organizations)
+  \item Membership management with role assignment
+  \item Organization profiles with SDG alignment
+  \item Institution-specific configurations
+\end{itemize}
+
+Key database tables: \texttt{organizations}, \texttt{affiliations}, \texttt{org\_members}
+
+\subsubsection{Program Service (port 8005)}
+
+Program lifecycle management:
+\begin{itemize}
+  \item Program creation with SDG (Sustainable Development Goal) mapping
+  \item Program lifecycle states: DRAFT $\rightarrow$ ACTIVE $\rightarrow$ COMPLETED $\rightarrow$ ARCHIVED
+  \item Enrollment management for volunteers
+  \item Program metrics and progress tracking
+  \item Budget and resource allocation
+\end{itemize}
+
+Key database tables: \texttt{programs}, \texttt{program\_enrollments}, \texttt{sdg\_mappings}
+
+\subsubsection{Task Service (port 8006)}
+
+Finite state machine for task management:
+\begin{itemize}
+  \item Task creation within programs
+  \item State machine: CREATED $\rightarrow$ ASSIGNED $\rightarrow$ IN\_PROGRESS $\rightarrow$ SUBMITTED $\rightarrow$ VERIFIED $\rightarrow$ COMPLETED
+  \item Assignment to volunteers with deadline management
+  \item Location-based task discovery and matching
+  \item Task dependencies and prerequisite chains
+\end{itemize}
+
+Key database tables: \texttt{tasks}, \texttt{task\_assignments}, \texttt{task\_states}
+
+\subsubsection{Workflow Service (port 8007)}
+
+Process orchestration and automation:
+\begin{itemize}
+  \item Workflow definition with sequential and parallel steps
+  \item Conditional branching based on verification outcomes
+  \item Automated task creation based on workflow templates
+  \item SLA monitoring and escalation
+  \item Integration with verification and AI pipelines
+\end{itemize}
+
+Key database tables: \texttt{workflows}, \texttt{workflow\_tasks}, \texttt{workflow\_triggers}
+
+\subsection{Verification Domain}
+
+The Verification domain is the core differentiator of the MASAREN platform. It ensures that every claimed field action undergoes rigorous multi-layered verification before becoming an economic asset. This domain comprises six services working in concert.
+
+\subsubsection{Verification Service (port 8008)}
+
+Central verification engine that coordinates the verification pipeline:
+\begin{itemize}
+  \item Orchestrates multi-layered verification (AI + GPS + human review)
+  \item Implements configurable verification rules per program type
+  \item Manages verification state machine: PENDING $\rightarrow$ IN\_REVIEW $\rightarrow$ APPROVED/REJECTED/FLAGGED
+  \item Calculates verification confidence scores
+  \item Triggers fraud detection when anomalies are detected
+  \item Routes to human-in-the-loop (HITL) review for edge cases
+\end{itemize}
+
+\subsubsection{Evidence Service (port 8009)}
+
+Evidence capture and management:
+\begin{itemize}
+  \item Multi-format evidence ingestion (images, videos, documents, audio)
+  \item Versioning and chain of custody for all evidence items
+  \item Metadata extraction (EXIF, timestamps, device info)
+  \item Evidence integrity verification (hash checksums)
+  \item Integration with MinIO/S3 for blob storage
+\end{itemize}
+
+\subsubsection{GPS Service}
+
+Geolocation verification:
+\begin{itemize}
+  \item GPS coordinate capture with timestamp binding
+  \item Geofencing validation against program locations
+  \item Location trajectory analysis for pattern verification
+  \item Spatial queries using PostGIS
+  \item Anti-spoofing detection for fake GPS data
+\end{itemize}
+
+\subsubsection{Media Service}
+
+Media processing pipeline:
+\begin{itemize}
+  \item Image and video compression and format conversion
+  \item OCR (Optical Character Recognition) for document evidence
+  \item Face detection and anonymization for privacy compliance
+  \item Thumbnail generation for gallery views
+  \item Content moderation flagging
+\end{itemize}
+
+\subsubsection{Audit Service}
+
+Comprehensive audit trail management:
+\begin{itemize}
+  \item Immutable audit logs for all verification events
+  \item Compliance reporting for regulatory requirements
+  \item Tamper-evident log storage
+  \item Queryable audit trail for investigations
+  \item GDPR compliance data management
+\end{itemize}
+
+\subsubsection{Submission Service}
+
+Submission intake and validation:
+\begin{itemize}
+  \item Evidence submission intake from mobile and web clients
+  \item Schema validation against program requirements
+  \item Preliminary automated validation checks
+  \item Queue management for verification processing
+  \item Submission status tracking and notifications
+\end{itemize}
+
+\subsection{AI Domain}
+
+The AI domain provides cloud-based intelligent agents that augment the verification pipeline. All AI inference is performed exclusively through cloud APIs (OpenAI GPT-4o/GPT-4o Vision and Google Gemini Pro/Gemini Flash) -- no local LLM execution occurs on the deployment hardware.
+
+\subsubsection{Vision AI Service}
+
+\begin{description}
+  \item[Input Event:] \texttt{evidence\_uploaded}
+  \item[Cloud Model:] GPT-4o Vision / Gemini Pro
+  \item[Output Event:] \texttt{evidence\_verified}
+  \item[Responsibilities:] Visual evidence verification, object detection in images/videos, OCR on document evidence, quality assessment of submitted media, content moderation flagging
+\end{description}
+
+\subsubsection{Fraud Detection Service}
+
+\begin{description}
+  \item[Input Events:] \texttt{location\_reached}, \texttt{evidence\_uploaded}
+  \item[Cloud Model:] GPT-4o / Gemini Flash
+  \item[Output Event:] \texttt{fraud\_detected}
+  \item[Responsibilities:] Pattern-based fraud detection, anomaly detection in submission patterns, GPS spoofing analysis, duplicate evidence detection, behavioral analysis of user submission patterns
+\end{description}
+
+\subsubsection{Economist Agent}
+
+\begin{description}
+  \item[Input Event:] \texttt{evidence\_verified} (APPROVED status)
+  \item[Cloud Model:] GPT-4o / Gemini Pro
+  \item[Output Event:] \texttt{impact\_asset\_created}
+  \item[Responsibilities:] Impact value calculation based on verified evidence, SDG contribution quantification, economic value assignment, asset metadata generation, PMS (Personal Metric Score) calculation
+\end{description}
+
+\subsubsection{Graph Synthesis Agent}
+
+\begin{description}
+  \item[Input Event:] \texttt{impact\_asset\_created}
+  \item[Cloud Model:] GPT-4o / Gemini Pro
+  \item[Output Event:] \texttt{pms\_updated} + Neo4j Cypher queries
+  \item[Responsibilities:] Knowledge graph updates in Neo4j, relationship inference between entities, impact propagation through graph, automated graph maintenance and deduplication
+\end{description}
+
+\subsubsection{AI Orchestrator (port 8070)}
+
+The orchestrator coordinates the POAI (Proof of AI) deliberative crew:
+\begin{itemize}
+  \item Manages the execution pipeline for all AI agents
+  \item Implements crew coordination with agent handoffs
+  \item Handles retry logic and fallback strategies
+  \item Provides a unified API for AI operations
+  \item Logs all AI decisions for audit and improvement
+\end{itemize}
+
+\subsubsection{Additional AI Modules}
+
+The following AI agents are implemented but not yet wired into docker-compose.yml:
+\begin{itemize}
+  \item \textbf{Auditor Agent:} Compliance verification and regulatory review
+  \item \textbf{Broker Agent:} Opportunity matching and recommendation
+  \item \textbf{Planner Agent:} Program planning and resource optimization
+  \item \textbf{Recommendation Agent:} Personalized user recommendations
+  \item \textbf{Speech AI Service:} Voice-based evidence submission processing
+  \item \textbf{Compliance Service:} Automated regulatory compliance checking
+  \item \textbf{Media Distribution Service:} Automated media publishing workflows
+\end{itemize}
+
+\subsection{Reputation Domain}
+
+The Reputation domain quantifies and tracks the impact and reputation of individuals and organizations within the platform.
+
+\subsubsection{Impact Score Service (port 8094)}
+
+Individual impact scoring:
+\begin{itemize}
+  \item Personal Metric Score (PMS) calculation based on verified actions
+  \item SDG contribution tracking per user
+  \item Historical score trends and projections
+  \item Score breakdown by category and program
+\end{itemize}
+
+\subsubsection{Organization Score Service}
+
+Organizational reputation management:
+\begin{itemize}
+  \item Organizational Impact Index (OII) calculation
+  \item Aggregate organizational performance metrics
+  \item Peer comparison and benchmarking
+  \item Transparency and trust scoring
+\end{itemize}
+
+\subsubsection{Portfolio Service}
+
+Impact portfolio management:
+\begin{itemize}
+  \item Individual impact asset portfolio tracking
+  \item Portfolio diversification analysis
+  \item Impact asset valuation over time
+  \item Portfolio export and sharing capabilities
+\end{itemize}
+
+\subsection{Marketplace Domain}
+
+The Marketplace domain connects impact creators with opportunity providers.
+
+\subsubsection{Opportunity Service (port 8013)}
+
+Opportunity lifecycle management:
+\begin{itemize}
+  \item Opportunity creation by organizations
+  \item Opportunity states: DRAFT $\rightarrow$ OPEN $\rightarrow$ IN\_PROGRESS $\rightarrow$ FILLED $\rightarrow$ CLOSED
+  \item Search and discovery with filters (location, SDG, skills)
+  \item Application and matching workflows
+\end{itemize}
+
+\subsubsection{Matching Service (port 8014)}
+
+Intelligent matching between opportunities and talent:
+\begin{itemize}
+  \item Skill-based matching algorithms
+  \item Location proximity matching
+  \item Reputation score integration
+  \item Availability and capacity planning
+\end{itemize}
+
+\subsection{Economic Domain}
+
+The Economic domain manages all financial transactions and value exchange within the platform.
+
+\subsubsection{Billing Service (port 8050)}
+
+Invoicing and billing:
+\begin{itemize}
+  \item Invoice generation and management
+  \item Usage-based billing calculations
+  \item Invoice lifecycle: DRAFT $\rightarrow$ SENT $\rightarrow$ PAID $\rightarrow$ OVERDUE $\rightarrow$ CANCELLED
+\end{itemize}
+
+\subsubsection{Payment Service (port 8090)}
+
+Payment processing:
+\begin{itemize}
+  \item Stripe integration for international payments
+  \item Paymob Accept for Egyptian cards and Vodafone Cash
+  \item Payment lifecycle: PENDING $\rightarrow$ PROCESSING $\rightarrow$ COMPLETED $\rightarrow$ FAILED $\rightarrow$ REFUNDED
+  \item Webhook handling for asynchronous payment confirmations
+\end{itemize}
+
+\subsubsection{Subscription Service}
+
+Subscription management:
+\begin{itemize}
+  \item Tiered subscription plans (Free, Pro, Enterprise)
+  \item Automated billing cycles
+  \item Subscription upgrades, downgrades, and cancellations
+\end{itemize}
+
+\subsubsection{Coin Service}
+
+MASAREN Coin (MRC) management:
+\begin{itemize}
+  \item MRC token creation and distribution
+  \item MRC-to-EGP exchange rate management
+  \item Wallet balance tracking per user
+  \item Transaction history and audit trails
+\end{itemize}
+
+\subsection{Additional Services}
+
+\subsubsection{Notification Service (port 8060)}
+
+Multi-channel notification delivery:
+\begin{itemize}
+  \item Firebase Cloud Messaging (FCM) for push notifications
+  \item Email notifications via SMTP
+  \item In-app notification center
+  \item Notification preferences and opt-out management
+  \item Template-based notification rendering
+\end{itemize}
+
+\subsubsection{Chat Service}
+
+Real-time communication:
+\begin{itemize}
+  \item Direct messaging between users
+  \item Group chats for program teams
+  \item NATS-powered real-time updates
+  \item Message persistence and history
+  \item Read receipts and typing indicators
+\end{itemize}
+
+\subsubsection{Reporting Domain}
+
+\begin{itemize}
+  \item \textbf{Report Service:} Report generation with configurable templates
+  \item \textbf{Analytics Service:} Live SQL analytics with query builder
+  \item \textbf{Forecast Service:} Predictive analytics and trend forecasting
+\end{itemize}
+
+\subsubsection{Partner Service}
+
+Partner organization management:
+\begin{itemize}
+  \item Partner onboarding and verification
+  \item Partnership agreement management
+  \item Co-branded program support
+\end{itemize}
+
+\subsubsection{Ads Service}
+
+Advertising and brokerage:
+\begin{itemize}
+  \item Targeted advertising within the platform
+  \item Opportunity promotion and featured listings
+  \item Brokerage fee management
+\end{itemize}
+
+\subsubsection{Platform Service}
+
+Platform-level aggregation and revenue management:
+\begin{itemize}
+  \item Cross-service revenue aggregation
+  \item Platform fee calculation and collection
+  \item System-wide analytics and reporting
+\end{itemize}
+
+\clearpage

@@ -1,0 +1,11 @@
+# AUDIT: `Profile` surface reachable from the menu sheet.
+appId: com.masaren.app
+---
+- runFlow: login.yaml
+
+- tapOn:
+    text: "Menu"
+- waitForAnimationToEnd
+- tapOn: "Profile"
+- waitForAnimationToEnd
+- assertVisible: "Personal Information"

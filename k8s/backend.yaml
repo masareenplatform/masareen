@@ -1,0 +1,156 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: masaren
+  labels:
+    app.kubernetes.io/part-of: masaren
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: masaren-backend
+  namespace: masaren
+  labels:
+    app: masaren-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: masaren-backend
+  template:
+    metadata:
+      labels:
+        app: masaren-backend
+    spec:
+      containers:
+        - name: backend
+          image: masaren/backend:latest
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: masaren-secrets
+                  key: database-url
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: masaren-secrets
+                  key: jwt-secret
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: kafka.masaren.svc.cluster.local:9092
+            - name: REDIS_URL
+              value: redis://redis.masaren.svc.cluster.local:6379/0
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: masaren-backend
+  namespace: masaren
+spec:
+  selector:
+    app: masaren-backend
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: masaren-ingress
+  namespace: masaren
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - masareen.mediahubnetwork.net
+      secretName: masaren-tls
+  rules:
+    - host: masareen.mediahubnetwork.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: masaren-backend
+                port:
+                  number: 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: masaren
+  labels:
+    app: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          ports:
+            - containerPort: 6379
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: masaren
+spec:
+  selector:
+    app: redis
+  ports:
+    - port: 6379
+      targetPort: 6379
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: masaren-secrets
+  namespace: masaren
+type: Opaque
+stringData:
+  database-url: "postgresql+asyncpg://masaren:CHANGE_ME@postgres.masaren.svc.cluster.local:5432/masaren"
+  jwt-secret: "CHANGE_ME_TO_A_SECURE_SECRET"

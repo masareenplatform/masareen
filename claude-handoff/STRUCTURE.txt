@@ -1,0 +1,49 @@
+# claude-handoff - package structure (compact map)
+Generated: 2026-07-12 02:51:25Z
+
+Root files: docker-compose.yml, docker-compose.override.yml, .env.example, PLATFORM_GENOME.md, platform-genome.json, CODE_PATTERNS.md, README.md, MANIFEST.txt
+
+## backend/  (19.35 MB, 707 files)
+  - ads/
+  - ai/
+  - billing/
+  - chat/
+  - chat-service/
+  - coin/
+  - combined/
+  - efficiency-selector/
+  - execution/
+  - gateway/
+  - graph/
+  - identity/
+  - marketplace/
+  - notifications/
+  - partners/
+  - platform/
+  - reporting/
+  - reputation/
+  - shared/
+  - verification/
+
+## apps/web/  (0.49 MB, 65 files)
+  - public/
+  - src/
+
+## apps/mobile/  (0.66 MB, 72 files)
+  - assets/
+  - integration_test/
+  - lib/
+  - patrol_test/
+  - test/
+
+## infrastructure/  (0.15 MB, 50 files)
+  - analytics/
+  - ci-cd/
+  - databases/
+  - docker/
+  - helm/
+  - kafka/
+  - kubernetes/
+  - monitoring/
+  - terraform/
+

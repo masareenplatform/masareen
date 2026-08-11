@@ -1,0 +1,35 @@
+{
+  "results": [
+    {
+      "name": "register_ui",
+      "ok": true,
+      "detail": "submitted register form for web_e2e_1783806525822@masaren.dev"
+    },
+    {
+      "name": "db_verify",
+      "ok": true,
+      "detail": "set email_verified=true, status=ACTIVE"
+    },
+    {
+      "name": "login_ui",
+      "ok": true,
+      "detail": "redirected to dashboard token present"
+    },
+    {
+      "name": "dashboard_render",
+      "ok": true,
+      "detail": "dashboard body len=631 sample=M MASAREN W M MASAREN Create post MENU Home Explore Tasks Alerts Profile TOOLS Dashboard Programs Evidence Impact Passpo"
+    },
+    {
+      "name": "feed_render",
+      "ok": true,
+      "detail": "feed body len=1500"
+    },
+    {
+      "name": "no_console_errors",
+      "ok": true,
+      "detail": "0 real console errors: "
+    }
+  ],
+  "consoleErrors": []
+}

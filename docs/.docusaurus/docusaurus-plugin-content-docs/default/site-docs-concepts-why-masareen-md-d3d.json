@@ -1,0 +1,25 @@
+{
+  "id": "concepts/why-masareen",
+  "title": "Why MASAREEN Exists",
+  "description": "The problem we are solving",
+  "source": "@site/docs/concepts/why-masareen.md",
+  "sourceDirName": "concepts",
+  "slug": "/concepts/why-masareen",
+  "permalink": "/docs/concepts/why-masareen",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/masareen/masareen-docs/tree/main/docs/concepts/why-masareen.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "id": "why-masareen",
+    "title": "Why MASAREEN Exists",
+    "sidebar_position": 1
+  },
+  "sidebar": "concepts",
+  "next": {
+    "title": "Profiles & Multiple Identities",
+    "permalink": "/docs/concepts/profiles-and-identities"
+  }
+}

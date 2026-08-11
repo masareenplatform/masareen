@@ -1,0 +1,28 @@
+# E2E: Feed scroll and content loading
+# Pre-condition: must be logged in on feed
+appId: com.masaren.app
+---
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: /tmp/e2e_07_feed_top
+# Scroll down the feed
+- swipe:
+    start: "540,1400"
+    end: "540,800"
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: /tmp/e2e_07_feed_scrolled_down
+# Scroll more
+- swipe:
+    start: "540,1400"
+    end: "540,800"
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: /tmp/e2e_07_feed_scrolled_more
+# Scroll back up
+- swipe:
+    start: "540,800"
+    end: "540,1400"
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: /tmp/e2e_07_feed_scrolled_up

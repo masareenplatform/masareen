@@ -1,0 +1,6 @@
+appId: com.masaren.app
+---
+- runFlow: login.yaml
+- tapOn:
+    text: "Menu"
+- waitForAnimationToEnd

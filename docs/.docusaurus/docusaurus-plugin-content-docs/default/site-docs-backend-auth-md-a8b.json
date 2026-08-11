@@ -1,0 +1,29 @@
+{
+  "id": "backend/auth",
+  "title": "Authentication & Authorization",
+  "description": "Sign-up",
+  "source": "@site/docs/backend/auth.md",
+  "sourceDirName": "backend",
+  "slug": "/backend/auth",
+  "permalink": "/docs/backend/auth",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/masareen/masareen-docs/tree/main/docs/backend/auth.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 3,
+  "frontMatter": {
+    "id": "auth",
+    "title": "Authentication & Authorization",
+    "sidebar_position": 3
+  },
+  "sidebar": "backend",
+  "previous": {
+    "title": "Services Catalog",
+    "permalink": "/docs/backend/services"
+  },
+  "next": {
+    "title": "The Verification Engine",
+    "permalink": "/docs/backend/verification-engine"
+  }
+}

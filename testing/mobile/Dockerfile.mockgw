@@ -1,0 +1,16 @@
+# MASAREN mock gateway — stateful contract provider used by the Flutter
+# end-to-end (Maestro) audit. Implements the exact API surface the mobile
+# app expects (see testing/mobile/mock_gateway.mjs + apps/mobile/lib/services/api_service.dart).
+#
+# The Flutter app's default API_BASE_URL is http://10.0.2.2:8080/api/v1.
+# On the Android emulator 10.0.2.2 -> host loopback, so mapping this
+# container's 8080 to the host's 8080 makes the app reach it with zero rebuild.
+FROM node:20-alpine
+
+WORKDIR /app
+
+COPY mock_gateway.mjs ./
+
+EXPOSE 8080
+
+CMD ["node", "mock_gateway.mjs"]

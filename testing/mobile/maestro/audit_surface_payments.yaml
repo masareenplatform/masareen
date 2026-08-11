@@ -1,0 +1,11 @@
+# AUDIT: `Payments` surface reachable from the menu sheet.
+appId: com.masaren.app
+---
+- runFlow: login.yaml
+
+- tapOn:
+    text: "Menu"
+- waitForAnimationToEnd
+- tapOn: "Payments"
+- waitForAnimationToEnd
+- assertVisible: "Payments"
