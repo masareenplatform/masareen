@@ -38,6 +38,7 @@ import GoogleAuthCallback from "./pages/GoogleAuthCallback";
 import OnboardingPage from "./pages/OnboardingPage";
 import PresentationPage from "./pages/PresentationPage";
 import DocsPage from "./pages/DocsPage";
+import FinancialReportPage from "./pages/FinancialReportPage";
 
 export default function App() {
   return (
@@ -58,6 +59,7 @@ export default function App() {
           <Route path="/verification" element={<VerificationPage />} />
           <Route path="/presentation" element={<PresentationPage />} />
           <Route path="/docs" element={<DocsPage />} />
+          <Route path="/financialreport" element={<FinancialReportPage />} />
 
           {/* Authenticated app shell — RequireAuth wraps all children */}
           <Route element={<RequireAuth><Layout /></RequireAuth>}>

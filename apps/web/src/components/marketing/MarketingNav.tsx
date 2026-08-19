@@ -31,7 +31,7 @@ export default function MarketingNav() {
           <div className="nav-item">
             <button className="rounded-lg px-3 py-1.5 hover:bg-white/10 hover:text-white">Resources ▾</button>
             <div className="mega grid grid-cols-1 gap-1">
-              {[["How verification works","/how-it-works"],["Evidence & proof","/evidence"],["SDGs & Egypt 2030","#sdg"],["Pricing","/pricing"],["About","/about"],["Blog & guides","/resources"]].map(([t,l]) => (
+              {[["How verification works","/how-it-works"],["Evidence & proof","/evidence"],["SDGs & Egypt 2030","#sdg"],["Pricing","/pricing"],["Financial Report","/financialreport"],["About","/about"],["Blog & guides","/resources"]].map(([t,l]) => (
                 <Link key={t} to={l} className="rounded-lg px-3 py-2 text-sm text-ink hover:bg-canvas">{t}</Link>
               ))}
             </div>

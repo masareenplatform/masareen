@@ -1,0 +1,2628 @@
+
+% ============================================================
+%  MASAREN (مسارين) Technical Architecture Documentation
+%  Impact Infrastructure as a Service (IIaaS) Platform
+%  Version 2.0.0
+% ============================================================
+
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{courier}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{float}
+\usepackage{enumitem}
+\usepackage{setspace}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage[normalem]{ulem}
+\usepackage{fancyvrb}
+\usepackage{titlesec}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{tikz}
+\usetikzlibrary{arrows, positioning, shapes, patterns, calc, arrows.meta}
+\usepackage{pdflscape}
+\usepackage{url}
+\usepackage{colortbl}
+
+\definecolor{codebg}{rgb}{0.95,0.95,0.95}
+\definecolor{blueprint}{rgb}{0.1,0.3,0.6}
+\definecolor{sectionblue}{rgb}{0.0,0.2,0.5}
+
+\lstset{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true,
+  frame=single,
+  tabsize=2,
+  captionpos=b
+}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!60!black,
+  urlcolor=blue!60!black
+}
+
+\onehalfspacing
+
+\title{\Huge \textbf{MASAREN (مسارين)} \\[4pt]
+       \Large Impact Infrastructure as a Service \\[8pt]
+       \large \textit{Technical Architecture Documentation} \\[4pt]
+       \normalsize Version 2.0.0}
+
+\author{The MASAREN Engineering Team}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{center}
+\fbox{\parbox{0.9\textwidth}{\centering
+\textbf{Core Principle:} If an action cannot be verified, it cannot become an economic asset.
+}}
+\end{center}
+
+\vfill
+\begin{abstract}
+MASAREN (مسارين) represents the world's first \textbf{Impact Infrastructure as a Service (IIaaS)} platform, converting verified real-world field actions into immutable, measurable, and economically valuable digital assets. Built on modern microservices architecture with 35+ services, the platform combines Domain-Driven Design with event-driven principles to create a production-grade system supporting millions of users across Web and Mobile interfaces.
+
+This document provides the comprehensive technical architecture, implementation patterns, and operational guidelines for the MASAREN platform. It serves as the definitive reference for technical implementation, deployment strategies, and system integration.
+
+\textbf{Key Differentiators:}
+\begin{itemize}
+  \item Event-Driven Architecture leveraging Kafka as source of truth
+  \item Cross-platform deployment with React+TypeScript and Flutter applications
+  \item Cloud-native AI with zero local inference
+  \item Enterprise-grade security with RBAC and GDPR compliance
+  \item Combined backend for simplified local development
+\end{itemize}
+\end{abstract}
+\clearpage
+
+\tableofcontents
+\clearpage
+
+% ============================================================
+% SECTION 1: INTRODUCTION
+% ============================================================
+\section{Introduction}
+
+\subsection{Mission and Purpose}
+
+MASAREN stands as the pioneering \textbf{Impact Infrastructure Platform} that transforms verified real-world field actions into digitally verifiable, quantifiable economic assets. The platform addresses a fundamental challenge in impact investing and value measurement by creating immutable digital representations of verified activities.
+
+The platform operates at the intersection of:
+\begin{itemize}
+  \item \textbf{Intention and Execution} -- bridging planned objectives with field-level actions
+  \item \textbf{Field Work and Digital Assets} -- converting physical actions into digital value
+  \item \textbf{Trust and Measurable Reputation} -- building verifiable trust through data
+\end{itemize}
+
+\subsection{Platform Vision}
+
+\begin{description}
+  \item[Verification-Centric Architecture] Every asset creation requires multi-layered verification through AI, GPS, and human-in-the-loop review
+  \item[Cross-Platform Consistency] Web and mobile experiences maintain identical feature sets through shared backend APIs
+  \item[Event-Driven Data Consistency] Kafka serves as the single source of truth for all domain events with at-least-once delivery guarantees
+  \item[Cloud-First AI Strategy] No local LLM execution; all AI inference routes to cloud providers (OpenAI / Google Gemini)
+  \item[Enterprise-Grade Security] Zero-trust architecture with JWT-based authentication, RBAC, and comprehensive audit trails
+  \item[Developer-First Design] Comprehensive shared kernel, combined backend for local development, and full CI/CD pipelines
+\end{description}
+
+\subsection{Core Architecture Principles}
+
+The MASAREN platform is built on the following engineering principles:
+
+\begin{enumerate}
+  \item \textbf{Domain-Driven Design:} Complex business logic is organized into bounded contexts with ubiquitous language, aggregate patterns, and domain events.
+  \item \textbf{Clean/Hexagonal Architecture:} Separation of concerns places core business logic at the center, surrounded by infrastructure adapters.
+  \item \textbf{CQRS with Event Sourcing:} Commands and queries are separated with immutable event logs providing audit trails and data replication.
+  \item \textbf{Transactional Outbox Pattern:} Database transactions and Kafka event publishing are atomic to prevent data loss.
+  \item \textbf{Event-Driven Microservices:} 35+ independent services communicate through the Kafka event bus.
+  \item \textbf{Repository Pattern:} Abstract data access with domain-specific repositories ensures persistence ignorance.
+  \item \textbf{Specification Pattern:} Query building and filtering for complex data retrieval across bounded contexts.
+\end{enumerate}
+
+\clearpage
+
+% ============================================================
+% SECTION 2: SYSTEM ARCHITECTURE OVERVIEW
+% ============================================================
+\section{System Architecture Overview}
+
+\subsection{High-Level Architecture Layers}
+
+The MASAREN architecture follows a layered design with seven distinct layers:
+
+\begin{enumerate}
+  \item \textbf{Presentation Layer:} React/TypeScript web applications and Flutter mobile app serving as the user-facing interfaces
+  \item \textbf{Experience Layer:} API Gateway (BFF pattern) at port 8080 providing routing, JWT authentication, rate limiting, and aggregation
+  \item \textbf{Business Layer:} 35+ domain services organized into bounded contexts (Identity, Execution, Verification, Reputation, Marketplace, etc.)
+  \item \textbf{AI Layer:} Cloud-based AI agents for vision verification, fraud detection, economist analysis, and graph synthesis
+  \item \textbf{Knowledge Layer:} Neo4j knowledge graph storing complex relationships between entities, programs, and impact assets
+  \item \textbf{Data Layer:} PostgreSQL+PostGIS for transactional data, Redis for caching/sessions, MinIO/S3 for evidence blobs
+  \item \textbf{Infrastructure Layer:} Docker/Kubernetes orchestration, Kafka event bus, monitoring with Prometheus/Grafana
+\end{enumerate}
+
+\subsection{Architecture Diagram}
+
+\begin{center}
+\begin{tikzpicture}[scale=0.85, transform shape, node distance=2.2cm]
+\tikzstyle{layer}=[draw, fill=blue!5, shape=rectangle, minimum height=0.8cm, text centered, font=\small\bfseries]
+\tikzstyle{service}=[draw, fill=blue!10, shape=rectangle, minimum height=1.2cm, text centered, font=\footnotesize]
+\tikzstyle{data}=[draw, fill=yellow!10, shape=ellipse, minimum width=1.5cm, text centered, font=\footnotesize]
+\tikzstyle{ai}=[draw, fill=red!10, shape=rectangle, minimum height=1cm, text centered, font=\footnotesize]
+\tikzstyle{front}=[draw, fill=green!10, shape=rectangle, minimum height=1cm, text centered, font=\footnotesize]
+\tikzstyle{infra}=[draw, fill=purple!10, shape=rectangle, minimum height=1cm, text centered, font=\footnotesize]
+
+\node[layer, fill=green!20] (pres) at (0,7) {Presentation Layer};
+\node[front] (web) at (-3,6) {Web App\\React+TS\\:3000};
+\node[front] (admin) at (0,6) {Admin Panel\\React+TS\\:3001};
+\node[front] (mobile) at (3,6) {Mobile App\\Flutter\\Android/iOS};
+
+\node[layer, fill=cyan!20] (exp) at (0,5) {Experience Layer};
+\node[service] (gateway) at (0,4.2) {API Gateway (BFF)\\:8080};
+
+\node[layer, fill=blue!20] (biz) at (0,3.5) {Business Layer};
+\node[service] (id) at (-5,2.8) {Identity\\:8001-8003};
+\node[service] (exec) at (-2.5,2.8) {Execution\\:8004-8007};
+\node[service] (ver) at (0,2.8) {Verification\\:8008-8009};
+\node[service] (rep) at (2.5,2.8) {Reputation\\:8094+};
+\node[service] (market) at (5,2.8) {Marketplace\\:8013-8014};
+
+\node[layer, fill=red!20] (ai) at (0,2) {AI Layer};
+\node[ai] (vision) at (-4,1.3) {Vision AI};
+\node[ai] (fraud) at (-1.5,1.3) {Fraud Detection};
+\node[ai] (econ) at (1.5,1.3) {Economist Agent};
+\node[ai] (graphai) at (4,1.3) {Graph Synthesis};
+
+\node[layer, fill=orange!20] (know) at (0,0.6) {Knowledge Layer};
+\node[data] (neo4j) at (0,0) {Neo4j\\Knowledge Graph};
+
+\node[layer, fill=yellow!20] (data) at (0,-0.6) {Data Layer};
+\node[data] (pg) at (-3,-1.3) {PostgreSQL\\+PostGIS};
+\node[data] (redis) at (0,-1.3) {Redis Cache};
+\node[data] (minio) at (3,-1.3) {MinIO/S3\\Blob Store};
+
+\node[layer, fill=purple!20] (inf) at (0,-2) {Infrastructure Layer};
+\node[infra] (kafka) at (-2.5,-2.8) {Kafka Event Bus};
+\node[infra] (nats) at (0,-2.8) {NATS Real-time};
+\node[infra] (docker) at (2.5,-2.8) {Docker/K8s};
+
+\draw[-latex, thick] (web) -- (gateway);
+\draw[-latex, thick] (admin) -- (gateway);
+\draw[-latex, thick] (mobile) -- (gateway);
+\draw[-latex, thick] (gateway) -- (id);
+\draw[-latex, thick] (gateway) -- (exec);
+\draw[-latex, thick] (gateway) -- (ver);
+\draw[-latex, thick] (gateway) -- (rep);
+\draw[-latex, thick] (gateway) -- (market);
+\draw[-latex, thick, red!50] (ver) -- (vision);
+\draw[-latex, thick, red!50] (ver) -- (fraud);
+\draw[-latex, thick, red!50] (ver) -- (econ);
+\draw[-latex, thick, red!50] (ver) -- (graphai);
+\draw[-latex, thick, orange!50] (graphai) -- (neo4j);
+\draw[-latex, thick, blue!50] (neo4j) -- (rep);
+\draw[-latex, thick, blue!50] (neo4j) -- (market);
+\draw[-latex, thick] (pg) -- (id);
+\draw[-latex, thick] (pg) -- (exec);
+\draw[-latex, thick] (pg) -- (ver);
+\draw[-latex, thick] (kafka) -- (ver);
+\draw[-latex, thick] (kafka) -- (rep);
+\draw[-latex, thick] (kafka) -- (market);
+\draw[-latex, thick] (kafka) -- (vision);
+\draw[-latex, thick] (kafka) -- (econ);
+\draw[-latex, thick, purple!50] (docker) -- (kafka);
+\draw[-latex, thick, purple!50] (docker) -- (nats);
+
+\end{tikzpicture}
+\captionof{figure}{MASAREN Layered Architecture Diagram}
+\end{center}
+
+\subsection{Sync and Async Communication}
+
+The platform employs a dual-transport strategy:
+
+\begin{description}
+  \item[Synchronous (REST)] All service-to-service and client-to-service communication uses REST over HTTP via FastAPI. The API Gateway at port 8080 serves as the Backend-for-Frontend (BFF), handling routing, authentication, rate limiting, and response aggregation.
+  \item[Asynchronous (Kafka + NATS)] Domain events are published to Kafka topics with at-least-once delivery guarantees. The Transactional Outbox pattern ensures atomicity between database writes and event publication. NATS provides real-time fan-out for social features including chat, posts, and feed updates.
+\end{description}
+
+\subsection{Database Strategy}
+
+The platform uses a polyglot persistence approach:
+
+\begin{itemize}
+  \item \textbf{PostgreSQL + PostGIS:} Primary transactional store for all domain entities. PostGIS extension enables spatial queries for geolocation-based verification.
+  \item \textbf{Neo4j + APOC:} Knowledge graph storing complex relationships between organizations, programs, tasks, users, and impact assets. Graph queries enable sophisticated reputation scoring and opportunity matching.
+  \item \textbf{Redis 7:} Session storage, API rate limiting, and cache layer for frequently accessed data.
+  \item \textbf{MinIO / S3:} Blob storage for evidence media files (images, videos, documents) uploaded during verification.
+  \item \textbf{OpenSearch (planned):} Full-text search across programs, opportunities, and impact assets.
+\end{itemize}
+
+\clearpage
+
+% ============================================================
+% SECTION 3: TECHNOLOGY STACK
+% ============================================================
+\section{Technology Stack}
+
+\subsection{Backend Technologies}
+
+\begin{longtable}{|p{3.5cm}|p{3cm}|p{6cm}|}
+\hline
+\textbf{Technology} & \textbf{Layer} & \textbf{Details} \\
+\hline
+\endhead
+Python 3.11+ & Runtime & Type-hinted, async-capable runtime for all microservices \\
+\hline
+FastAPI & Web Framework & OpenAPI 3.1 auto-documentation, dependency injection, async support \\
+\hline
+PostgreSQL 16 + PostGIS & Database & ACID-compliant relational data with spatial query extensions \\
+\hline
+Neo4j 5 + APOC + GDS & Graph Database & Knowledge graph, graph algorithms for scoring and matching \\
+\hline
+Redis 7 & Cache & Session management, rate limiting, pub/sub messaging \\
+\hline
+Apache Kafka 3.7 & Message Broker & KRaft mode (no Zookeeper) with 20+ event topics \\
+\hline
+NATS & Real-time & Fan-out messaging for social features and live updates \\
+\hline
+MinIO / S3 & Object Storage & Blob storage for evidence media and attachments \\
+\hline
+OpenAI / Gemini & AI Inference & Cloud-based LLMs for vision, fraud detection, and analysis \\
+\hline
+\end{longtable}
+
+\subsection{Frontend Technologies}
+
+\subsubsection{Web Application (apps/web)}
+
+\begin{longtable}{|p{3.5cm}|p{9cm}|}
+\hline
+\textbf{Technology} & \textbf{Details} \\
+\hline
+\endhead
+React 18.2 + TypeScript 5.3 & Component-based UI framework with static typing \\
+\hline
+Vite 5.1 & Fast build tool with HMR and optimized production bundling \\
+\hline
+React Router v6 & Client-side routing with protected routes and role-based access \\
+\hline
+TanStack Query & Server state management with caching, refetching, and mutations \\
+\hline
+React Context & Client state management for auth, theme, and UI state \\
+\hline
+Tailwind CSS 3.4 & Utility-first CSS framework with responsive design \\
+\hline
+Axios & HTTP client with interceptors for automatic JWT refresh \\
+\hline
+i18n & Internationalization for English and Arabic (RTL) support \\
+\hline
+Google OAuth & Popup-based authentication flow with secure token handling \\
+\hline
+Vitest + RTL + Playwright & Unit, component, and E2E testing frameworks \\
+\hline
+\end{longtable}
+
+\subsubsection{Admin Panel (apps/admin)}
+
+\begin{longtable}{|p{3.5cm}|p{9cm}|}
+\hline
+\textbf{Technology} & \textbf{Details} \\
+\hline
+\endhead
+React + TypeScript & Same stack as web app with Mantine component library \\
+\hline
+Mantine UI & Rich component library for admin interfaces (tables, forms, modals) \\
+\hline
+Vite & Optimized build with separate configuration \\
+\hline
+nginx & Production serving with reverse proxy configuration \\
+\hline
+\end{longtable}
+
+\subsubsection{Mobile Application (apps/mobile)}
+
+\begin{longtable}{|p{3.5cm}|p{9cm}|}
+\hline
+\textbf{Technology} & \textbf{Details} \\
+\hline
+\endhead
+Flutter 3.22+ & Cross-platform mobile framework with Dart 3 \\
+\hline
+MVVM Pattern & Architecture pattern with Provider for state management \\
+\hline
+Provider Package & State management with ChangeNotifier and MultiProvider \\
+\hline
+Flutter Navigator & Custom bottom navigation with drawer for deep navigation \\
+\hline
+http Package & Pure Dart HTTP client with automatic JWT handling \\
+\hline
+shared\_preferences & Local persistence for user preferences and cached data \\
+\hline
+flutter\_secure\_storage & Secure token storage using platform keychains \\
+\hline
+Material Design 3 & Custom theme with responsive layouts and bilingual support \\
+\hline
+Flutter Test + Maestro & Unit, widget, and E2E integration testing \\
+\hline
+\end{longtable}
+
+\subsection{DevOps and Infrastructure}
+
+\begin{longtable}{|p{3.5cm}|p{9cm}|}
+\hline
+\textbf{Tool} & \textbf{Purpose} \\
+\hline
+\endhead
+Docker & Containerization for all services and infrastructure components \\
+\hline
+Docker Compose & Local development orchestration with 30+ services \\
+\hline
+Kubernetes & Production deployment with Helm charts and Kustomize \\
+\hline
+Prometheus + Grafana & Metrics collection, monitoring dashboards, and alerting \\
+\hline
+OpenTelemetry & Distributed tracing across microservices \\
+\hline
+GitHub Actions & CI/CD pipelines for build, test, and deployment automation \\
+\hline
+Terraform & Infrastructure as Code for cloud resource provisioning \\
+\hline
+nginx & Reverse proxy for frontend serving and API routing \\
+\hline
+\end{longtable}
+
+\clearpage
+
+% ============================================================
+% SECTION 4: SERVICE DOMAIN ARCHITECTURE
+% ============================================================
+\section{Service Domain Architecture}
+
+The MASAREN platform comprises 35+ microservices organized into bounded contexts. Each domain encapsulates a distinct area of business capability with its own database schema, event contracts, and API surface.
+
+\subsection{Gateway Service}
+
+The API Gateway at port 8080 serves as the single entry point for all client requests. It implements the Backend-for-Frontend (BFF) pattern with the following responsibilities:
+
+\begin{itemize}
+  \item \textbf{Routing:} Proxies requests to appropriate backend services based on URL paths
+  \item \textbf{JWT Authentication:} Validates and decodes JWT tokens before forwarding requests
+  \item \textbf{Rate Limiting:} Redis-backed rate limiting per client IP and user
+  \item \textbf{Response Aggregation:} Combines responses from multiple services when needed
+  \item \textbf{CORS Management:} Handles cross-origin requests from web and mobile clients
+  \item \textbf{Error Mapping:} Standardizes error responses across all services
+\end{itemize}
+
+\subsection{Identity Domain}
+
+The Identity domain manages all user authentication, authorization, and profile management. It is the foundation of the platform's security model.
+
+\subsubsection{Identity Service (port 8001)}
+
+The core user management service handling:
+\begin{itemize}
+  \item User registration with email verification
+  \item Profile creation and management (personal, personnel, institution)
+  \item Email and phone verification workflows
+  \item Password management and recovery
+  \item User preference management
+\end{itemize}
+
+Key database tables: \texttt{users}, \texttt{user\_profiles}, \texttt{verification\_attempts}
+
+\subsubsection{Authentication Service (port 8002)}
+
+Handles all authentication flows:
+\begin{itemize}
+  \item JWT token issuance and validation
+  \item OAuth2 integration (Google OAuth with popup flow)
+  \item Session management with refresh token rotation
+  \item Multi-factor authentication support
+  \item Token blacklisting for logout
+\end{itemize}
+
+Key database tables: \texttt{oauth\_sessions}, \texttt{tokens}, \texttt{refresh\_tokens}
+
+\subsubsection{Authorization Service (port 8003)}
+
+Role-based access control (RBAC) management:
+\begin{itemize}
+  \item Role definitions (VOLUNTEER, ORG\_ADMIN, ADMIN, SUPER\_ADMIN)
+  \item Permission assignment per role
+  \item Resource-level authorization checks
+  \item Organization-specific role scoping
+  \item Permission inheritance and hierarchy
+\end{itemize}
+
+Key database tables: \texttt{roles}, \texttt{permissions}, \texttt{role\_permissions}
+
+\subsection{Execution Domain}
+
+The Execution domain manages the core operational workflow of the platform: organizations create programs, programs contain tasks, and tasks are assigned to volunteers for execution.
+
+\subsubsection{Organization Service (port 8004)}
+
+Manages organizational entities and hierarchies:
+\begin{itemize}
+  \item Organization creation and verification
+  \item Organizational hierarchy (parent/child organizations)
+  \item Membership management with role assignment
+  \item Organization profiles with SDG alignment
+  \item Institution-specific configurations
+\end{itemize}
+
+Key database tables: \texttt{organizations}, \texttt{affiliations}, \texttt{org\_members}
+
+\subsubsection{Program Service (port 8005)}
+
+Program lifecycle management:
+\begin{itemize}
+  \item Program creation with SDG (Sustainable Development Goal) mapping
+  \item Program lifecycle states: DRAFT $\rightarrow$ ACTIVE $\rightarrow$ COMPLETED $\rightarrow$ ARCHIVED
+  \item Enrollment management for volunteers
+  \item Program metrics and progress tracking
+  \item Budget and resource allocation
+\end{itemize}
+
+Key database tables: \texttt{programs}, \texttt{program\_enrollments}, \texttt{sdg\_mappings}
+
+\subsubsection{Task Service (port 8006)}
+
+Finite state machine for task management:
+\begin{itemize}
+  \item Task creation within programs
+  \item State machine: CREATED $\rightarrow$ ASSIGNED $\rightarrow$ IN\_PROGRESS $\rightarrow$ SUBMITTED $\rightarrow$ VERIFIED $\rightarrow$ COMPLETED
+  \item Assignment to volunteers with deadline management
+  \item Location-based task discovery and matching
+  \item Task dependencies and prerequisite chains
+\end{itemize}
+
+Key database tables: \texttt{tasks}, \texttt{task\_assignments}, \texttt{task\_states}
+
+\subsubsection{Workflow Service (port 8007)}
+
+Process orchestration and automation:
+\begin{itemize}
+  \item Workflow definition with sequential and parallel steps
+  \item Conditional branching based on verification outcomes
+  \item Automated task creation based on workflow templates
+  \item SLA monitoring and escalation
+  \item Integration with verification and AI pipelines
+\end{itemize}
+
+Key database tables: \texttt{workflows}, \texttt{workflow\_tasks}, \texttt{workflow\_triggers}
+
+\subsection{Verification Domain}
+
+The Verification domain is the core differentiator of the MASAREN platform. It ensures that every claimed field action undergoes rigorous multi-layered verification before becoming an economic asset. This domain comprises six services working in concert.
+
+\subsubsection{Verification Service (port 8008)}
+
+Central verification engine that coordinates the verification pipeline:
+\begin{itemize}
+  \item Orchestrates multi-layered verification (AI + GPS + human review)
+  \item Implements configurable verification rules per program type
+  \item Manages verification state machine: PENDING $\rightarrow$ IN\_REVIEW $\rightarrow$ APPROVED/REJECTED/FLAGGED
+  \item Calculates verification confidence scores
+  \item Triggers fraud detection when anomalies are detected
+  \item Routes to human-in-the-loop (HITL) review for edge cases
+\end{itemize}
+
+\subsubsection{Evidence Service (port 8009)}
+
+Evidence capture and management:
+\begin{itemize}
+  \item Multi-format evidence ingestion (images, videos, documents, audio)
+  \item Versioning and chain of custody for all evidence items
+  \item Metadata extraction (EXIF, timestamps, device info)
+  \item Evidence integrity verification (hash checksums)
+  \item Integration with MinIO/S3 for blob storage
+\end{itemize}
+
+\subsubsection{GPS Service}
+
+Geolocation verification:
+\begin{itemize}
+  \item GPS coordinate capture with timestamp binding
+  \item Geofencing validation against program locations
+  \item Location trajectory analysis for pattern verification
+  \item Spatial queries using PostGIS
+  \item Anti-spoofing detection for fake GPS data
+\end{itemize}
+
+\subsubsection{Media Service}
+
+Media processing pipeline:
+\begin{itemize}
+  \item Image and video compression and format conversion
+  \item OCR (Optical Character Recognition) for document evidence
+  \item Face detection and anonymization for privacy compliance
+  \item Thumbnail generation for gallery views
+  \item Content moderation flagging
+\end{itemize}
+
+\subsubsection{Audit Service}
+
+Comprehensive audit trail management:
+\begin{itemize}
+  \item Immutable audit logs for all verification events
+  \item Compliance reporting for regulatory requirements
+  \item Tamper-evident log storage
+  \item Queryable audit trail for investigations
+  \item GDPR compliance data management
+\end{itemize}
+
+\subsubsection{Submission Service}
+
+Submission intake and validation:
+\begin{itemize}
+  \item Evidence submission intake from mobile and web clients
+  \item Schema validation against program requirements
+  \item Preliminary automated validation checks
+  \item Queue management for verification processing
+  \item Submission status tracking and notifications
+\end{itemize}
+
+\subsection{AI Domain}
+
+The AI domain provides cloud-based intelligent agents that augment the verification pipeline. All AI inference is performed exclusively through cloud APIs (OpenAI GPT-4o/GPT-4o Vision and Google Gemini Pro/Gemini Flash) -- no local LLM execution occurs on the deployment hardware.
+
+\subsubsection{Vision AI Service}
+
+\begin{description}
+  \item[Input Event:] \texttt{evidence\_uploaded}
+  \item[Cloud Model:] GPT-4o Vision / Gemini Pro
+  \item[Output Event:] \texttt{evidence\_verified}
+  \item[Responsibilities:] Visual evidence verification, object detection in images/videos, OCR on document evidence, quality assessment of submitted media, content moderation flagging
+\end{description}
+
+\subsubsection{Fraud Detection Service}
+
+\begin{description}
+  \item[Input Events:] \texttt{location\_reached}, \texttt{evidence\_uploaded}
+  \item[Cloud Model:] GPT-4o / Gemini Flash
+  \item[Output Event:] \texttt{fraud\_detected}
+  \item[Responsibilities:] Pattern-based fraud detection, anomaly detection in submission patterns, GPS spoofing analysis, duplicate evidence detection, behavioral analysis of user submission patterns
+\end{description}
+
+\subsubsection{Economist Agent}
+
+\begin{description}
+  \item[Input Event:] \texttt{evidence\_verified} (APPROVED status)
+  \item[Cloud Model:] GPT-4o / Gemini Pro
+  \item[Output Event:] \texttt{impact\_asset\_created}
+  \item[Responsibilities:] Impact value calculation based on verified evidence, SDG contribution quantification, economic value assignment, asset metadata generation, PMS (Personal Metric Score) calculation
+\end{description}
+
+\subsubsection{Graph Synthesis Agent}
+
+\begin{description}
+  \item[Input Event:] \texttt{impact\_asset\_created}
+  \item[Cloud Model:] GPT-4o / Gemini Pro
+  \item[Output Event:] \texttt{pms\_updated} + Neo4j Cypher queries
+  \item[Responsibilities:] Knowledge graph updates in Neo4j, relationship inference between entities, impact propagation through graph, automated graph maintenance and deduplication
+\end{description}
+
+\subsubsection{AI Orchestrator (port 8070)}
+
+The orchestrator coordinates the POAI (Proof of AI) deliberative crew:
+\begin{itemize}
+  \item Manages the execution pipeline for all AI agents
+  \item Implements crew coordination with agent handoffs
+  \item Handles retry logic and fallback strategies
+  \item Provides a unified API for AI operations
+  \item Logs all AI decisions for audit and improvement
+\end{itemize}
+
+\subsubsection{Additional AI Modules}
+
+The following AI agents are implemented but not yet wired into docker-compose.yml:
+\begin{itemize}
+  \item \textbf{Auditor Agent:} Compliance verification and regulatory review
+  \item \textbf{Broker Agent:} Opportunity matching and recommendation
+  \item \textbf{Planner Agent:} Program planning and resource optimization
+  \item \textbf{Recommendation Agent:} Personalized user recommendations
+  \item \textbf{Speech AI Service:} Voice-based evidence submission processing
+  \item \textbf{Compliance Service:} Automated regulatory compliance checking
+  \item \textbf{Media Distribution Service:} Automated media publishing workflows
+\end{itemize}
+
+\subsection{Reputation Domain}
+
+The Reputation domain quantifies and tracks the impact and reputation of individuals and organizations within the platform.
+
+\subsubsection{Impact Score Service (port 8094)}
+
+Individual impact scoring:
+\begin{itemize}
+  \item Personal Metric Score (PMS) calculation based on verified actions
+  \item SDG contribution tracking per user
+  \item Historical score trends and projections
+  \item Score breakdown by category and program
+\end{itemize}
+
+\subsubsection{Organization Score Service}
+
+Organizational reputation management:
+\begin{itemize}
+  \item Organizational Impact Index (OII) calculation
+  \item Aggregate organizational performance metrics
+  \item Peer comparison and benchmarking
+  \item Transparency and trust scoring
+\end{itemize}
+
+\subsubsection{Portfolio Service}
+
+Impact portfolio management:
+\begin{itemize}
+  \item Individual impact asset portfolio tracking
+  \item Portfolio diversification analysis
+  \item Impact asset valuation over time
+  \item Portfolio export and sharing capabilities
+\end{itemize}
+
+\subsection{Marketplace Domain}
+
+The Marketplace domain connects impact creators with opportunity providers.
+
+\subsubsection{Opportunity Service (port 8013)}
+
+Opportunity lifecycle management:
+\begin{itemize}
+  \item Opportunity creation by organizations
+  \item Opportunity states: DRAFT $\rightarrow$ OPEN $\rightarrow$ IN\_PROGRESS $\rightarrow$ FILLED $\rightarrow$ CLOSED
+  \item Search and discovery with filters (location, SDG, skills)
+  \item Application and matching workflows
+\end{itemize}
+
+\subsubsection{Matching Service (port 8014)}
+
+Intelligent matching between opportunities and talent:
+\begin{itemize}
+  \item Skill-based matching algorithms
+  \item Location proximity matching
+  \item Reputation score integration
+  \item Availability and capacity planning
+\end{itemize}
+
+\subsection{Economic Domain}
+
+The Economic domain manages all financial transactions and value exchange within the platform.
+
+\subsubsection{Billing Service (port 8050)}
+
+Invoicing and billing:
+\begin{itemize}
+  \item Invoice generation and management
+  \item Usage-based billing calculations
+  \item Invoice lifecycle: DRAFT $\rightarrow$ SENT $\rightarrow$ PAID $\rightarrow$ OVERDUE $\rightarrow$ CANCELLED
+\end{itemize}
+
+\subsubsection{Payment Service (port 8090)}
+
+Payment processing:
+\begin{itemize}
+  \item Stripe integration for international payments
+  \item Paymob Accept for Egyptian cards and Vodafone Cash
+  \item Payment lifecycle: PENDING $\rightarrow$ PROCESSING $\rightarrow$ COMPLETED $\rightarrow$ FAILED $\rightarrow$ REFUNDED
+  \item Webhook handling for asynchronous payment confirmations
+\end{itemize}
+
+\subsubsection{Subscription Service}
+
+Subscription management:
+\begin{itemize}
+  \item Tiered subscription plans (Free, Pro, Enterprise)
+  \item Automated billing cycles
+  \item Subscription upgrades, downgrades, and cancellations
+\end{itemize}
+
+\subsubsection{Coin Service}
+
+MASAREN Coin (MRC) management:
+\begin{itemize}
+  \item MRC token creation and distribution
+  \item MRC-to-EGP exchange rate management
+  \item Wallet balance tracking per user
+  \item Transaction history and audit trails
+\end{itemize}
+
+\subsection{Additional Services}
+
+\subsubsection{Notification Service (port 8060)}
+
+Multi-channel notification delivery:
+\begin{itemize}
+  \item Firebase Cloud Messaging (FCM) for push notifications
+  \item Email notifications via SMTP
+  \item In-app notification center
+  \item Notification preferences and opt-out management
+  \item Template-based notification rendering
+\end{itemize}
+
+\subsubsection{Chat Service}
+
+Real-time communication:
+\begin{itemize}
+  \item Direct messaging between users
+  \item Group chats for program teams
+  \item NATS-powered real-time updates
+  \item Message persistence and history
+  \item Read receipts and typing indicators
+\end{itemize}
+
+\subsubsection{Reporting Domain}
+
+\begin{itemize}
+  \item \textbf{Report Service:} Report generation with configurable templates
+  \item \textbf{Analytics Service:} Live SQL analytics with query builder
+  \item \textbf{Forecast Service:} Predictive analytics and trend forecasting
+\end{itemize}
+
+\subsubsection{Partner Service}
+
+Partner organization management:
+\begin{itemize}
+  \item Partner onboarding and verification
+  \item Partnership agreement management
+  \item Co-branded program support
+\end{itemize}
+
+\subsubsection{Ads Service}
+
+Advertising and brokerage:
+\begin{itemize}
+  \item Targeted advertising within the platform
+  \item Opportunity promotion and featured listings
+  \item Brokerage fee management
+\end{itemize}
+
+\subsubsection{Platform Service}
+
+Platform-level aggregation and revenue management:
+\begin{itemize}
+  \item Cross-service revenue aggregation
+  \item Platform fee calculation and collection
+  \item System-wide analytics and reporting
+\end{itemize}
+
+\clearpage
+
+% ============================================================
+% SECTION 5: COMBINED BACKEND ARCHITECTURE
+% ============================================================
+\section{Combined Backend Architecture}
+
+\subsection{Purpose and Design}
+
+The Combined Backend is a design pattern unique to the MASAREN platform that merges all 35+ microservices into a single FastAPI process for local development efficiency. This approach eliminates the overhead of running 30+ separate Docker containers during development while maintaining complete service compatibility.
+
+\begin{description}
+  \item[Purpose:] Single-process backend that merges all microservices for local development
+  \item[Architecture:] Imports each service as a uniquely-named package and routes requests to appropriate handlers
+  \item[Benefits:] Local development on a laptop or small cloud droplet without running the full Docker stack
+  \item[Complexity:] Duplicate table registration requires SQLAlchemy Table.\_\_new\_\_ patching
+  \item[Performance:] Single process eliminates network overhead between services
+\end{description}
+
+\subsection{Service Registration Mechanism}
+
+The combined backend programmatically registers each service package at runtime. Each service is given a unique alias and its source directory is added to Python's module path:
+
+\begin{lstlisting}[language=Python, caption=Service Registration in combined/main.py]
+SERVICES = [
+    ("ms_identity",      "identity/identity-service"),
+    ("ms_auth",          "identity/authentication-service"),
+    ("ms_authz",         "identity/authorization-service"),
+    ("ms_organization",  "execution/organization-service"),
+    ("ms_program",       "execution/program-service"),
+    ("ms_task",          "execution/task-service"),
+    ("ms_workflow",      "execution/workflow-service"),
+    ("ms_verification",  "verification/verification-service"),
+    ("ms_evidence",      "verification/evidence-service"),
+    ("ms_gps",           "verification/gps-service"),
+    ("ms_audit",         "verification/audit-service"),
+    ("ms_media",         "verification/media-service"),
+    ("ms_submission",    "verification/submission-service"),
+    ("ms_graph",         "graph/graph-service"),
+    ("ms_reputation",    "reputation/portfolio-service"),
+    ("ms_impact_score",  "reputation/impact-score-service"),
+    ("ms_org_score",     "reputation/organization-score-service"),
+    ("ms_marketplace",   "marketplace/opportunity-service"),
+    ("ms_matching",      "marketplace/matching-service"),
+    ("ms_report",        "reporting/report-service"),
+    ("ms_analytics",     "reporting/analytics-service"),
+    ("ms_forecast",      "reporting/forecast-service"),
+    ("ms_notification",  "notifications/notification-service"),
+    ("ms_chat",          "chat-service"),
+    ("ms_billing",       "billing/billing-service"),
+    ("ms_payment",       "billing/payment-service"),
+    ("ms_subscription",  "billing/subscription-service"),
+    ("ms_partner",       "partners/partner-service"),
+    ("ms_coin",          "coin/coin-service"),
+    ("ms_ads",           "ads/ads-service"),
+    ("ms_platform",      "platform/platform-service"),
+]
+\end{lstlisting}
+
+\subsection{Package Registration Function}
+
+Each service is dynamically registered as a top-level Python package. This allows standard Python imports to resolve service modules correctly:
+
+\begin{lstlisting}[language=Python, caption=Dynamic Package Registration]
+def _register_service_package(alias: str, rel: str) -> None:
+    \"\"\"Register backend/<rel> as a top-level package named alias.\"\"\"
+    svc_root = os.path.join(BACKEND, rel)
+    pkg = types.ModuleType(alias)
+    pkg.__path__ = [svc_root]
+    pkg.__package__ = alias
+    sys.modules[alias] = pkg
+\end{lstlisting}
+
+\subsection{Duplicate Table Resolution}
+
+A critical challenge of merging 30+ independent services is that many define the same SQLAlchemy ORM tables (e.g., \texttt{users}, \texttt{organizations}). The solution is a monkey-patch on \texttt{Table.\_\_new\_\_} that deduplicates table registrations:
+
+\begin{lstlisting}[language=Python, caption=SQLAlchemy Table Deduplication]
+import sqlalchemy as _sa
+from sqlalchemy import Table as _Table
+
+_orig_table_new = _Table.__new__
+
+def _patched_table_new(cls, *args, **kwargs):
+    metadata = kwargs.get("metadata") or \
+               (args[1] if len(args) >= 2 else None)
+    name = kwargs.get("name") or \
+           (args[0] if args else None)
+    schema = kwargs.get("schema")
+
+    if metadata is not None and name is not None:
+        key = (schema, name) if schema else name
+        if key in metadata.tables:
+            return metadata.tables[key]
+
+    return _orig_table_new(cls, *args, **kwargs)
+
+_Table.__new__ = staticmethod(_patched_table_new)
+\end{lstlisting}
+
+\subsection{Route Merging}
+
+After registering packages and patching tables, the combined backend iterates through all services and merges their FastAPI routes into a single application:
+
+\begin{lstlisting}[language=Python, caption=Route Merging]
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI(
+    title="MASAREN Combined Backend",
+    version="0.1.0"
+)
+
+for alias, rel in SERVICES:
+    try:
+        _register_service_package(alias, rel)
+        mod = importlib.import_module(f"{alias}.src.main")
+        svc = getattr(mod, "app", None)
+
+        if svc is None:
+            continue
+
+        for r in list(svc.routes):
+            if getattr(r, "path", None) in SKIP:
+                svc.routes.remove(r)
+
+        app.include_router(svc.router)
+
+        for exc_type, handler in \
+                svc.exception_handlers.items():
+            if exc_type not in app.exception_handlers:
+                app.add_exception_handler(exc_type, handler)
+
+        _included.append(alias)
+        print(f"[combined] OK included {alias}", flush=True)
+    except Exception as e:
+        print(f"[combined] FAIL {alias}: {e!r}", flush=True)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=os.getenv(
+        "CORS_ORIGINS",
+        "http://localhost:3000,http://localhost:3001"
+    ).split(","),
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+\end{lstlisting}
+
+\subsection{Service Skip List}
+
+Certain routes are excluded from the combined backend to avoid conflicts:
+\begin{itemize}
+  \item Gateway routes (\texttt{/api/v1/*}) -- the gateway should not proxy to itself
+  \item Duplicate health check endpoints (only one \texttt{/health} is kept)
+  \item OpenAPI documentation endpoints (only the combined app's docs are exposed)
+\end{itemize}
+
+\clearpage
+
+% ============================================================
+% SECTION 6: WEB APPLICATION ARCHITECTURE
+% ============================================================
+\section{Web Application Architecture}
+
+\subsection{Component Architecture}
+
+The web application at \texttt{apps/web} is a React 18.2 + TypeScript application built with Vite 5.1. It follows a component-based architecture with clear separation of concerns:
+
+\subsubsection{Directory Structure}
+
+\begin{verbatim}
+apps/web/src/
+  components/
+    layout/          TopNav, Sidebar, Header, RightRail
+    common/          Branding, ErrorBoundary, Icons
+  pages/             30+ page components
+  services/          API client layer
+  store/             React Context providers
+  hooks/             Custom React hooks
+  types/             TypeScript type definitions
+  test/              Test utilities and setup
+  i18n.tsx           Internationalization configuration
+\end{verbatim}
+
+\subsubsection{Page Structure}
+
+The application defines 30+ pages accessible through React Router v6:
+
+\begin{longtable}{|p{3.5cm}|p{3cm}|p{6cm}|}
+\hline
+\textbf{Page} & \textbf{Route} & \textbf{Description} \\
+\hline
+\endhead
+LandingPage & /, /landing & Public landing with platform overview \\
+\hline
+LoginPage & /login & Authentication with email/password and Google OAuth \\
+\hline
+RegisterPage & /register & User registration with email verification \\
+\hline
+DashboardPage & /dashboard & Personal dashboard with metrics and activity \\
+\hline
+ProgramsPage & /programs & Program discovery and enrollment \\
+\hline
+TasksPage & /tasks & Task management and assignment \\
+\hline
+EvidencePage & /evidence & Evidence submission and tracking \\
+\hline
+PassportPage & /passport & Digital impact passport \\
+\hline
+OpportunitiesPage & /opportunities & Marketplace opportunity discovery \\
+\hline
+PortfolioPage & /portfolio & Impact asset portfolio \\
+\hline
+ProfilePage & /profile & User profile management \\
+\hline
+PersonnelProfilePage & /personnel/:id & Public personnel profile \\
+\hline
+InstitutionProfilePage & /institution/:id & Institution profile view \\
+\hline
+AdminPage & /admin & Administrative dashboard (ADMIN/SUPER\_ADMIN) \\
+\hline
+NotificationsPage & /notifications & Notification center \\
+\hline
+ReportsPage & /reports & Analytics and reports \\
+\hline
+BillingPage & /billing & Billing and subscription management \\
+\hline
+ChatPage & /chat & Real-time messaging \\
+\hline
+FeedPage & /feed & Social activity feed \\
+\hline
+WalletPage & /wallet & MRC wallet management \\
+\hline
+\ldots & \ldots & Additional pages for ads, payments, revenue, challenges, etc. \\
+\hline
+\end{longtable}
+
+\subsection{Routing Architecture}
+
+The application implements protected routes with role-based access control:
+
+\begin{lstlisting}[language=TypeScript, caption=Protected Route Implementation]
+function RequireRole({
+  roles,
+  children
+}: {
+  roles: string[];
+  children: ReactElement;
+}) {
+  const { user, isAuthenticated } = useAuth();
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (user && !roles.includes(user.role))
+    return <Navigate to="/dashboard" replace />;
+  return children;
+}
+\end{lstlisting}
+
+\subsection{State Management}
+
+The application uses a dual state management approach:
+
+\begin{description}
+  \item[React Context] Client-side state for authentication (\texttt{AuthProvider}), theme preferences, and UI state
+  \item[TanStack Query] Server state management with automatic caching, background refetching, and optimistic updates
+\end{description}
+
+\subsection{Internationalization}
+
+The application supports bilingual English/Arabic operation:
+
+\begin{lstlisting}[language=TypeScript, caption=i18n Configuration]
+// apps/web/src/i18n.tsx
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+
+i18n.use(initReactI18next).init({
+  resources: {
+    en: { translation: enTranslations },
+    ar: { translation: arTranslations }
+  },
+  lng: 'en',
+  fallbackLng: 'en',
+  interpolation: { escapeValue: false }
+});
+\end{lstlisting}
+
+\subsection{Authentication Flow}
+
+\begin{enumerate}
+  \item User navigates to login page
+  \item User authenticates via email/password or Google OAuth popup
+  \item Backend issues JWT access token and refresh token
+  \item Axios interceptor attaches JWT to all API requests
+  \item On 401 response, interceptor attempts token refresh
+  \item On refresh failure, user is redirected to login
+\end{enumerate}
+
+\subsection{API Client Layer}
+
+The services layer provides type-safe API interaction:
+
+\begin{lstlisting}[language=TypeScript, caption=API Client Structure]
+// apps/web/src/services/
+import axios from 'axios';
+
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL ||
+           'http://localhost:8080/api/v1',
+});
+
+api.interceptors.request.use((config) => {
+  const token = getAccessToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response?.status === 401) {
+      await refreshToken();
+      return api.request(error.config);
+    }
+    return Promise.reject(error);
+  }
+);
+\end{lstlisting}
+
+\clearpage
+
+% ============================================================
+% SECTION 7: MOBILE APPLICATION ARCHITECTURE
+% ============================================================
+\section{Mobile Application Architecture}
+
+\subsection{Architecture Overview}
+
+The mobile application at \texttt{apps/mobile} is built with Flutter 3.22+ and follows the MVVM (Model-View-ViewModel) architecture pattern with Provider for state management. The app provides the same feature set as the web application, optimized for mobile form factors with offline support and device-native capabilities.
+
+\subsection{Directory Structure}
+
+\begin{verbatim}
+apps/mobile/lib/
+  features/            Feature-specific modules
+  providers/           ChangeNotifier providers
+  services/            API client and service layer
+  widgets/             Reusable UI components
+  models/              Data models and DTOs
+  screens/             Full-page screen widgets
+  utils/               Utility functions and helpers
+  main.dart            Application entry point
+\end{verbatim}
+
+\subsection{Screen Structure}
+
+The Flutter app implements the following screens:
+\begin{itemize}
+  \item Login and Registration screens with Google OAuth integration
+  \item Dashboard with activity summary and quick actions
+  \item Program discovery and enrollment screens
+  \item Task list and detail screens with mobile-optimized forms
+  \item Evidence capture screen with camera integration and GPS binding
+  \item Digital passport visualization
+  \item Opportunity marketplace with search and filters
+  \item Impact portfolio with charts and metrics
+  \item Profile management with edit capabilities
+  \item Real-time chat interface
+  \item Social feed with infinite scroll
+  \item Notification center with push notification handling
+  \item Billing and subscription management
+  \item Wallet for MRC balance and transactions
+\end{itemize}
+
+\subsection{State Management}
+
+The app uses the Provider package for state management:
+
+\begin{lstlisting}[language=Dart, caption=Provider Setup]
+// main.dart
+void main() {
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => ProgramProvider()),
+        ChangeNotifierProvider(create: (_) => TaskProvider()),
+        ChangeNotifierProvider(create: (_) => EvidenceProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationProvider()),
+      ],
+      child: const MasarenApp(),
+    ),
+  );
+}
+\end{lstlisting}
+
+\subsection{Navigation Architecture}
+
+The app uses Flutter Navigator with a custom bottom navigation bar:
+
+\begin{itemize}
+  \item \textbf{Bottom Navigation Tabs:} Dashboard, Programs, Tasks, Profile, More
+  \item \textbf{Drawer Menu:} Settings, Help, About, Logout
+  \item \textbf{Deep Linking:} Notification-driven navigation to specific screens
+  \item \textbf{Modal Routes:} Evidence capture, chat, and form modals
+\end{itemize}
+
+\subsection{Mobile-Specific Features}
+
+The mobile app leverages device capabilities not available on the web:
+
+\begin{itemize}
+  \item \textbf{Camera Integration:} Direct evidence capture through device camera
+  \item \textbf{GPS Location Binding:} Automatic coordinates attachment to submissions
+  \item \textbf{Offline Mode:} Queue submissions when offline, sync when connected
+  \item \textbf{Push Notifications:} FCM-based real-time alerts for assignments and verification
+  \item \textbf{Biometric Auth:} Fingerprint/Face ID for quick app unlock
+  \item \textbf{Image Gallery:} Photo library access for evidence selection
+  \item \textbf{File Management:} Download and open impact certificates and reports
+\end{itemize}
+
+\subsection{API Integration}
+
+\begin{lstlisting}[language=Dart, caption=API Service Layer]
+class ApiService {
+  static const String baseUrl =
+    'http://localhost:8080/api/v1';
+
+  Future<Map<String, dynamic>> get(
+    String endpoint, {
+    Map<String, String>? headers,
+  }) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/$endpoint'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ${await getToken()}',
+        ...?headers,
+      },
+    );
+    return json.decode(response.body);
+  }
+
+  Future<Map<String, dynamic>> post(
+    String endpoint, {
+    Map<String, dynamic>? body,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/$endpoint'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ${await getToken()}',
+      },
+      body: json.encode(body),
+    );
+    return json.decode(response.body);
+  }
+}
+\end{lstlisting}
+
+\subsection{Bilingual Support}
+
+The mobile app provides full bilingual support similar to the web:
+
+\begin{lstlisting}[language=Dart, caption=Internationalization Setup]
+class MasarenLocalizations {
+  static const Map<String, Map<String, String>> _localized = {
+    'en': {
+      'app.title': 'MASAREN',
+      'nav.home': 'Home',
+      'nav.programs': 'Programs',
+      'nav.tasks': 'Tasks',
+      'nav.profile': 'Profile',
+    },
+    'ar': {
+      'app.title': 'مسارين',
+      'nav.home': 'الرئيسية',
+      'nav.programs': 'البرامج',
+      'nav.tasks': 'المهام',
+      'nav.profile': 'الملف الشخصي',
+    },
+  };
+}
+\end{lstlisting}
+
+\clearpage
+
+% ============================================================
+% SECTION 8: EVENT-DRIVEN ARCHITECTURE
+% ============================================================
+\section{Event-Driven Architecture}
+
+\subsection{Kafka Event Bus}
+
+Apache Kafka 3.7 serves as the central nervous system of the MASAREN platform, providing durable, scalable, and fault-tolerant event streaming. Kafka runs in KRaft mode (no Zookeeper dependency) for simplified operations.
+
+\subsection{Event Catalog}
+
+The platform defines 20+ domain events organized by bounded context:
+
+\begin{longtable}{|p{4cm}|p{3cm}|p{6cm}|}
+\hline
+\textbf{Event} & \textbf{Domain} & \textbf{Description} \\
+\hline
+\endhead
+organization\_created & Execution & A new organization has been registered \\
+\hline
+program\_created & Execution & A new program has been launched \\
+\hline
+task\_created & Execution & A new task has been defined \\
+\hline
+task\_assigned & Execution & Task assigned to a volunteer \\
+\hline
+task\_started & Execution & Volunteer began task execution \\
+\hline
+task\_completed & Execution & Volunteer marked task as done \\
+\hline
+location\_reached & Verification & GPS confirms arrival at target location \\
+\hline
+submission\_uploaded & Verification & Evidence submitted for verification \\
+\hline
+evidence\_uploaded & Verification & Media evidence uploaded \\
+\hline
+evidence\_verified & AI/Vision & AI completed verification analysis \\
+\hline
+fraud\_detected & AI/Fraud & Suspicious pattern identified \\
+\hline
+impact\_asset\_created & AI/Economist & New impact asset minted \\
+\hline
+impact\_score\_updated & Reputation & PMS recalculated \\
+\hline
+organization\_score\_updated & Reputation & OII recalculated \\
+\hline
+portfolio\_updated & Reputation & User portfolio changed \\
+\hline
+graph\_updated & Graph & Neo4j knowledge graph updated \\
+\hline
+\end{longtable}
+
+\subsection{Event Schema}
+
+Each domain event follows a standardized schema:
+
+\begin{lstlisting}[language=Python, caption=Domain Event Base Class]
+from pydantic import BaseModel
+from datetime import datetime
+from uuid import uuid4
+
+class DomainEvent(BaseModel):
+    event_id: str = str(uuid4())
+    event_type: str
+    aggregate_id: str
+    aggregate_type: str
+    event_version: int = 1
+    timestamp: datetime = datetime.utcnow()
+    data: dict
+    metadata: dict = {}
+\end{lstlisting}
+
+\subsection{Transactional Outbox Pattern}
+
+To ensure atomicity between database operations and event publication, every service uses the Transactional Outbox pattern:
+
+\begin{lstlisting}[language=Python, caption=Transactional Outbox Implementation]
+from sqlalchemy import Column, String, JSON, DateTime, Enum
+from sqlalchemy.ext.declarative import declarative_base
+
+class OutboxMessage(Base):
+    __tablename__ = "outbox_messages"
+
+    id = Column(String, primary_key=True, default=uuid4)
+    event_type = Column(String, nullable=False)
+    aggregate_id = Column(String, nullable=False)
+    aggregate_type = Column(String, nullable=False)
+    payload = Column(JSON, nullable=False)
+    status = Column(
+        Enum("PENDING", "PUBLISHED", "FAILED"),
+        default="PENDING"
+    )
+    created_at = Column(DateTime, default=datetime.utcnow)
+    published_at = Column(DateTime, nullable=True)
+
+def publish_event(event: DomainEvent) -> None:
+    session = Session()
+    outbox = OutboxMessage(
+        event_type=event.event_type,
+        aggregate_id=event.aggregate_id,
+        aggregate_type=event.aggregate_type,
+        payload=event.dict()
+    )
+    session.add(outbox)
+    session.commit()
+\end{lstlisting}
+
+\subsection{Event Processing Pipeline}
+
+\begin{enumerate}
+  \item Domain action triggers \texttt{publish\_event()} within a database transaction
+  \item Event is saved to the \texttt{outbox\_messages} table in the same transaction
+  \item Background processor polls for \texttt{PENDING} outbox messages
+  \item Each pending message is serialized and published to the appropriate Kafka topic
+  \item On successful publication, the message status is updated to \texttt{PUBLISHED}
+  \item Downstream services consume events with at-least-once delivery guarantees
+  \item Idempotent consumers deduplicate events using \texttt{event\_id}
+\end{enumerate}
+
+\subsection{Consumer Implementation}
+
+\begin{lstlisting}[language=Python, caption=Idempotent Kafka Consumer]
+from shared.utils.kafka_consumer import KafkaConsumer
+
+class VerificationEventConsumer(KafkaConsumer):
+    def __init__(self):
+        super().__init__(
+            topic="evidence_verified",
+            group_id="verification-service-group"
+        )
+
+    async def process(self, event: DomainEvent) -> None:
+        if await self._is_duplicate(event.event_id):
+            return
+        if event.data.get("status") == "APPROVED":
+            await self._trigger_economist_agent(event)
+        await self._mark_processed(event.event_id)
+
+    async def _is_duplicate(self, event_id: str) -> bool:
+        return await redis_client.sismember(
+            "processed_events", event_id
+        )
+
+    async def _mark_processed(self, event_id: str) -> None:
+        await redis_client.sadd("processed_events", event_id)
+\end{lstlisting}
+
+\clearpage
+
+% ============================================================
+% SECTION 9: SHARED KERNEL
+% ============================================================
+\section{Shared Kernel}
+
+The shared kernel at \texttt{backend/shared} provides reusable infrastructure code imported by all services as \texttt{shared.*}. It eliminates code duplication and ensures consistent patterns across the entire platform.
+
+\subsection{Kernel Modules}
+
+\begin{longtable}{|p{3.5cm}|p{9cm}|}
+\hline
+\textbf{Module} & \textbf{Purpose} \\
+\hline
+\endhead
+\texttt{events/} & Domain event base classes and all 20+ event contract definitions \\
+\hline
+\texttt{utils/cqrs.py} & CommandBus and QueryBus with middleware support for cross-cutting concerns \\
+\hline
+\texttt{utils/kafka\_producer.py} & Idempotent Kafka publisher with retry logic and error handling \\
+\hline
+\texttt{utils/kafka\_consumer.py} & At-least-once consumer base with automatic offset management \\
+\hline
+\texttt{utils/outbox.py} & Transactional Outbox pattern implementation \\
+\hline
+\texttt{utils/cloud\_llm\_client.py} & Unified abstraction for OpenAI and Google AI client APIs \\
+\hline
+\texttt{utils/app\_factory.py} & Shared FastAPI app factory with standardized configuration \\
+\hline
+\texttt{utils/health.py} & Composable health check system with Redis, PostgreSQL, Kafka checks \\
+\hline
+\texttt{utils/logging.py} & Structured JSON logging with request ID propagation \\
+\hline
+\texttt{middleware/} & JWT validation, RBAC enforcement, bcrypt password hashing \\
+\hline
+\texttt{base\_entity.py} & Abstract base for all domain entities with common fields \\
+\hline
+\texttt{base\_repository.py} & Generic CRUD repository with filtering and pagination \\
+\hline
+\texttt{constants.py} & Platform-wide constants, enums, and configuration \\
+\hline
+\texttt{dtos.py} & Shared Data Transfer Objects for cross-service communication \\
+\hline
+\texttt{exceptions.py} & Standardized exception hierarchy with HTTP mapping \\
+\hline
+\texttt{testing/} & Test fixtures, factories, and utilities \\
+\hline
+\texttt{types.py} & Custom type definitions and generic aliases \\
+\hline
+\end{longtable}
+
+\subsection{CQRS Pattern}
+
+\begin{lstlisting}[language=Python, caption=Command and Query Bus]
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+
+class Command(ABC):
+    pass
+
+class Query(ABC):
+    pass
+
+class CommandBus:
+    def __init__(self):
+        self._handlers = {}
+
+    def register(self, command_type, handler):
+        self._handlers[command_type] = handler
+
+    async def dispatch(self, command: Command):
+        handler = self._handlers.get(type(command))
+        if not handler:
+            raise ValueError(
+                f"No handler for {type(command).__name__}"
+            )
+        return await handler.handle(command)
+
+class QueryBus:
+    def __init__(self):
+        self._handlers = {}
+
+    def register(self, query_type, handler):
+        self._handlers[query_type] = handler
+
+    async def ask(self, query: Query):
+        handler = self._handlers.get(type(query))
+        if not handler:
+            raise ValueError(
+                f"No handler for {type(query).__name__}"
+            )
+        return await handler.handle(query)
+\end{lstlisting}
+
+\subsection{Health Check System}
+
+\begin{lstlisting}[language=Python, caption=Health Check Implementation]
+from shared.utils.health import (
+    HealthCheck,
+    RedisHealthCheck,
+    PostgresHealthCheck,
+    KafkaHealthCheck,
+)
+
+async def health_check():
+    checks = HealthCheck([
+        PostgresHealthCheck(),
+        RedisHealthCheck(),
+        KafkaHealthCheck(),
+    ])
+    return await checks.run()
+\end{lstlisting}
+
+\clearpage
+
+% ============================================================
+% SECTION 10: INFRASTRUCTURE AND DEPLOYMENT
+% ============================================================
+\section{Infrastructure and Deployment}
+
+\subsection{Docker Compose Architecture}
+
+The \texttt{docker-compose.yml} file defines 30+ services and infrastructure components for full-stack local development:
+
+\begin{longtable}{|p{3.5cm}|p{2cm}|p{1.5cm}|p{5cm}|}
+\hline
+\textbf{Component} & \textbf{Image} & \textbf{Port} & \textbf{Purpose} \\
+\hline
+\endhead
+Gateway & backend/Dockerfile.service & 8080 & BFF API Gateway \\
+\hline
+Web Frontend & apps/web/Dockerfile & 3000 & React web application \\
+\hline
+Admin Frontend & apps/admin/Dockerfile & 3001 & Admin panel \\
+\hline
+Identity & backend/Dockerfile.service & 8001 & Identity management \\
+\hline
+Auth & backend/Dockerfile.service & 8002 & Authentication \\
+\hline
+Authz & backend/Dockerfile.service & 8003 & Authorization \\
+\hline
+Organization & backend/Dockerfile.service & 8004 & Organization management \\
+\hline
+Program & backend/Dockerfile.service & 8005 & Program management \\
+\hline
+Task & backend/Dockerfile.service & 8006 & Task management \\
+\hline
+Workflow & backend/Dockerfile.service & 8007 & Workflow orchestration \\
+\hline
+Verification & backend/Dockerfile.service & 8008 & Verification engine \\
+\hline
+Evidence & backend/Dockerfile.service & 8009 & Evidence management \\
+\hline
+PostgreSQL & postgis/postgis:16-3.4 & 5432 & Primary database \\
+\hline
+Neo4j & neo4j:5-community & 7687 & Knowledge graph \\
+\hline
+Redis & redis:7-alpine & 6379 & Cache and sessions \\
+\hline
+Kafka & apache/kafka:3.7.0 & 9092 & Event bus \\
+\hline
+MinIO & minio/minio & 9000 & Blob storage \\
+\hline
+NATS & nats:latest & 4222 & Real-time messaging \\
+\hline
+\end{longtable}
+
+\subsection{Dockerfile Pattern}
+
+\begin{lstlisting}[language=Docker, caption=Dockerfile.service Template]
+FROM python:3.11-slim
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y gcc libpq-dev \\
+    && rm -rf /var/lib/apt/lists/*
+
+COPY backend/shared /app/shared
+
+ARG SERVICE_PATH
+COPY \${SERVICE_PATH} /app/service
+WORKDIR /app/service
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+EXPOSE 8000
+
+CMD ["uvicorn", "src.main:app", \\
+     "--host", "0.0.0.0", "--port", "8000"]
+\end{lstlisting}
+
+\subsection{Database Migrations}
+
+\begin{lstlisting}[language=SQL, caption=Migration Example (V001\_\_initial.sql)]
+CREATE EXTENSION IF NOT EXISTS postgis;
+
+CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    display_name VARCHAR(255),
+    role VARCHAR(50) DEFAULT 'VOLUNTEER',
+    email_verified BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE organizations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    logo_url TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+\end{lstlisting}
+
+\subsection{Kubernetes Deployment}
+
+\begin{lstlisting}[language=yaml, caption=Service Deployment Template]
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: identity-service
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: identity-service
+  template:
+    metadata:
+      labels:
+        app: identity-service
+    spec:
+      containers:
+      - name: identity
+        image: masaren/identity-service:latest
+        ports:
+        - containerPort: 8000
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 8000
+\end{lstlisting}
+
+\subsection{CI/CD Pipeline}
+
+\begin{lstlisting}[language=yaml, caption=CI Pipeline Structure]
+name: MASAREN CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-shared:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          cd backend/shared
+          pip install -r requirements.txt
+          pytest --cov=shared --cov-report=xml
+
+  test-services:
+    strategy:
+      matrix:
+        service: [identity, auth, organization, program, task]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          cd backend/\${{ matrix.service }}
+          pip install -r requirements.txt
+          pytest
+
+  build-docker:
+    needs: [test-shared, test-services]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          docker build -t masaren/app:latest .
+          docker push masaren/app:latest
+
+  deploy:
+    needs: [build-docker]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - run: |
+          kubectl set image deployment/app app=masaren/app:\${{ github.sha }}
+\end{lstlisting}
+
+\clearpage
+
+% ============================================================
+% SECTION 11: TESTING STRATEGY
+% ============================================================
+\section{Testing Strategy}
+
+The MASAREN platform employs a comprehensive testing strategy targeting 90\%+ code coverage across all services.
+
+\subsection{Testing Pyramid}
+
+\begin{description}
+  \item[Unit Tests:] Test individual functions, commands, queries, and domain logic in isolation. Mock all external dependencies (database, Kafka, Redis, AI APIs).
+  \item[Integration Tests:] Test service interactions with real database instances, Kafka topics, and Redis. Verify the Transactional Outbox pattern end-to-end.
+  \item[Contract Tests:] Verify API contract compliance between services using OpenAPI schema validation.
+  \item[Event Tests:] Verify event schemas, consumer idempotency, and event replay capabilities.
+  \item[E2E Tests:] Full-stack tests using Playwright (web) and Maestro (mobile) covering critical user journeys.
+\end{description}
+
+\subsection{Test Configuration}
+
+\begin{lstlisting}[language=Python, caption=Test Fixtures]
+import pytest
+from shared.testing import (
+    DatabaseFixture,
+    KafkaFixture,
+    RedisFixture,
+    AuthFixture,
+)
+
+@pytest.fixture
+async def db():
+    async with DatabaseFixture() as fixture:
+        await fixture.create_tables()
+        yield fixture
+        await fixture.drop_tables()
+
+@pytest.fixture
+async def kafka():
+    async with KafkaFixture() as fixture:
+        yield fixture
+
+@pytest.fixture
+def auth_token():
+    return AuthFixture().generate_token(
+        user_id="test-user",
+        roles=["VOLUNTEER"]
+    )
+\end{lstlisting}
+
+\subsection{Example Unit Test}
+
+\begin{lstlisting}[language=Python, caption=Unit Test Example]
+import pytest
+from datetime import datetime
+from uuid import uuid4
+
+class TestTaskService:
+    async def test_create_task_success(self, db, auth_token):
+        service = TaskService(db.session)
+        command = CreateTaskCommand(
+            program_id=str(uuid4()),
+            title="Plant 50 trees",
+            description="Reforestation task",
+            location={"lat": 30.0, "lng": 31.0},
+            deadline=datetime(2026, 12, 31),
+        )
+        result = await service.create_task(command, auth_token)
+        assert result.status == "CREATED"
+        assert result.title == "Plant 50 trees"
+
+    async def test_create_task_missing_title(self, db, auth_token):
+        with pytest.raises(ValidationError):
+            command = CreateTaskCommand(
+                program_id=str(uuid4()),
+                title="",
+                description="",
+            )
+            await service.create_task(command, auth_token)
+\end{lstlisting}
+
+\subsection{E2E Testing with Playwright}
+
+\begin{lstlisting}[language=TypeScript, caption=Web E2E Test]
+import { test, expect } from '@playwright/test';
+
+test('volunteer can complete task flow', async ({ page }) => {
+  await page.goto('/login');
+  await page.fill('[name=email]', 'volunteer@test.com');
+  await page.fill('[name=password]', 'password123');
+  await page.click('button[type=submit]');
+  await expect(page).toHaveURL('/dashboard');
+
+  await page.click('text=Tasks');
+  await expect(page).toHaveURL('/tasks');
+
+  await page.click('text=Plant 50 trees');
+  await page.click('text=Accept Task');
+
+  await page.click('text=Submit Evidence');
+  await page.setInputFiles('input[type=file]', 'test-assets/trees.jpg');
+  await page.click('text=Submit');
+
+  await expect(page.locator('text=Evidence Submitted')).toBeVisible();
+});
+\end{lstlisting}
+
+\subsection{Mobile E2E Testing with Maestro}
+
+\begin{lstlisting}[language=yaml, caption=Mobile E2E Flow]
+appId: com.masaren.app
+---
+- launchApp
+- tapOn: "Login"
+- inputText: "volunteer@test.com"
+- tapOn: "Next"
+- inputText: "password123"
+- tapOn: "Sign In"
+- assertVisible: "Dashboard"
+- tapOn: "Tasks"
+- assertVisible: "Plant 50 trees"
+- tapOn: "Accept Task"
+- tapOn: "Capture Evidence"
+- takeScreenshot: "evidence_capture"
+- tapOn: "Submit"
+- assertVisible: "Evidence Submitted"
+\end{lstlisting}
+
+\clearpage
+
+% ============================================================
+% SECTION 12: SECURITY
+% ============================================================
+\section{Security Architecture}
+
+\subsection{Authentication and Authorization}
+
+The platform implements a defense-in-depth security model:
+
+\begin{itemize}
+  \item \textbf{JWT-Based Authentication:} RS256 signed JWT tokens with short expiration (15 minutes) and refresh token rotation (7 days)
+  \item \textbf{RBAC:} Four roles with hierarchical permissions: VOLUNTEER < ORG\_ADMIN < ADMIN < SUPER\_ADMIN
+  \item \textbf{Google OAuth:} Popup-based authentication with PKCE flow for enhanced security
+  \item \textbf{API Key Authentication:} Service-to-service communication uses API keys stored in environment variables
+  \item \textbf{Rate Limiting:} Redis-backed rate limiting per IP and user ID
+  \item \textbf{CORS:} Strict origin validation with whitelisted domains
+  \item \textbf{Input Validation:} Pydantic models validate all API inputs with comprehensive error messages
+  \item \textbf{SQL Injection Prevention:} SQLAlchemy ORM with parameterized queries throughout
+\end{itemize}
+
+\subsection{Token Management}
+
+\begin{lstlisting}[language=Python, caption=JWT Token Management]
+from datetime import datetime, timedelta
+import jwt
+
+class TokenManager:
+    def __init__(self, secret: str):
+        self.secret = secret
+        self.access_expiry = timedelta(minutes=15)
+        self.refresh_expiry = timedelta(days=7)
+
+    def create_access_token(self, user_id: str, roles: list[str]) -> str:
+        payload = {
+            "sub": user_id,
+            "roles": roles,
+            "type": "access",
+            "iat": datetime.utcnow(),
+            "exp": datetime.utcnow() + self.access_expiry,
+        }
+        return jwt.encode(payload, self.secret, algorithm="HS256")
+
+    def create_refresh_token(self, user_id: str) -> str:
+        payload = {
+            "sub": user_id,
+            "type": "refresh",
+            "iat": datetime.utcnow(),
+            "exp": datetime.utcnow() + self.refresh_expiry,
+        }
+        return jwt.encode(payload, self.secret, algorithm="HS256")
+
+    def verify_token(self, token: str) -> dict:
+        try:
+            return jwt.decode(token, self.secret, algorithms=["HS256"])
+        except jwt.ExpiredSignatureError:
+            raise AuthenticationError("Token expired")
+        except jwt.InvalidTokenError:
+            raise AuthenticationError("Invalid token")
+\end{lstlisting}
+
+\subsection{RBAC Middleware}
+
+\begin{lstlisting}[language=Python, caption=Role-Based Access Control Middleware]
+from fastapi import Request, HTTPException
+from functools import wraps
+
+def require_roles(allowed_roles: list[str]):
+    def decorator(func):
+        @wraps(func)
+        async def wrapper(request: Request, *args, **kwargs):
+            user = request.state.user
+            if not user:
+                raise HTTPException(status_code=401, detail="Authentication required")
+            if not any(role in user.get("roles", []) for role in allowed_roles):
+                raise HTTPException(status_code=403, detail="Insufficient permissions")
+            return await func(request, *args, **kwargs)
+        return wrapper
+    return decorator
+\end{lstlisting}
+
+\subsection{Data Privacy}
+
+\begin{itemize}
+  \item \textbf{GDPR Compliance:} User data export, deletion, and consent management APIs
+  \item \textbf{Data Encryption:} All data encrypted at rest and in transit (TLS 1.3)
+  \item \textbf{PII Handling:} Personally Identifiable Information stored separately with restricted access
+  \item \textbf{Audit Trails:} All access to sensitive data is logged with user ID, timestamp, and action
+  \item \textbf{Evidence Privacy:} Evidence media is access-controlled with per-program visibility rules
+\end{itemize}
+
+\subsection{Security Best Practices}
+
+\begin{itemize}
+  \item Secrets stored in environment variables, never in code
+  \item \texttt{JWT\_SECRET} must be at least 256 bits and unique per deployment
+  \item Database passwords generated with cryptographic random generators
+  \item All API endpoints behind the Gateway -- no direct service exposure
+  \item Health endpoints are read-only and expose no sensitive data
+  \item Rate limiting prevents brute force and DDoS attacks
+  \item Input validation at API boundaries prevents injection attacks
+  \item CORS configured with explicit allowed origins
+\end{itemize}
+
+\clearpage
+
+% ============================================================
+% SECTION 13: ENVIRONMENT CONFIGURATION
+% ============================================================
+\section{Environment Configuration}
+
+\subsection{Required Environment Variables}
+
+\begin{longtable}{|p{4cm}|p{3cm}|p{5cm}|}
+\hline
+\textbf{Variable} & \textbf{Required} & \textbf{Description} \\
+\hline
+\endhead
+JWT\_SECRET & Yes & Shared secret for JWT signing (min 256-bit) \\
+\hline
+DATABASE\_URL & Yes & PostgreSQL connection string \\
+\hline
+REDIS\_URL & Yes & Redis connection string \\
+\hline
+KAFKA\_BOOTSTRAP\_SERVERS & Yes & Kafka broker addresses \\
+\hline
+NEO4J\_URL & Yes & Neo4j connection string \\
+\hline
+OPENAI\_API\_KEY & Yes & OpenAI API key for AI agents \\
+\hline
+PUBLIC\_GATEWAY\_URL & Yes & Public API Gateway URL \\
+\hline
+STRIPE\_SECRET\_KEY & No & Stripe payment processing \\
+\hline
+STRIPE\_WEBHOOK\_SECRET & No & Stripe webhook verification \\
+\hline
+PAYMOB\_API\_KEY & No & Paymob payment processing \\
+\hline
+PAYMOB\_INTEGRATION\_ID & No & Paymob integration identifier \\
+\hline
+FCM\_SERVICE\_ACCOUNT\_JSON & No & Firebase Cloud Messaging \\
+\hline
+MRC\_PER\_EGP & No & MASAREN Coin exchange rate \\
+\hline
+CREWAI\_BROKER\_URL & No & AI orchestrator broker URL \\
+\hline
+CORS\_ORIGINS & No & Allowed CORS origins \\
+\hline
+\end{longtable}
+
+\subsection{Environment Configuration File}
+
+\begin{lstlisting}[language=bash, caption=.env.example]
+JWT_SECRET=your-256-bit-secret-here
+DATABASE_URL=postgresql://masaren:password@localhost:5432/masaren
+REDIS_URL=redis://localhost:6379/0
+KAFKA_BOOTSTRAP_SERVERS=localhost:9092
+NEO4J_URL=bolt://neo4j:password@localhost:7687
+OPENAI_API_KEY=sk-your-openai-key
+PUBLIC_GATEWAY_URL=http://localhost:8080/api/v1
+\end{lstlisting}
+
+\clearpage
+
+% ============================================================
+% SECTION 14: DEVELOPMENT WORKFLOW
+% ============================================================
+\section{Development Workflow}
+
+\subsection{Local Development Setup}
+
+\begin{enumerate}
+  \item Clone the repository and copy environment configuration
+  \item Start infrastructure dependencies with Docker Compose
+  \item Run individual services natively using \texttt{uvicorn}
+  \item Or launch the combined backend for all-in-one development
+  \item Frontend development with Vite HMR and Flutter hot reload
+\end{enumerate}
+
+\begin{lstlisting}[language=bash, caption=Development Setup Commands]
+cp .env.example .env
+docker compose up -d postgres neo4j redis kafka minio
+cd backend/identity/identity-service
+pip install -r requirements.txt
+uvicorn src.main:app --reload --port 8001
+cd apps/web && npm install && npm run dev
+cd apps/mobile && flutter pub get && flutter run
+\end{lstlisting}
+
+\subsection{Native Development Script}
+
+\begin{lstlisting}[language=bash, caption=Native Port Assignments]
+gateway       :8080
+identity      :8001
+auth          :8002
+organization  :8004
+program       :8005
+task          :8006
+workflow      :8007
+verification  :8008
+evidence      :8009
+graph         :8011
+opportunity   :8013
+matching      :8014
+billing       :8050
+notification  :8060
+orchestrator  :8070
+fraud-python  :8090
+auth-python   :8093
+impact-score  :8094
+\end{lstlisting}
+
+\subsection{Engineering Rules}
+
+\begin{itemize}
+  \item \textbf{Never} bypass domain events -- always use Transactional Outbox
+  \item \textbf{Never} couple services to another service's database
+  \item \textbf{Never} call another service's database directly
+  \item \textbf{Never} run AI inference locally -- cloud only
+  \item \textbf{Never} put business logic in controllers
+  \item \textbf{Never} bypass CommandBus/QueryBus
+  \item \textbf{Never} publish Kafka events without the Outbox pattern
+  \item \textbf{Never} create circular service dependencies
+  \item \textbf{Always} use the Repository pattern for data access
+  \item \textbf{Always} validate DTOs with Pydantic
+  \item \textbf{Always} publish domain events for state changes
+  \item \textbf{Always} write unit + integration + contract tests
+  \item \textbf{Always} maintain independent deployability
+  \item \textbf{Always} use structured JSON logging
+  \item \textbf{Always} expose health check endpoints
+  \item \textbf{Always} implement idempotent event consumers
+  \item \textbf{Always} keep domain models framework-independent
+\end{itemize}
+
+\subsection{Development Stages Completed}
+
+\begin{longtable}{|p{2cm}|p{5cm}|p{5cm}|}
+\hline
+\textbf{Stage} & \textbf{Description} & \textbf{Status} \\
+\hline
+\endhead
+0 & Project specification & Completed \\
+\hline
+1 & Monorepo structure (423 directories, 24+ services) & Completed \\
+\hline
+2 & Shared kernel (22 modules) & Completed \\
+\hline
+3 & Identity domain (54 files, 30+ tests) & Completed \\
+\hline
+4 & Execution domain (organization, program, task, workflow) & Completed \\
+\hline
+5 & Verification domain (6 services) & Completed \\
+\hline
+6 & AI agents (full implementation) & Completed \\
+\hline
+7 & Reputation (PMS, OII, portfolio) & Completed \\
+\hline
+8 & Marketplace (opportunity, matching) & Completed \\
+\hline
+9 & Reporting and analytics & Completed \\
+\hline
+10 & Knowledge graph (Neo4j) & Completed \\
+\hline
+11 & Frontend (Flutter + React) & Completed \\
+\hline
+12 & Production infrastructure (Docker, K8s, CI/CD) & Completed \\
+\hline
+\end{longtable}
+
+\clearpage
+
+% ============================================================
+% SECTION 15: KNOWN GAPS AND FUTURE WORK
+% ============================================================
+\section{Known Gaps and Future Work}
+
+\subsection{Current Gaps}
+
+\begin{itemize}
+  \item Per-function dead-code analysis (ruff/vulture) across all 30+ services
+  \item Several AI agents implemented but not wired into docker-compose.yml
+  \item OpenSearch search layer planned but not present in compose stack
+  \item Go/Rust targets aspirational only; current implementation is Python
+  \item gRPC remains aspirational; REST + Kafka is the real transport
+\end{itemize}
+
+\subsection{Future Roadmap}
+
+\begin{enumerate}
+  \item \textbf{OpenSearch Integration:} Full-text search across programs, opportunities, and impact assets
+  \item \textbf{AI/ML Enhancement:} Additional AI agents for predictive analytics and recommendations
+  \item \textbf{Event Sourcing:} Complete event sourcing for core domain aggregates
+  \item \textbf{Saga Orchestration:} Distributed transaction management across bounded contexts
+  \item \textbf{Performance Optimization:} Query optimization, caching strategies, CDN integration
+  \item \textbf{Mobile Offline Mode:} Enhanced offline support with conflict resolution
+  \item \textbf{Advanced Analytics:} Real-time dashboards with drill-down capabilities
+  \item \textbf{Multi-Tenancy:} Tenant isolation for enterprise deployments
+  \item \textbf{API Versioning:} Formal API versioning strategy for backward compatibility
+\end{enumerate}
+
+\clearpage
+
+% ============================================================
+% SECTION 16: APPENDICES
+% ============================================================
+\section{Appendices}
+
+\subsection{Appendix A: Service Port Map}
+
+\begin{longtable}{|p{4cm}|p{2cm}|p{6cm}|}
+\hline
+\textbf{Service} & \textbf{Port} & \textbf{Docker Compose Key} \\
+\hline
+\endhead
+API Gateway & 8080 & gateway \\
+\hline
+Identity Service & 8001 & identity \\
+\hline
+Authentication Service & 8002 & auth \\
+\hline
+Authorization Service & 8003 & authz \\
+\hline
+Organization Service & 8004 & organization \\
+\hline
+Program Service & 8005 & program \\
+\hline
+Task Service & 8006 & task \\
+\hline
+Workflow Service & 8007 & workflow \\
+\hline
+Verification Service & 8008 & verification \\
+\hline
+Evidence Service & 8009 & evidence \\
+\hline
+Graph Service & 8011 & graph \\
+\hline
+Opportunity Service & 8013 & marketplace \\
+\hline
+Matching Service & 8014 & matching \\
+\hline
+Billing Service & 8050 & billing \\
+\hline
+Notification Service & 8060 & notification \\
+\hline
+AI Orchestrator & 8070 & orchestrator \\
+\hline
+Fraud Detection (Python) & 8090 & fraud-python \\
+\hline
+Auth (Python) & 8093 & auth-python \\
+\hline
+Impact Score (Python) & 8094 & impact-score-python \\
+\hline
+Web Frontend & 3000 & web \\
+\hline
+Admin Frontend & 3001 & admin \\
+\hline
+\end{longtable}
+
+\subsection{Appendix B: Repository Layout}
+
+\begin{verbatim}
+MASAREN/
+  README.md
+  PLATFORM_GENOME.md
+  platform-genome.json
+  docker-compose.yml
+  .env.example
+  apps/
+    web/                    React + TypeScript (port 3000)
+    admin/                  React + TypeScript (Mantine, port 3001)
+    mobile/                 Flutter (Android/iOS)
+  backend/
+    shared/                 Shared kernel package
+    combined/main.py        All models loader
+    identity/               Identity domain (3 services)
+    execution/              Execution domain (4 services)
+    verification/           Verification domain (6 services)
+    ai/                     AI agents + orchestrator
+    graph/                  Graph service
+    reputation/             Reputation domain (3 services)
+    marketplace/            Marketplace domain (2 services)
+    reporting/              Reporting domain (3 services)
+    notifications/          Notification service
+    billing/                Billing domain (3 services)
+    partners/               Partner service
+    coin/                   Coin service
+    ads/                    Ads service
+    platform/               Platform service
+    gateway/                API Gateway
+    chat-service/           Chat service
+  docs/                     Documentation
+  infrastructure/           DB migrations, K8s, CI/CD
+  testing/                  Test harnesses
+  analytics/                R report scripts
+  logo/                     Brand assets
+\end{verbatim}
+
+\subsection{Appendix C: Quick Reference}
+
+\begin{lstlisting}[language=bash, caption=Common Development Commands]
+docker compose up -d
+docker compose logs -f <service-name>
+cd backend/combined && python main.py
+cd backend && pytest
+cd apps/web && npm run dev
+cd apps/mobile && flutter run
+cd apps/mobile && flutter build apk
+\end{lstlisting}
+
+\end{document}
+
+\clearpage
+
+% ============================================================
+% SECTION 9: INFRASTRUCTURE COST ANALYSIS AND FINANCIAL PLANNING
+% ============================================================
+\section{Infrastructure Cost Analysis and Financial Planning}
+
+\subsection{Executive Summary}
+
+This section provides a comprehensive breakdown of infrastructure costs for the MASAREN platform in Egyptian Pounds (EGP). All pricing is calculated using the exchange rate of 1 USD = 50.5 EGP (as of August 2026). Costs are presented for three deployment scenarios:
+
+\begin{enumerate}
+    \item \textbf{Dev/Staging Environment:} Single-node deployment for development and testing
+    \item \textbf{Production Environment:} Multi-region, high-availability deployment
+    \item \textbf{Hybrid Deployment:} Egyptian-based infrastructure with cloud backup
+\end{enumerate}
+
+\subsection{Cost Calculation Basis}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|l|l|l|}
+\hline
+\textbf{Item} & \textbf{Value} & \textbf{Notes} \\
+\hline
+Exchange Rate & 50.5 EGP = 1 USD & August 2026 average \\
+\hline
+VAT (Egypt) & 14\% & Standard rate for IT services \\
+\hline
+Payment Terms & Monthly/Annual & Volume discounts available for annual \\
+\hline
+\end{tabular}
+\caption{Cost Calculation Parameters}
+\end{table}
+
+\subsection{Infrastructure Cost Breakdown by Category}
+
+\subsubsection{Category 1: Database Infrastructure}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\begin{tabular}{|l|l|l|l|l|l|l|l|}
+\hline
+\textbf{Service} & \textbf{Provider} & \textbf{Tier} & \textbf{Monthly USD} & \textbf{Monthly EGP} & \textbf{Annual EGP} & \textbf{Notes} \\
+\hline
+PostgreSQL & AWS RDS & db.t3.medium & 85 & 4,293 & 51,516 & Multi-AZ for HA \\
+PostGIS & AWS RDS & Included & 0 & 0 & 0 & Extension requires t3.small+ \\
+\hline
+Neo4j Aura & Neo4j & Professional & 200 & 10,100 & 121,200 & Graph database \\
+\hline
+Redis & AWS ElastiCache & cache.t3.micro & 20 & 1,010 & 12,120 & In-cluster mode \\
+\hline
+PostgreSQL & DigitalOcean & Basic PostgreSQL & 15 & 758 & 9,096 & Development only \\
+\hline
+Neo4j Self-Hosted & Local Server & EC2 t3.large & 90 & 4,545 & 54,540 & Bring-your-own-license \\
+\hline
+\end{tabular}
+\caption{Database Infrastructure Costs - Monthly}
+\end{table}
+
+\subsubsection{Category 2: Compute and Application Services}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\begin{tabular}{|l|l|l|l|l|l|l|l|}
+\hline
+\textbf{Service} & \textbf{Provider} & \textbf{Instance} & \textbf{Monthly USD} & \textbf{Monthly EGP} & \textbf{Annual EGP} & \textbf{Notes} \\
+\hline
+API Gateway & AWS API GW & REST API + Custom Domain & 15 & 758 & 9,096 & $3/Million calls + $1/domain \\
+\hline
+App Services & AWS ECS & 3 x t3.medium & 249 & 12,575 & 150,900 & Auto-scaling group \\
+App Services & Render.com & Starter & 59 & 2,980 & 35,760 & 100GB bandwidth included \\
+App Services & Hetzner Cloud & CX32 & 24.42 & 1,233 & 14,796 & 80,000 requests/month \\
+\hline
+Realtime Server & AWS EC2 & t3.small & 15.50 & 783 & 9,396 & Node.js websocket server \\
+Realtime Server & DigitalOcean & Basic Droplet 1GB & 6 & 303 & 3,636 & Alternative provider \\
+\hline
+\end{tabular}
+\caption{Compute Infrastructure Costs - Monthly}
+\end{table}
+
+\subsubsection{Category 3: AI and Machine Learning Services}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\begin{tabular}{|l|l|l|l|l|l|l|l|}
+\hline
+\textbf{Service} & \textbf{Provider} & \textbf{Model/Usage} & \textbf{Monthly USD} & \textbf{Monthly EGP} & \textbf{Annual EGP} & \textbf{Notes} \\
+\hline
+Vision AI & OpenAI GPT-4o Vision & 150K tokens/day & 450 & 22,725 & 272,700 & Token conversion required \\
+Vision AI & Google Gemini Pro Vision & 150K calls/day & 389 & 19,645 & 235,740 & $0.0025/1K images \\
+Fraud Detection & OpenAI GPT-4o & 200K input tokens/day & 380 & 19,190 & 230,280 & \\
+Fraud Detection & Google Gemini Flash & 200K calls/day & 234 & 11,817 & 141,804 & $0.0075/1K input \\
+Impact Economist & OpenAI GPT-4o & 100K tokens/day & 175 & 8,838 & 106,056 & \\
+Impact Economist & Google Gemini Pro & 100K calls/day & 263 & 13,272 & 159,264 & \\
+Graph Synthesis & OpenAI GPT-4o & 50K tokens/day & 85 & 4,293 & 51,516 & \\
+Graph Synthesis & Google Gemini Pro & 50K calls/day & 127 & 6,414 & 76,968 & \\
+\hline
+\multicolumn{4}{|l|}{\textbf{AI Total (Conservative Estimate)}} & \textbf{150,060} & \textbf{1,800,720} & \textbf{3,600+ images/day} \\
+\hline
+\end{tabular}
+\caption{AI Infrastructure Costs - Monthly}
+\end{table}
+
+\subsubsection{Category 4: Storage and CDN}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\begin{tabular}{|l|l|l|l|l|l|l|l|}
+\hline
+\textbf{Service} & \textbf{Provider} & \textbf{Tier} & \textbf{Monthly USD} & \textbf{Monthly EGP} & \textbf{Annual EGP} & \textbf{Notes} \\
+\hline
+Object Storage & AWS S3 & 100GB Standard & 2.30 & 116 & 1,392 & $0.023/GB + $0.0004/1K requests \\
+CDN & AWS CloudFront & 50GB transfer & 45 & 2,273 & 27,276 & $0.085/GB + $0.0075/10K requests \\
+Egypt CDN & EgyptCloud CDN & 50GB & 15 & 758 & 9,096 & Local Egypt provider \\
+\hline
+\end{tabular}
+\caption{Storage and CDN Costs - Monthly}
+\end{table}
+
+\subsubsection{Category 5: Monitoring and Observability}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\begin{tabular}{|l|l|l|l|l|l|l|}
+\hline
+\textbf{Service} & \textbf{Provider} & \textbf{Monthly USD} & \textbf{Monthly EGP} & \textbf{Annual EGP} & \textbf{Notes} \\
+\hline
+Prometheus Cloud & Grafana Cloud & Pro Plan & 49 & 2,475 & 29,700 & 50GB logs/month \\
+DataDog (Alternative) & DataDog & Pro 15 hosts & 279 & 14,090 & 169,080 & Higher tier option \\
+New Relic (Alternative) & New Relic & Pro 15 hosts & 165 & 8,333 & 99,996 & \\
+\hline
+\end{tabular}
+\caption{Monitoring and Observability Costs - Monthly}
+\end{table}
+
+\subsubsection{Category 6: Authentication and Notifications}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\begin{tabular}{|l|l|l|l|l|l|l|}
+\hline
+\textbf{Service} & \textbf{Provider} & \textbf{Monthly USD} & \textbf{Monthly EGP} & \textbf{Annual EGP} & \textbf{Notes} \\
+\hline
+FCM & Firebase & Free Tier + Pay-as-you-go & 15 & 758 & 9,096 & $0.00 per message up to quota \\
+SendGrid & Twilio SendGrid & Pro 300K & 40 & 2,020 & 24,240 & Email delivery \\
+STK Push & Fawry API & Pay-as-you-go & Variable & Variable & 0.5 EGP/notification & Vodafone Cash \\
+\hline
+\end{tabular}
+\caption{Authentication and Notification Costs - Monthly}
+\end{table}
+
+\subsubsection{Category 7: Payment Processing}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\begin{tabular}{|l|l|l|l|l|l|l|l|}
+\hline
+\textbf{Service} & \textbf{Provider} & \textbf{Tier} & \textbf{Monthly USD} & \textbf{Monthly EGP} & \textbf{Annual EGP} & \textbf{Notes} \\
+\hline
+Payment Gateway & Stripe & Standard & 0 & 0 & 0 & 2.9\% + 0.30 USD/txn \\
+Payment Gateway & Paymob & Egyptian Gateway & 0 & 0 & 0 & 2.5\% + EGP 0.50/txn \\
+Paymob Setup Fee & Paymob & Onboarding & 100 & 5,050 & One-time & KYC verification \\
+\hline
+\end{tabular}
+\caption{Payment Processing Costs - Monthly (per transaction fees apply)}
+\end{table}
+
+\subsection{Total Infrastructure Costs}
+
+\subsubsection{Development/Staging Environment}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\begin{tabular}{|l|l|l|l|}
+\hline
+\textbf{Category} & \textbf{Monthly USD} & \textbf{Monthly EGP} & \textbf{Annual EGP} \\
+\hline
+Database Infrastructure & 35.22 & 1,780 & 21,360 \\
+Compute Services & 99.92 & 5,045 & 60,540 \\
+AI Services & 500 & 25,250 & 303,000 \\
+Storage + CDN & 54.61 & 2,758 & 33,096 \\
+Monitoring & 49 & 2,475 & 29,700 \\
+Notifications & 55 & 2,778 & 33,336 \\
+Payment Fees & Variable & Variable & 2.5\% + 0.50 EGP/txn \\
+\hline
+\textbf{Subtotal (Excl. Payments)} & \textbf{793.75} & \textbf{40,086} & \textbf{481,032} \\
+\hline
+\end{tabular}
+\caption{Monthly Infrastructure Costs - Development/Staging}
+\end{table}
+
+\subsubsection{Production Environment (Minimum Viable)}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\begin{tabular}{|l|l|l|l|}
+\hline
+\textbf{Category} & \textbf{Monthly USD} & \textbf{Monthly EGP} & \textbf{Annual EGP} \\
+\hline
+Database Infrastructure & 85 & 4,293 & 51,516 \\
+Compute Services & 350 & 17,675 & 212,100 \\
+AI Services & 1,000 & 50,500 & 606,000 \\
+Storage + CDN & 150 & 7,575 & 90,900 \\
+Monitoring & 165 & 8,333 & 99,996 \\
+Notifications & 100 & 5,050 & 60,600 \\
+\hline
+\textbf{Subtotal} & \textbf{1,850} & \textbf{93,826} & \textbf{1,125,912} \\
+\hline
+\end{tabular}
+\caption{Monthly Infrastructure Costs - Production (MVA)}
+\end{table}
+
+\subsubsection{Production Environment (High Availability)}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\begin{tabular}{|l|l|l|l|}
+\hline
+\textbf{Category} & \textbf{Monthly USD} & \textbf{Monthly EGP} & \textbf{Annual EGP} \\
+\hline
+Database Infrastructure & 200 & 10,100 & 121,200 \\
+Compute Services & 800 & 40,400 & 484,800 \\
+AI Services & 2,500 & 126,250 & 1,515,000 \\
+Storage + CDN & 300 & 15,150 & 181,800 \\
+Monitoring & 300 & 15,150 & 181,800 \\
+Notifications & 200 & 10,100 & 121,200 \\
+\hline
+\textbf{Subtotal} & \textbf{4,300} & \textbf{217,150} & \textbf{2,605,800} \\
+\hline
+\end{tabular}
+\caption{Monthly Infrastructure Costs - Production (HA)}
+\end{table}
+
+\subsection{Egypt-Based Infrastructure Options}
+
+\subsubsection{EgyptCloud (Local Egyptian Provider)}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\begin{tabular}{|l|l|l|l|l|l|l|}
+\hline
+\textbf{Service} & \textbf{Tier} & \textbf{Monthly USD} & \textbf{Monthly EGP} & \textbf{Annual EGP} & \textbf{Notes} \\
+\hline
+Virtual Server & CX32 (4vCPU, 8GB RAM) & 24.42 & 1,233 & 14,796 & Comparable to Hetzner \\
+Object Storage & 200GB & 5.88 & 297 & 3,564 & EGP 0.0025/GB \\
+Database & Managed PostgreSQL & 35 & 1,768 & 21,216 & \\
+CDN & 100GB & 25 & 1,265 & 15,180 & \\
+\hline
+\multicolumn{3}{|r|}{\textbf{EgyptCloud Subtotal (Staging)}} & 90.30 & 4,563 & 54,756 & \\
+\hline
+\end{tabular}
+\caption{EgyptCloud Infrastructure Costs Comparison}
+\end{table}
+
+\subsection{Cost Optimization Strategies}
+
+\begin{enumerate}
+    \item \textbf{Annual Commitments:} 30-40\% discount for annual pre-payment on most cloud services
+    \item \textbf{Spot Instances:} Up to 70\% savings for non-critical batch processing workloads
+    \item \textbf{Cold Storage:} Archive storage for inactive evidence at $0.004/GB/month
+    \item \textbf{Cache Optimization:} Reduce DB queries by 60-80\% through Redis caching
+    \item \textbf{AI Cost Control:} Implement usage quotas and prompt optimization to reduce token consumption
+    \item \textbf{Egypt CDN:} 40-60\% cost reduction for Egyptian users compared to global CDNs
+    \item \textbf{Self-Hosted Neo4j:} $10,100/month savings vs Neo4j Aura by using AWS EC2
+\end{enumerate}
+
+\subsection{ROI and Break-Even Analysis}
+
+\subsubsection{Monthly Monetization Threshold}
+
+To achieve break-even with Production HA infrastructure costs:
+
+\begin{align*}
+\text{Required Monthly Revenue} &= \text{Infrastructure Costs} \\
+&= 4,300 \text{ USD} \\
+&= 900 \text{ EGP} \text{ per active user (assuming 4,780 users)}
+\end{align*}
+
+\subsubsection{Blockchain Transaction Costs}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\begin{tabular}{|l|l|l|l|}
+\hline
+\textbf{Network} & \textbf{Transaction Fee} & \textbf{Monthly (100K txns)} & \textbf{Annual} \\
+\hline
+Ethereum L2 (Polygon) & 0.5 USD & 50 USD & 600 USD \\
+Solana & 0.01 USD & 1,000 USD? No: 0.01 USD = 1 USD for 100K transactions & 12,000 USD \\
+BSC & 0.20 USD & 20 USD & 240 USD \\
+Hedera Hashgraph & 0.0001 USD & 10 USD & 120 USD \\
+\hline
+\end{tabular}
+\caption{Monthly Blockchain Transaction Fee Estimates}
+\end{table}
+
+\clearpage
+
+\subsection{Recommendations for CEO}
+
+\begin{enumerate}
+    \item \textbf{Immediate (0-3 months):} Start with Development/Staging environment at \$794/month (\$40K annually) to validate the MVP and secure initial users
+    
+    \item \textbf{Growth Phase (3-12 months):} Scale to Production-MVA at \$1,850/month (\$1.1M annually) once user base exceeds 5,000 MAU
+    
+    \item \textbf{Maturity Phase (Year 2+):} Deploy Production-HA at \$4,300/month (\$2.6M annually) for platform reliability and scalability to millions of users
+    
+    \item \textbf{Technical Leadership Considerations:}
+    \begin{itemize}
+        \item Prioritize AI cost management through prompt engineering and caching
+        \item Evaluate self-hosted Neo4j vs managed service based on query volume
+        \item Implement comprehensive monitoring before scaling AI services
+        \item Leverage Egypt-based cloud providers for reduced latency and costs for Egyptian users
+    \end{itemize}
+    
+    \item \textbf{Financial Planning:} The platform requires significant infrastructure investment upfront. Revenue projections should account for the 12-month break-even timeline at scale.
+\end{enumerate}
+
+\subsection{Financial Risk Assessment}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\begin{tabular}{|l|l|l|l|}
+\hline
+\textbf{Risk Category} & \textbf{Probability} & \textbf{Impact} & \textbf{Mitigation} \\
+\hline
+AI Cost Overruns & Medium & High & Usage quotas, prompt optimization, caching \\
+User Growth Slower Than Expected & High & High & Lean infrastructure, gradual scaling \\
+Payment Processing Failure & Low & Medium & Multi-gateway redundancy, escrow \\
+Database Scaling Issues & Medium & High & Proper capacity planning, read replicas \\
+\hline
+\end{tabular}
+\caption{Financial Risk Assessment Matrix}
+\end{table}
+
