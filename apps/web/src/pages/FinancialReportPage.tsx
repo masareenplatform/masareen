@@ -14,67 +14,64 @@ const COST_CATEGORIES: CostCategory[] = [
   {
     category: "Database Infrastructure",
     services: [
-      { name: "PostgreSQL (AWS Aurora)", provider: "AWS", monthlyEGP: 4293, annualEGP: 51516, notes: "db.t3.medium, Multi-AZ for HA" },
-      { name: "Neo4j Aura", provider: "Neo4j", monthlyEGP: 10100, annualEGP: 121200, notes: "Knowledge graph, Professional tier" },
-      { name: "Redis Cache", provider: "AWS ElastiCache", monthlyEGP: 1010, annualEGP: 12120, notes: "cache.t3.micro" },
+      { name: "PostgreSQL (AWS Aurora)", provider: "AWS", monthlyEGP: 3500, annualEGP: 42000, notes: "db.t3.medium, Multi-AZ for HA" },
+      { name: "Neo4j Aura", provider: "Neo4j", monthlyEGP: 6500, annualEGP: 78000, notes: "Knowledge graph, Professional tier" },
+      { name: "Redis Cache", provider: "AWS ElastiCache", monthlyEGP: 800, annualEGP: 9600, notes: "cache.t3.micro" },
     ],
-    totalMonthly: 15403,
+    totalMonthly: 10800,
   },
   {
     category: "Compute Services",
     services: [
-      { name: "API Gateway", provider: "AWS", monthlyEGP: 758, annualEGP: 9096, notes: "REST API + Custom Domain" },
-      { name: "App Services (3x)", provider: "AWS ECS", monthlyEGP: 12575, annualEGP: 150900, notes: "t3.medium instances" },
-      { name: "Realtime Server", provider: "AWS EC2", monthlyEGP: 783, annualEGP: 9396, notes: "WebSocket hub" },
+      { name: "API Gateway", provider: "AWS", monthlyEGP: 650, annualEGP: 7800, notes: "REST API + Custom Domain" },
+      { name: "App Services (3x)", provider: "AWS ECS", monthlyEGP: 8500, annualEGP: 102000, notes: "t3.medium instances" },
+      { name: "Realtime Server", provider: "AWS EC2", monthlyEGP: 650, annualEGP: 7800, notes: "WebSocket hub" },
     ],
-    totalMonthly: 14116,
+    totalMonthly: 9800,
   },
   {
-    category: "AI/ML Services",
+    category: "AI/ML Services (User-Provided)",
     services: [
-      { name: "Vision AI (GPT-4o Vision)", provider: "OpenAI", monthlyEGP: 22725, annualEGP: 272700, notes: "150K tokens/day estimate" },
-      { name: "Fraud Detection", provider: "OpenAI/Gemini", monthlyEGP: 19190, annualEGP: 230280, notes: "200K actions/day" },
-      { name: "Impact Economist", provider: "OpenAI/Gemini", monthlyEGP: 8838, annualEGP: 106056, notes: "100K actions/day" },
-      { name: "Graph Synthesis", provider: "OpenAI/Gemini", monthlyEGP: 4293, annualEGP: 51516, notes: "50K exports/day" },
+      { name: "AI Inference (OpenAI/Gemini)", provider: "Cloud APIs", monthlyEGP: 5000, annualEGP: 60000, notes: "Existing platform AI integration" },
     ],
-    totalMonthly: 55046,
+    totalMonthly: 5000,
   },
   {
     category: "Storage + CDN",
     services: [
-      { name: "Object Storage (S3)", provider: "AWS", monthlyEGP: 116, annualEGP: 1392, notes: "100GB Standard" },
-      { name: "CDN", provider: "AWS CloudFront", monthlyEGP: 2273, annualEGP: 27276, notes: "50GB transfer" },
+      { name: "Object Storage (S3)", provider: "AWS", monthlyEGP: 150, annualEGP: 1800, notes: "100GB Standard" },
+      { name: "CDN", provider: "AWS CloudFront", monthlyEGP: 2200, annualEGP: 26400, notes: "50GB transfer" },
     ],
-    totalMonthly: 2389,
+    totalMonthly: 2350,
   },
   {
     category: "Monitoring",
     services: [
-      { name: "Grafana Cloud Pro", provider: "Grafana", monthlyEGP: 2475, annualEGP: 29700, notes: "50GB logs/month" },
+      { name: "Grafana Cloud Pro", provider: "Grafana", monthlyEGP: 2200, annualEGP: 26400, notes: "50GB logs/month" },
     ],
-    totalMonthly: 2475,
+    totalMonthly: 2200,
   },
 ];
 
 const DEPLOYMENT_SCENARIOS = [
   {
     name: "Development/Staging",
-    monthlyEGP: 40086,
-    annualEGP: 481032,
+    monthlyEGP: 8500,
+    annualEGP: 102000,
     description: "Single-node deployment for MVP validation and testing",
     users: "Up to 1,000 MAU",
   },
   {
     name: "Production MVP",
-    monthlyEGP: 93826,
-    annualEGP: 1125912,
+    monthlyEGP: 23000,
+    annualEGP: 276000,
     description: "Minimum viable production for 5,000+ users",
     users: "5,000+ MAU",
   },
   {
     name: "Production HA",
-    monthlyEGP: 217150,
-    annualEGP: 2605800,
+    monthlyEGP: 45500,
+    annualEGP: 546000,
     description: "High-availability multi-region deployment for scale",
     users: "50,000+ MAU",
   },
@@ -121,7 +118,7 @@ export default function FinancialReportPage() {
               MASAREN Platform Cost Analysis
             </h1>
             <p className="mx-auto mt-4 max-w-3xl text-xl text-white/90">
-              Comprehensive infrastructure cost breakdown in Egyptian Pounds (EGP). Includes AI services, databases, compute, and deployment scenarios.
+              Comprehensive infrastructure cost breakdown in Egyptian Pounds (EGP). Includes database, compute, storage, and deployment scenarios.
             </p>
             <div className="mt-8 flex justify-center gap-4">
               <button onClick={handlePDFDownload} className="btn-xl btn-gold flex items-center gap-2">
@@ -177,7 +174,7 @@ export default function FinancialReportPage() {
         </div>
       </section>
 
-      <section className="py-20 bg-gray-50">
+      <section className="py-20">
         <div className="mx-auto max-w-6xl px-4">
           <h2 className="font-display text-4xl font-extrabold text-center text-ink mb-12">Deployment Scenarios</h2>
           
