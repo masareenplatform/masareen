@@ -211,8 +211,8 @@ export default function FinancialReportPage() {
   // Handler functions
   const handlePDFDownload = () => {
     const link = document.createElement("a");
-    link.href = "/docs/techdocs/techdocs.tex";
-    link.download = "MASAREN_Financial_Report.tex";
+    link.href = "/docs/techdocs/techdocs.pdf";
+    link.download = "MASAREN_Financial_Report.pdf";
     link.click();
   };
 
