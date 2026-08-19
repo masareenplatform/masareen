@@ -12,67 +12,59 @@ interface CostCategory {
 
 const COST_CATEGORIES: CostCategory[] = [
   {
-    category: "Database Infrastructure",
+    category: "Vision AI Services",
     services: [
-      { name: "PostgreSQL (AWS Aurora)", provider: "AWS", monthlyEGP: 3500, annualEGP: 42000, notes: "db.t3.medium, Multi-AZ for HA" },
-      { name: "Neo4j Aura", provider: "Neo4j", monthlyEGP: 6500, annualEGP: 78000, notes: "Knowledge graph, Professional tier" },
-      { name: "Redis Cache", provider: "AWS ElastiCache", monthlyEGP: 800, annualEGP: 9600, notes: "cache.t3.micro" },
+      { name: "OpenAI GPT-4o Vision", provider: "OpenAI", monthlyEGP: 22725, annualEGP: 272700, notes: "150K tokens/day" },
+      { name: "Google Gemini Pro Vision", provider: "Google", monthlyEGP: 19645, annualEGP: 235740, notes: "150K calls/day" },
     ],
-    totalMonthly: 10800,
+    totalMonthly: 42370,
   },
   {
-    category: "Compute Services",
+    category: "Fraud Detection AI",
     services: [
-      { name: "API Gateway", provider: "AWS", monthlyEGP: 650, annualEGP: 7800, notes: "REST API + Custom Domain" },
-      { name: "App Services (3x)", provider: "AWS ECS", monthlyEGP: 8500, annualEGP: 102000, notes: "t3.medium instances" },
-      { name: "Realtime Server", provider: "AWS EC2", monthlyEGP: 650, annualEGP: 7800, notes: "WebSocket hub" },
+      { name: "OpenAI GPT-4o", provider: "OpenAI", monthlyEGP: 19190, annualEGP: 230280, notes: "200K input tokens/day" },
+      { name: "Google Gemini Flash", provider: "Google", monthlyEGP: 11817, annualEGP: 141804, notes: "200K calls/day" },
     ],
-    totalMonthly: 9800,
+    totalMonthly: 31007,
   },
   {
-    category: "AI/ML Services (User-Provided)",
+    category: "Impact Economist AI",
     services: [
-      { name: "AI Inference (OpenAI/Gemini)", provider: "Cloud APIs", monthlyEGP: 5000, annualEGP: 60000, notes: "Existing platform AI integration" },
+      { name: "OpenAI GPT-4o", provider: "OpenAI", monthlyEGP: 8838, annualEGP: 106056, notes: "100K tokens/day" },
+      { name: "Google Gemini Pro", provider: "Google", monthlyEGP: 13272, annualEGP: 159264, notes: "100K calls/day" },
     ],
-    totalMonthly: 5000,
+    totalMonthly: 22110,
   },
   {
-    category: "Storage + CDN",
+    category: "Graph Synthesis AI",
     services: [
-      { name: "Object Storage (S3)", provider: "AWS", monthlyEGP: 150, annualEGP: 1800, notes: "100GB Standard" },
-      { name: "CDN", provider: "AWS CloudFront", monthlyEGP: 2200, annualEGP: 26400, notes: "50GB transfer" },
+      { name: "OpenAI GPT-4o", provider: "OpenAI", monthlyEGP: 4293, annualEGP: 51516, notes: "50K tokens/day" },
+      { name: "Google Gemini Pro", provider: "Google", monthlyEGP: 6414, annualEGP: 76968, notes: "50K calls/day" },
     ],
-    totalMonthly: 2350,
-  },
-  {
-    category: "Monitoring",
-    services: [
-      { name: "Grafana Cloud Pro", provider: "Grafana", monthlyEGP: 2200, annualEGP: 26400, notes: "50GB logs/month" },
-    ],
-    totalMonthly: 2200,
+    totalMonthly: 10707,
   },
 ];
 
 const DEPLOYMENT_SCENARIOS = [
   {
-    name: "Development/Staging",
-    monthlyEGP: 8500,
-    annualEGP: 102000,
-    description: "Single-node deployment for MVP validation and testing",
+    name: "AI Development",
+    monthlyEGP: 42370,
+    annualEGP: 508440,
+    description: "Vision + fraud detection + economist AI services for MVP",
     users: "Up to 1,000 MAU",
   },
   {
-    name: "Production MVP",
-    monthlyEGP: 23000,
-    annualEGP: 276000,
-    description: "Minimum viable production for 5,000+ users",
+    name: "AI Production",
+    monthlyEGP: 95504,
+    annualEGP: 1146048,
+    description: "Full AI suite (vision, fraud, economist, graph synthesis) for 5,000+ users",
     users: "5,000+ MAU",
   },
   {
-    name: "Production HA",
-    monthlyEGP: 45500,
-    annualEGP: 546000,
-    description: "High-availability multi-region deployment for scale",
+    name: "AI Enterprise",
+    monthlyEGP: 210324,
+    annualEGP: 2523888,
+    description: "Complete AI services at scale with volume discounts and custom models",
     users: "50,000+ MAU",
   },
 ];
