@@ -286,7 +286,7 @@ export default function FinancialReportPage() {
             <span className="eyebrow mb-4 inline-block">AI Services Costs</span>
             <h2 className="font-display text-4xl font-extrabold text-ink">Monthly Cost Breakdown</h2>
             <p className="text-muted mt-4 max-w-2xl mx-auto">
-              All prices in EGP using 1 USD = 50.5 EGP exchange rate (August 2026). AI services only. Infrastructure provided separately.
+              All prices in EGP using 1 USD = 50.5 EGP exchange rate (August 2026). AI services only. Infrastructure provided separately. Costs charged to users via admin-controlled per-user quotas and billing.
             </p>
           </div>
 
@@ -460,6 +460,120 @@ export default function FinancialReportPage() {
               <p className="text-sm text-muted">
                 {FINANCIAL_ANALYSIS.exchangeRateNote}. Volume discounts available at Enterprise scale (25% discount applicable).
               </p>
+            </div>
+          </section>
+
+          {/* Admin Control Panel */}
+          <section className="mt-8">
+            <div className="mb-6">
+              <h3 className="font-display text-2xl font-bold text-ink mb-3">Admin Control Panel - AI Service Usage</h3>
+              <p className="text-muted mb-4">
+                Administrators can control AI service usage per user to manage costs effectively.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <h4 className="font-display text-semibold text-ink mb-2">Usage Quota Management</h4>
+                <ul className="text-muted space-y-2">
+                  <li>Daily Token Limits: 10K-2M tokens/day per user tier</li>
+                  <li>Daily Call Limits: 1K-5M calls/day per user tier</li>
+                  <li>Monthly Reset: Quotas reset on account anniversary</li>
+                  <li>Overage Charging: 2x base cost/token for overages</li>
+                </ul>
+              </div>
+
+              <div>
+                <h4 className="font-display text-semibold text-ink mb-2">Model Selection & Routing</h4>
+                <ul className="text-muted space-y-2">
+                  <li>Primary Models: OpenAI GPT-4o, Google Gemini Pro</li>
+                  <li>Fallback Models: Llama 3.1, Mistral (60-80% cost reduction)</li>
+                  <li>Automatic Routing: To cheapest model meeting quality requirements</li>
+                  <li>Per-User Model Affinity: Based on use case</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="mt-4 p-3 bg-canvas rounded-lg">
+              <h4 className="font-display text-semibold text-ink mb-2">Cost Monitoring Thresholds</h4>
+              <ul className="text-sm text-muted space-y-2">
+                <li>Cost per User: Exceeds 2x average → Admin notification</li>
+                <li>Daily Token Usage: Exceeds 80% quota → Automatic user warning</li>
+                <li>Monthly Burn Rate: Exceeds budget +15% → Alert email to admin</li>
+                <li>Quota Utilization: 100% → API calls blocked, overage charged</li>
+              </ul>
+            </div>
+          </section>
+
+          {/* User-Charged Financial Plan */}
+          <section className="mt-8">
+            <div className="mb-6">
+              <h3 className="font-display text-2xl font-bold text-ink mb-3">Financial Plan - User-Charged AI Model</h3>
+              <p className="text-muted mb-4">
+                AI service costs are billed directly to platform users, ensuring sustainable infrastructure funding.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <h4 className="font-display text-semibold text-ink mb-2">Per-User Cost Schedule</h4>
+                <table className="w-full text-sm text-muted">
+                  <thead>
+                    <tr>
+                      <th className="font-bold text-ink">Tier</th>
+                      <th className="font-bold text-ink">Users</th>
+                      <th className="font-bold text-ink">Daily Tokens</th>
+                      <th className="font-bold text-ink">Cost/User (EGP/month)</th>
+                      <th className="font-bold text-ink">Included Services</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Development</td>
+                      <td>Up to 1,000</td>
+                      <td>350,000</td>
+                      <td>4.24</td>
+                      <td>Vision AI + Fraud Detection</td>
+                    </tr>
+                    <tr>
+                      <td>Production</td>
+                      <td>5,000+</td>
+                      <td>850,000</td>
+                      <td>1.91</td>
+                      <td>All 4 AI categories</td>
+                    </tr>
+                    <tr>
+                      <td>Enterprise</td>
+                      <td>50,000+</td>
+                      <td>2,000,000</td>
+                      <td>0.42</td>
+                      <td>All AI with volume discounts</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div>
+                <h4 className="font-display text-semibold text-ink mb-2">Billing Integration</h4>
+                <ul className="text-muted space-y-3">
+                  <li>Monthly invoice with AI costs itemized separately</li>
+                  <li>Automatic payment linked to user's payment method</li>
+                  <li>Usage transparency via user dashboard</li>
+                  <li>Quota management through account settings</li>
+                  <li>Overage notifications when approaching limits</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="mt-4 p-3 bg-canvas rounded-lg">
+              <h4 className="font-display text-semibold text-ink mb-2">Cost Recovery Guarantee</h4>
+              <ul className="text-muted space-y-2">
+                <li>100% Cost Recovery: All AI service costs (10,707 EGP/month baseline) recovered from users</li>
+                <li>Predictable Budgeting: Fixed per-user costs enable predictable monthly revenue</li>
+                <li>Scalable Model: Cost per user decreases with scale (Economies of scale)</li>
+                <li>Administrator Control: Full admin interface for quota management and cost optimization</li>
+                <li>User Transparency: Complete visibility into AI usage and costs</li>
+              </ul>
             </div>
           </section>
         </div>

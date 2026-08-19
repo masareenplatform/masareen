@@ -2424,16 +2424,228 @@ User Growth Faster Than Expected & Medium & High & Scale AI infrastructure proac
         \item Plan for multi-AI-provider strategy to avoid vendor lock-in and leverage best pricing
     \end{itemize}
     
-    \item \textbf{Financial Planning:} The AI services cost of 10,707 EGP/month (conservative estimate) is in addition to the infrastructure costs (starting at 8,500 EGP/month for Dev/Staging). Total platform cost at Development/Staging = 8,500 + 10,707 = 19,207 EGP/month.
+    \item \textbf{Financial Planning - User-Charged AI Costs}
+
+The MASAREN platform implements a user-charged AI services model where AI service costs are billed directly to platform users rather than being absorbed by the platform operator. This model ensures sustainable infrastructure funding while keeping platform costs predictable.
+
+\subsubsection{Per-User AI Cost Allocation}
+
+AI service costs are allocated per active user based on actual usage:
+
+\begin{table}[H]
+\centering
+\footnotesize
+\begin{tabular}{|l|l|l|l|l|}
+\hline
+\textbf{Scenario} & \textbf{Monthly AI Cost (EGP)} & \textbf{Users} & \textbf{Cost/User (EGP/month)} & \textbf{Billing Frequency} \\
+\hline
+AI Development & 4,237 & Up to 1,000 & 4.24 & Monthly prepayment \\
+AI Production & 9,550 & 5,000+ & 1.91 & Monthly prepayment \\
+AI Enterprise & 21,032 & 50,000+ & 0.42 & Monthly prepayment (volume discounts) \\
+\hline
+\end{tabular}
+\caption{Per-User AI Cost Allocation Model (500-10,000 EGP/month range)}
+\end{table}
+
+\subsubsection{Admin Control Panel for AI Service Usage}
+
+The platform includes an administrative interface for controlling AI service usage per user to manage costs:
+
+\begin{enumerate}
+    \item \textbf{Usage Quotas:} Administrators can set maximum daily token limits per user tier
+    \item \textbf{Prompt Caching:} Global caching enabled by default to reduce redundant token consumption by 30-50\%
+    \item \textbf{Model Switching:} Admins can force fallback to open-source models (Llama 3.1, Mistral) for cost reduction of 60-80\%
+    \item \textbf{Rate Limiting:} Per-user API rate limits to prevent cost overruns from runaway usage
+    \item \textbf{Quota Alerts:} Automatic alerts when user usage exceeds 80\% of allocated quota
+    \item \textbf{Custom Pricing Tiers:} Admins can define custom pricing per user category (Enterprise, Production, Development)
 \end{enumerate}
 
-\subsection{Next Steps - AI Cost Management}
+\subsubsection{Cost Control Mechanisms}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\begin{tabular}{|l|l|l|l|}
+\hline
+\textbf{Mechanism} & \textbf{Cost Reduction} & \textbf{Implementation} & \textbf{User Impact} \\
+\hline
+Prompt Caching & 30-50\% & Global cache for repeated prompts & Transparent to users \\
+Model Fallback & 60-80\% & Automatic switch to open-source & May affect output quality \\
+Token Quotas & Variable & Per-user daily limits & Predictable costs \\
+Peak Pricing & 20-30\% & Higher rates during peak hours & Incentivizes off-peak usage \\
+Volume Discounts & 15-30\% & Annual commitments & Lower per-user costs \\
+\hline
+\end{table}
+
+\subsubsection{Revenue and Cost Recovery}
+
+The user-charged AI model operates on the following financial principles:
+
+\begin{align*}
+\text{Total AI Revenue} &= \sum_{i=1}^{n} (\text{Cost/User}_i \times \text{Users}_i) \\
+\text{Total AI Services Cost} &= 10,707 \text{ EGP/month (baseline)} \\
+\text{Cost Recovery Ratio} &= \frac{\text{Total AI Revenue}}{\text{Total AI Services Cost}} \times 100\% \\
+\end{align*}
+
+Target Cost Recovery: 100\% (full cost recovery from users)
+
+\textbf{Break-Even Analysis:} At the AI Production scenario (9,550 EGP/month total, 1.91 EGP/user/month with 5,000 MAU), the platform breaks even when 5,000+ active users are registered and paying their allocated AI service fees.
+
+\textbf{Revenue Projections:}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\begin{tabular}{|l|l|l|l|}
+\hline
+\textbf{Scenario} & \textbf{Users} & \textbf{Cost/User (EGP)} & \textbf{Monthly Revenue (EGP)} \\
+\hline
+AI Development & 1,000 & 4.24 & 4,240 \\
+AI Production & 5,000 & 1.91 & 9,550 \\
+AI Enterprise & 50,000 & 0.42 & 21,000 \\
+\hline
+\end{tabular}
+\caption{Revenue Projections per User Tier}
+\end{table}
+
+\subsection{Admin Control Panel for AI Service Usage}
+
+The MASAREN platform includes a comprehensive administrative interface for controlling AI service usage per user to manage costs effectively:
+
+\subsubsection{Usage Quota Management}
+
+Administrators can configure per-user AI service usage quotas:
+
+\begin{itemize}
+    \item \textbf{Daily Token Limits:} Set maximum tokens per user per day (range: 10K-2M tokens/day)
+    \item \textbf{Daily Call Limits:} Set maximum API calls per user per day (range: 1K-5M calls/day)
+    \item \textbf{Monthly Reset:} Quotas reset on user account anniversary or calendar month
+    \item \textbf{Overage Charging:} Users exceeding quotas charged at premium rate (2x base cost/token)
+\end{itemize}
+
+\subsubsection{Model Selection and Routing}
+
+Administrators can control which AI models are used per user tier:
+
+\begin{itemize}
+    \item \textbf{Primary Models:} OpenAI GPT-4o, Google Gemini Pro (default for production)
+    \item \textbf{Fallback Models:} Open-source Llama 3.1, Mistral for cost reduction
+    \item \textbf{Model Affinity:} Per-user model preferences based on use case
+    \item \textbf{Automatic Routing:} System intelligently routes requests to cheapest available model meeting quality requirements
+\end{itemize}
+
+\subsubsection{Cost Monitoring and Alerts}
+
+Real-time monitoring dashboard for AI service costs:
+
+\begin{table}[H]
+\centering
+\footnotesize
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Metric} & \textbf{Threshold} & \textbf{Action} \\
+\hline
+Cost per User & Exceeds 2$\times$ average & Admin notification \\
+Daily Token Usage & Exceeds 80\% quota & Automatic warning to user \\
+Monthly Burn Rate & Exceeds budget \& 15\% & Alert email to admin \\
+Quota Utilization & 100\% & API calls blocked, overage charged \\
+\hline
+\end{tabular}
+\caption{Cost Monitoring Thresholds and Actions}
+\end{table}
+
+\subsection{Comprehensive Financial Plan - User-Charged AI Model}
+
+\subsubsection{Objective}
+
+Implement a sustainable user-charged AI services model that:
+\begin{enumerate}
+    \item Recovers 100\% of AI service costs from platform users
+    \item Maintains predictable cost structure for platform planning
+    \item Provides administrators tools to control and optimize AI usage
+    \ensures transparent billing for end users
+\end{enumerate}
+
+\subsubsection{Implementation Phases}
+
+\textbf{Phase 1: Immediate (0-3 months)}
+\begin{itemize}
+    \item Deploy per-user quota system with default limits
+    \item Implement prompt caching (30-50\% cost reduction)
+    \item Set up cost monitoring and alerting
+    \item Bill AI costs alongside platform subscription fees
+    \item Target: 90\% cost recovery from first 1,000 users
+\end{itemize}
+
+\textbf{Phase 2: Growth (3-12 months)}
+\begin{itemize}
+    \item Implement model fallback system (60-80\% cost reduction)
+    \item Deploy custom pricing tiers per user category
+    \item Integrate volume discount automatic application
+    \item Real-time admin dashboard for cost monitoring
+    \item Target: 95-100\% cost recovery at scale
+\end{itemize}
+
+\textbf{Phase 3: Maturity (Year 2+)}
+\begin{itemize}
+    \item Negotiate enterprise pricing with OpenAI/Google
+    \item Deploy custom fine-tuned open-source models
+    \item Implement advanced predictive usage management
+    \item Cross-subsidize development phase from enterprise revenues
+    \item Target: Profitable AI services operation
+\end{itemize}
+
+\subsubsection{Per-User Cost Schedule}
+
+The following per-user cost schedule applies across all deployment scenarios, with costs billed monthly:
+
+\begin{table}[H]
+\centering
+\footnotesize
+\begin{tabular}{|l|l|l|l|l|}
+\hline
+\textbf{Tier} & \textbf{Users} & \textbf{Daily Tokens} & \textbf{Cost/User (EGP/month)} & \textbf{Included Services} \\
+\hline
+Development & Up to 1,000 & 350,000 & 4.24 & Vision AI + Fraud Detection \\
+Production & 5,000+ & 850,000 & 1.91 & All 4 AI categories \\
+Enterprise & 50,000+ & 2,000,000 & 0.42 & All AI with volume discounts \\
+\hline
+\end{table}
+
+\subsubsection{Billing and Payment Integration}
+
+AI service fees are integrated with the MASAREN payment system:
+
+\begin{enumerate}
+    \item \textbf{Monthly Invoice:} AI costs itemized separately on monthly user invoice
+    \item \textbf{Automatic Payment:} Linked to user's existing payment method on file
+    \item \textbf{Usage Transparency:} Users can view their token usage and costs in dashboard
+    \item \textbf{Quota Management:} Users can adjust their AI service usage quota via account settings
+    \item \textbf{Overage Notifications:} Users notified when approaching/ exceeding quotas
+\end{enumerate}
+
+\subsubsection{Cost Recovery Guarantee}
+
+The user-charged AI model guarantees:
+
+\begin{itemize}
+    \item \textbf{100\% Cost Recovery:} All AI service costs (10,707 EGP/month baseline) recovered from users
+    \item \textbf{Predictable Budgeting:} Fixed per-user costs enable predictable monthly revenue
+    \item \textbf{Scalable Model:} Cost per user decreases with scale (Economies of scale)
+    \item \textbf{Administrator Control:} Full admin interface for quota management and cost optimization
+    \item \textbf{User Transparency:} Complete visibility into AI usage and costs
+\end{itemize}
+
+\subsubsection{Next Steps}
 
 The platform operator should:
-1. Implement AI usage monitoring and quota alerts immediately
-2. Optimize prompts and implement caching to reduce token consumption by 30-50\%
-3. Evaluate open-source LLM alternatives for high-volume, low-complexity tasks
-4. Negotiate volume discounts with OpenAI/Google once monthly usage exceeds 1,000 EGP per service
-5. Plan for AI cost scaling proportional to user growth (currently 10,707 EGP/month at baseline usage)
-6. Consider hybrid approach: open-source models for batch processing + API models for real-time interactions
+
+\begin{enumerate}
+    \item \textbf{Immediate (0-3 months):} Deploy per-user quota system with default limits (Development: 4.24 EGP/user/month, Production: 1.91 EGP/user/month, Enterprise: 0.42 EGP/user/month). Implement prompt caching and cost monitoring. Bill AI costs alongside platform subscription fees. Target 90\% cost recovery from first 1,000 users.
+    
+    \item \textbf{Growth Phase (3-12 months):} Implement model fallback system for 60-80\% cost reduction. Deploy custom pricing tiers per user category. Integrate volume discount automatic application. Achieve 95-100\% cost recovery at scale.
+    
+    \item \textbf{Maturity Phase (Year 2+):} Negotiate enterprise pricing with OpenAI/Google. Deploy custom fine-tuned open-source models. Implement advanced predictive usage management. Cross-subsidize development phase from enterprise revenues. Target profitable AI services operation.
+\end{enumerate}
+'''
 '''
