@@ -1,129 +1,154 @@
-\contentsline {section}{\numberline {1}Introduction}{3}{section.1}%
-\contentsline {subsection}{\numberline {1.1}Mission and Purpose}{3}{subsection.1.1}%
-\contentsline {subsection}{\numberline {1.2}Platform Vision}{3}{subsection.1.2}%
-\contentsline {subsection}{\numberline {1.3}Core Architecture Principles}{3}{subsection.1.3}%
-\contentsline {section}{\numberline {2}System Architecture Overview}{5}{section.2}%
-\contentsline {subsection}{\numberline {2.1}High-Level Architecture Layers}{5}{subsection.2.1}%
-\contentsline {subsection}{\numberline {2.2}Architecture Diagram}{5}{subsection.2.2}%
-\contentsline {subsection}{\numberline {2.3}Sync and Async Communication}{6}{subsection.2.3}%
-\contentsline {subsection}{\numberline {2.4}Database Strategy}{6}{subsection.2.4}%
-\contentsline {section}{\numberline {3}Technology Stack}{7}{section.3}%
-\contentsline {subsection}{\numberline {3.1}Backend Technologies}{7}{subsection.3.1}%
-\contentsline {subsection}{\numberline {3.2}Frontend Technologies}{7}{subsection.3.2}%
-\contentsline {subsubsection}{\numberline {3.2.1}Web Application (apps/web)}{7}{subsubsection.3.2.1}%
-\contentsline {subsubsection}{\numberline {3.2.2}Admin Panel (apps/admin)}{8}{subsubsection.3.2.2}%
-\contentsline {subsubsection}{\numberline {3.2.3}Mobile Application (apps/mobile)}{8}{subsubsection.3.2.3}%
-\contentsline {subsection}{\numberline {3.3}DevOps and Infrastructure}{8}{subsection.3.3}%
-\contentsline {section}{\numberline {4}Service Domain Architecture}{10}{section.4}%
-\contentsline {subsection}{\numberline {4.1}Gateway Service}{10}{subsection.4.1}%
-\contentsline {subsection}{\numberline {4.2}Identity Domain}{10}{subsection.4.2}%
-\contentsline {subsubsection}{\numberline {4.2.1}Identity Service (port 8001)}{10}{subsubsection.4.2.1}%
-\contentsline {subsubsection}{\numberline {4.2.2}Authentication Service (port 8002)}{10}{subsubsection.4.2.2}%
-\contentsline {subsubsection}{\numberline {4.2.3}Authorization Service (port 8003)}{11}{subsubsection.4.2.3}%
-\contentsline {subsection}{\numberline {4.3}Execution Domain}{11}{subsection.4.3}%
-\contentsline {subsubsection}{\numberline {4.3.1}Organization Service (port 8004)}{11}{subsubsection.4.3.1}%
-\contentsline {subsubsection}{\numberline {4.3.2}Program Service (port 8005)}{11}{subsubsection.4.3.2}%
-\contentsline {subsubsection}{\numberline {4.3.3}Task Service (port 8006)}{12}{subsubsection.4.3.3}%
-\contentsline {subsubsection}{\numberline {4.3.4}Workflow Service (port 8007)}{12}{subsubsection.4.3.4}%
-\contentsline {subsection}{\numberline {4.4}Verification Domain}{12}{subsection.4.4}%
-\contentsline {subsubsection}{\numberline {4.4.1}Verification Service (port 8008)}{12}{subsubsection.4.4.1}%
-\contentsline {subsubsection}{\numberline {4.4.2}Evidence Service (port 8009)}{13}{subsubsection.4.4.2}%
-\contentsline {subsubsection}{\numberline {4.4.3}GPS Service}{13}{subsubsection.4.4.3}%
-\contentsline {subsubsection}{\numberline {4.4.4}Media Service}{13}{subsubsection.4.4.4}%
-\contentsline {subsubsection}{\numberline {4.4.5}Audit Service}{14}{subsubsection.4.4.5}%
-\contentsline {subsubsection}{\numberline {4.4.6}Submission Service}{14}{subsubsection.4.4.6}%
-\contentsline {subsection}{\numberline {4.5}AI Domain}{14}{subsection.4.5}%
-\contentsline {subsubsection}{\numberline {4.5.1}Vision AI Service}{14}{subsubsection.4.5.1}%
-\contentsline {subsubsection}{\numberline {4.5.2}Fraud Detection Service}{15}{subsubsection.4.5.2}%
-\contentsline {subsubsection}{\numberline {4.5.3}Economist Agent}{15}{subsubsection.4.5.3}%
-\contentsline {subsubsection}{\numberline {4.5.4}Graph Synthesis Agent}{15}{subsubsection.4.5.4}%
-\contentsline {subsubsection}{\numberline {4.5.5}AI Orchestrator (port 8070)}{15}{subsubsection.4.5.5}%
-\contentsline {subsubsection}{\numberline {4.5.6}Additional AI Modules}{16}{subsubsection.4.5.6}%
-\contentsline {subsection}{\numberline {4.6}Reputation Domain}{16}{subsection.4.6}%
-\contentsline {subsubsection}{\numberline {4.6.1}Impact Score Service (port 8094)}{16}{subsubsection.4.6.1}%
-\contentsline {subsubsection}{\numberline {4.6.2}Organization Score Service}{16}{subsubsection.4.6.2}%
-\contentsline {subsubsection}{\numberline {4.6.3}Portfolio Service}{17}{subsubsection.4.6.3}%
-\contentsline {subsection}{\numberline {4.7}Marketplace Domain}{17}{subsection.4.7}%
-\contentsline {subsubsection}{\numberline {4.7.1}Opportunity Service (port 8013)}{17}{subsubsection.4.7.1}%
-\contentsline {subsubsection}{\numberline {4.7.2}Matching Service (port 8014)}{17}{subsubsection.4.7.2}%
-\contentsline {subsection}{\numberline {4.8}Economic Domain}{17}{subsection.4.8}%
-\contentsline {subsubsection}{\numberline {4.8.1}Billing Service (port 8050)}{17}{subsubsection.4.8.1}%
-\contentsline {subsubsection}{\numberline {4.8.2}Payment Service (port 8090)}{18}{subsubsection.4.8.2}%
-\contentsline {subsubsection}{\numberline {4.8.3}Subscription Service}{18}{subsubsection.4.8.3}%
-\contentsline {subsubsection}{\numberline {4.8.4}Coin Service}{18}{subsubsection.4.8.4}%
-\contentsline {subsection}{\numberline {4.9}Additional Services}{18}{subsection.4.9}%
-\contentsline {subsubsection}{\numberline {4.9.1}Notification Service (port 8060)}{18}{subsubsection.4.9.1}%
-\contentsline {subsubsection}{\numberline {4.9.2}Chat Service}{19}{subsubsection.4.9.2}%
-\contentsline {subsubsection}{\numberline {4.9.3}Reporting Domain}{19}{subsubsection.4.9.3}%
-\contentsline {subsubsection}{\numberline {4.9.4}Partner Service}{19}{subsubsection.4.9.4}%
-\contentsline {subsubsection}{\numberline {4.9.5}Ads Service}{19}{subsubsection.4.9.5}%
-\contentsline {subsubsection}{\numberline {4.9.6}Platform Service}{19}{subsubsection.4.9.6}%
-\contentsline {section}{\numberline {5}Combined Backend Architecture}{20}{section.5}%
-\contentsline {subsection}{\numberline {5.1}Purpose and Design}{20}{subsection.5.1}%
-\contentsline {subsection}{\numberline {5.2}Service Registration Mechanism}{20}{subsection.5.2}%
-\contentsline {subsection}{\numberline {5.3}Package Registration Function}{21}{subsection.5.3}%
-\contentsline {subsection}{\numberline {5.4}Duplicate Table Resolution}{21}{subsection.5.4}%
-\contentsline {subsection}{\numberline {5.5}Route Merging}{22}{subsection.5.5}%
-\contentsline {subsection}{\numberline {5.6}Service Skip List}{23}{subsection.5.6}%
-\contentsline {section}{\numberline {6}Web Application Architecture}{24}{section.6}%
-\contentsline {subsection}{\numberline {6.1}Component Architecture}{24}{subsection.6.1}%
-\contentsline {subsubsection}{\numberline {6.1.1}Directory Structure}{24}{subsubsection.6.1.1}%
-\contentsline {subsubsection}{\numberline {6.1.2}Page Structure}{24}{subsubsection.6.1.2}%
-\contentsline {subsection}{\numberline {6.2}Routing Architecture}{25}{subsection.6.2}%
-\contentsline {subsection}{\numberline {6.3}State Management}{25}{subsection.6.3}%
-\contentsline {subsection}{\numberline {6.4}Internationalization}{25}{subsection.6.4}%
-\contentsline {subsection}{\numberline {6.5}Authentication Flow}{26}{subsection.6.5}%
-\contentsline {subsection}{\numberline {6.6}API Client Layer}{26}{subsection.6.6}%
-\contentsline {section}{\numberline {7}Mobile Application Architecture}{28}{section.7}%
-\contentsline {subsection}{\numberline {7.1}Architecture Overview}{28}{subsection.7.1}%
-\contentsline {subsection}{\numberline {7.2}Directory Structure}{28}{subsection.7.2}%
-\contentsline {subsection}{\numberline {7.3}Screen Structure}{28}{subsection.7.3}%
-\contentsline {subsection}{\numberline {7.4}State Management}{29}{subsection.7.4}%
-\contentsline {subsection}{\numberline {7.5}Navigation Architecture}{29}{subsection.7.5}%
-\contentsline {subsection}{\numberline {7.6}Mobile-Specific Features}{29}{subsection.7.6}%
-\contentsline {subsection}{\numberline {7.7}API Integration}{30}{subsection.7.7}%
-\contentsline {subsection}{\numberline {7.8}Bilingual Support}{30}{subsection.7.8}%
-\contentsline {section}{\numberline {8}Event-Driven Architecture}{32}{section.8}%
-\contentsline {subsection}{\numberline {8.1}Kafka Event Bus}{32}{subsection.8.1}%
-\contentsline {subsection}{\numberline {8.2}Event Catalog}{32}{subsection.8.2}%
-\contentsline {subsection}{\numberline {8.3}Event Schema}{32}{subsection.8.3}%
-\contentsline {subsection}{\numberline {8.4}Transactional Outbox Pattern}{33}{subsection.8.4}%
-\contentsline {subsection}{\numberline {8.5}Event Processing Pipeline}{33}{subsection.8.5}%
-\contentsline {subsection}{\numberline {8.6}Consumer Implementation}{34}{subsection.8.6}%
-\contentsline {section}{\numberline {9}Shared Kernel}{35}{section.9}%
-\contentsline {subsection}{\numberline {9.1}Kernel Modules}{35}{subsection.9.1}%
-\contentsline {subsection}{\numberline {9.2}CQRS Pattern}{35}{subsection.9.2}%
-\contentsline {subsection}{\numberline {9.3}Health Check System}{36}{subsection.9.3}%
-\contentsline {section}{\numberline {10}Infrastructure and Deployment}{38}{section.10}%
-\contentsline {subsection}{\numberline {10.1}Docker Compose Architecture}{38}{subsection.10.1}%
-\contentsline {subsection}{\numberline {10.2}Dockerfile Pattern}{38}{subsection.10.2}%
-\contentsline {subsection}{\numberline {10.3}Database Migrations}{39}{subsection.10.3}%
-\contentsline {subsection}{\numberline {10.4}Kubernetes Deployment}{39}{subsection.10.4}%
-\contentsline {subsection}{\numberline {10.5}CI/CD Pipeline}{40}{subsection.10.5}%
-\contentsline {section}{\numberline {11}Testing Strategy}{42}{section.11}%
-\contentsline {subsection}{\numberline {11.1}Testing Pyramid}{42}{subsection.11.1}%
-\contentsline {subsection}{\numberline {11.2}Test Configuration}{42}{subsection.11.2}%
-\contentsline {subsection}{\numberline {11.3}Example Unit Test}{43}{subsection.11.3}%
-\contentsline {subsection}{\numberline {11.4}E2E Testing with Playwright}{43}{subsection.11.4}%
-\contentsline {subsection}{\numberline {11.5}Mobile E2E Testing with Maestro}{44}{subsection.11.5}%
-\contentsline {section}{\numberline {12}Security Architecture}{45}{section.12}%
-\contentsline {subsection}{\numberline {12.1}Authentication and Authorization}{45}{subsection.12.1}%
-\contentsline {subsection}{\numberline {12.2}Token Management}{45}{subsection.12.2}%
-\contentsline {subsection}{\numberline {12.3}RBAC Middleware}{46}{subsection.12.3}%
-\contentsline {subsection}{\numberline {12.4}Data Privacy}{46}{subsection.12.4}%
-\contentsline {subsection}{\numberline {12.5}Security Best Practices}{47}{subsection.12.5}%
-\contentsline {section}{\numberline {13}Environment Configuration}{48}{section.13}%
-\contentsline {subsection}{\numberline {13.1}Required Environment Variables}{48}{subsection.13.1}%
-\contentsline {subsection}{\numberline {13.2}Environment Configuration File}{48}{subsection.13.2}%
-\contentsline {section}{\numberline {14}Development Workflow}{49}{section.14}%
-\contentsline {subsection}{\numberline {14.1}Local Development Setup}{49}{subsection.14.1}%
-\contentsline {subsection}{\numberline {14.2}Native Development Script}{49}{subsection.14.2}%
-\contentsline {subsection}{\numberline {14.3}Engineering Rules}{49}{subsection.14.3}%
-\contentsline {subsection}{\numberline {14.4}Development Stages Completed}{50}{subsection.14.4}%
-\contentsline {section}{\numberline {15}Known Gaps and Future Work}{52}{section.15}%
-\contentsline {subsection}{\numberline {15.1}Current Gaps}{52}{subsection.15.1}%
-\contentsline {subsection}{\numberline {15.2}Future Roadmap}{52}{subsection.15.2}%
-\contentsline {section}{\numberline {16}Appendices}{53}{section.16}%
-\contentsline {subsection}{\numberline {16.1}Appendix A: Service Port Map}{53}{subsection.16.1}%
-\contentsline {subsection}{\numberline {16.2}Appendix B: Repository Layout}{53}{subsection.16.2}%
-\contentsline {subsection}{\numberline {16.3}Appendix C: Quick Reference}{54}{subsection.16.3}%
+\contentsline {section}{\numberline {1}Introduction}{6}{section.1}%
+\contentsline {subsection}{\numberline {1.1}Mission and Purpose}{6}{subsection.1.1}%
+\contentsline {subsection}{\numberline {1.2}Platform Vision}{6}{subsection.1.2}%
+\contentsline {subsection}{\numberline {1.3}Core Architecture Principles}{6}{subsection.1.3}%
+\contentsline {section}{\numberline {2}System Architecture Overview}{8}{section.2}%
+\contentsline {subsection}{\numberline {2.1}High-Level Architecture Layers}{8}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Architecture Diagram}{8}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}Sync and Async Communication}{9}{subsection.2.3}%
+\contentsline {subsection}{\numberline {2.4}Database Strategy}{9}{subsection.2.4}%
+\contentsline {section}{\numberline {3}Technology Stack}{10}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Backend Technologies}{10}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Frontend Technologies}{11}{subsection.3.2}%
+\contentsline {subsubsection}{\numberline {3.2.1}Web Application (apps/web)}{11}{subsubsection.3.2.1}%
+\contentsline {subsubsection}{\numberline {3.2.2}Admin Panel (apps/admin)}{11}{subsubsection.3.2.2}%
+\contentsline {subsubsection}{\numberline {3.2.3}Mobile Application (apps/mobile)}{12}{subsubsection.3.2.3}%
+\contentsline {subsection}{\numberline {3.3}DevOps and Infrastructure}{12}{subsection.3.3}%
+\contentsline {section}{\numberline {4}Service Domain Architecture}{13}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Gateway Service}{13}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Identity Domain}{13}{subsection.4.2}%
+\contentsline {subsubsection}{\numberline {4.2.1}Identity Service (port 8001)}{13}{subsubsection.4.2.1}%
+\contentsline {subsubsection}{\numberline {4.2.2}Authentication Service (port 8002)}{13}{subsubsection.4.2.2}%
+\contentsline {subsubsection}{\numberline {4.2.3}Authorization Service (port 8003)}{14}{subsubsection.4.2.3}%
+\contentsline {subsection}{\numberline {4.3}Execution Domain}{14}{subsection.4.3}%
+\contentsline {subsubsection}{\numberline {4.3.1}Organization Service (port 8004)}{14}{subsubsection.4.3.1}%
+\contentsline {subsubsection}{\numberline {4.3.2}Program Service (port 8005)}{14}{subsubsection.4.3.2}%
+\contentsline {subsubsection}{\numberline {4.3.3}Task Service (port 8006)}{15}{subsubsection.4.3.3}%
+\contentsline {subsubsection}{\numberline {4.3.4}Workflow Service (port 8007)}{15}{subsubsection.4.3.4}%
+\contentsline {subsection}{\numberline {4.4}Verification Domain}{15}{subsection.4.4}%
+\contentsline {subsubsection}{\numberline {4.4.1}Verification Service (port 8008)}{15}{subsubsection.4.4.1}%
+\contentsline {subsubsection}{\numberline {4.4.2}Evidence Service (port 8009)}{16}{subsubsection.4.4.2}%
+\contentsline {subsubsection}{\numberline {4.4.3}GPS Service}{16}{subsubsection.4.4.3}%
+\contentsline {subsubsection}{\numberline {4.4.4}Media Service}{16}{subsubsection.4.4.4}%
+\contentsline {subsubsection}{\numberline {4.4.5}Audit Service}{17}{subsubsection.4.4.5}%
+\contentsline {subsubsection}{\numberline {4.4.6}Submission Service}{17}{subsubsection.4.4.6}%
+\contentsline {subsection}{\numberline {4.5}AI Domain}{17}{subsection.4.5}%
+\contentsline {subsubsection}{\numberline {4.5.1}Vision AI Service}{17}{subsubsection.4.5.1}%
+\contentsline {subsubsection}{\numberline {4.5.2}Fraud Detection Service}{18}{subsubsection.4.5.2}%
+\contentsline {subsubsection}{\numberline {4.5.3}Economist Agent}{18}{subsubsection.4.5.3}%
+\contentsline {subsubsection}{\numberline {4.5.4}Graph Synthesis Agent}{18}{subsubsection.4.5.4}%
+\contentsline {subsubsection}{\numberline {4.5.5}AI Orchestrator (port 8070)}{18}{subsubsection.4.5.5}%
+\contentsline {subsubsection}{\numberline {4.5.6}Additional AI Modules}{19}{subsubsection.4.5.6}%
+\contentsline {subsection}{\numberline {4.6}Reputation Domain}{19}{subsection.4.6}%
+\contentsline {subsubsection}{\numberline {4.6.1}Impact Score Service (port 8094)}{19}{subsubsection.4.6.1}%
+\contentsline {subsubsection}{\numberline {4.6.2}Organization Score Service}{19}{subsubsection.4.6.2}%
+\contentsline {subsubsection}{\numberline {4.6.3}Portfolio Service}{20}{subsubsection.4.6.3}%
+\contentsline {subsection}{\numberline {4.7}Marketplace Domain}{20}{subsection.4.7}%
+\contentsline {subsubsection}{\numberline {4.7.1}Opportunity Service (port 8013)}{20}{subsubsection.4.7.1}%
+\contentsline {subsubsection}{\numberline {4.7.2}Matching Service (port 8014)}{20}{subsubsection.4.7.2}%
+\contentsline {subsection}{\numberline {4.8}Economic Domain}{20}{subsection.4.8}%
+\contentsline {subsubsection}{\numberline {4.8.1}Billing Service (port 8050)}{20}{subsubsection.4.8.1}%
+\contentsline {subsubsection}{\numberline {4.8.2}Payment Service (port 8090)}{21}{subsubsection.4.8.2}%
+\contentsline {subsubsection}{\numberline {4.8.3}Subscription Service}{21}{subsubsection.4.8.3}%
+\contentsline {subsubsection}{\numberline {4.8.4}Coin Service}{21}{subsubsection.4.8.4}%
+\contentsline {subsection}{\numberline {4.9}Additional Services}{21}{subsection.4.9}%
+\contentsline {subsubsection}{\numberline {4.9.1}Notification Service (port 8060)}{21}{subsubsection.4.9.1}%
+\contentsline {subsubsection}{\numberline {4.9.2}Chat Service}{22}{subsubsection.4.9.2}%
+\contentsline {subsubsection}{\numberline {4.9.3}Reporting Domain}{22}{subsubsection.4.9.3}%
+\contentsline {subsubsection}{\numberline {4.9.4}Partner Service}{22}{subsubsection.4.9.4}%
+\contentsline {subsubsection}{\numberline {4.9.5}Ads Service}{22}{subsubsection.4.9.5}%
+\contentsline {subsubsection}{\numberline {4.9.6}Platform Service}{22}{subsubsection.4.9.6}%
+\contentsline {section}{\numberline {5}Combined Backend Architecture}{23}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Purpose and Design}{23}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}Service Registration Mechanism}{23}{subsection.5.2}%
+\contentsline {subsection}{\numberline {5.3}Package Registration Function}{24}{subsection.5.3}%
+\contentsline {subsection}{\numberline {5.4}Duplicate Table Resolution}{24}{subsection.5.4}%
+\contentsline {subsection}{\numberline {5.5}Route Merging}{25}{subsection.5.5}%
+\contentsline {subsection}{\numberline {5.6}Service Skip List}{26}{subsection.5.6}%
+\contentsline {section}{\numberline {6}Web Application Architecture}{27}{section.6}%
+\contentsline {subsection}{\numberline {6.1}Component Architecture}{27}{subsection.6.1}%
+\contentsline {subsubsection}{\numberline {6.1.1}Directory Structure}{27}{subsubsection.6.1.1}%
+\contentsline {subsubsection}{\numberline {6.1.2}Page Structure}{27}{subsubsection.6.1.2}%
+\contentsline {subsection}{\numberline {6.2}Routing Architecture}{28}{subsection.6.2}%
+\contentsline {subsection}{\numberline {6.3}State Management}{29}{subsection.6.3}%
+\contentsline {subsection}{\numberline {6.4}Internationalization}{29}{subsection.6.4}%
+\contentsline {subsection}{\numberline {6.5}Authentication Flow}{29}{subsection.6.5}%
+\contentsline {subsection}{\numberline {6.6}API Client Layer}{30}{subsection.6.6}%
+\contentsline {section}{\numberline {7}Mobile Application Architecture}{31}{section.7}%
+\contentsline {subsection}{\numberline {7.1}Architecture Overview}{31}{subsection.7.1}%
+\contentsline {subsection}{\numberline {7.2}Directory Structure}{31}{subsection.7.2}%
+\contentsline {subsection}{\numberline {7.3}Screen Structure}{31}{subsection.7.3}%
+\contentsline {subsection}{\numberline {7.4}State Management}{32}{subsection.7.4}%
+\contentsline {subsection}{\numberline {7.5}Navigation Architecture}{32}{subsection.7.5}%
+\contentsline {subsection}{\numberline {7.6}Mobile-Specific Features}{32}{subsection.7.6}%
+\contentsline {subsection}{\numberline {7.7}API Integration}{33}{subsection.7.7}%
+\contentsline {subsection}{\numberline {7.8}Bilingual Support}{33}{subsection.7.8}%
+\contentsline {section}{\numberline {8}Event-Driven Architecture}{35}{section.8}%
+\contentsline {subsection}{\numberline {8.1}Kafka Event Bus}{35}{subsection.8.1}%
+\contentsline {subsection}{\numberline {8.2}Event Catalog}{35}{subsection.8.2}%
+\contentsline {subsection}{\numberline {8.3}Event Schema}{35}{subsection.8.3}%
+\contentsline {subsection}{\numberline {8.4}Transactional Outbox Pattern}{36}{subsection.8.4}%
+\contentsline {subsection}{\numberline {8.5}Event Processing Pipeline}{36}{subsection.8.5}%
+\contentsline {subsection}{\numberline {8.6}Consumer Implementation}{37}{subsection.8.6}%
+\contentsline {section}{\numberline {9}Shared Kernel}{38}{section.9}%
+\contentsline {subsection}{\numberline {9.1}Kernel Modules}{38}{subsection.9.1}%
+\contentsline {subsection}{\numberline {9.2}CQRS Pattern}{38}{subsection.9.2}%
+\contentsline {subsection}{\numberline {9.3}Health Check System}{39}{subsection.9.3}%
+\contentsline {section}{\numberline {10}Infrastructure and Deployment}{41}{section.10}%
+\contentsline {subsection}{\numberline {10.1}Docker Compose Architecture}{41}{subsection.10.1}%
+\contentsline {subsection}{\numberline {10.2}Dockerfile Pattern}{41}{subsection.10.2}%
+\contentsline {subsection}{\numberline {10.3}Database Migrations}{42}{subsection.10.3}%
+\contentsline {subsection}{\numberline {10.4}Kubernetes Deployment}{42}{subsection.10.4}%
+\contentsline {subsection}{\numberline {10.5}CI/CD Pipeline}{43}{subsection.10.5}%
+\contentsline {section}{\numberline {11}Testing Strategy}{45}{section.11}%
+\contentsline {subsection}{\numberline {11.1}Testing Pyramid}{45}{subsection.11.1}%
+\contentsline {subsection}{\numberline {11.2}Test Configuration}{45}{subsection.11.2}%
+\contentsline {subsection}{\numberline {11.3}Example Unit Test}{46}{subsection.11.3}%
+\contentsline {subsection}{\numberline {11.4}E2E Testing with Playwright}{46}{subsection.11.4}%
+\contentsline {subsection}{\numberline {11.5}Mobile E2E Testing with Maestro}{47}{subsection.11.5}%
+\contentsline {section}{\numberline {12}Security Architecture}{48}{section.12}%
+\contentsline {subsection}{\numberline {12.1}Authentication and Authorization}{48}{subsection.12.1}%
+\contentsline {subsection}{\numberline {12.2}Token Management}{48}{subsection.12.2}%
+\contentsline {subsection}{\numberline {12.3}RBAC Middleware}{49}{subsection.12.3}%
+\contentsline {subsection}{\numberline {12.4}Data Privacy}{49}{subsection.12.4}%
+\contentsline {subsection}{\numberline {12.5}Security Best Practices}{50}{subsection.12.5}%
+\contentsline {section}{\numberline {13}Environment Configuration}{51}{section.13}%
+\contentsline {subsection}{\numberline {13.1}Required Environment Variables}{51}{subsection.13.1}%
+\contentsline {subsection}{\numberline {13.2}Environment Configuration File}{51}{subsection.13.2}%
+\contentsline {section}{\numberline {14}Development Workflow}{52}{section.14}%
+\contentsline {subsection}{\numberline {14.1}Local Development Setup}{52}{subsection.14.1}%
+\contentsline {subsection}{\numberline {14.2}Native Development Script}{52}{subsection.14.2}%
+\contentsline {subsection}{\numberline {14.3}Engineering Rules}{52}{subsection.14.3}%
+\contentsline {subsection}{\numberline {14.4}Development Stages Completed}{54}{subsection.14.4}%
+\contentsline {section}{\numberline {15}Known Gaps and Future Work}{55}{section.15}%
+\contentsline {subsection}{\numberline {15.1}Current Gaps}{55}{subsection.15.1}%
+\contentsline {subsection}{\numberline {15.2}Future Roadmap}{55}{subsection.15.2}%
+\contentsline {section}{\numberline {16}Appendices}{56}{section.16}%
+\contentsline {subsection}{\numberline {16.1}Appendix A: Service Port Map}{56}{subsection.16.1}%
+\contentsline {subsection}{\numberline {16.2}Appendix B: Repository Layout}{56}{subsection.16.2}%
+\contentsline {subsection}{\numberline {16.3}Appendix C: Quick Reference}{57}{subsection.16.3}%
+\contentsline {section}{\numberline {17}AI Services Cost Analysis and Financial Planning (500-10,000 EGP/month)}{58}{section.17}%
+\contentsline {subsection}{\numberline {17.1}AI Services Cost Breakdown}{58}{subsection.17.1}%
+\contentsline {subsubsection}{\numberline {17.1.1}Vision AI Services}{58}{subsubsection.17.1.1}%
+\contentsline {subsubsection}{\numberline {17.1.2}Fraud Detection AI}{58}{subsubsection.17.1.2}%
+\contentsline {subsubsection}{\numberline {17.1.3}Impact Economist AI}{58}{subsubsection.17.1.3}%
+\contentsline {subsubsection}{\numberline {17.1.4}Graph Synthesis AI}{58}{subsubsection.17.1.4}%
+\contentsline {subsection}{\numberline {17.2}Total AI Services Cost}{59}{subsection.17.2}%
+\contentsline {subsection}{\numberline {17.3}Deployment Scenarios for AI Services}{59}{subsection.17.3}%
+\contentsline {subsection}{\numberline {17.4}Financial Risk Assessment - AI Focus}{59}{subsection.17.4}%
+\contentsline {subsection}{\numberline {17.5}Recommendations for CEO - AI Focus}{59}{subsection.17.5}%
+\contentsline {subsubsection}{\numberline {17.5.1}Per-User AI Cost Allocation}{60}{subsubsection.17.5.1}%
+\contentsline {subsubsection}{\numberline {17.5.2}Admin Control Panel for AI Service Usage}{60}{subsubsection.17.5.2}%
+\contentsline {subsubsection}{\numberline {17.5.3}Cost Control Mechanisms}{60}{subsubsection.17.5.3}%
+\contentsline {subsubsection}{\numberline {17.5.4}Revenue and Cost Recovery}{60}{subsubsection.17.5.4}%
+\contentsline {subsection}{\numberline {17.6}Admin Control Panel for AI Service Usage}{61}{subsection.17.6}%
+\contentsline {subsubsection}{\numberline {17.6.1}Usage Quota Management}{61}{subsubsection.17.6.1}%
+\contentsline {subsubsection}{\numberline {17.6.2}Model Selection and Routing}{61}{subsubsection.17.6.2}%
+\contentsline {subsubsection}{\numberline {17.6.3}Cost Monitoring and Alerts}{62}{subsubsection.17.6.3}%
+\contentsline {subsection}{\numberline {17.7}Comprehensive Financial Plan - User-Charged AI Model}{62}{subsection.17.7}%
+\contentsline {subsubsection}{\numberline {17.7.1}Objective}{62}{subsubsection.17.7.1}%
+\contentsline {subsubsection}{\numberline {17.7.2}Implementation Phases}{62}{subsubsection.17.7.2}%
+\contentsline {subsubsection}{\numberline {17.7.3}Per-User Cost Schedule}{63}{subsubsection.17.7.3}%
+\contentsline {subsubsection}{\numberline {17.7.4}Billing and Payment Integration}{63}{subsubsection.17.7.4}%
+\contentsline {subsubsection}{\numberline {17.7.5}Cost Recovery Guarantee}{63}{subsubsection.17.7.5}%
+\contentsline {subsubsection}{\numberline {17.7.6}Next Steps}{64}{subsubsection.17.7.6}%

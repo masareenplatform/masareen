@@ -158,7 +158,7 @@ The MASAREN architecture follows a layered design with seven distinct layers:
 \subsection{Architecture Diagram}
 
 \begin{center}
-\begin{tikzpicture}[scale=0.85, transform shape, node distance=2.2cm]
+\begin{tikzpicture}[scale=0.85, transform shape, node distance=2.2cm, every node/.style={align=center}]
 \tikzstyle{layer}=[draw, fill=blue!5, shape=rectangle, minimum height=0.8cm, text centered, font=\small\bfseries]
 \tikzstyle{service}=[draw, fill=blue!10, shape=rectangle, minimum height=1.2cm, text centered, font=\footnotesize]
 \tikzstyle{data}=[draw, fill=yellow!10, shape=ellipse, minimum width=1.5cm, text centered, font=\footnotesize]
@@ -260,11 +260,10 @@ The platform uses a polyglot persistence approach:
 
 \subsection{Backend Technologies}
 
-\begin{longtable}{|p{3.5cm}|p{3cm}|p{6cm}|}
+\begin{tabular}{|p{3.5cm}|p{3cm}|p{6cm}|}
 \hline
 \textbf{Technology} & \textbf{Layer} & \textbf{Details} \\
 \hline
-\endhead
 Python 3.11+ & Runtime & Type-hinted, async-capable runtime for all microservices \\
 \hline
 FastAPI & Web Framework & OpenAPI 3.1 auto-documentation, dependency injection, async support \\
@@ -283,17 +282,16 @@ MinIO / S3 & Object Storage & Blob storage for evidence media and attachments \\
 \hline
 OpenAI / Gemini & AI Inference & Cloud-based LLMs for vision, fraud detection, and analysis \\
 \hline
-\end{longtable}
+\end{tabular}
 
 \subsection{Frontend Technologies}
 
 \subsubsection{Web Application (apps/web)}
 
-\begin{longtable}{|p{3.5cm}|p{9cm}|}
+\begin{tabular}{|p{3.5cm}|p{9cm}|}
 \hline
 \textbf{Technology} & \textbf{Details} \\
 \hline
-\endhead
 React 18.2 + TypeScript 5.3 & Component-based UI framework with static typing \\
 \hline
 Vite 5.1 & Fast build tool with HMR and optimized production bundling \\
@@ -314,15 +312,14 @@ Google OAuth & Popup-based authentication flow with secure token handling \\
 \hline
 Vitest + RTL + Playwright & Unit, component, and E2E testing frameworks \\
 \hline
-\end{longtable}
+\end{tabular}
 
 \subsubsection{Admin Panel (apps/admin)}
 
-\begin{longtable}{|p{3.5cm}|p{9cm}|}
+\begin{tabular}{|p{3.5cm}|p{9cm}|}
 \hline
 \textbf{Technology} & \textbf{Details} \\
 \hline
-\endhead
 React + TypeScript & Same stack as web app with Mantine component library \\
 \hline
 Mantine UI & Rich component library for admin interfaces (tables, forms, modals) \\
@@ -331,15 +328,14 @@ Vite & Optimized build with separate configuration \\
 \hline
 nginx & Production serving with reverse proxy configuration \\
 \hline
-\end{longtable}
+\end{tabular}
 
 \subsubsection{Mobile Application (apps/mobile)}
 
-\begin{longtable}{|p{3.5cm}|p{9cm}|}
+\begin{tabular}{|p{3.5cm}|p{9cm}|}
 \hline
 \textbf{Technology} & \textbf{Details} \\
 \hline
-\endhead
 Flutter 3.22+ & Cross-platform mobile framework with Dart 3 \\
 \hline
 MVVM Pattern & Architecture pattern with Provider for state management \\
@@ -358,15 +354,14 @@ Material Design 3 & Custom theme with responsive layouts and bilingual support \
 \hline
 Flutter Test + Maestro & Unit, widget, and E2E integration testing \\
 \hline
-\end{longtable}
+\end{tabular}
 
 \subsection{DevOps and Infrastructure}
 
-\begin{longtable}{|p{3.5cm}|p{9cm}|}
+\begin{tabular}{|p{3.5cm}|p{9cm}|}
 \hline
 \textbf{Tool} & \textbf{Purpose} \\
 \hline
-\endhead
 Docker & Containerization for all services and infrastructure components \\
 \hline
 Docker Compose & Local development orchestration with 30+ services \\
@@ -383,7 +378,7 @@ Terraform & Infrastructure as Code for cloud resource provisioning \\
 \hline
 nginx & Reverse proxy for frontend serving and API routing \\
 \hline
-\end{longtable}
+\end{tabular}
 
 \clearpage
 
@@ -990,11 +985,10 @@ apps/web/src/
 
 The application defines 30+ pages accessible through React Router v6:
 
-\begin{longtable}{|p{3.5cm}|p{3cm}|p{6cm}|}
+\begin{tabular}{|p{3.5cm}|p{3cm}|p{6cm}|}
 \hline
 \textbf{Page} & \textbf{Route} & \textbf{Description} \\
 \hline
-\endhead
 LandingPage & /, /landing & Public landing with platform overview \\
 \hline
 LoginPage & /login & Authentication with email/password and Google OAuth \\
@@ -1037,13 +1031,13 @@ WalletPage & /wallet & MRC wallet management \\
 \hline
 \ldots & \ldots & Additional pages for ads, payments, revenue, challenges, etc. \\
 \hline
-\end{longtable}
+\end{tabular}
 
 \subsection{Routing Architecture}
 
 The application implements protected routes with role-based access control:
 
-\begin{lstlisting}[language=TypeScript, caption=Protected Route Implementation]
+\begin{lstlisting}[language={[Sharp]C}, caption=Protected Route Implementation]
 function RequireRole({
   roles,
   children
@@ -1072,7 +1066,7 @@ The application uses a dual state management approach:
 
 The application supports bilingual English/Arabic operation:
 
-\begin{lstlisting}[language=TypeScript, caption=i18n Configuration]
+\begin{lstlisting}[language={[Sharp]C}, caption=i18n Configuration]
 // apps/web/src/i18n.tsx
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
@@ -1103,7 +1097,7 @@ i18n.use(initReactI18next).init({
 
 The services layer provides type-safe API interaction:
 
-\begin{lstlisting}[language=TypeScript, caption=API Client Structure]
+\begin{lstlisting}[language={[Sharp]C}, caption=API Client Structure]
 // apps/web/src/services/
 import axios from 'axios';
 
@@ -1181,7 +1175,7 @@ The Flutter app implements the following screens:
 
 The app uses the Provider package for state management:
 
-\begin{lstlisting}[language=Dart, caption=Provider Setup]
+\begin{lstlisting}[language=Java, caption=Provider Setup]
 // main.dart
 void main() {
   runApp(
@@ -1227,7 +1221,7 @@ The mobile app leverages device capabilities not available on the web:
 
 \subsection{API Integration}
 
-\begin{lstlisting}[language=Dart, caption=API Service Layer]
+\begin{lstlisting}[language=Java, caption=API Service Layer]
 class ApiService {
   static const String baseUrl =
     'http://localhost:8080/api/v1';
@@ -1268,7 +1262,7 @@ class ApiService {
 
 The mobile app provides full bilingual support similar to the web:
 
-\begin{lstlisting}[language=Dart, caption=Internationalization Setup]
+\begin{lstlisting}[language=Java, caption=Internationalization Setup]
 class MasarenLocalizations {
   static const Map<String, Map<String, String>> _localized = {
     'en': {
@@ -1304,11 +1298,10 @@ Apache Kafka 3.7 serves as the central nervous system of the MASAREN platform, p
 
 The platform defines 20+ domain events organized by bounded context:
 
-\begin{longtable}{|p{4cm}|p{3cm}|p{6cm}|}
+\begin{tabular}{|p{4cm}|p{3cm}|p{6cm}|}
 \hline
 \textbf{Event} & \textbf{Domain} & \textbf{Description} \\
 \hline
-\endhead
 organization\_created & Execution & A new organization has been registered \\
 \hline
 program\_created & Execution & A new program has been launched \\
@@ -1341,7 +1334,7 @@ portfolio\_updated & Reputation & User portfolio changed \\
 \hline
 graph\_updated & Graph & Neo4j knowledge graph updated \\
 \hline
-\end{longtable}
+\end{tabular}
 
 \subsection{Event Schema}
 
@@ -1449,11 +1442,10 @@ The shared kernel at \texttt{backend/shared} provides reusable infrastructure co
 
 \subsection{Kernel Modules}
 
-\begin{longtable}{|p{3.5cm}|p{9cm}|}
+\begin{tabular}{|p{3.5cm}|p{9cm}|}
 \hline
 \textbf{Module} & \textbf{Purpose} \\
 \hline
-\endhead
 \texttt{events/} & Domain event base classes and all 20+ event contract definitions \\
 \hline
 \texttt{utils/cqrs.py} & CommandBus and QueryBus with middleware support for cross-cutting concerns \\
@@ -1488,7 +1480,7 @@ The shared kernel at \texttt{backend/shared} provides reusable infrastructure co
 \hline
 \texttt{types.py} & Custom type definitions and generic aliases \\
 \hline
-\end{longtable}
+\end{tabular}
 
 \subsection{CQRS Pattern}
 
@@ -1563,11 +1555,10 @@ async def health_check():
 
 The \texttt{docker-compose.yml} file defines 30+ services and infrastructure components for full-stack local development:
 
-\begin{longtable}{|p{3.5cm}|p{2cm}|p{1.5cm}|p{5cm}|}
+\begin{tabular}{|p{3.5cm}|p{2cm}|p{1.5cm}|p{5cm}|}
 \hline
 \textbf{Component} & \textbf{Image} & \textbf{Port} & \textbf{Purpose} \\
 \hline
-\endhead
 Gateway & backend/Dockerfile.service & 8080 & BFF API Gateway \\
 \hline
 Web Frontend & apps/web/Dockerfile & 3000 & React web application \\
@@ -1604,11 +1595,11 @@ MinIO & minio/minio & 9000 & Blob storage \\
 \hline
 NATS & nats:latest & 4222 & Real-time messaging \\
 \hline
-\end{longtable}
+\end{tabular}
 
 \subsection{Dockerfile Pattern}
 
-\begin{lstlisting}[language=Docker, caption=Dockerfile.service Template]
+\begin{lstlisting}[language=bash, caption=Dockerfile.service Template]
 FROM python:3.11-slim
 
 WORKDIR /app
@@ -1657,7 +1648,7 @@ CREATE TABLE organizations (
 
 \subsection{Kubernetes Deployment}
 
-\begin{lstlisting}[language=yaml, caption=Service Deployment Template]
+\begin{lstlisting}[language=bash, caption=Service Deployment Template]
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -1689,7 +1680,7 @@ spec:
 
 \subsection{CI/CD Pipeline}
 
-\begin{lstlisting}[language=yaml, caption=CI Pipeline Structure]
+\begin{lstlisting}[language=bash, caption=CI Pipeline Structure]
 name: MASAREN CI
 
 on:
@@ -1821,7 +1812,7 @@ class TestTaskService:
 
 \subsection{E2E Testing with Playwright}
 
-\begin{lstlisting}[language=TypeScript, caption=Web E2E Test]
+\begin{lstlisting}[language={[Sharp]C}, caption=Web E2E Test]
 import { test, expect } from '@playwright/test';
 
 test('volunteer can complete task flow', async ({ page }) => {
@@ -1847,7 +1838,7 @@ test('volunteer can complete task flow', async ({ page }) => {
 
 \subsection{Mobile E2E Testing with Maestro}
 
-\begin{lstlisting}[language=yaml, caption=Mobile E2E Flow]
+\begin{lstlisting}[language=bash, caption=Mobile E2E Flow]
 appId: com.masaren.app
 ---
 - launchApp
@@ -1980,11 +1971,10 @@ def require_roles(allowed_roles: list[str]):
 
 \subsection{Required Environment Variables}
 
-\begin{longtable}{|p{4cm}|p{3cm}|p{5cm}|}
+\begin{tabular}{|p{4cm}|p{3cm}|p{5cm}|}
 \hline
 \textbf{Variable} & \textbf{Required} & \textbf{Description} \\
 \hline
-\endhead
 JWT\_SECRET & Yes & Shared secret for JWT signing (min 256-bit) \\
 \hline
 DATABASE\_URL & Yes & PostgreSQL connection string \\
@@ -2015,7 +2005,7 @@ CREWAI\_BROKER\_URL & No & AI orchestrator broker URL \\
 \hline
 CORS\_ORIGINS & No & Allowed CORS origins \\
 \hline
-\end{longtable}
+\end{tabular}
 
 \subsection{Environment Configuration File}
 
@@ -2103,11 +2093,10 @@ impact-score  :8094
 
 \subsection{Development Stages Completed}
 
-\begin{longtable}{|p{2cm}|p{5cm}|p{5cm}|}
+\begin{tabular}{|p{2cm}|p{5cm}|p{5cm}|}
 \hline
 \textbf{Stage} & \textbf{Description} & \textbf{Status} \\
 \hline
-\endhead
 0 & Project specification & Completed \\
 \hline
 1 & Monorepo structure (423 directories, 24+ services) & Completed \\
@@ -2134,7 +2123,7 @@ impact-score  :8094
 \hline
 12 & Production infrastructure (Docker, K8s, CI/CD) & Completed \\
 \hline
-\end{longtable}
+\end{tabular}
 
 \clearpage
 
@@ -2176,11 +2165,10 @@ impact-score  :8094
 
 \subsection{Appendix A: Service Port Map}
 
-\begin{longtable}{|p{4cm}|p{2cm}|p{6cm}|}
+\begin{tabular}{|p{4cm}|p{2cm}|p{6cm}|}
 \hline
 \textbf{Service} & \textbf{Port} & \textbf{Docker Compose Key} \\
 \hline
-\endhead
 API Gateway & 8080 & gateway \\
 \hline
 Identity Service & 8001 & identity \\
@@ -2223,7 +2211,7 @@ Web Frontend & 3000 & web \\
 \hline
 Admin Frontend & 3001 & admin \\
 \hline
-\end{longtable}
+\end{tabular}
 
 \subsection{Appendix B: Repository Layout}
 
@@ -2275,8 +2263,6 @@ cd apps/web && npm run dev
 cd apps/mobile && flutter run
 cd apps/mobile && flutter build apk
 \end{lstlisting}
-
-\end{document}
 
 \clearpage
 
@@ -2470,11 +2456,16 @@ The platform includes an administrative interface for controlling AI service usa
 \textbf{Mechanism} & \textbf{Cost Reduction} & \textbf{Implementation} & \textbf{User Impact} \\
 \hline
 Prompt Caching & 30-50\% & Global cache for repeated prompts & Transparent to users \\
+\hline
 Model Fallback & 60-80\% & Automatic switch to open-source & May affect output quality \\
+\hline
 Token Quotas & Variable & Per-user daily limits & Predictable costs \\
+\hline
 Peak Pricing & 20-30\% & Higher rates during peak hours & Incentivizes off-peak usage \\
+\hline
 Volume Discounts & 15-30\% & Annual commitments & Lower per-user costs \\
 \hline
+\end{tabular}
 \end{table}
 
 \subsubsection{Revenue and Cost Recovery}
@@ -2563,7 +2554,7 @@ Implement a sustainable user-charged AI services model that:
     \item Recovers 100\% of AI service costs from platform users
     \item Maintains predictable cost structure for platform planning
     \item Provides administrators tools to control and optimize AI usage
-    \ensures transparent billing for end users
+    \item Ensures transparent billing for end users
 \end{enumerate}
 
 \subsubsection{Implementation Phases}
@@ -2599,18 +2590,17 @@ Implement a sustainable user-charged AI services model that:
 
 The following per-user cost schedule applies across all deployment scenarios, with costs billed monthly:
 
-\begin{table}[H]
-\centering
-\footnotesize
 \begin{tabular}{|l|l|l|l|l|}
 \hline
 \textbf{Tier} & \textbf{Users} & \textbf{Daily Tokens} & \textbf{Cost/User (EGP/month)} & \textbf{Included Services} \\
 \hline
 Development & Up to 1,000 & 350,000 & 4.24 & Vision AI + Fraud Detection \\
+\hline
 Production & 5,000+ & 850,000 & 1.91 & All 4 AI categories \\
+\hline
 Enterprise & 50,000+ & 2,000,000 & 0.42 & All AI with volume discounts \\
 \hline
-\end{table}
+\end{tabular}
 
 \subsubsection{Billing and Payment Integration}
 
@@ -2647,5 +2637,5 @@ The platform operator should:
     
     \item \textbf{Maturity Phase (Year 2+):} Negotiate enterprise pricing with OpenAI/Google. Deploy custom fine-tuned open-source models. Implement advanced predictive usage management. Cross-subsidize development phase from enterprise revenues. Target profitable AI services operation.
 \end{enumerate}
-'''
-'''
+
+\end{document}
