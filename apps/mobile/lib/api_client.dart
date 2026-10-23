@@ -4,12 +4,20 @@ import 'package:http_parser/http_parser.dart';
 import 'package:masaren/models.dart';
 
 class ApiClient {
-  ApiClient({String baseUrl = 'http://41.33.197.134:8088'})
-      : _base = baseUrl;
+  /// Backend base URL. Override at build time with
+  /// `--dart-define=API_BASE_URL=https://your.server`.
+  static const String defaultBaseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://41.33.197.134:8088',
+  );
+
+  ApiClient({String baseUrl = defaultBaseUrl}) : _base = _clean(baseUrl);
+
+  static String _clean(String v) => v.trim().replaceAll(RegExp(r'/+$'), '');
 
   String _base;
   String get baseUrl => _base;
-  set baseUrl(String v) => _base = v.trim().replaceAll(RegExp(r'/+\$'), '');
+  set baseUrl(String v) => _base = _clean(v);
 
   String? _token;
   void setToken(String? token) => _token = token;

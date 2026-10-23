@@ -180,7 +180,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         final hlsUrl = result['hls_url'] as String?;
         final jobId = result['job_id'] as String?;
         if (hlsUrl != null) {
-          final fullHlsUrl = hlsUrl.startsWith('http') ? hlsUrl : 'http://41.33.197.134:8088$hlsUrl';
+          final fullHlsUrl = hlsUrl.startsWith('http') ? hlsUrl : '${api.baseUrl}$hlsUrl';
           media.add({'type': 'VIDEO', 'url': fullHlsUrl, 'name': _video!.path.split('/').last, 'job_id': jobId});
         }
       }

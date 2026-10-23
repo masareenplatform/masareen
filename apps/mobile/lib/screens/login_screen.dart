@@ -21,7 +21,7 @@ class _LoginScreenState extends State<LoginScreen> {
   String? _error;
 
   Future<void> _google() async {
-    final url = Uri.parse('http://41.33.197.134:8088/login?google=1');
+    final url = Uri.parse('${api.baseUrl}/login?google=1');
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     }

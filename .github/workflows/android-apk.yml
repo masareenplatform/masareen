@@ -1,0 +1,57 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [main]
+    paths: ['apps/mobile/**', '.github/workflows/android-apk.yml']
+  workflow_dispatch:
+    inputs:
+      api_base_url:
+        description: 'Backend URL baked into the app (blank = code default)'
+        required: false
+        default: ''
+      publish_release:
+        description: 'Publish as GitHub Release "latest-apk" (used by the landing page button)'
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - uses: subosito/flutter-action@v2
+        with: { flutter-version: '3.24.5', channel: stable, cache: true }
+      - name: Generate Android project (git-ignored in repo)
+        run: |
+          flutter create --platforms=android --org com.masaren --project-name masaren .
+          pip install pillow
+          python3 tool/patch_android.py
+      - run: flutter pub get
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+      - name: Build release APK
+        run: |
+          ARGS=""
+          if [ -n "${{ github.event.inputs.api_base_url }}" ]; then ARGS="--dart-define=API_BASE_URL=${{ github.event.inputs.api_base_url }}"; fi
+          flutter build apk --release $ARGS
+          cp build/app/outputs/flutter-apk/app-release.apk ../../masareen.apk
+      - uses: actions/upload-artifact@v4
+        with: { name: masareen-apk, path: masareen.apk }
+      - name: Publish release
+        if: github.event_name == 'push' || github.event.inputs.publish_release == 'true'
+        working-directory: .
+        env: { GH_TOKEN: '${{ github.token }}' }
+        run: |
+          gh release delete latest-apk --yes --cleanup-tag 2>/dev/null || true
+          gh release create latest-apk masareen.apk --title "MASAREEN Android APK (latest)" \
+            --notes "Install: download masareen.apk on your Android phone, allow 'Install unknown apps' for your browser when asked, then open the file."

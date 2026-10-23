@@ -416,6 +416,26 @@ Gunicorn + Uvicorn         # ASGI server
 
 ---
 
+## Building the Android APK (clean clone)
+
+`apps/mobile/android/` is git-ignored, so a fresh clone has no Android project. CI (and you, locally) regenerate it and re-apply the MASAREEN config (package `com.masaren.app`, permissions, cleartext HTTP, desugaring, launcher icon):
+
+```bash
+cd apps/mobile
+flutter create --platforms=android --org com.masaren --project-name masaren .   # Flutter 3.24.x
+pip install pillow && python3 tool/patch_android.py
+flutter pub get
+flutter build apk --release --dart-define=API_BASE_URL=https://your.backend   # define is optional
+```
+
+GitHub Actions does this automatically (`.github/workflows/android-apk.yml`) and publishes `masareen.apk` to the `latest-apk` release, which the landing page (`landing/`) links to. The APK is signed with the debug key (installable, not Play-Store-ready).
+
+## Landing page (`landing/`)
+
+Static bilingual (EN/AR) site for Cloudflare R2 / `masareen.com`; see `landing/README.md`.
+
+---
+
 ## Mobile App (Flutter)
 
 **Package:** `com.masaren.app`

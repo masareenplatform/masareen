@@ -1,0 +1,17 @@
+name: Web build
+
+on:
+  push: { paths: ['apps/web/**', 'landing/**', '.github/workflows/web-ci.yml'] }
+  pull_request: { paths: ['apps/web/**', 'landing/**'] }
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: apps/web } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: npm install --no-audit --no-fund
+      - run: npx tsc --noEmit
+      - run: npx vite build
