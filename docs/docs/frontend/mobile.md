@@ -12,8 +12,8 @@ opportunities, do the work, capture GPS-stamped evidence, and watch your reputat
 ## Stack
 
 - **Flutter 3.32 / Dart 3.8**.
-- **`http`** — pure-Dart HTTP client (no native code → no Gradle/AGP/Kotlin conflicts).
-- **`url_launcher`** — opens Google sign-in in the device browser (the web app handles the
+- **`http`**, pure-Dart HTTP client (no native code → no Gradle/AGP/Kotlin conflicts).
+- **`url_launcher`**, opens Google sign-in in the device browser (the web app handles the
   full OAuth + id_token exchange, then returns the user to the app already verified).
 
 ## Screens
@@ -66,6 +66,6 @@ redirect URI to be registered, same as web.)
 
 ## Tips
 
-- On an emulator, `10.0.2.2` is the host — but the app already defaults to the public
+- On an emulator, `10.0.2.2` is the host, but the app already defaults to the public
   domain, so no change is needed.
 - Keep `debugShowCheckedModeBanner: false` for release builds (already set).

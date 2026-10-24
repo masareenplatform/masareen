@@ -52,7 +52,7 @@ const COMPARISON = [
 ];
 
 const FEATURES = [
-  { icon: IconCompass, title: "Impact Discovery", text: "A social feed of verified impact stories, programs and evidence — ranked by real outcomes, not engagement bait." },
+  { icon: IconCompass, title: "Impact Discovery", text: "A social feed of verified impact stories, programs and evidence, ranked by real outcomes, not engagement bait." },
   { icon: IconShield, title: "POAI Verification", text: "Every claim is scored, audited and traced through a verification pipeline you can trust." },
   { icon: IconProgram, title: "Programs & Tasks", text: "Launch, join and complete real programs with lifecycle tracking from assign to verified." },
   { icon: IconEvidence, title: "Evidence & GPS", text: "Attach geo-tagged proof to every action so impact is undeniable and measurable." },
@@ -114,14 +114,14 @@ function Hero({ onEmail, email, setEmail, sent }: any) {
             The professional network for <span className="gradient-text">real-world impact</span>.
           </h1>
           <p className="mt-4 max-w-md text-lg text-muted">
-            MASAREN is where impact workers, NGOs and governments prove, track and scale verified change —
+            MASAREN is where impact workers, NGOs and governments prove, track and scale verified change -
             with POAI verification, programs, evidence and an impact economy built in.
           </p>
           <form className="mt-6 flex max-w-md flex-col gap-2 sm:flex-row" onSubmit={(e) => { e.preventDefault(); onEmail(); }}>
             <input className="glass-input" placeholder="you@organization.org" value={email} onChange={(e) => setEmail(e.target.value)} type="email" required />
             <button className="btn-gold whitespace-nowrap" type="submit">Request alpha access</button>
           </form>
-          {sent && <p className="mt-2 text-sm font-medium text-accent-700">You're on the list — we'll email your invite. 🎉</p>}
+          {sent && <p className="mt-2 text-sm font-medium text-accent-700">You're on the list, we'll email your invite. 🎉</p>}
           <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-muted">
             <a href="#download" className="inline-flex items-center gap-1.5 font-semibold text-brand hover:underline"><IconDownload size={16} /> Download for Android</a>
             <Link to="/login" className="inline-flex items-center gap-1.5 font-semibold text-ink hover:underline">Open web app <IconArrowRight size={16} /></Link>
@@ -185,8 +185,8 @@ function Compare() {
           {COMPARISON.map((r, i) => (
             <div key={i} className="grid grid-cols-3 items-center border-b border-line px-4 py-3 text-sm last:border-0">
               <div className="text-ink">{r.feature}</div>
-              <div className="flex justify-center">{r.masaren ? <IconCheck className="text-accent" size={20} /> : <span className="text-muted">—</span>}</div>
-              <div className="flex justify-center">{r.others ? <IconCheck className="text-muted" size={20} /> : <span className="text-muted">—</span>}</div>
+              <div className="flex justify-center">{r.masaren ? <IconCheck className="text-accent" size={20} /> : <span className="text-muted">-</span>}</div>
+              <div className="flex justify-center">{r.others ? <IconCheck className="text-muted" size={20} /> : <span className="text-muted">-</span>}</div>
             </div>
           ))}
         </RevealBox>
@@ -201,7 +201,7 @@ function Features() {
       <div className="mx-auto max-w-6xl px-4">
         <RevealBox className="text-center">
           <h2 className="font-display text-3xl font-extrabold text-ink">Everything impact teams need</h2>
-          <p className="mx-auto mt-2 max-w-xl text-muted">One platform — social, verified, and measurable.</p>
+          <p className="mx-auto mt-2 max-w-xl text-muted">One platform, social, verified, and measurable.</p>
         </RevealBox>
         <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map((f, i) => (
@@ -223,7 +223,7 @@ function Sdg() {
       <div className="mx-auto max-w-6xl px-4">
         <RevealBox className="text-center">
           <h2 className="font-display text-3xl font-extrabold text-ink">Aligned with the UN SDGs & Egypt Vision 2030</h2>
-          <p className="mx-auto mt-2 max-w-xl text-muted">Every verified action maps to a goal — and to Egypt's national transformation agenda.</p>
+          <p className="mx-auto mt-2 max-w-xl text-muted">Every verified action maps to a goal, and to Egypt's national transformation agenda.</p>
         </RevealBox>
         <RevealBox delay={80} className="mt-8 flex flex-wrap justify-center gap-2">
           {SDGS.map((n) => (

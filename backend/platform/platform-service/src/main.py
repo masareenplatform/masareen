@@ -1,4 +1,4 @@
-"""Platform admin service — brokerage fee config + revenue/profit summary.
+"""Platform admin service, brokerage fee config + revenue/profit summary.
 
 Entrypoint. Mounts the platform admin API under ``/api/v1/platform`` so the
 gateway (which routes ``/api/v1/platform`` → this service) forwards correctly.

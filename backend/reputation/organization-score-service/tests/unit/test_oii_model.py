@@ -1,4 +1,4 @@
-"""Unit tests for the OII (Organizational Impact Index) domain — pure, no I/O."""
+"""Unit tests for the OII (Organizational Impact Index) domain, pure, no I/O."""
 from src.domain.oii_model import OrganizationalImpactIndex, OIIDimension
 
 

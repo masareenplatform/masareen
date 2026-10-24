@@ -1,5 +1,5 @@
 """
-Recommendation Agent — proactive opportunity and skill recommendations.
+Recommendation Agent, proactive opportunity and skill recommendations.
 Consumes: masaren.identity.pms_updated.v1
 Emits:    masaren.marketplace.opportunity_recommended.v1
 """

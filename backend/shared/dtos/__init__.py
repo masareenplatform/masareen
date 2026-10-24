@@ -1,6 +1,6 @@
 """
 Shared Pydantic schemas used across multiple services.
-These are the canonical API contract types — never import domain entities here.
+These are the canonical API contract types, never import domain entities here.
 """
 from __future__ import annotations
 from datetime import datetime

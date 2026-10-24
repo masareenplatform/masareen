@@ -2,7 +2,7 @@
 
 Mirrors the Go variant's contract (HS256 JWT verify + bcrypt) so the
 EfficiencySelector can compare engines on identical work. Real cryptography via
-python-jose and passlib — no mocks, no stubs.
+python-jose and passlib, no mocks, no stubs.
 """
 from __future__ import annotations
 

@@ -222,7 +222,7 @@ function Chip({ icon, k, v }: { icon: string; k: string; v: string }) {
   return (
     <span className="inline-flex items-center gap-1 rounded-lg border border-line bg-canvas px-2.5 py-1 text-xs">
       <span>{icon}</span><span className="text-muted">{k}:</span>
-      <span className="font-semibold text-ink">{v || "—"}</span>
+      <span className="font-semibold text-ink">{v || "-"}</span>
     </span>
   );
 }

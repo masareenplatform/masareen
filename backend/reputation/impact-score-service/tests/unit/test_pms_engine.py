@@ -45,10 +45,10 @@ class TestPMSComputation:
     def test_delta_application_clamped(self):
         dims = {k: 0.5 for k in DIMENSION_KEYS}
         snap = PMSSnapshot.compute("u1", dims)
-        # Large positive delta — should clamp to 1.0
+        # Large positive delta, should clamp to 1.0
         new_dims = snap.apply_delta({"reliability": 2.0})
         assert new_dims["reliability"] == pytest.approx(1.0)
-        # Large negative delta — should clamp to 0.0
+        # Large negative delta, should clamp to 0.0
         new_dims2 = snap.apply_delta({"reliability": -2.0})
         assert new_dims2["reliability"] == pytest.approx(0.0)
 

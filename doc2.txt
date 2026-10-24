@@ -459,7 +459,7 @@ Retrieved July 21, 2026, from https://slsa.dev/spec/v1.1/
 //spdx.dev/use/specifications/
 The Trust Project. (2026). Trust indicators explained. Retrieved July 21, 2026, from https :
 //thetrustproject.org/trust-indicators/
-UNESCO. (2026). The national media authority—maspero. Retrieved July 21, 2026, from https:
+UNESCO. (2026). The national media authority-maspero. Retrieved July 21, 2026, from https:
 / / www . unesco . org / creativity / en / policy - monitoring - platform / national - media authority-maspero
 United Media Services. (2026). About united media services. Retrieved July 21, 2026, from
 https://ums.com.eg/en/about-en/

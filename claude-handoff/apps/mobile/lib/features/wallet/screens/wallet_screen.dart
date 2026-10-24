@@ -149,7 +149,7 @@ class _WalletScreenState extends State<WalletScreen> {
                     children: [
                       const Text('Balance', style: TextStyle(fontSize: 14, color: MasarenTheme.navyLight)),
                       const SizedBox(height: 4),
-                      Text('${balance ?? '—'} $currency',
+                      Text('${balance ?? '-'} $currency',
                           style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: MasarenTheme.gold, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
                       Text('Exchange rate: 1 EGP = ${_rateToMrc.toStringAsFixed(4)} MRC',

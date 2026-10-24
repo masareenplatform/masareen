@@ -147,9 +147,9 @@ AND ("knowledge graph" OR "neo4j" OR "graph database")
 **Blocking Documents:** 0
 
 **Closest Prior Art Documents:**
-1. US-11,328,319 (Salesforce) — Sustainability metric tracking (corporate data only)
-2. US-10,984,441 (SAP) — Multi-dimensional sustainability rating (static weights)
-3. US-9,852,423 (IBM) — Environmental impact scoring from sensor data (single domain)
+1. US-11,328,319 (Salesforce), Sustainability metric tracking (corporate data only)
+2. US-10,984,441 (SAP), Multi-dimensional sustainability rating (static weights)
+3. US-9,852,423 (IBM), Environmental impact scoring from sensor data (single domain)
 
 None of these teach the combination of AI verification + multi-domain impact scoring + blockchain minting + knowledge graph integration.
 
@@ -223,6 +223,6 @@ All contracting states of the Patent Cooperation Treaty, including but not limit
 
 **Filed by:** MASAREN IP Team
 **Date:** August 11, 2026
-**Classification:** CONFIDENTIAL — PROPRIETARY
+**Classification:** CONFIDENTIAL, PROPRIETARY
 
 *This PCT application is drafted based on the provisional applications PROV-001 and PROV-002. Formal filing to be completed by registered patent attorney.*

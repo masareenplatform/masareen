@@ -1,5 +1,5 @@
 """
-Graph Synthesis Engine — executes structural inferences into the local Neo4j
+Graph Synthesis Engine, executes structural inferences into the local Neo4j
 knowledge graph and adjusts Proof of Mission Scores (PMS) across 10 dimensions.
 
 This agent is the bridge between cloud AI reasoning and local graph state.
@@ -55,7 +55,7 @@ class GraphSynthesisEngine(EventConsumer):
     """
     Consumes: masaren.reputation.impact_asset_created.v1
     Emits:    masaren.identity.pms_updated.v1
-    Writes:   Neo4j (local) — ImpactAsset nodes, GENERATED relationships, PMS scores
+    Writes:   Neo4j (local), ImpactAsset nodes, GENERATED relationships, PMS scores
     """
 
     CONSUME_TOPICS = ["masaren.reputation.impact_asset_created.v1"]

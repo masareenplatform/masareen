@@ -1,5 +1,5 @@
 """
-Graph service API — Neo4j knowledge graph operations.
+Graph service API, Neo4j knowledge graph operations.
 Exposes REST endpoints for node CRUD, relationship management,
 and complex traversal queries. All endpoints perform real Neo4j operations;
 when Neo4j is unreachable they return an honest error rather than fabricated data.

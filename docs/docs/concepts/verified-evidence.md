@@ -1,10 +1,10 @@
 ---
 id: verified-evidence
-title: Verified Evidence — What It Actually Is
+title: Verified Evidence, What It Actually Is
 sidebar_position: 4
 ---
 
-# Verified Evidence — What It Actually Is
+# Verified Evidence, What It Actually Is
 
 "Verified evidence" is the central noun of MASAREEN. This page defines it precisely,
 because the whole reputation system rests on getting this right.
@@ -76,7 +76,7 @@ Verified evidence is the leaf node of trust in MASAREEN:
 - It powers the **PMS** (your personal merit) and **OII** (org impact) scores.
 - It becomes an **asset** in your portfolio (`GET /api/v1/portfolio/{user_id}/assets`).
 - It produces a portable **impact passport** entry
-  (`GET /api/v1/users/{user_id}/impact-passport`) — proof you can take anywhere.
+  (`GET /api/v1/users/{user_id}/impact-passport`), proof you can take anywhere.
 - It writes an edge in the **graph** (`POST /api/v1/graph/relationships`) linking you to the
   program/SDG you impacted.
 

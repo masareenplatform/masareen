@@ -1,6 +1,6 @@
 // Realtime layer: an in-app event bus (works with zero backend) plus an
 // optional WebSocket connection. UI components publish/subscribe to topics so
-// the feed, messenger and notifications update live — NO manual refresh.
+// the feed, messenger and notifications update live, NO manual refresh.
 //
 // Wire `VITE_WS_URL` (or set window.__MASAREN_WS__) to a broadcast WS server to
 // get cross-tab / cross-user live updates. The bundled `ws-server.mjs` does this.

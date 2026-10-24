@@ -1,4 +1,4 @@
-# MASAREN — Live Client Demo
+# MASAREN, Live Client Demo
 
 ## What This Demo Shows
 A fully functional MASAREN BFF (API gateway + SPA) that runs standalone with a
@@ -10,7 +10,7 @@ Design principles (per platform-genome "never" rules):
 - **NO in-memory mock data.** All domain state is persisted in SQLite.
 - **NO simulated/random values.** AI confidence, impact value, GPS, and fraud
   risk are REAL (computed from actual evidence) or explicitly marked
-  `IN_REVIEW` / `PENDING` — never faked.
+  `IN_REVIEW` / `PENDING`, never faked.
 - Every write also attempts a real call to the corresponding backend service
   (org / program / task / gps / evidence / submission / verification / audit).
   If a backend service is unreachable, the operation still succeeds locally but
@@ -62,7 +62,7 @@ with `docker-compose up` from the repository root, then start the demo.
 2. `POST /api/evidence/{evidence_id}/sync` polls the verification-service for the
    pipeline verdict. When the backend reports `APPROVED`, the demo creates the impact
    asset locally with a **transparent value** = `MEDIA_BASE_VALUE[media_type] × ai_confidence`
-   (using the real `ai_confidence_score` from the pipeline — never random). If the
+   (using the real `ai_confidence_score` from the pipeline, never random). If the
    backend is unreachable the endpoint returns HTTP 503.
 3. The frontend should call `sync` after a short delay (or on a timer) to reflect the
    real verification outcome.
@@ -81,7 +81,7 @@ Or register a new account from the UI.
 
 | Section | What to show |
 |---------|-------------|
-| 📊 Dashboard | Live stats — users, programs, tasks, evidence, impact value, events emitted |
+| 📊 Dashboard | Live stats, users, programs, tasks, evidence, impact value, events emitted |
 | 📋 Programs | Create organizations and programs with SDG goal tagging |
 | ✅ Tasks | Full task lifecycle: PENDING → ASSIGNED → IN_PROGRESS → SUBMITTED → COMPLETED |
 | 📸 Evidence | GPS-tagged evidence submission with instant AI verification simulation |
@@ -91,11 +91,11 @@ Or register a new account from the UI.
 ## Demo Flow for Client Presentation (10 minutes)
 
 ### 1. The Problem (1 min)
-> "Billions are spent on social programs every year — with no way to verify what actually happened in the field."
+> "Billions are spent on social programs every year, with no way to verify what actually happened in the field."
 
 ### 2. Show the Dashboard (1 min)
-- Point to "Events Emitted" — every action is immutable
-- Point to "Impact Value $" — real economic value from field work
+- Point to "Events Emitted", every action is immutable
+- Point to "Impact Value $", real economic value from field work
 
 ### 3. Create a Program (2 min)
 - Click Programs → create an org → create a program with SDGs 3, 6, 10

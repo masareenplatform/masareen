@@ -1,4 +1,4 @@
--- MASAREN Identity — reconcile users/user_profiles with the ORM model.
+-- MASAREN Identity, reconcile users/user_profiles with the ORM model.
 -- Migration V016
 -- The SQLAlchemy ORM (UserORM / UserProfileORM) references several columns that
 -- were never added to the live schema, causing GET /users/{id} to 500 with

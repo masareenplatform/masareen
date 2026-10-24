@@ -80,7 +80,7 @@ export default function ReviewsPage() {
                   <strong>Review {r.review_id}</strong>
                   {r.evidence_id && <div style={{ fontSize: 13, color: "#64748b" }}>Evidence: {r.evidence_id}</div>}
                   <div style={{ fontSize: 12, color: "#94a3b8" }}>
-                    {r.status} · submitted by {r.submitted_by ?? "—"} · {r.created_at ?? ""}
+                    {r.status} · submitted by {r.submitted_by ?? "-"} · {r.created_at ?? ""}
                   </div>
                 </div>
                 <span className="btn btn-ghost" style={{ height: 28 }}>{r.status}</span>

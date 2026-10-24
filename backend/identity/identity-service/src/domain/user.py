@@ -1,5 +1,5 @@
 """
-User aggregate root — the central entity of the Identity domain.
+User aggregate root, the central entity of the Identity domain.
 
 Rules:
 - All state changes emit domain events
@@ -85,7 +85,7 @@ class User(AggregateRoot):
     email:              str             = ""
     full_name:          str             = ""
     phone:              str             = ""            # optional at registration, validated if provided
-    national_id:        str             = ""            # KYC — captured at registration or later verification
+    national_id:        str             = ""            # KYC, captured at registration or later verification
     university_id:      Optional[str]   = None          # relevant when audience == STUDENT
     role:               UserRole        = UserRole.INDIVIDUAL
     status:             UserStatus      = UserStatus.PENDING_VERIFICATION

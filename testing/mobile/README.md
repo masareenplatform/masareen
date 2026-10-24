@@ -1,11 +1,11 @@
-# MASAREN Mobile — Emulator / Integration-Test Simulation Scheme
+# MASAREN Mobile, Emulator / Integration-Test Simulation Scheme
 
 Goal: reproducibly launch the Flutter app on an Android emulator, drive through the
 four new monetisation surfaces (Wallet, Ads, Payments, Platform Revenue), capture
-screenshots, and assert they render — without depending on a human.
+screenshots, and assert they render, without depending on a human.
 
 ## Prerequisites
-- Flutter SDK (3.44.x) + `JAVA_HOME` set (JDK 17). ✅ already working — `flutter build apk` succeeds.
+- Flutter SDK (3.44.x) + `JAVA_HOME` set (JDK 17). ✅ already working, `flutter build apk` succeeds.
 - An Android emulator (AVD). Create one if missing:
   ```powershell
   flutter emulators --create --name masaren_test -s "pixel_6"
@@ -16,7 +16,7 @@ screenshots, and assert they render — without depending on a human.
   The UI shells (AppBar titles, forms, empty/error states) render regardless.
 
 ## What to run
-1. `testing/mobile/run_emulator.ps1` — boots the AVD, waits for `adb`, then:
+1. `testing/mobile/run_emulator.ps1`, boots the AVD, waits for `adb`, then:
    - `flutter test integration_test/app_test.dart` (drives + asserts every screen), and
    - `flutter drive --driver=testing_driver.dart --target=integration_test/app_test.dart`
      to capture `screenshots/*.png` via `integrationDriver`.

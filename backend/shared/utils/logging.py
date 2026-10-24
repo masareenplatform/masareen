@@ -9,7 +9,7 @@ from typing import Optional
 
 
 def configure_logging(service_name: str, log_level: str = "INFO") -> None:
-    """Call once at service startup — before any log.info() calls."""
+    """Call once at service startup, before any log.info() calls."""
 
     structlog.configure(
         processors=[
@@ -39,7 +39,7 @@ def bind_request_context(
     user_id: Optional[str] = None,
     correlation_id: Optional[str] = None,
 ) -> None:
-    """Bind per-request context — call from middleware."""
+    """Bind per-request context, call from middleware."""
     ctx = {}
     if trace_id:
         ctx["trace_id"] = trace_id

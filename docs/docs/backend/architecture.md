@@ -31,7 +31,7 @@ Running 37 separate `uvicorn` processes is heavy and fragile on a small host. Ea
 already builds a complete FastAPI app with its own routers, so `combined/main.py` imports
 every service as a **uniquely-named package** (e.g. `ms_identity`, `ms_evidence`) and merges
 their routers under one app. Result: a single process on `:8080` serving every `/api/v1/*`
-route the web and mobile apps expect — no API gateway fan-out needed.
+route the web and mobile apps expect, no API gateway fan-out needed.
 
 > Infra (Postgres / Neo4j / Redis) still runs separately as containers. The "combined"
 > part is only the HTTP layer.
@@ -46,10 +46,10 @@ module names never collide. Google OAuth is mounted separately
 
 ## Identity & trust boundaries
 
-- **Authentication** (`ms_auth`) — JWT issuance/refresh, password change/reset, Google.
-- **Authorization** (`ms_authz`) — role/permission checks (`POST /api/v1/authz/check`).
-- **Identity** (`ms_identity`) — users, profiles, multiple identities.
-- **Organization** (`ms_organization`) — orgs, members, OII.
+- **Authentication** (`ms_auth`), JWT issuance/refresh, password change/reset, Google.
+- **Authorization** (`ms_authz`), role/permission checks (`POST /api/v1/authz/check`).
+- **Identity** (`ms_identity`), users, profiles, multiple identities.
+- **Organization** (`ms_organization`), orgs, members, OII.
 
 ## Infra dependencies
 
@@ -62,9 +62,9 @@ module names never collide. Google OAuth is mounted separately
 
 ## Health & observability
 
-- `/health`, `/health/live`, `/health/ready` — liveness/readiness.
-- `/evidence/health`, `/evidence/health/ready`, `/api/v1/graph/health/neo4j` — per-dependency.
-- `/bench` — quick benchmark. Prometheus instrumentation is wired via the shared layer.
+- `/health`, `/health/live`, `/health/ready`, liveness/readiness.
+- `/evidence/health`, `/evidence/health/ready`, `/api/v1/graph/health/neo4j`, per-dependency.
+- `/bench`, quick benchmark. Prometheus instrumentation is wired via the shared layer.
 
 ## Running it
 

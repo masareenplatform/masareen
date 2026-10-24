@@ -1,4 +1,4 @@
-"""Real OII repository — persists Organizational Impact Index rows to PostgreSQL.
+"""Real OII repository, persists Organizational Impact Index rows to PostgreSQL.
 
 Writes to the canonical ``oii_scores`` table (migration V004). Append-only:
 each recomputation inserts a new row with an incremented ``version`` so the full

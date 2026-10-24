@@ -6,7 +6,7 @@ sidebar_position: 5
 
 # REST API Reference
 
-Base URL (public): `https://masareen.mediahubnetwork.net` — all routes are under `/api/v1`.
+Base URL (public): `https://masareen.mediahubnetwork.net`, all routes are under `/api/v1`.
 The full machine-readable spec is at `/openapi.json`.
 
 ## Quick index (most-used)

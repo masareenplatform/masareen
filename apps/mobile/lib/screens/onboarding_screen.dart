@@ -23,7 +23,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     _OnboardPageData(
       icon: Icons.route,
       title: 'Two Paths to Impact',
-      subtitle: 'Path A — Market your skills through opportunities. Path B — Execute field work and capture verified evidence.',
+      subtitle: 'Path A, Market your skills through opportunities. Path B, Execute field work and capture verified evidence.',
       gradient: [Color(0xFF34A853), Color(0xFF0F9D58)],
     ),
     _OnboardPageData(

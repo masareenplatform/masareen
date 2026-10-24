@@ -1,4 +1,4 @@
-"""Invoice aggregate — usage-based billing."""
+"""Invoice aggregate, usage-based billing."""
 from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import date, datetime, timezone

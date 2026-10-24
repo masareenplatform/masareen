@@ -1,4 +1,4 @@
-// MASAREN Mobile — lightweight stateful mock gateway for end-to-end testing.
+// MASAREN Mobile, lightweight stateful mock gateway for end-to-end testing.
 // Implements the contract the Flutter app expects (apps/mobile/lib/services/api_service.dart).
 // Every request is logged. Responses are wrapped in { success: true, data } because
 // the mobile ApiService interceptor unwraps `data`.

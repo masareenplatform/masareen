@@ -55,7 +55,7 @@ class ApprovalRequest(BaseModel):
 def route_to_human_review(evidence_id: str, confidence: float) -> None:
     """Route a low-confidence result to the real audit-service review queue.
 
-    Runs synchronously (called from the crew worker thread) — no event-loop
+    Runs synchronously (called from the crew worker thread), no event-loop
     juggling. Failures are recorded to the blackboard, not swallowed silently.
     """
     try:

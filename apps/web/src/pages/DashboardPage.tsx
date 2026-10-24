@@ -60,7 +60,7 @@ export default function DashboardPage() {
     .map((k) => ({ key: k, label: PLATFORM_LABELS[k], value: (platform as any)[k], icon: PLATFORM_ICONS[k] }));
 
   const score = data?.pms?.composite_score;
-  const scoreDisplay = score != null ? (score <= 1 ? (score * 100).toFixed(0) : score.toFixed(0)) : "—";
+  const scoreDisplay = score != null ? (score <= 1 ? (score * 100).toFixed(0) : score.toFixed(0)) : "-";
 
   if (loading) return (
     <div className="space-y-6 animate-fade-up">
@@ -137,7 +137,7 @@ export default function DashboardPage() {
               <p className="text-label-lg text-muted mb-1">MRC Wallet Balance</p>
               <div className="flex items-baseline gap-2">
                 <span className="text-display-sm text-ink">
-                  {mrcBalance != null ? mrcBalance.toLocaleString() : "—"}
+                  {mrcBalance != null ? mrcBalance.toLocaleString() : "-"}
                 </span>
                 {mrcBalance != null && <span className="text-sm font-semibold text-accent">MRC</span>}
               </div>
@@ -153,7 +153,7 @@ export default function DashboardPage() {
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <p className="text-label-lg text-muted mb-1">Your Programs</p>
-              <span className="text-display-sm text-ink">{data?.user_stats?.programs_enrolled ?? "—"}</span>
+              <span className="text-display-sm text-ink">{data?.user_stats?.programs_enrolled ?? "-"}</span>
             </div>
             <Link to="/programs" className="grid h-14 w-14 place-items-center rounded-xl bg-brand-50 text-2xl transition-all duration-200 hover:bg-brand-100 group-hover:scale-110">
               🌱
@@ -176,7 +176,7 @@ export default function DashboardPage() {
                 <span className="text-2xl mb-2 block transition-transform duration-200 group-hover:scale-110">{c.icon}</span>
                 <p className="text-label-sm text-muted mb-1">{c.label}</p>
                 <p className="text-title-lg text-ink font-bold">
-                  {typeof c.value === "number" ? c.value.toLocaleString() : String(c.value ?? "—")}
+                  {typeof c.value === "number" ? c.value.toLocaleString() : String(c.value ?? "-")}
                 </p>
               </div>
             ))}

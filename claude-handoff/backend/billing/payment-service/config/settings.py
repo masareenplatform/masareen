@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     jwt_secret: str = "change-me-in-production"
     jwt_algorithm: str = "HS256"
 
-    # Paymob (Egypt) — card iframe + Vodafone Cash wallet
+    # Paymob (Egypt), card iframe + Vodafone Cash wallet
     paymob_api_key: str = ""
     paymob_hmac_secret: str = ""
     paymob_wallet_integration_id: str = ""

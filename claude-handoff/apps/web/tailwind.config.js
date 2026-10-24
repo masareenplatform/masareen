@@ -5,7 +5,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Primary brand (MASAREN logo blue) — matches mobile MasarenTheme.brand (#0250A3)
+        // Primary brand (MASAREN logo blue), matches mobile MasarenTheme.brand (#0250A3)
         brand: {
           DEFAULT: "#0250A3",
           light: "#0077C8", // azure
@@ -21,7 +21,7 @@ export default {
           800: "#022E60",
           900: "#011B3A",
         },
-        // Secondary accent (MASAREN logo green) — MasarenTheme.green (#2A9D45)
+        // Secondary accent (MASAREN logo green), MasarenTheme.green (#2A9D45)
         accent: {
           DEFAULT: "#2A9D45",
           light: "#3EBD5C",
@@ -58,7 +58,7 @@ export default {
         like: "#E25555",
       },
       fontFamily: {
-        // Flutter uses Google Fonts Cairo across the whole app — mirror it on web.
+        // Flutter uses Google Fonts Cairo across the whole app, mirror it on web.
         sans: ["Cairo", "Inter", "system-ui", "sans-serif"],
         ar: ["Cairo", "Inter", "sans-serif"],
         display: ["Cairo", "Inter", "sans-serif"],

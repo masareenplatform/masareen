@@ -1,7 +1,7 @@
 """PostgreSQL session factory for the analytics-service.
 
 Uses SQLAlchemy async engine. When the database is unreachable, callers that
-open a session will raise — the API layer converts that into an honest 503
+open a session will raise, the API layer converts that into an honest 503
 rather than returning fabricated zeros.
 """
 from __future__ import annotations

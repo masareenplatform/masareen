@@ -152,13 +152,13 @@ async def _check_kafka(request: Request) -> Dict[str, Any]:
 
 @health_router.get("/health")
 async def liveness():
-    """Liveness probe — returns 200 if the process is running."""
+    """Liveness probe, returns 200 if the process is running."""
     return {"status": "ok", "timestamp": datetime.now(timezone.utc).isoformat()}
 
 
 @health_router.get("/health/ready")
 async def readiness(request: Request):
-    """Readiness probe — verifies all backing services are reachable.
+    """Readiness probe, verifies all backing services are reachable.
 
     Returns HTTP 200 only when every service reports healthy.
     """

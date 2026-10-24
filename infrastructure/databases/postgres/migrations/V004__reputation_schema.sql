@@ -83,7 +83,7 @@ CREATE TABLE opportunity_applications (
 -- NOTE: The `invoices` and `invoice_line_items` tables are owned by the billing
 -- domain and are defined in V006__billing_notifications_schema.sql (which also
 -- carries the `updated_at` column the billing repository relies on). They were
--- previously duplicated here, which — because V004 runs first — shadowed the
+-- previously duplicated here, which, because V004 runs first, shadowed the
 -- complete V006 definition and broke `UPDATE ... SET updated_at`. Removed to keep
 -- a single source of truth.
 

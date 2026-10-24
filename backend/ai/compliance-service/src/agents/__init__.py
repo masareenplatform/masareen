@@ -1,5 +1,5 @@
 """
-Compliance Agent — policy enforcement and regulatory checks.
+Compliance Agent, policy enforcement and regulatory checks.
 Consumes: masaren.reporting.report_generated.v1
 Emits:    masaren.compliance.issue_flagged.v1
 """

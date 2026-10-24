@@ -1,7 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 /**
- * MASAREN Web E2E — Playwright configuration.
+ * MASAREN Web E2E, Playwright configuration.
  *
  * Serves the pre-built SPA (dist/) through the fixture-level static server
  * (see e2e/fixtures.ts) so no separate `webServer` process is needed.

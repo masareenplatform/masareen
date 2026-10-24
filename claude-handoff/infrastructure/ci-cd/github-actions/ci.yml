@@ -98,4 +98,4 @@ jobs:
         run: |
           echo "Building ${{ matrix.service.name }}..."
           # docker build -t ghcr.io/masaren/${{ matrix.service.name }}:${{ github.sha }} ${{ matrix.service.path }}
-          echo "Image build step — configure registry credentials in repo secrets"
+          echo "Image build step, configure registry credentials in repo secrets"

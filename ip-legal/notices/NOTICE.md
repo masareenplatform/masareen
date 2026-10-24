@@ -1,4 +1,4 @@
-# NOTICE — MASAREN Platform
+# NOTICE, MASAREN Platform
 
 > **Legal Template Notice:** This document is a template prepared for internal use. It does not constitute legal advice. MASAREN should have this document reviewed and finalized by qualified legal counsel before relying on it for any legal purpose.
 
@@ -8,7 +8,7 @@
 
 Copyright © 2026 MASAREN. All rights reserved.
 
-**MASAREN** (مسارين) — Impact Infrastructure as a Service (IIaaS)
+**MASAREN** (مسارين)، Impact Infrastructure as a Service (IIaaS)
 Platform Version: 1.0
 First Published: 2026
 
@@ -18,7 +18,7 @@ This software, including all source code, documentation, design assets, algorith
 
 ## 2. All Rights Reserved
 
-No part of this Platform may be reproduced, distributed, transmitted, displayed, published, or broadcast in any form or by any means — including but not limited to electronic, mechanical, photocopying, recording, or other methods — without the prior written permission of MASAREN.
+No part of this Platform may be reproduced, distributed, transmitted, displayed, published, or broadcast in any form or by any means, including but not limited to electronic, mechanical, photocopying, recording, or other methods, without the prior written permission of MASAREN.
 
 Unauthorized use, reproduction, or distribution of any portion of this Platform, or any portion thereof, may result in severe civil and criminal penalties, and will be prosecuted to the maximum extent possible under applicable law.
 
@@ -28,9 +28,9 @@ Unauthorized use, reproduction, or distribution of any portion of this Platform,
 
 To inquire about licensing, partnerships, or any authorized use of MASAREN intellectual property, contact:
 
-**MASAREN — Legal & Licensing**
+**MASAREN, Legal & Licensing**
 Email: legal@masaren.io
-Subject Line: `[IP LICENSING INQUIRY] — <Brief Description>`
+Subject Line: `[IP LICENSING INQUIRY], <Brief Description>`
 
 All licensing inquiries are subject to review and approval. MASAREN reserves the right to decline any licensing request at its sole discretion.
 

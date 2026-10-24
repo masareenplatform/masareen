@@ -94,7 +94,7 @@ function Overview() {
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
         <div className="rounded-xl bg-canvas p-4">
           <h3 className="text-sm font-bold text-ink">Vision</h3>
-          <p className="mt-1 text-xs text-muted">Make every unit of social impact provable, auditable and economically meaningful — so funders trust outcomes and workers earn from real change.</p>
+          <p className="mt-1 text-xs text-muted">Make every unit of social impact provable, auditable and economically meaningful, so funders trust outcomes and workers earn from real change.</p>
         </div>
         <div className="rounded-xl bg-canvas p-4">
           <h3 className="text-sm font-bold text-ink">SDG Alignment</h3>
@@ -136,7 +136,7 @@ function FeedDocs() {
       <h2 className="font-display text-2xl font-extrabold text-ink">The Feed</h2>
       <p className="mt-3 text-sm text-muted leading-relaxed">
         The MASAREEN feed is a social timeline of verified impact stories. Posts are ranked by a composite score combining
-        recency, engagement and verification confidence — not just likes.
+        recency, engagement and verification confidence, not just likes.
       </p>
       <h3 className="mt-6 text-base font-bold text-ink">Post Types</h3>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -174,7 +174,7 @@ function VerificationDocs() {
       </p>
       <div className="mt-6 space-y-3">
         {[
-          { step: "Event Capture", desc: "An action fires — tree planted, clinic run, goal scored. It becomes an event in the stream." },
+          { step: "Event Capture", desc: "An action fires, tree planted, clinic run, goal scored. It becomes an event in the stream." },
           { step: "Evidence Bundling", desc: "Photos, GPS coordinates, timestamps and sensor data are packaged into a tamper-evident bundle." },
           { step: "POAI Scoring", desc: "The algorithm evaluates plausibility, completeness, SDG alignment and consistency with historical data." },
           { step: "Audit Decision", desc: "High-confidence events auto-verify. Low-confidence events route to human or partner audit." },
@@ -292,7 +292,7 @@ function OpportunitiesDocs() {
     <div>
       <h2 className="font-display text-2xl font-extrabold text-ink">Opportunities</h2>
       <p className="mt-3 text-sm text-muted leading-relaxed">
-        The Opportunity Marketplace connects impact workers with volunteering positions, jobs, grants and partnerships — all
+        The Opportunity Marketplace connects impact workers with volunteering positions, jobs, grants and partnerships, all
         backed by verified impact credentials.
       </p>
       <h3 className="mt-6 text-base font-bold text-ink">Types</h3>

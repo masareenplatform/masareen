@@ -1,8 +1,8 @@
-"""Forecast repository — real aggregates from existing platform tables.
+"""Forecast repository, real aggregates from existing platform tables.
 
 We read monthly ``impact_assets.economic_value_usd`` (and completed ``tasks``
 counts) to build a historical series, then the (pure) forecast engine
-projects forward. No fabricated future numbers — they are derived from real
+projects forward. No fabricated future numbers, they are derived from real
 history via a documented linear trend.
 """
 from __future__ import annotations

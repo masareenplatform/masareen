@@ -1,4 +1,4 @@
-// MASAREN Web — COMPREHENSIVE offline simulation, test & report.
+// MASAREN Web, COMPREHENSIVE offline simulation, test & report.
 //
 // Covers EVERY web feature: auth/login, dashboard, feed (ranking algorithm +
 // react), programs (list + create via API), tasks (list + create + lifecycle),
@@ -147,7 +147,7 @@ function mockPayload(method, url) {
   if (u === "programs" && isGet) return [...state.programs];
   if (u === "programs" && method === "POST") {
     const body = lastBody();
-    const p = { id: uid("pr"), title: body.title || "New Program", sdg_goals: body.sdg_goals || [4], enrolled_count: 0, status: body.status || "DRAFT", organization: "Self", location: "—" };
+    const p = { id: uid("pr"), title: body.title || "New Program", sdg_goals: body.sdg_goals || [4], enrolled_count: 0, status: body.status || "DRAFT", organization: "Self", location: "-" };
     state.programs.push(p); return p;
   }
   if (/^programs\/[^/]+$/.test(u)) return state.programs[0];
@@ -442,7 +442,7 @@ async function recordInteraction(name, route, feature, fn) {
 }
 function feat(name, status, note) { report.features.push({ feature: name, status, note }); }
 
-// 1) AUTH — real login flow
+// 1) AUTH, real login flow
 await recordInteraction("auth_login_flow", "/login", "Auth / Login", async () => {
   await page.goto(`${BASE}/login`, { waitUntil: "domcontentloaded" });
   await wait(500);
@@ -457,7 +457,7 @@ await recordInteraction("auth_login_flow", "/login", "Auth / Login", async () =>
   return "logged in -> redirected to " + url.split("/").pop();
 });
 
-// 2) FEED — compose & publish a post (social feed, localStorage-backed)
+// 2) FEED, compose & publish a post (social feed, localStorage-backed)
 await recordInteraction("feed_compose", "/feed", "Feed / Compose post", async () => {
   await page.goto(`${BASE}/feed`, { waitUntil: "domcontentloaded" });
   await wait(2000);
@@ -484,7 +484,7 @@ await recordInteraction("feed_compose", "/feed", "Feed / Compose post", async ()
   return "post authored and appeared in feed";
 });
 
-// 3) FEED — react (like toggle)
+// 3) FEED, react (like toggle)
 await recordInteraction("feed_react", "/feed", "Feed / React (like)", async () => {
   await page.goto(`${BASE}/feed`, { waitUntil: "domcontentloaded" });
   await wait(2000);
@@ -506,7 +506,7 @@ await recordInteraction("feed_react", "/feed", "Feed / React (like)", async () =
   return `react toggled (${before} -> ${after})`;
 });
 
-// 4) PROGRAMS — create via API, verify web list reflects it
+// 4) PROGRAMS, create via API, verify web list reflects it
 await recordInteraction("programs_create", "/programs", "Programs / Create", async () => {
   await page.goto(`${BASE}/programs`, { waitUntil: "domcontentloaded" });
   await wait(1000);
@@ -519,7 +519,7 @@ await recordInteraction("programs_create", "/programs", "Programs / Create", asy
   return "program created via API and shown in web list";
 });
 
-// 5) TASKS — create via API, verify web list reflects it
+// 5) TASKS, create via API, verify web list reflects it
 await recordInteraction("tasks_create", "/tasks", "Tasks / Create", async () => {
   await page.goto(`${BASE}/tasks`, { waitUntil: "domcontentloaded" });
   await wait(1000);
@@ -532,7 +532,7 @@ await recordInteraction("tasks_create", "/tasks", "Tasks / Create", async () => 
   return "task created via API and shown in web list";
 });
 
-// 6) TASKS — lifecycle (assign/start/submit/complete) via API
+// 6) TASKS, lifecycle (assign/start/submit/complete) via API
 await recordInteraction("tasks_lifecycle", "/tasks", "Tasks / Lifecycle", async () => {
   const res = await page.evaluate(async () => {
     const h = { "Content-Type": "application/json", Authorization: "Bearer fake.jwt.token" };
@@ -547,7 +547,7 @@ await recordInteraction("tasks_lifecycle", "/tasks", "Tasks / Lifecycle", async 
   return "assign/start/submit/complete all 200 OK";
 });
 
-// 7) OPPORTUNITIES / marketplace — apply
+// 7) OPPORTUNITIES / marketplace, apply
 await recordInteraction("opportunities_apply", "/opportunities", "Opportunities / Marketplace apply", async () => {
   await page.goto(`${BASE}/opportunities`, { waitUntil: "domcontentloaded" });
   await wait(1300);
@@ -558,7 +558,7 @@ await recordInteraction("opportunities_apply", "/opportunities", "Opportunities 
   return "applied to opportunity -> button shows 'Applied'";
 });
 
-// 8) COLLABORATE — partner hosting request
+// 8) COLLABORATE, partner hosting request
 await recordInteraction("collaborate_submit", "/collaborate", "Collaborate / Partner submit", async () => {
   await page.goto(`${BASE}/collaborate`, { waitUntil: "domcontentloaded" });
   await wait(2000);
@@ -579,7 +579,7 @@ await recordInteraction("collaborate_submit", "/collaborate", "Collaborate / Par
   return "partner hosting request submitted";
 });
 
-// 9) CHAT — select conversation + send message
+// 9) CHAT, select conversation + send message
 await recordInteraction("chat_send", "/chat", "Chat / Messaging", async () => {
   await page.goto(`${BASE}/chat`, { waitUntil: "domcontentloaded" });
   await wait(1100);
@@ -592,7 +592,7 @@ await recordInteraction("chat_send", "/chat", "Chat / Messaging", async () => {
   return "message sent and visible in conversation";
 });
 
-// 10) NOTIFICATIONS — mark as read
+// 10) NOTIFICATIONS, mark as read
 await recordInteraction("notifications_read", "/notifications", "Notifications / Mark read", async () => {
   await page.goto(`${BASE}/notifications`, { waitUntil: "domcontentloaded" });
   await wait(1100);
@@ -606,7 +606,7 @@ await recordInteraction("notifications_read", "/notifications", "Notifications /
   return "notification marked read (button removed)";
 });
 
-// 11) WALLET — convert (brokerage fee applied)
+// 11) WALLET, convert (brokerage fee applied)
 await recordInteraction("wallet_convert", "/wallet", "Wallet / Coin convert", async () => {
   await page.goto(`${BASE}/wallet`, { waitUntil: "domcontentloaded" });
   await wait(1300);
@@ -622,7 +622,7 @@ await recordInteraction("wallet_convert", "/wallet", "Wallet / Coin convert", as
   return "converted 100 EGP -> MRC with platform brokerage fee deducted";
 });
 
-// 12) WALLET — transfer (brokerage fee applied)
+// 12) WALLET, transfer (brokerage fee applied)
 await recordInteraction("wallet_transfer", "/wallet", "Wallet / Coin transfer", async () => {
   await page.goto(`${BASE}/wallet`, { waitUntil: "domcontentloaded" });
   await wait(1300);
@@ -638,7 +638,7 @@ await recordInteraction("wallet_transfer", "/wallet", "Wallet / Coin transfer", 
   return "transferred 50 MRC to u_vol with platform brokerage fee deducted";
 });
 
-// 13) ADS — create campaign (brokerage fee on budget)
+// 13) ADS, create campaign (brokerage fee on budget)
 await recordInteraction("ads_create", "/ads", "Ads / Create campaign", async () => {
   await page.goto(`${BASE}/ads`, { waitUntil: "domcontentloaded" });
   await wait(1300);
@@ -650,7 +650,7 @@ await recordInteraction("ads_create", "/ads", "Ads / Create campaign", async () 
   return "campaign created (1000 MRC budget, 2.5% brokerage fee)";
 });
 
-// 14) ADS — record impression (stats update)
+// 14) ADS, record impression (stats update)
 await recordInteraction("ads_impression", "/ads", "Ads / Impression tracking", async () => {
   await page.goto(`${BASE}/ads`, { waitUntil: "domcontentloaded" });
   await wait(1300);
@@ -661,7 +661,7 @@ await recordInteraction("ads_impression", "/ads", "Ads / Impression tracking", a
   return "impression recorded against active campaign";
 });
 
-// 15) PAYMENTS — Paymob intent
+// 15) PAYMENTS, Paymob intent
 await recordInteraction("payments_intent", "/payments", "Payments / Paymob intent", async () => {
   await page.goto(`${BASE}/payments`, { waitUntil: "domcontentloaded" });
   await wait(1300);
@@ -673,7 +673,7 @@ await recordInteraction("payments_intent", "/payments", "Payments / Paymob inten
   return "Paymob payment intent created (order 999)";
 });
 
-// 16) REVENUE — admin fee update
+// 16) REVENUE, admin fee update
 await recordInteraction("revenue_fee_update", "/revenue", "Revenue / Admin fee update", async () => {
   await page.goto(`${BASE}/revenue`, { waitUntil: "domcontentloaded" });
   await wait(1300);
@@ -687,7 +687,7 @@ await recordInteraction("revenue_fee_update", "/revenue", "Revenue / Admin fee u
   return "admin updated brokerage fee to 5%";
 });
 
-// 17) ADMIN — HITL resolve (approve review)
+// 17) ADMIN, HITL resolve (approve review)
 await recordInteraction("admin_hitl_resolve", "/admin", "Admin / HITL verification", async () => {
   await page.goto(`${BASE}/admin`, { waitUntil: "domcontentloaded" });
   await wait(1300);
@@ -698,7 +698,7 @@ await recordInteraction("admin_hitl_resolve", "/admin", "Admin / HITL verificati
   return "pending HITL review approved and cleared from queue";
 });
 
-// 18) EVIDENCE — capture
+// 18) EVIDENCE, capture
 await recordInteraction("evidence_capture", "/evidence", "Evidence / Capture", async () => {
   await page.goto(`${BASE}/evidence`, { waitUntil: "domcontentloaded" });
   await wait(600);
@@ -710,7 +710,7 @@ await recordInteraction("evidence_capture", "/evidence", "Evidence / Capture", a
   return "evidence capture submitted for task tk1";
 });
 
-// 19) REPORTS — analytics render
+// 19) REPORTS, analytics render
 await recordInteraction("reports_analytics", "/reports", "Reports / Analytics", async () => {
   await page.goto(`${BASE}/reports`, { waitUntil: "domcontentloaded" });
   await wait(1300);
@@ -720,7 +720,7 @@ await recordInteraction("reports_analytics", "/reports", "Reports / Analytics", 
   return "platform analytics (evidence/programs/impact) rendered";
 });
 
-// 20) BILLING — plans render
+// 20) BILLING, plans render
 await recordInteraction("billing_plans", "/billing", "Billing / Subscription plans", async () => {
   await page.goto(`${BASE}/billing`, { waitUntil: "domcontentloaded" });
   await wait(1300);
@@ -730,7 +730,7 @@ await recordInteraction("billing_plans", "/billing", "Billing / Subscription pla
   return "billing page renders current plan + available plans";
 });
 
-// 21) PROFILE — personal profile render
+// 21) PROFILE, personal profile render
 await recordInteraction("profile_view", "/profile", "Profile", async () => {
   await page.goto(`${BASE}/profile`, { waitUntil: "domcontentloaded" });
   await wait(1300);
@@ -739,7 +739,7 @@ await recordInteraction("profile_view", "/profile", "Profile", async () => {
   return "personal profile rendered (name/email/role/PMS)";
 });
 
-// 22) PASSPORT — impact passport render
+// 22) PASSPORT, impact passport render
 await recordInteraction("passport_view", "/passport", "Passport / Impact", async () => {
   await page.goto(`${BASE}/passport`, { waitUntil: "domcontentloaded" });
   await wait(1300);
@@ -748,7 +748,7 @@ await recordInteraction("passport_view", "/passport", "Passport / Impact", async
   return "impact passport rendered (PMS score + tier)";
 });
 
-// 23) PORTFOLIO — portfolio render
+// 23) PORTFOLIO, portfolio render
 await recordInteraction("portfolio_view", "/portfolio", "Portfolio", async () => {
   await page.goto(`${BASE}/portfolio`, { waitUntil: "domcontentloaded" });
   await wait(1300);
@@ -809,7 +809,7 @@ report.summary = {
 fs.writeFileSync(REPORT, JSON.stringify(report, null, 2));
 
 const md = [
-  `# MASAREN Web — Comprehensive Simulation Report`,
+  `# MASAREN Web, Comprehensive Simulation Report`,
   ``,
   `**Generated:** ${report.generatedAt}`,
   `**Overall verdict:** **${report.summary.overall}**`,
@@ -843,8 +843,8 @@ const md = [
   ``,
   `## Notes`,
   `- **Billing, payments & wallets** fully exercised: wallet convert + transfer both apply the 2.5% platform brokerage fee; Paymob intent + Stripe/Paymob PSP status rendered; billing plans shown.`,
-  `- **Feed algorithm**: items arrive pre-ranked by confidence score (descending); the web renders them in that order and exposes a per-item "Confidence: NN%" — verified non-increasing.`,
-  `- **Reacts**: the like button toggles 🤍 → ❤️ client-side. **Comments** are display-only counts in the current web build (no post/comment compose UI exists in the web client — consumption-only feed).`,
+  `- **Feed algorithm**: items arrive pre-ranked by confidence score (descending); the web renders them in that order and exposes a per-item "Confidence: NN%", verified non-increasing.`,
+  `- **Reacts**: the like button toggles 🤍 → ❤️ client-side. **Comments** are display-only counts in the current web build (no post/comment compose UI exists in the web client, consumption-only feed).`,
   `- **Create program / task / post**: the web pages are read-only dashboards, so creation is driven through the API contract (exactly as the mobile client does) and the web list is re-verified to reflect the new item. (The web has no program/task/post compose form.)`,
   `- **Opportunities / marketplace**: apply flow works end-to-end (button flips to "Applied").`,
   `- **Admin HITL**: approving a pending review removes it from the queue (stateful mock).`,

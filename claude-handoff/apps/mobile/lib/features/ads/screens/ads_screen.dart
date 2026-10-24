@@ -61,7 +61,7 @@ class _AdsScreenState extends State<AdsScreen> {
     try {
       final res = await _api.createCampaign(name, budget);
       setState(() => _message =
-          'Created "${res['name'] ?? name}". Deliverable budget: ${res['budget_coins'] ?? '—'} MRC. Platform fee taken: ${res['platform_fee_coins'] ?? '—'} MRC');
+          'Created "${res['name'] ?? name}". Deliverable budget: ${res['budget_coins'] ?? '-'} MRC. Platform fee taken: ${res['platform_fee_coins'] ?? '-'} MRC');
       _nameController.clear();
       _budgetController.clear();
       await _load();
@@ -157,11 +157,11 @@ class _AdsScreenState extends State<AdsScreen> {
                       ListTile(
                         contentPadding: EdgeInsets.zero,
                         title: Text(m['name']?.toString() ?? id),
-                        subtitle: Text('Status: ${m['status'] ?? '—'}'),
+                        subtitle: Text('Status: ${m['status'] ?? '-'}'),
                       ),
-                      Text('Budget (deliverable): ${m['budget_coins'] ?? '—'} MRC'),
-                      Text('Platform fee: ${m['platform_fee_coins'] ?? '—'} MRC'),
-                      Text('Spent: ${m['spent_coins'] ?? '—'} MRC'),
+                      Text('Budget (deliverable): ${m['budget_coins'] ?? '-'} MRC'),
+                      Text('Platform fee: ${m['platform_fee_coins'] ?? '-'} MRC'),
+                      Text('Spent: ${m['spent_coins'] ?? '-'} MRC'),
                       const SizedBox(height: 8),
                       Wrap(
                         spacing: 8,

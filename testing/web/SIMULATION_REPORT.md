@@ -1,4 +1,4 @@
-# MASAREN Web — Comprehensive Simulation Report
+# MASAREN Web, Comprehensive Simulation Report
 
 **Generated:** 2026-07-10T19:36:43.281Z
 **Overall verdict:** **GREEN**
@@ -97,8 +97,8 @@
 
 ## Notes
 - **Billing, payments & wallets** fully exercised: wallet convert + transfer both apply the 2.5% platform brokerage fee; Paymob intent + Stripe/Paymob PSP status rendered; billing plans shown.
-- **Feed algorithm**: items arrive pre-ranked by confidence score (descending); the web renders them in that order and exposes a per-item "Confidence: NN%" — verified non-increasing.
-- **Reacts**: the like button toggles 🤍 → ❤️ client-side. **Comments** are display-only counts in the current web build (no post/comment compose UI exists in the web client — consumption-only feed).
+- **Feed algorithm**: items arrive pre-ranked by confidence score (descending); the web renders them in that order and exposes a per-item "Confidence: NN%", verified non-increasing.
+- **Reacts**: the like button toggles 🤍 → ❤️ client-side. **Comments** are display-only counts in the current web build (no post/comment compose UI exists in the web client, consumption-only feed).
 - **Create program / task / post**: the web pages are read-only dashboards, so creation is driven through the API contract (exactly as the mobile client does) and the web list is re-verified to reflect the new item. (The web has no program/task/post compose form.)
 - **Opportunities / marketplace**: apply flow works end-to-end (button flips to "Applied").
 - **Admin HITL**: approving a pending review removes it from the queue (stateful mock).

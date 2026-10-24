@@ -2386,7 +2386,7 @@ OpenID Foundation. (2023). Openid connect core 1.0 incorporating errata set 2. R
 21, 2026, from https://openid.net/specs/openid-connect-core-1_0.html
 OpenTelemetry Authors. (2026). Opentelemetry documentation. Retrieved July 21, 2026, from
 https://opentelemetry.io/docs/
-OWASP Foundation. (2023). Owasp api security top 10—2023. Retrieved July 21, 2026, from
+OWASP Foundation. (2023). Owasp api security top 10-2023. Retrieved July 21, 2026, from
 https://owasp.org/API-Security/editions/2023/en/0x11-t10/
 OWASP Foundation. (2024). Mobile application security verification standard. Retrieved July
 21, 2026, from https://mas.owasp.org/MASVS/

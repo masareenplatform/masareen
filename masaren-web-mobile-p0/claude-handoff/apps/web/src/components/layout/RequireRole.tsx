@@ -9,7 +9,7 @@ interface RequireRoleProps {
 /**
  * Nested-route guard for role-restricted sections (e.g. /admin).
  * Assumes it renders under <Layout /> (via <Route element={<Layout />}>),
- * so authentication itself is already guaranteed by the time this runs —
+ * so authentication itself is already guaranteed by the time this runs -
  * this only adds the role check on top.
  */
 export default function RequireRole({ roles }: RequireRoleProps) {

@@ -1,4 +1,4 @@
-"""Payment service API — real local payment ledger.
+"""Payment service API, real local payment ledger.
 
 A payment intent is recorded against the invoice/organization and confirmed to
 SETTLED against the local ledger (``payments`` table). No fake PSP intent ids or
@@ -6,7 +6,7 @@ fabricated gateway responses are ever returned; if the database is unreachable
 the endpoints return HTTP 503.
 
 External PSP integration (Stripe / Vodafone Cash) is intentionally NOT stubbed
-here — it must be added with real credentials and real HTTP calls rather than
+here, it must be added with real credentials and real HTTP calls rather than
 simulated responses.
 """
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -77,10 +77,10 @@ async def payment_history(org_id: str, limit: int = 20,
     return ApiResponse.ok(data)
 
 
-# ── External PSP (Stripe) — real integration, honest fallback ────────────────────
+# ── External PSP (Stripe), real integration, honest fallback ────────────────────
 # These endpoints only work when STRIPE_SECRET_KEY is configured. When it is not,
 # they return HTTP 501 (not implemented / not configured) so the client can fall
-# back to the local-ledger endpoints above — they never fabricate a PSP receipt.
+# back to the local-ledger endpoints above, they never fabricate a PSP receipt.
 
 @router.get("/psp/status", response_model=ApiResponse[dict])
 async def psp_status():
@@ -136,7 +136,7 @@ async def confirm_psp_intent(body: PspConfirmRequest,
                              session: AsyncSession = Depends(get_session)):
     """Reconcile a PSP payment against Stripe's authoritative status.
 
-    The ledger is only marked SETTLED when Stripe reports ``succeeded`` — the
+    The ledger is only marked SETTLED when Stripe reports ``succeeded``, the
     status is taken from the PSP, never assumed."""
     client = get_psp_client()
     if not client:
@@ -156,10 +156,10 @@ async def confirm_psp_intent(body: PspConfirmRequest,
     return ApiResponse.ok({**record, "psp_status": intent.get("status")})
 
 
-# ── Paymob (Egypt) — card iframe + Vodafone Cash wallet ──────────────────────────
+# ── Paymob (Egypt), card iframe + Vodafone Cash wallet ──────────────────────────
 # Real integration: creates a Paymob order + payment key and (for Vodafone Cash)
 # initiates the wallet payment. The ledger is only SETTLED by the verified webhook
-# below — never assumed from the client.
+# below, never assumed from the client.
 class PaymobIntentRequest(BaseModel):
     org_id: str
     amount_egp: float
@@ -242,7 +242,7 @@ async def paymob_webhook(body: PaymobWebhookRequest,
     """Paymob transaction webhook. The HMAC is verified before any ledger change.
 
     A payment is marked SETTLED only when Paymob reports success; otherwise it is
-    marked FAILED. Replayed/invalid HMACs are rejected with 401 — no fabricated
+    marked FAILED. Replayed/invalid HMACs are rejected with 401, no fabricated
     settlement ever reaches the ledger.
     """
     client = get_paymob_client()

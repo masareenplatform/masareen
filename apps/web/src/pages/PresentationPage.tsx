@@ -44,14 +44,14 @@ const FEATURES = [
     icon: IconHeart,
     title: "Impact Feed & Social",
     color: "#E74C3C",
-    desc: "A social feed of verified impact stories ranked by real outcomes. Like, comment, share and follow impact workers — LinkedIn for change-makers.",
+    desc: "A social feed of verified impact stories ranked by real outcomes. Like, comment, share and follow impact workers, LinkedIn for change-makers.",
     points: ["Real-time impact stories", "Engagement that matters", "Follow verified orgs"],
   },
   {
     icon: IconShield,
     title: "POAI Verification Pipeline",
     color: "#0250A3",
-    desc: "Proof of Actual Impact — a five-step pipeline that scores, audits and stamps every claim with a verifiable trust badge.",
+    desc: "Proof of Actual Impact, a five-step pipeline that scores, audits and stamps every claim with a verifiable trust badge.",
     points: ["Evidence scoring engine", "Tamper-evident trail", "Auto-verify 98.6%"],
   },
   {
@@ -79,14 +79,14 @@ const FEATURES = [
     icon: IconFlag,
     title: "Institution Profiles",
     color: "#0EA5E9",
-    desc: "Tailored profiles for Government, Media, Sports and NGO institutions — each with its own verification widgets and public dashboard.",
+    desc: "Tailored profiles for Government, Media, Sports and NGO institutions, each with its own verification widgets and public dashboard.",
     points: ["5 profile types", "Custom dashboards", "Public trust scores"],
   },
   {
     icon: IconCompass,
     title: "Opportunity Marketplace",
     color: "#2A9D45",
-    desc: "Browse and apply to volunteering, jobs, grants and partnerships — all backed by verified impact credentials.",
+    desc: "Browse and apply to volunteering, jobs, grants and partnerships, all backed by verified impact credentials.",
     points: ["Verified credentials", "Smart matching", "Program discovery"],
   },
   {
@@ -121,7 +121,7 @@ function FeatureCards() {
         <Reveal className="max-w-2xl">
           <span className="eyebrow text-white/80"><IconSparkles size={14} /> Platform features</span>
           <h2 className="hero-tracking mt-4 font-display text-4xl font-extrabold text-white sm:text-5xl">Everything impact teams need</h2>
-          <p className="text-white-soft mt-3 text-lg">Social, verified, measurable — built for the people doing the real work.</p>
+          <p className="text-white-soft mt-3 text-lg">Social, verified, measurable, built for the people doing the real work.</p>
         </Reveal>
         <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map((f, i) => (
@@ -149,7 +149,7 @@ function FeatureCards() {
 /* ── verification flow ───────────────────────────────────────────────────── */
 
 const VERIFY_STEPS = [
-  { icon: IconImpact, title: "Claim the impact", desc: "Record an action — a tree planted, a clinic run, a goal scored. It becomes a trackable unit of change." },
+  { icon: IconImpact, title: "Claim the impact", desc: "Record an action, a tree planted, a clinic run, a goal scored. It becomes a trackable unit of change." },
   { icon: IconEvidence, title: "Submit evidence", desc: "Attach photos, receipts, GPS tags and field notes bundled into a tamper-evident package." },
   { icon: IconGlobe, title: "GPS & field audit", desc: "Pipeline cross-checks location, timestamps and third-party signals for every claim." },
   { icon: IconShield, title: "POAI score", desc: "Algorithm scores plausibility, completeness and SDG alignment in real time." },
@@ -164,7 +164,7 @@ function VerificationFlow() {
         <Reveal className="text-center">
           <span className="section-kicker"><IconShield size={14} /> Verification pipeline</span>
           <h2 className="mt-4 font-display text-4xl font-extrabold text-ink">How verification works</h2>
-          <p className="mx-auto mt-3 max-w-2xl text-muted">Every claim moves through an event-driven pipeline — from raw field note to trusted, auditable outcome.</p>
+          <p className="mx-auto mt-3 max-w-2xl text-muted">Every claim moves through an event-driven pipeline, from raw field note to trusted, auditable outcome.</p>
         </Reveal>
         <div className="mt-10 grid gap-8 rounded-3xl border border-line bg-white p-6 shadow-card md:grid-cols-2">
           <div className="space-y-2">
@@ -270,7 +270,7 @@ function Roles() {
         <Reveal className="text-center">
           <span className="section-kicker"><IconUsers size={14} /> User roles</span>
           <h2 className="mt-4 font-display text-4xl font-extrabold text-ink">Built for every stakeholder</h2>
-          <p className="mx-auto mt-3 max-w-xl text-muted">Each role gets a tailored experience — same network, different superpowers.</p>
+          <p className="mx-auto mt-3 max-w-xl text-muted">Each role gets a tailored experience, same network, different superpowers.</p>
         </Reveal>
         <div className="mt-8 flex flex-wrap justify-center gap-2">
           {ROLES.map((r, i) => (
@@ -332,7 +332,7 @@ function SdgGrid() {
         <Reveal className="text-center">
           <span className="eyebrow text-white/80 justify-center"><IconGlobe size={14} /> Global alignment</span>
           <h2 className="hero-tracking mt-4 font-display text-4xl font-extrabold text-white sm:text-5xl">17 SDGs tracked</h2>
-          <p className="text-white-soft mx-auto mt-3 max-w-2xl">Every verified action maps to a United Nations Sustainable Development Goal — and to Egypt Vision 2030.</p>
+          <p className="text-white-soft mx-auto mt-3 max-w-2xl">Every verified action maps to a United Nations Sustainable Development Goal, and to Egypt Vision 2030.</p>
         </Reveal>
         <div className="mt-10 grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-9">
           {SDGS.map((s, i) => (
@@ -410,11 +410,11 @@ export default function PresentationPage() {
           <Reveal>
             <span className="eyebrow text-white/80 justify-center"><IconSparkles size={14} /> Platform showcase</span>
             <h1 className="hero-tracking mt-5 font-display text-5xl font-extrabold leading-[1.05] text-white sm:text-6xl">
-              MASAREEN —<br /><span className="gradient-text">Verified Impact Infrastructure</span>
+              MASAREEN -<br /><span className="gradient-text">Verified Impact Infrastructure</span>
             </h1>
             <p className="text-white-soft mt-5 mx-auto max-w-2xl text-lg">
               The verified-impact network where NGOs, governments, communities and sports institutions
-              turn real-world work into trusted, measurable proof — backed by POAI verification.
+              turn real-world work into trusted, measurable proof, backed by POAI verification.
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link to="/register" className="btn-gold px-6 py-3 text-base text-white">Join the Alpha <IconArrowRight size={16} /></Link>
@@ -433,7 +433,7 @@ export default function PresentationPage() {
             <p className="mx-auto mt-4 max-w-2xl text-base text-muted">
               MASAREEN is a social-impact platform that combines a feed, verification pipeline and coin economy
               into a single infrastructure for proving change. Organizations and individuals post impact stories,
-              attach geo-tagged evidence, and receive a POAI (Proof of Actual Impact) verification badge — creating
+              attach geo-tagged evidence, and receive a POAI (Proof of Actual Impact) verification badge, creating
               a trusted, auditable record that funders, partners and citizens can rely on.
             </p>
           </Reveal>

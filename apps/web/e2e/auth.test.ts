@@ -1,5 +1,5 @@
 /**
- * MASAREN E2E — Authentication flows
+ * MASAREN E2E, Authentication flows
  *
  * Covers:
  *  - Landing page loads
@@ -87,7 +87,7 @@ test("register new user → auto-verified → dashboard", async ({ page, BASE })
 
   await page.fill('input[placeholder="Email"]', email);
 
-  // Password field — may have different placeholder
+  // Password field, may have different placeholder
   const pwInput = page.locator(
     'input[placeholder="Strong Password (8+ chars, mixed case)"], input[placeholder="Password"], input[type="password"]'
   ).first();
@@ -206,7 +206,7 @@ test("logout clears session and redirects to login", async ({
   ).first();
 
   if (await logoutBtn.count() === 0) {
-    // Try opening an avatar dropdown (desktop) — look for visible buttons only
+    // Try opening an avatar dropdown (desktop), look for visible buttons only
     const dropdownTriggers = page.locator(
       'button[aria-label*="profile"], button[aria-label*="avatar"], button[aria-label*="Account"], button[title*="account"], header button:last-of-type'
     );
@@ -236,7 +236,7 @@ test("logout clears session and redirects to login", async ({
       `Should redirect to login/landing after logout, got: ${url}`
     ).toBeTruthy();
   } else {
-    // No visible logout button found in UI — verify session guard works
+    // No visible logout button found in UI, verify session guard works
     // by clearing localStorage manually (this is the security contract that matters)
     await page.evaluate(() => {
       localStorage.removeItem("access_token");

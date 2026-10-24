@@ -1,4 +1,4 @@
-"""Lazy config loader — avoids circular imports between shared modules."""
+"""Lazy config loader, avoids circular imports between shared modules."""
 import os
 
 
@@ -28,7 +28,7 @@ def get_neo4j_auth() -> tuple[str, str]:
     )
 
 
-# ── Cloud AI (Hybrid Architecture — 0GB VRAM on-prem server) ─────────────────
+# ── Cloud AI (Hybrid Architecture, 0GB VRAM on-prem server) ─────────────────
 def get_ai_provider() -> str:
     """Which cloud LLM provider to use: openai | google | bedrock"""
     return os.environ.get("AI_PROVIDER", "google")

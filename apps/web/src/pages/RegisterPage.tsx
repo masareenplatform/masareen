@@ -86,13 +86,13 @@ export default function RegisterPage() {
             let user: any = { id: d.user_id, role: d.role, email: formData.email };
             try { user = await userService.me(); } catch { /* fallback */ }
             login(d.access_token, user);
-            setOk("Account created and verified — taking you in…");
+            setOk("Account created and verified, taking you in…");
             setTimeout(() => navigate("/feed"), 700);
             return;
           }
         } catch { /* fall through */ }
       }
-      setOk(res?.message || "Account created — redirecting to sign in…");
+      setOk(res?.message || "Account created, redirecting to sign in…");
       setTimeout(() => navigate("/login"), 1200);
     } catch (err: any) {
       const data = err?.response?.data;

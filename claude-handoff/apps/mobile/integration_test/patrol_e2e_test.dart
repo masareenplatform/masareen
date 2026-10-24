@@ -1,4 +1,4 @@
-// MASAREN Mobile — Patrol end-to-end audit (all surfaces).
+// MASAREN Mobile, Patrol end-to-end audit (all surfaces).
 //
 // Mirrors integration_test/app_test.dart using the Patrol native harness.
 // Drives a real login against the mock gateway (testing/mobile/mock_gateway.mjs,

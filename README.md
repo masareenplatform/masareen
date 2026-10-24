@@ -1,7 +1,7 @@
 # MASAREN (مسارين)
-### Impact Infrastructure as a Service — IIaaS
+### Impact Infrastructure as a Service, IIaaS
 
-> **"Two Paths"** — The intersection of Intention and Execution, Field Work and Digital Assets, Trust and Measurable Reputation.
+> **"Two Paths"**, The intersection of Intention and Execution, Field Work and Digital Assets, Trust and Measurable Reputation.
 
 **MASAREN** is the world's first **Impact Infrastructure Platform**, converting every verified real-world field action into immutable, measurable, and economically valuable digital assets.
 
@@ -253,7 +253,7 @@ cd masareen
 
 # Environment setup (for combined backend)
 cp .env.example .env
-# Edit .env — set POSTGRES_PASSWORD, NEO4J_PASSWORD, CLOUD_API_KEY
+# Edit .env, set POSTGRES_PASSWORD, NEO4J_PASSWORD, CLOUD_API_KEY
 
 # For combined backend (single FastAPI app)
 export PYTHONPATH="/home/sms/masarenfinal/backend"
@@ -313,10 +313,10 @@ flutter run
 | PostgreSQL + PostGIS | `postgis/postgis:16-3.4` | Primary transactional store | 5432 |
 | Neo4j + APOC + GDS | `neo4j:5-community` | Knowledge graph | 7474, 7687 |
 | Redis | `redis:7-alpine` | Sessions, cache, rate limiting | 6379 |
-| Apache Kafka (KRaft) | `apache/kafka:3.7.0` | Event bus — no Zookeeper | 9092 |
+| Apache Kafka (KRaft) | `apache/kafka:3.7.0` | Event bus, no Zookeeper | 9092 |
 | OpenSearch | `opensearchproject/opensearch:2` | Full-text search | 9200 |
 | Nginx Proxy Manager | `jc21/nginx-proxy-manager` | Reverse proxy, SSL | 80, 443, 81 |
-| Tailscale | `tailscale/tailscale` | VPN, secure remote access | — |
+| Tailscale | `tailscale/tailscale` | VPN, secure remote access | - |
 | Filebrowser | Self-hosted | File management | 8080 |
 
 ### Combined Backend Services
@@ -329,14 +329,14 @@ The `backend/combined/` directory contains a unified FastAPI application that me
 - Video processing (upload, transcode, HLS serving)
 
 **Key files:**
-- `main.py` — Application entry point, router registration
-- `extra_routers.py` — Additional API route registrations
-- `video_endpoints.py` — Video upload, transcoding, HLS streaming
-- `google_oauth.py` — OAuth 2.0 authentication
-- `admin_panel.py` — Admin management endpoints
-- `statistical_reports.py` — Analytics and reporting
-- `seed_platform.py` — Platform initialization and database seeding
-- `seed_profiles.py` — Profile and demo data seeding
+- `main.py`, Application entry point, router registration
+- `extra_routers.py`, Additional API route registrations
+- `video_endpoints.py`, Video upload, transcoding, HLS streaming
+- `google_oauth.py`, OAuth 2.0 authentication
+- `admin_panel.py`, Admin management endpoints
+- `statistical_reports.py`, Analytics and reporting
+- `seed_platform.py`, Platform initialization and database seeding
+- `seed_profiles.py`, Profile and demo data seeding
 
 ---
 
@@ -357,7 +357,7 @@ The `backend/combined/` directory contains a unified FastAPI application that me
 
 ---
 
-## AI Architecture — Hybrid (Cloud-Only Inference)
+## AI Architecture, Hybrid (Cloud-Only Inference)
 
 **Deployment hardware:** HPE ProLiant DL360 Gen10 · 32GB RAM · **0GB VRAM**
 
@@ -429,6 +429,10 @@ flutter build apk --release --dart-define=API_BASE_URL=https://your.backend   # 
 ```
 
 GitHub Actions does this automatically (`.github/workflows/android-apk.yml`) and publishes `masareen.apk` to the `latest-apk` release, which the landing page (`landing/`) links to. The APK is signed with the debug key (installable, not Play-Store-ready).
+
+## Cloudflare backend (`cloudflare/`)
+
+Free-tier Worker + D1 database: Google sign-up, registrations, login tracking, contact messages and the CEO dashboard (`/admin.html`). Setup: `cloudflare/README.md`.
 
 ## Landing page (`landing/`)
 
@@ -701,7 +705,7 @@ Response:
 ### Running the Combined Backend
 
 ```bash
-# Production (port 8088 — avoids filebrowser on 8080)
+# Production (port 8088, avoids filebrowser on 8080)
 cd /home/sms/masarenfinal/backend
 export DATABASE_URL="postgresql+asyncpg://masaren:masaren_password@localhost:5432/masaren"
 export JWT_SECRET="masaren-alpha-change-me"
@@ -958,9 +962,9 @@ Tests use screen coordinates for the Oppo Reno 6 4G (1080×2400 screen):
 
 ### Test Scripts
 
-- `run_all_tests.sh` — Runs all 19 tests sequentially
-- `scripts/` — Helper scripts for setup, teardown, and reporting
-- `screenshots/` — Captured screenshots from test runs
+- `run_all_tests.sh`, Runs all 19 tests sequentially
+- `scripts/`, Helper scripts for setup, teardown, and reporting
+- `screenshots/`, Captured screenshots from test runs
 
 ---
 
@@ -1032,19 +1036,19 @@ AUTO_VERIFY_ON_REGISTER=true
 
 ## Development Stages
 
-- [x] **Stage 0** — Project specification
-- [x] **Stage 1** — Monorepo structure (423 dirs, 24+ services)
-- [x] **Stage 2** — Shared kernel (22 modules)
-- [x] **Stage 3** — Identity domain (54 files, 30 tests)
-- [x] **Stage 4** — Execution domain (organization, program, task, workflow)
-- [x] **Stage 5** — Verification domain
-- [x] **Stage 6** — AI agents (full implementation)
-- [x] **Stage 7** — Reputation (PMS, OII, portfolio)
-- [x] **Stage 8** — Marketplace
-- [x] **Stage 9** — Reporting & analytics
-- [x] **Stage 10** — Knowledge graph
-- [x] **Stage 11** — Frontend (Flutter + React)
-- [x] **Stage 12** — Production infrastructure
+- [x] **Stage 0**, Project specification
+- [x] **Stage 1**, Monorepo structure (423 dirs, 24+ services)
+- [x] **Stage 2**, Shared kernel (22 modules)
+- [x] **Stage 3**, Identity domain (54 files, 30 tests)
+- [x] **Stage 4**, Execution domain (organization, program, task, workflow)
+- [x] **Stage 5**, Verification domain
+- [x] **Stage 6**, AI agents (full implementation)
+- [x] **Stage 7**, Reputation (PMS, OII, portfolio)
+- [x] **Stage 8**, Marketplace
+- [x] **Stage 9**, Reporting & analytics
+- [x] **Stage 10**, Knowledge graph
+- [x] **Stage 11**, Frontend (Flutter + React)
+- [x] **Stage 12**, Production infrastructure
 
 ---
 
@@ -1130,7 +1134,7 @@ Authorization: Bearer <jwt_token>
 | Kafka | 10.78.51.217 | 9092 | Event bus |
 | Neo4j | localhost | 7474, 7687 | Knowledge graph |
 | Filebrowser | 10.78.51.217 | 8080 | File management |
-| Tailscale | 100.123.2.61 | — | VPN access |
+| Tailscale | 100.123.2.61 | - | VPN access |
 
 ### Admin Credentials
 
@@ -1159,7 +1163,7 @@ adb -s 127.0.0.1:15561 install -r apps/mobile/build/app/outputs/flutter-apk/app-
 
 ## License
 
-**Proprietary — MASAREN Project · All rights reserved.**
+**Proprietary, MASAREN Project · All rights reserved.**
 
 See `ip-legal/notices/LICENSE-PROPRIETARY.md` for the full proprietary license agreement.
 
@@ -1180,4 +1184,4 @@ Unauthorized reproduction, distribution, or modification of any portion of this 
 
 *Document Owner: MASAREN Legal Team*
 *Last Updated: August 11, 2026*
-*Classification: CONFIDENTIAL — PROPRIETARY*
+*Classification: CONFIDENTIAL, PROPRIETARY*

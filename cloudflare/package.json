@@ -1,0 +1,13 @@
+{
+  "name": "masareen-api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test --no-warnings test/worker.test.mjs",
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:init": "wrangler d1 execute masareen --remote --file=schema.sql",
+    "db:init:local": "wrangler d1 execute masareen --local --file=schema.sql"
+  },
+  "devDependencies": { "wrangler": "^3.99.0" }
+}

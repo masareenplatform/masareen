@@ -1,11 +1,11 @@
-"""Portfolio Service API — real PostgreSQL-backed aggregation (no fabricated data).
+"""Portfolio Service API, real PostgreSQL-backed aggregation (no fabricated data).
 
 Aggregates a user's portfolio from real tables:
   tasks, evidence, impact_assets, pms_scores, user_skills, skills, certificates,
   program_enrollments.
 
 When the database is unreachable the endpoints return HTTP 503 (honest), and when
-a user simply has no records the endpoints return real zeros/empty lists — never a
+a user simply has no records the endpoints return real zeros/empty lists, never a
 synthesized passport ID or hardcoded scores.
 """
 from __future__ import annotations
@@ -166,7 +166,7 @@ async def get_impact_passport(user_id: str, session: AsyncSession = Depends(get_
             {"uid": user_id})).fetchone()
         score = float(pms_row[0]) if pms_row and pms_row[0] is not None else 0.0
         tier = _tier(score)
-        # Passport ID is DERIVED from the real user id + real tier — not a fabricated constant.
+        # Passport ID is DERIVED from the real user id + real tier, not a fabricated constant.
         passport_id = f"MP-{user_id[:8].upper()}-{tier}"
         return ApiResponse.ok({
             "user_id": user_id,

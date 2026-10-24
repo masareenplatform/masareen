@@ -1,4 +1,4 @@
-"""Platform admin API — brokerage fee config + revenue/profit summary.
+"""Platform admin API, brokerage fee config + revenue/profit summary.
 
 The fee rate is the single, tweakable brokerage knob applied to every monetisable
 action across the platform (coin conversions, transfers, PSP payments, ads). Only

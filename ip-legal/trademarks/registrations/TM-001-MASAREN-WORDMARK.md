@@ -1,5 +1,5 @@
 # TRADEMARK APPLICATION RECORD
-## TM-001 — MASAREN Word Mark
+## TM-001, MASAREN Word Mark
 
 ---
 
@@ -11,7 +11,7 @@
 | Document Version | 1.0 |
 | Created | 2026-08-11 |
 | Last Updated | 2026-08-11 |
-| Classification | CONFIDENTIAL — IP LEGAL |
+| Classification | CONFIDENTIAL, IP LEGAL |
 | Prepared By | MASAREN Legal Department |
 
 ---
@@ -23,7 +23,7 @@
 | **Mark** | MASAREN |
 | **Mark Type** | Standard Character / Word Mark |
 | **Script** | Latin (Roman) |
-| **Stylization** | None — standard characters only (this record covers word mark protection irrespective of font, style, size, or color) |
+| **Stylization** | None, standard characters only (this record covers word mark protection irrespective of font, style, size, or color) |
 | **Translation / Transliteration** | "MASAREN" is the romanized transliteration of the Arabic word مسارين (masārayn), meaning "Two Paths" |
 | **Disclaimer** | None required for word mark |
 
@@ -33,7 +33,7 @@
 
 | Field | Details |
 |-------|---------|
-| **Owner Name** | MASAREN [ENTITY TYPE — e.g., LLC / FZ-LLC / Inc.] |
+| **Owner Name** | MASAREN [ENTITY TYPE, e.g., LLC / FZ-LLC / Inc.] |
 | **Legal Form** | [INSERT LEGAL ENTITY TYPE] |
 | **Jurisdiction of Incorporation** | [INSERT COUNTRY / EMIRATE / STATE] |
 | **Registration Number** | [INSERT COMPANY REGISTRATION NUMBER] |
@@ -48,23 +48,23 @@
 
 ## 3. GOODS AND SERVICES DESCRIPTION (NICE CLASSIFICATION)
 
-### International Class 42 — Scientific and Technological Services *(Primary)*
+### International Class 42, Scientific and Technological Services *(Primary)*
 
 Software as a service (SaaS); Platform as a service (PaaS); providing an online platform for impact measurement, management, and reporting; cloud-based software for tracking, verifying, and quantifying social impact activities; software for converting verified field actions into digital assets; artificial intelligence software for impact verification and fraud detection; application programming interface (API) services for impact data integration; software development tools for impact measurement platforms; providing temporary use of non-downloadable software for managing volunteer programs and organizational impact portfolios.
 
-### International Class 35 — Advertising and Business Services *(Secondary)*
+### International Class 35, Advertising and Business Services *(Secondary)*
 
 Business management services relating to social impact programs; impact portfolio management services; organizational reputation scoring services; business data analysis services relating to social impact measurement; providing a marketplace for matching volunteers with impact opportunities; business information services relating to non-governmental organizations and social enterprises; compiling and providing data and statistics relating to verified social impact activities.
 
-### International Class 38 — Telecommunications *(Secondary)*
+### International Class 38, Telecommunications *(Secondary)*
 
 Electronic transmission of impact verification data; providing access to online databases for impact tracking; real-time data transmission services for field activity monitoring; telecommunications services for connecting volunteer organizations with impact verification systems.
 
-### International Class 36 — Financial and Insurance Services *(Secondary)*
+### International Class 36, Financial and Insurance Services *(Secondary)*
 
 Monetization services for digital impact assets; valuation services for social impact portfolios; financial transaction processing relating to impact credits; economic assessment services for social impact activities.
 
-### International Class 9 — Computer and Scientific *(Secondary)*
+### International Class 9, Computer and Scientific *(Secondary)*
 
 Downloadable software for impact measurement and management; computer software for volunteer management; downloadable mobile applications for field activity verification; electronic databases containing impact data; computer programs for social impact reporting and analytics.
 
@@ -74,13 +74,13 @@ Downloadable software for impact measurement and management; computer software f
 
 | Jurisdiction | Basis | Details |
 |-------------|-------|---------|
-| **USA (USPTO)** | Section 1(a) — Use in Commerce | First use in commerce: 2026-08-11 |
-| **USA (USPTO)** | Section 1(b) — Intent to Use | Fallback if use claim is challenged |
+| **USA (USPTO)** | Section 1(a), Use in Commerce | First use in commerce: 2026-08-11 |
+| **USA (USPTO)** | Section 1(b), Intent to Use | Fallback if use claim is challenged |
 | **EU (EUIPO)** | Article 8(1)(b) EUTMR | Use in commerce within EU territory |
 | **UAE (MOCCAE / MoIAT)** | Federal Law No. 36 of 2021 | GCC filing via Madrid Protocol |
 | **GCC Countries** | Madrid Protocol | International registration via WIPO |
-| **International (WIPO)** | Madrid Protocol — Article 2 | Based on home country application |
-| **UK (UKIPO)** | Section 1(1)(b) — Use in Commerce | Post-Brexit independent filing |
+| **International (WIPO)** | Madrid Protocol, Article 2 | Based on home country application |
+| **UK (UKIPO)** | Section 1(1)(b), Use in Commerce | Post-Brexit independent filing |
 
 ---
 
@@ -94,12 +94,12 @@ Downloadable software for impact measurement and management; computer software f
 | 4 | United Kingdom | UKIPO | [TBD] | TBD | PENDING FILING |
 | 5 | Saudi Arabia | SAIP | [TBD] | TBD | PENDING FILING |
 | 6 | International (WIPO Madrid) | WIPO | [TBD] | TBD | PENDING FILING |
-| 7 | Qatar | QIPAMO | [TBD] | TBD | PLANNED — Q1 2027 |
-| 8 | Kuwait | KISR/IPD | [TBD] | TBD | PLANNED — Q1 2027 |
-| 9 | Jordan | NIISP | [TBD] | TBD | PLANNED — Q2 2027 |
-| 10 | Egypt | EGPO | [TBD] | TBD | PLANNED — Q2 2027 |
-| 11 | Canada | CIPO | [TBD] | TBD | PLANNED — Q2 2027 |
-| 12 | Australia | IP Australia | [TBD] | TBD | PLANNED — Q3 2027 |
+| 7 | Qatar | QIPAMO | [TBD] | TBD | PLANNED, Q1 2027 |
+| 8 | Kuwait | KISR/IPD | [TBD] | TBD | PLANNED, Q1 2027 |
+| 9 | Jordan | NIISP | [TBD] | TBD | PLANNED, Q2 2027 |
+| 10 | Egypt | EGPO | [TBD] | TBD | PLANNED, Q2 2027 |
+| 11 | Canada | CIPO | [TBD] | TBD | PLANNED, Q2 2027 |
+| 12 | Australia | IP Australia | [TBD] | TBD | PLANNED, Q3 2027 |
 
 ---
 
@@ -122,12 +122,12 @@ Downloadable software for impact measurement and management; computer software f
 
 | Field | Value |
 |-------|-------|
-| **Overall Status** | PRE-FILING — Internal Record Established |
+| **Overall Status** | PRE-FILING, Internal Record Established |
 | **Current Phase** | Attorney review and clearance search |
-| **Clearance Search Status** | PENDING — Full knockout search to be conducted |
+| **Clearance Search Status** | PENDING, Full knockout search to be conducted |
 | **Conflicting Marks Found** | [TO BE DETERMINED AFTER SEARCH] |
 | **Next Action** | Engage trademark counsel; conduct global clearance search |
-| **Next Action Due Date** | [INSERT DATE — RECOMMEND WITHIN 30 DAYS] |
+| **Next Action Due Date** | [INSERT DATE, RECOMMEND WITHIN 30 DAYS] |
 | **Renewal Dates** | TBD upon registration (typically 10 years from registration) |
 
 ### Status History
@@ -137,8 +137,8 @@ Downloadable software for impact measurement and management; computer software f
 | 2026-08-11 | Internal trademark record created | Pre-filing documentation established |
 | [DATE] | Clearance search commissioned | Attorney: [NAME] |
 | [DATE] | Clearance search results received | [NOTES] |
-| [DATE] | Application filed — UAE | Application #: [TBD] |
-| [DATE] | Application filed — USPTO | Application #: [TBD] |
+| [DATE] | Application filed, UAE | Application #: [TBD] |
+| [DATE] | Application filed, USPTO | Application #: [TBD] |
 
 ---
 
@@ -149,8 +149,8 @@ Downloadable software for impact measurement and management; computer software f
 | **Date of First Use Anywhere** | 2026-08-11 |
 | **Date of First Use in Commerce** | 2026-08-11 |
 | **Nature of First Use** | Platform launch; software services offered under the MASAREN mark |
-| **Geographic Scope of First Use** | [INSERT COUNTRY / REGION — e.g., United Arab Emirates] |
-| **Evidence of First Use** | See TRADEMARK-USAGE-LOG.md — Usage Entry UE-001 |
+| **Geographic Scope of First Use** | [INSERT COUNTRY / REGION, e.g., United Arab Emirates] |
+| **Evidence of First Use** | See TRADEMARK-USAGE-LOG.md, Usage Entry UE-001 |
 | **Specimen Description** | Website screenshot at masaren.com showing mark in connection with software services |
 
 ---
@@ -185,11 +185,11 @@ The mark MASAREN is inherently distinctive for the following reasons:
 | IP Type | Record ID | Description |
 |---------|-----------|-------------|
 | Trademark | TM-002 | MASAREN in Arabic script (مسارين) |
-| Trademark | TM-003 | IIaaS — Impact Infrastructure as a Service |
+| Trademark | TM-003 | IIaaS, Impact Infrastructure as a Service |
 | Trade Secret | TS-001 through TS-015 | See TRADE-SECRET-INVENTORY.md |
-| Copyright | [CY-001 — TBD] | Software source code, documentation |
-| Domain Names | — | masaren.com, masaren.io, masaren.ae, masaren.org |
-| Logo | — | See /logo/ directory — pending TM-004 |
+| Copyright | [CY-001, TBD] | Software source code, documentation |
+| Domain Names | - | masaren.com, masaren.io, masaren.ae, masaren.org |
+| Logo | - | See /logo/ directory, pending TM-004 |
 
 ---
 
@@ -228,4 +228,4 @@ The mark MASAREN is inherently distinctive for the following reasons:
 
 ---
 
-**Document End — TM-001**
+**Document End, TM-001**

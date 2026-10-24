@@ -444,7 +444,7 @@ _BASE_URL = os.environ.get("PUBLIC_BASE_URL", "https://masareen.mediahubnetwork.
 
 
 def _resolve_media_url(url: Optional[str]) -> Optional[str]:
-    """Ensure media URLs are absolute — prefix relative paths with the base URL."""
+    """Ensure media URLs are absolute, prefix relative paths with the base URL."""
     if not url:
         return None
     if url.startswith("http://") or url.startswith("https://"):

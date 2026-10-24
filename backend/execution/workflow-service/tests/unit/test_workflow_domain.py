@@ -1,4 +1,4 @@
-"""Unit tests for the Workflow aggregate — no DB, no I/O."""
+"""Unit tests for the Workflow aggregate, no DB, no I/O."""
 import pytest
 
 from src.domain.workflow import WorkflowInstance, WorkflowTemplate, WorkflowStep

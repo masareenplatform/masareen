@@ -1,9 +1,9 @@
-// postService — local mock social feed backed by an in-memory store.
+// postService, local mock social feed backed by an in-memory store.
 //
 // The MASAREN backend does not yet expose /posts, so this service owns a seed
 // dataset and a tiny persistence layer (localStorage) so posts survive reloads
 // in the demo. New posts/likes/comments are fanned out through the realtime bus
-// (see services/realtime) so every open tab updates live — no refresh needed.
+// (see services/realtime) so every open tab updates live, no refresh needed.
 //
 // When a real /api/v1/posts endpoint exists, swap the local store reads for
 // `apiClient.get("/posts")` and the writes for `apiClient.post("/posts", …)`.
@@ -39,7 +39,7 @@ function seed(): Post[] {
       id: uid(),
       kind: "impact",
       author: SEED_AUTHORS[4],
-      text: "We just planted 12,000 mangrove saplings along the northern coast with 340 volunteers. Real, verified impact — every seedling geotagged and audited. 🌱",
+      text: "We just planted 12,000 mangrove saplings along the northern coast with 340 volunteers. Real, verified impact, every seedling geotagged and audited. 🌱",
       media: [],
       programTag: "Coastal Restoration",
       sdg: 14,
@@ -71,7 +71,7 @@ function seed(): Post[] {
       id: uid(),
       kind: "evidence",
       author: SEED_AUTHORS[2],
-      text: "Field verification complete for the solar microgrid in Aswan. 98% uptime this quarter — audit trail attached.",
+      text: "Field verification complete for the solar microgrid in Aswan. 98% uptime this quarter, audit trail attached.",
       media: [{ url: "", type: "image", name: "audit-aswan.jpg" }],
       sdg: 7,
       impactValue: 98,
@@ -100,7 +100,7 @@ function seed(): Post[] {
       id: uid(),
       kind: "impact",
       author: SEED_AUTHORS[5],
-      text: "Aswan solar microgrid just crossed 98% uptime for the quarter — clean energy reaching 4 villages. ☀️",
+      text: "Aswan solar microgrid just crossed 98% uptime for the quarter, clean energy reaching 4 villages. ☀️",
       media: [],
       programTag: "Rural Electrification",
       sdg: 7,
@@ -116,7 +116,7 @@ function seed(): Post[] {
       id: uid(),
       kind: "program",
       author: SEED_AUTHORS[6],
-      text: "Scholarships are open for the 2026 EduForAll cohort — 200 places for girls in STEM across 5 governorates.",
+      text: "Scholarships are open for the 2026 EduForAll cohort, 200 places for girls in STEM across 5 governorates.",
       media: [],
       programTag: "EduForAll 2026",
       sdg: 4,
@@ -192,7 +192,7 @@ function seed(): Post[] {
       programTag: "Clean Air Pilot",
       sdg: 11,
       likes: 119,
-      comments: [{ id: uid("c"), author: SEED_AUTHORS[0], text: "Measurable and verified — exactly the standard.", createdAt: ago(12) }],
+      comments: [{ id: uid("c"), author: SEED_AUTHORS[0], text: "Measurable and verified, exactly the standard.", createdAt: ago(12) }],
       shares: 14,
       likedByMe: false,
       createdAt: ago(265),
@@ -213,7 +213,7 @@ function seed(): Post[] {
       id: uid(),
       kind: "impact",
       author: SEED_AUTHORS[6],
-      text: "Girls coding club graduated 60 students this term — 80% from underserved districts. 💻",
+      text: "Girls coding club graduated 60 students this term, 80% from underserved districts. 💻",
       media: [],
       programTag: "Girls Who Code",
       sdg: 5,
@@ -350,7 +350,7 @@ export const postService = {
   },
 };
 
-// Avatar gradient helper — deterministic colors per handle (used by PostCard,
+// Avatar gradient helper, deterministic colors per handle (used by PostCard,
 // Messenger, TopNav). Pure CSS classes; no network needed.
 export function avatarColors(seed: string): { c1: string; c2: string } {
   const palettes = [

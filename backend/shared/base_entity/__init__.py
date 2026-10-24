@@ -17,7 +17,7 @@ class OutboxStatus(str, Enum):
 
 
 class OutboxMessage(Base):
-    """Transactional outbox table — written in the same DB transaction as the
+    """Transactional outbox table, written in the same DB transaction as the
     aggregate change, then polled by a relay process for Kafka publication.
 
     This is the authoritative schema referenced by the outbox.py relay and

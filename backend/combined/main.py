@@ -1,10 +1,10 @@
-"""MASAREEN combined backend — one process hosting every microservice's HTTP routes.
+"""MASAREEN combined backend, one process hosting every microservice's HTTP routes.
 
 Why: running 35+ uvicorn processes is heavy and fragile on a laptop / small droplet.
 Each service already constructs a complete FastAPI `app` (shared `create_app` + routers),
 so we import each service as a uniquely-named package and merge its routes here.
 The result is a single `uvicorn combined.main:app` (port 8080) that serves every
-`/api/v1/...` route the mobile + web apps expect — no per-service gateway fan-out needed.
+`/api/v1/...` route the mobile + web apps expect, no per-service gateway fan-out needed.
 
 Infra (postgres/neo4j/redis/kafka) still runs separately (Docker containers locally).
 
@@ -97,7 +97,7 @@ from shared.base_repository.db import Base
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Single-process combined backend: make sure every ORM-defined table exists
-    # in the (dev) database. `create_all` is idempotent — it only creates tables
+    # in the (dev) database. `create_all` is idempotent, it only creates tables
     # that are missing, so it coexists with the SQL migration files and is safe
     # to run on every startup. This keeps the combined backend self-contained
     # for local E2E without needing the full per-service migration pipeline.

@@ -1,4 +1,4 @@
-"""Submission bundle aggregate root — orchestrates evidence submission and pipeline creation."""
+"""Submission bundle aggregate root, orchestrates evidence submission and pipeline creation."""
 from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, timezone

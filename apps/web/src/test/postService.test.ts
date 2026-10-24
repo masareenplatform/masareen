@@ -30,7 +30,7 @@ beforeEach(() => {
   postImpl.mockResolvedValue({ data: { id: "server_default" } });
 });
 
-describe("postService — bookmarks (saved)", () => {
+describe("postService, bookmarks (saved)", () => {
   it("starts with no saved posts", () => {
     const list = postService.list();
     expect(list.length).toBeGreaterThan(0);
@@ -63,7 +63,7 @@ describe("postService — bookmarks (saved)", () => {
   });
 });
 
-describe("postService — trending", () => {
+describe("postService, trending", () => {
   it("derives tags from post text hashtags and programTags", () => {
     // Add a post with a known hashtag so the result is deterministic.
     postService.create({
@@ -87,7 +87,7 @@ describe("postService — trending", () => {
   });
 });
 
-describe("postService — core feed", () => {
+describe("postService, core feed", () => {
   it("lists posts sorted by rank (highest first)", () => {
     const list = postService.list();
     expect(list.length).toBeGreaterThan(1);

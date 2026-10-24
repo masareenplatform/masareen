@@ -65,7 +65,7 @@ export default function RegisterPage() {
           )}
           {ok && (
             <div className="mb-4 mt-3 rounded-xl border border-accent/30 bg-accent-50 px-3 py-2 text-sm font-medium text-accent-700">
-              Account created — redirecting to sign in…
+              Account created, redirecting to sign in…
             </div>
           )}
 

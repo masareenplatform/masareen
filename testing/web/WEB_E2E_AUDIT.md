@@ -1,4 +1,4 @@
-# MASAREN Web — Full E2E Audit & UI Unification
+# MASAREN Web, Full E2E Audit & UI Unification
 
 **Date:** 2026-07-12
 **Scope:** Complete web E2E audit of all authenticated routes + visual unification of the
@@ -26,7 +26,7 @@ Authenticates a real user, then loads **every** authenticated route on desktop, 
 
 Routes verified: dashboard, programs, tasks, evidence, passport, opportunities,
 portfolio, profile, admin, notifications, reports, billing, **chat (fixed)**, feed,
-collaborate, wallet, ads, payments, revenue — and mobile bottom-nav + compose-FAB +
+collaborate, wallet, ads, payments, revenue, and mobile bottom-nav + compose-FAB +
 sidebar-hidden checks.
 
 ### 1c. Fixes found during audit
@@ -42,23 +42,23 @@ Goal: make the web app feel like the **same platform** as the Flutter mobile app
 staying web-appropriate and responsive.
 
 ### Shared design language (now identical on both platforms)
-- **Palette** — already matched: brand `#0250A3`, azure `#0077C8`, green `#2A9D45`,
+- **Palette**, already matched: brand `#0250A3`, azure `#0077C8`, green `#2A9D45`,
   canvas `#F0F4FF`, ink `#0D1425`, muted `#3D4F6B`, line `#DCE6F5`.
-- **Font** — web now uses **Cairo** globally (was Inter/Sora), matching Flutter's
+- **Font**, web now uses **Cairo** globally (was Inter/Sora), matching Flutter's
   `GoogleFonts.cairoTextTheme`.
-- **Material 3 light surfaces** — 16–20px radius cards, hairline borders, soft shadows,
+- **Material 3 light surfaces**, 16–20px radius cards, hairline borders, soft shadows,
   filled brand buttons (rounded 12px), rounded-full chips, 12px filled inputs with brand
   focus ring. All defined in `apps/web/src/index.css` + `tailwind.config.js`.
-- **Brand identity** — `BrandMark` (gradient M tile) + `BrandWordmark` (brand→azure
+- **Brand identity**, `BrandMark` (gradient M tile) + `BrandWordmark` (brand→azure
   gradient text) mirror Flutter's `ShaderMask` wordmark and logo mark, used in the
   TopNav, Sidebar, Landing, Login and Register.
-- **Avatars** — brand-family gradient avatars across web, matching the MASAREN brand
+- **Avatars**, brand-family gradient avatars across web, matching the MASAREN brand
   (palette retuned in `postService.avatarColors`).
 
 ### Navigation parity (web mirrors the Flutter shell)
 - `components/common/Branding.tsx` defines one `PRIMARY_NAV` + `TOOLS_NAV` model.
 - **Desktop:** left `Sidebar` = Primary tabs (Home/Explore/Tasks/Alerts/Profile) + Tools
-  group — exactly the Flutter bottom bar + app-menu-sheet, expanded.
+  group, exactly the Flutter bottom bar + app-menu-sheet, expanded.
 - **Mobile:** `BottomNav` (5-tab Material-style bar) + gradient **compose FAB** mirrors
   Flutter's `NavigationBar` + `FloatingActionButton`. A `MenuSheet` ("More") mirrors
   `AppMenuSheet`. The sidebar hides on mobile; the FAB opens a `ComposeModal`
@@ -67,13 +67,13 @@ staying web-appropriate and responsive.
   menu).
 
 ### Pages restyled
-- `LoginPage` / `RegisterPage` — centered card, gradient wordmark, "Continue with Google"
+- `LoginPage` / `RegisterPage`, centered card, gradient wordmark, "Continue with Google"
   button, brand inputs; **E2E placeholders preserved exactly**
   (`Full Name`, `Email`, `Strong Password (8+ chars, mixed case)`, `Phone Number`, … and
   `button[type=submit"]`).
-- `DashboardPage` — converted from dark tokens to clean light M3 cards.
-- `ChatPage` — fixed + restyled to light theme.
-- `LandingPage` — Cairo font, light `bg-aurora-light` hero, unified brand mark.
+- `DashboardPage`, converted from dark tokens to clean light M3 cards.
+- `ChatPage`, fixed + restyled to light theme.
+- `LandingPage`, Cairo font, light `bg-aurora-light` hero, unified brand mark.
 - Legacy dark-theme utilities (`text-white`, `text-gold`, `from-gold-light/to-gold`,
   `shadow-glow-gold`) are normalized to light/brand in `index.css` so the remaining 20
   feature pages stay readable and on-brand without per-file rewrites.

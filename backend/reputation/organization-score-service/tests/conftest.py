@@ -1,4 +1,4 @@
-"""pytest config for organization-score-service — adds backend root for `shared`."""
+"""pytest config for organization-score-service, adds backend root for `shared`."""
 import sys
 import os
 

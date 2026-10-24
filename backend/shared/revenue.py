@@ -6,7 +6,7 @@ ads) routes a configurable brokerage cut to the platform. The rate lives in
 appended to ``platform_revenue`` so profit is always auditable and never fabricated.
 
 All functions take the caller's async SQLAlchemy session and run inside its
-transaction — there are no standalone balances to desync.
+transaction, there are no standalone balances to desync.
 """
 from __future__ import annotations
 from typing import Optional

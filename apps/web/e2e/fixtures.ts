@@ -1,5 +1,5 @@
 /**
- * MASAREN E2E — shared fixtures.
+ * MASAREN E2E, shared fixtures.
  *
  * Provides:
  *  - `server`  : ephemeral Node HTTP server serving dist/ with /api proxy to :8080

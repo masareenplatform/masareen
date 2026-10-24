@@ -1,8 +1,8 @@
-"""Chat service API — conversational assistant with real persistence.
+"""Chat service API, conversational assistant with real persistence.
 
 Assistant replies come from the configured cloud LLM (``ChatLLMClient``). When no
 provider key is configured the client is unavailable and the API returns an honest
-"assistant unavailable" message — it never fabricates a reply.
+"assistant unavailable" message, it never fabricates a reply.
 """
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ from ..infrastructure.llm_client import ChatLLMClient
 
 router = APIRouter(prefix="/api/v1/chat", tags=["chat"])
 
-# Module-level singleton — swapped by tests via ``src.api._llm``.
+# Module-level singleton, swapped by tests via ``src.api._llm``.
 _llm = ChatLLMClient()
 
 
@@ -115,7 +115,7 @@ async def send_message(
     reply = await _llm.reply(model_history, payload.content)
     if reply is None:
         reply = (
-            "Assistant is currently unavailable. Your message was saved — "
+            "Assistant is currently unavailable. Your message was saved, "
             "please try again later."
         )
 

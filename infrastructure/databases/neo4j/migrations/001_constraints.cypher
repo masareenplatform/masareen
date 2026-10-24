@@ -1,4 +1,4 @@
-// MASAREN Knowledge Graph — Constraints & Indexes
+// MASAREN Knowledge Graph, Constraints & Indexes
 // Run once on first startup
 
 // Uniqueness constraints

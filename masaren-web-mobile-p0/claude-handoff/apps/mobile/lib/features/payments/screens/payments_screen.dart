@@ -100,9 +100,9 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Stripe enabled: ${_psp?['providers']?['stripe']?['enabled'] ?? '—'}'),
-                    Text('Paymob enabled: ${_psp?['providers']?['paymob']?['enabled'] ?? '—'}'),
-                    Text('Paymob currency: ${_psp?['providers']?['paymob']?['currency'] ?? '—'}'),
+                    Text('Stripe enabled: ${_psp?['providers']?['stripe']?['enabled'] ?? '-'}'),
+                    Text('Paymob enabled: ${_psp?['providers']?['paymob']?['enabled'] ?? '-'}'),
+                    Text('Paymob currency: ${_psp?['providers']?['paymob']?['currency'] ?? '-'}'),
                     Text('Paymob methods: ${methods.join(', ')}'),
                   ],
                 ),
@@ -135,9 +135,9 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text('Payment intent created', style: TextStyle(fontWeight: FontWeight.bold)),
-                    Text('Redirect URL: ${_intent?['psp']?['redirect_url'] ?? '—'}'),
-                    Text('Payment key: ${_intent?['psp']?['payment_key'] ?? '—'}'),
-                    Text('Order id: ${_intent?['psp']?['order_id'] ?? '—'}'),
+                    Text('Redirect URL: ${_intent?['psp']?['redirect_url'] ?? '-'}'),
+                    Text('Payment key: ${_intent?['psp']?['payment_key'] ?? '-'}'),
+                    Text('Order id: ${_intent?['psp']?['order_id'] ?? '-'}'),
                   ],
                 ),
               ),
@@ -154,7 +154,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
               return Card(
                 child: ListTile(
                   leading: const Icon(Icons.payment, color: MasarenTheme.navyLight),
-                  title: Text('${m['amount'] ?? '—'} ${m['currency'] ?? ''}'),
+                  title: Text('${m['amount'] ?? '-'} ${m['currency'] ?? ''}'),
                   subtitle: Text('${m['provider'] ?? ''} · ${m['status'] ?? ''}'),
                 ),
               );

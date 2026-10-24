@@ -1,4 +1,4 @@
-"""Ads manager API — campaign lifecycle, creatives and delivery tracking.
+"""Ads manager API, campaign lifecycle, creatives and delivery tracking.
 
 Campaigns are funded in MASAREN Coin (MRC). Creating/listing requires a valid JWT;
 a campaign can only be managed by its owning advertiser or an admin. Delivery events

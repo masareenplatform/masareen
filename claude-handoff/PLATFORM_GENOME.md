@@ -1,15 +1,15 @@
-# MASAREN Platform Genome (v2.0 — Cleaned & Verified)
+# MASAREN Platform Genome (v2.0, Cleaned & Verified)
 
 > **Single source of truth for any agent working on MASAREN.**
 > Read this file first. It is the machine-friendly blueprint of the platform after the
 > cleanup audit of 2026-07-12 (dead code, duplicate implementations, build artifacts and
-> session/transcript clutter removed — see "Cleanup Audit" at the bottom).
+> session/transcript clutter removed, see "Cleanup Audit" at the bottom).
 
 ---
 
 ## 0. One-line identity
 
-**MASAREN (مسارين)** — *Impact Infrastructure as a Service (IIaaS)*. Converts verified
+**MASAREN (مسارين)**, *Impact Infrastructure as a Service (IIaaS)*. Converts verified
 real-world field actions into immutable, measurable, economically valuable digital assets.
 Core principle: **if an action cannot be verified, it cannot become an economic asset.**
 
@@ -20,7 +20,7 @@ Core principle: **if an action cannot be verified, it cannot become an economic 
 ```
 MASAREN/
 ├── README.md                      # Human entry point
-├── PLATFORM_GENOME.md             # THIS FILE — agent blueprint
+├── PLATFORM_GENOME.md             # THIS FILE, agent blueprint
 ├── platform-genome.json           # Machine-readable copy of this file
 ├── .env.example                   # Env template (copy to .env, fill secrets)
 ├── .gitignore
@@ -69,11 +69,11 @@ MASAREN/
   Redis (cache/sessions/rate-limit) · MinIO/S3 (evidence blobs).
 - **AI deployment:** Cloud-only inference (OpenAI / Google Gemini). No local LLMs.
   Configured via `OPENAI_API_KEY` and `CREWAI_BROKER_URL` in `.env` (SETUP_GUIDE referenced
-  `AI_PROVIDER`/`CLOUD_API_KEY` — those are doc aliases; `.env.example` is authoritative).
+  `AI_PROVIDER`/`CLOUD_API_KEY`, those are doc aliases; `.env.example` is authoritative).
 
 ---
 
-## 3. Service topology (authoritative — from docker-compose.yml)
+## 3. Service topology (authoritative, from docker-compose.yml)
 
 Every service is built from `backend/Dockerfile.service` (`SERVICE_PATH: <path>`), runs
 internally on `:8000`, and derives JWT from `JWT_SECRET`. Only the gateway and frontends are
@@ -81,7 +81,7 @@ published to the host.
 
 | Domain | Compose key | Source path | Responsibility |
 | --- | --- | --- | --- |
-| Gateway | `gateway` | `backend/gateway` | BFF, routing, JWT auth, rate-limit, aggregation — published `:8080` |
+| Gateway | `gateway` | `backend/gateway` | BFF, routing, JWT auth, rate-limit, aggregation, published `:8080` |
 | Identity | `identity` | `backend/identity/identity-service` | Users, profiles, RBAC |
 | Identity | `auth` | `backend/identity/authentication-service` | Login / token issuance |
 | Identity | `authz` | `backend/identity/authorization-service` | Authorization checks |
@@ -115,8 +115,8 @@ published to the host.
 | Platform | `platform` | `backend/platform/platform-service` | Platform revenue/aggregation |
 
 ### AI / verification services (implemented, orchestrated separately)
-- `backend/ai/verification_orchestrator_service` — POAI deliberative crew (native `:8070`).
-- `backend/ai/fraud-service/python` — fraud scoring (native `:8090`).
+- `backend/ai/verification_orchestrator_service`, POAI deliberative crew (native `:8070`).
+- `backend/ai/fraud-service/python`, fraud scoring (native `:8090`).
 - Other AI modules consumed by the orchestrator: `auditor-agent`, `economist-agent`,
   `broker-agent`, `planner-agent`, `recommendation-agent`, `vision-ai-service`,
   `speech-ai-service`, `compliance-service`, `media-distribution-service`.
@@ -150,11 +150,11 @@ auth-python 8093 · impact-score-python 8094.
 `infrastructure` · `middleware` (JWT/RBAC/bcrypt) · `testing` · `types` · `utils`
 (app_factory, health, logging, kafka_producer/consumer, cqrs, cloud_llm_client, outbox).
 This is the real shared package. (The old top-level `shared/` with protobuf/avro stubs was
-removed — it was referenced by no code.)
+removed, it was referenced by no code.)
 
 ---
 
-## 6. Environment variables (`.env.example` — authoritative)
+## 6. Environment variables (`.env.example`, authoritative)
 
 `JWT_SECRET` (required, shared by all services + gateway) · `STRIPE_SECRET_KEY` /
 `STRIPE_WEBHOOK_SECRET` (optional; 501 local-ledger mode without) · `PAYMOB_*` (Egypt card +
@@ -175,18 +175,18 @@ docker compose up -d            # full stack; gateway :8080, web :3000, admin :3
 # DB + Kafka auto-init from infrastructure/ migrations + event_catalog.yaml
 ```
 Frontends: `apps/web` (Vite+React+TS), `apps/admin` (Vite+React+TS, Mantine),
-`apps/mobile` (Flutter). `apps/web/src` is TypeScript — the old compiled `.js` duplicates
+`apps/mobile` (Flutter). `apps/web/src` is TypeScript, the old compiled `.js` duplicates
 were deleted; do not reintroduce them.
 
 ---
 
 ## 8. Frontend apps
 
-- **apps/web** — React + TypeScript (Vite). Authored in `.tsx`/`.ts`; the stale compiled `.js`
+- **apps/web**, React + TypeScript (Vite). Authored in `.tsx`/`.ts`; the stale compiled `.js`
   siblings were removed during cleanup.
-- **apps/admin** — React + TypeScript admin console (Mantine), built and served via nginx.
-- **apps/mobile** — Flutter app (lib/ feature structure; bilingual EN/AR).
-- Top-level `frontend/` (vanilla-JS prototype) was **removed** — redundant with `apps/admin`.
+- **apps/admin**, React + TypeScript admin console (Mantine), built and served via nginx.
+- **apps/mobile**, Flutter app (lib/ feature structure; bilingual EN/AR).
+- Top-level `frontend/` (vanilla-JS prototype) was **removed**, redundant with `apps/admin`.
 
 ---
 
@@ -201,7 +201,7 @@ contract + event tests · independent deployability · structured JSON logging �
 endpoints · idempotent consumers · framework-independent domain models.
 Target: ≥90% coverage. Languages: services are **Python/FastAPI** (the Go/Rust experiments in
 `authentication-service/go`, `impact-score-service/go`, `fraud-service/rust` were abandoned and
-removed). Some services list Go/Rust as future targets in older docs — aspirational only.
+removed). Some services list Go/Rust as future targets in older docs, aspirational only.
 
 ---
 
@@ -209,7 +209,7 @@ removed). Some services list Go/Rust as future targets in older docs — aspirat
 
 - Architecture: `docs/architecture/adr/ADR-001..007`, `service-contracts.md`, `event-catalog.md`,
   `saga-design.md`, `verification-sequence.md`, `database-ownership.md`.
-- API/human: `docs/api/api-reference.md` (gRPC is aspirational — REST/Kafka is real),
+- API/human: `docs/api/api-reference.md` (gRPC is aspirational, REST/Kafka is real),
   `docs/api/contracts.md` (BFF request/response schemas).
 - Runbooks: `docs/deployment/runbooks/local-dev-setup.md`, `production-checklist.md`,
   `k8s-service-template.yaml`.
@@ -219,7 +219,7 @@ removed). Some services list Go/Rust as future targets in older docs — aspirat
 
 ---
 
-## 11. Cleanup audit (2026-07-12) — what was removed
+## 11. Cleanup audit (2026-07-12), what was removed
 
 **Removed (root clutter, all untracked or unused):** `prompt1-30.txt`, `promptres*.txt`,
 `prompte2e*.txt`, `promptlog.txt`, `promptrn*.txt`, `statusreport1-5.tex`, `workstream2.tex`,

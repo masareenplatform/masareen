@@ -2,13 +2,13 @@
 You are the lead engineer tasked with taking the MASAREN platform (Impact Infrastructure as a Service) from its current state to **production-ready grade**, with primary focus on the **web (React/TypeScript)** and **mobile (Flutter)** frontends, while keeping the whole system coherent and deployable.
 
 **Start here**
-1. Read `PLATFORM_GENOME.md` (and `platform-genome.json`) first — it is the single source of truth for architecture, service topology, ports, env vars, events, and the engineering rules. Read `CODE_PATTERNS.md` and `STRUCTURE.txt` next to learn conventions and what's in this package.
-2. Do **not** modify backend domain contracts, Kafka event schemas, or the shared kernel without explicit justification — frontend changes must stay compatible with the existing BFF/gateway contracts in `docs/api/contracts.md` (summarized in the genome).
+1. Read `PLATFORM_GENOME.md` (and `platform-genome.json`) first, it is the single source of truth for architecture, service topology, ports, env vars, events, and the engineering rules. Read `CODE_PATTERNS.md` and `STRUCTURE.txt` next to learn conventions and what's in this package.
+2. Do **not** modify backend domain contracts, Kafka event schemas, or the shared kernel without explicit justification, frontend changes must stay compatible with the existing BFF/gateway contracts in `docs/api/contracts.md` (summarized in the genome).
 
 **Production-readiness definition (apply to web + mobile)**
 - Correct, typed, and lint/type-check clean builds (`npm run build` for web, `flutter analyze` + `flutter build` for mobile).
 - Real error handling, loading/empty/error states, retry, and offline tolerance; no hardcoded mock data, no `# TODO`/stub screens.
-- Full **EN/AR bilingual** support with proper RTL layout and i18n (already partially present — complete and verify it).
+- Full **EN/AR bilingual** support with proper RTL layout and i18n (already partially present, complete and verify it).
 - Accessibility, responsive layouts, and safe async/state management.
 - Secure handling of tokens (`JWT_SECRET`-derived), no secrets in client code, correct gateway/`PUBLIC_GATEWAY_URL` usage.
 - Consume the backend only through the documented BFF endpoints; align any mismatches with the genome and flag them.
@@ -17,11 +17,11 @@ You are the lead engineer tasked with taking the MASAREN platform (Impact Infras
 **Deliverables I expect from you**
 1. A concise **audit summary** of web + mobile: what is production-grade, what is not, and the highest-risk gaps.
 2. A **prioritized remediation plan** (P0/P1/P2) with effort estimates.
-3. Concrete, reviewed code changes — implement the P0/P1 items directly in the package files, keeping edits minimal and convention-compliant.
+3. Concrete, reviewed code changes, implement the P0/P1 items directly in the package files, keeping edits minimal and convention-compliant.
 4. A short **"how to run & verify"** section and a list of any backend contract changes you recommend (for my approval before applying).
 
 **Constraints**
-- Keep changes within `apps/web` and `apps/mobile` unless a backend contract gap blocks production readiness — in that case, propose it separately rather than editing backend code unilaterally.
+- Keep changes within `apps/web` and `apps/mobile` unless a backend contract gap blocks production readiness, in that case, propose it separately rather than editing backend code unilaterally.
 - Preserve the existing architecture and the "verification-before-valuation" domain model; do not introduce local AI inference or bypass domain events.
 - When done, update `PLATFORM_GENOME.md` only if topology/contracts actually changed, and summarize all edits.
 

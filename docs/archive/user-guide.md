@@ -3,9 +3,9 @@
 Welcome to **MASAREN (مسارين)**. If you've never heard of us, you are about to discover a platform that turns your real-world good deeds into a digital asset.
 
 ## ❓ What is MASAREN?
-In the real world, people do amazing things—helping the poor, planting trees, teaching children, or managing huge social projects. Usually, this "impact" is invisible. It exists in memories or old paper reports.
+In the real world, people do amazing things-helping the poor, planting trees, teaching children, or managing huge social projects. Usually, this "impact" is invisible. It exists in memories or old paper reports.
 
-**MASAREN changes that.** We provide the "Infrastructure for Impact." We help you verify your field work using AI and GPS, and then we convert that verified work into a **Reputation Score (PMS/OII)**. This score is like a "Credit Score for Goodness"—it proves your value to the world.
+**MASAREN changes that.** We provide the "Infrastructure for Impact." We help you verify your field work using AI and GPS, and then we convert that verified work into a **Reputation Score (PMS/OII)**. This score is like a "Credit Score for Goodness"-it proves your value to the world.
 
 ---
 

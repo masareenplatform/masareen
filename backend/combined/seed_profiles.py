@@ -1,4 +1,4 @@
-"""MASAREN Profile Seed Script — populates every profile type for testing.
+"""MASAREN Profile Seed Script, populates every profile type for testing.
 
 Creates 17 demo accounts across 5 categories:
   - News Media Profiles (Al Jazeera, BBC, Al Masareen)
@@ -87,7 +87,7 @@ PROFILES = [
             "social_links": {"twitter": "@AJEnglish", "youtube": "aljazeera"},
         },
         "personnel": {
-            "headline": "Global News Network — Al Jazeera",
+            "headline": "Global News Network, Al Jazeera",
             "summary": "Award-winning news network providing independent journalism across 150+ countries, with a focus on underserved stories.",
             "mission": "Giving voice to the voiceless and holding power to account through fearless, independent journalism.",
             "beat": "International News",
@@ -161,7 +161,7 @@ PROFILES = [
             "social_links": {"twitter": "@BBCNews", "youtube": "BBCNews"},
         },
         "personnel": {
-            "headline": "BBC News — World Service Arabic",
+            "headline": "BBC News, World Service Arabic",
             "summary": "The BBC's Arabic service delivers impartial news and analysis to audiences across the Middle East and North Africa.",
             "mission": "To provide impartial, high-quality journalism that informs and educates a global audience.",
             "beat": "Global Affairs",
@@ -221,7 +221,7 @@ PROFILES = [
             "social_links": {"twitter": "@AlMasareenNews", "youtube": "almasareennews"},
         },
         "personnel": {
-            "headline": "Al Masareen News — Platform Media",
+            "headline": "Al Masareen News, Platform Media",
             "summary": "The editorial voice of MASAREN, amplifying verified community impact and holding institutions accountable.",
             "mission": "Amplifying verified community voices and creating transparent impact narratives.",
             "beat": "Community Impact",
@@ -285,7 +285,7 @@ PROFILES = [
         "role": "Sports Club",
         "audience": "CORPORATE",
         "profile": {
-            "bio": "Al Ahly Sporting Club — the most decorated club in African football history. Founded 1907 in Cairo, Egypt.",
+            "bio": "Al Ahly Sporting Club, the most decorated club in African football history. Founded 1907 in Cairo, Egypt.",
             "country": "Egypt",
             "city": "Cairo",
             "languages": ["Arabic", "English"],
@@ -296,7 +296,7 @@ PROFILES = [
             "social_links": {"twitter": "@AlAhly", "instagram": "alahly"},
         },
         "personnel": {
-            "headline": "Al Ahly SC — Club Communications",
+            "headline": "Al Ahly SC, Club Communications",
             "summary": "Official communications channel for Al Ahly Sporting Club, delivering match updates, transfer news, and club initiatives.",
             "mission": "Serving the Ahly community with verified updates and championing sports development across Egypt.",
             "beat": "Football",
@@ -347,7 +347,7 @@ PROFILES = [
         "role": "Sports Club",
         "audience": "CORPORATE",
         "profile": {
-            "bio": "Zamalek Sporting Club — White Knights of Egyptian football. Founded 1911, one of Africa's most storied clubs.",
+            "bio": "Zamalek Sporting Club, White Knights of Egyptian football. Founded 1911, one of Africa's most storied clubs.",
             "country": "Egypt",
             "city": "Giza",
             "languages": ["Arabic", "English"],
@@ -358,7 +358,7 @@ PROFILES = [
             "social_links": {"twitter": "@ZamalekClub", "instagram": "zamalekclub"},
         },
         "personnel": {
-            "headline": "Zamalek SC — Official Media",
+            "headline": "Zamalek SC, Official Media",
             "summary": "The official media arm of Zamalek Sporting Club, covering first-team football, academy, and community outreach.",
             "mission": "Connecting the Zamalek community through verified stories and championing sportsmanship.",
             "beat": "Football",
@@ -407,7 +407,7 @@ PROFILES = [
         "role": "Sports Federation",
         "audience": "GOVERNMENT",
         "profile": {
-            "bio": "The Egyptian National Football Team — Pharaohs of Africa. 7-time Africa Cup of Nations champions and FIFA World Cup participants.",
+            "bio": "The Egyptian National Football Team, Pharaohs of Africa. 7-time Africa Cup of Nations champions and FIFA World Cup participants.",
             "country": "Egypt",
             "city": "Cairo",
             "languages": ["Arabic", "English", "French"],
@@ -418,7 +418,7 @@ PROFILES = [
             "social_links": {"twitter": "@EFA", "instagram": "egyptiannationalteam"},
         },
         "personnel": {
-            "headline": "Egyptian FA — National Team Communications",
+            "headline": "Egyptian FA, National Team Communications",
             "summary": "Official media channel for Egypt's national football teams, covering senior, U-23, and women's programmes.",
             "mission": "Representing Egyptian football on the world stage and developing the next generation of champions.",
             "beat": "National Football",
@@ -473,7 +473,7 @@ PROFILES = [
         "role": "Athlete",
         "audience": "PROFESSIONAL",
         "profile": {
-            "bio": "Mohamed Salah — Egyptian King. Liverpool FC forward, AFCON champion, and global ambassador for Egyptian football.",
+            "bio": "Mohamed Salah, Egyptian King. Liverpool FC forward, AFCON champion, and global ambassador for Egyptian football.",
             "country": "Egypt",
             "city": "Cairo",
             "languages": ["Arabic", "English"],
@@ -484,7 +484,7 @@ PROFILES = [
             "social_links": {"twitter": "@MoSalah", "instagram": "mosalah"},
         },
         "personnel": {
-            "headline": "Mohamed Salah — Professional Footballer",
+            "headline": "Mohamed Salah, Professional Footballer",
             "summary": "Premier League and Champions League winner, multiple African Player of the Year. Using football as a force for social good.",
             "mission": "Inspiring the next generation of Egyptian athletes and using my platform to create verified positive impact in communities.",
             "beat": "Professional Football",
@@ -550,7 +550,7 @@ PROFILES = [
         "role": "Athlete",
         "audience": "PROFESSIONAL",
         "profile": {
-            "bio": "Mohamed Abdelmonem — Egyptian international centre-back, known for his aerial dominance and leadership at the back.",
+            "bio": "Mohamed Abdelmonem, Egyptian international centre-back, known for his aerial dominance and leadership at the back.",
             "country": "Egypt",
             "city": "Alexandria",
             "languages": ["Arabic", "English"],
@@ -561,7 +561,7 @@ PROFILES = [
             "social_links": {"instagram": "abdelmonem"},
         },
         "personnel": {
-            "headline": "Mohamed Abdelmonem — Professional Footballer",
+            "headline": "Mohamed Abdelmonem, Professional Footballer",
             "summary": "Egyptian international defender and AFCON standout, committed to community work through verified platforms.",
             "mission": "Using my platform to support youth development and community sports in Alexandria and across Egypt.",
             "beat": "Professional Football",
@@ -610,7 +610,7 @@ PROFILES = [
         "role": "Athlete",
         "audience": "PROFESSIONAL",
         "profile": {
-            "bio": "Mahmoud Hassan 'Trezeguet' — Egyptian winger known for pace, flair, and creativity. Former Trabzonspor, now Al Ahly SC.",
+            "bio": "Mahmoud Hassan 'Trezeguet', Egyptian winger known for pace, flair, and creativity. Former Trabzonspor, now Al Ahly SC.",
             "country": "Egypt",
             "city": "Cairo",
             "languages": ["Arabic", "English", "Turkish"],
@@ -621,7 +621,7 @@ PROFILES = [
             "social_links": {"twitter": "@Trezeguet", "instagram": "trezeguet"},
         },
         "personnel": {
-            "headline": "Trezeguet — Professional Footballer",
+            "headline": "Trezeguet, Professional Footballer",
             "summary": "Explosive winger who has played across Europe and the Middle East, now back home at Al Ahly and the Egyptian national team.",
             "mission": "Bringing joy through football and supporting verified grassroots development programs in Upper Egypt.",
             "beat": "Professional Football",
@@ -650,7 +650,7 @@ PROFILES = [
         "wallet_balance": 1500,
         "posts": [
             {
-                "text": "STORY: I grew up in Mahalla, kicking a ball on dusty streets. Now I'm using MASAREN to verify every sports development program we run in Upper Egypt. No more empty promises — only verified impact.",
+                "text": "STORY: I grew up in Mahalla, kicking a ball on dusty streets. Now I'm using MASAREN to verify every sports development program we run in Upper Egypt. No more empty promises, only verified impact.",
                 "kind": "story",
                 "sdg": 3,
                 "impact_value": 1200,
@@ -668,7 +668,7 @@ PROFILES = [
         "role": "Athlete",
         "audience": "PROFESSIONAL",
         "profile": {
-            "bio": "Mohamed Elneny — Egyptian midfielder, Arsenal legend, known for his tireless engine and class on the ball.",
+            "bio": "Mohamed Elneny, Egyptian midfielder, Arsenal legend, known for his tireless engine and class on the ball.",
             "country": "Egypt",
             "city": "Cairo",
             "languages": ["Arabic", "English"],
@@ -679,7 +679,7 @@ PROFILES = [
             "social_links": {"twitter": "@ElNenny", "instagram": "elneny"},
         },
         "personnel": {
-            "headline": "Mohamed Elneny — Professional Footballer",
+            "headline": "Mohamed Elneny, Professional Footballer",
             "summary": "Egyptian international midfielder, Arsenal FC veteran, and advocate for education through sport.",
             "mission": "Championing education and sport as equalisers for Egyptian youth, verified through transparent impact tracking.",
             "beat": "Professional Football",
@@ -714,7 +714,7 @@ PROFILES = [
         "wallet_balance": 2000,
         "posts": [
             {
-                "text": "STORY: Education changed my life — football was just the vehicle. Through MASAREN, I can verify every scholarship and school we build. Every dirham, every student, verified.",
+                "text": "STORY: Education changed my life, football was just the vehicle. Through MASAREN, I can verify every scholarship and school we build. Every dirham, every student, verified.",
                 "kind": "story",
                 "sdg": 4,
                 "impact_value": 2500,
@@ -736,7 +736,7 @@ PROFILES = [
         "role": "Government",
         "audience": "GOVERNMENT",
         "profile": {
-            "bio": "The Egyptian Ministry of Tourism & Antiquities — preserving Egypt's heritage and promoting sustainable tourism.",
+            "bio": "The Egyptian Ministry of Tourism & Antiquities, preserving Egypt's heritage and promoting sustainable tourism.",
             "country": "Egypt",
             "city": "Cairo",
             "languages": ["Arabic", "English", "French"],
@@ -747,7 +747,7 @@ PROFILES = [
             "social_links": {"twitter": "@TourismEgypt"},
         },
         "personnel": {
-            "headline": "Ministry of Tourism & Antiquities — Communications",
+            "headline": "Ministry of Tourism & Antiquities, Communications",
             "summary": "Official digital communications for Egypt's tourism and antiquities portfolio, covering heritage preservation and sustainable tourism.",
             "mission": "Preserving 5,000 years of civilisation while building a sustainable tourism economy for Egypt's future.",
             "beat": "Tourism & Heritage",
@@ -796,7 +796,7 @@ PROFILES = [
         "role": "Government",
         "audience": "GOVERNMENT",
         "profile": {
-            "bio": "The Egyptian Ministry of Youth & Sports — empowering the next generation through sport, culture, and community engagement.",
+            "bio": "The Egyptian Ministry of Youth & Sports, empowering the next generation through sport, culture, and community engagement.",
             "country": "Egypt",
             "city": "Cairo",
             "languages": ["Arabic", "English"],
@@ -807,7 +807,7 @@ PROFILES = [
             "social_links": {"twitter": "@YouthSportsEG"},
         },
         "personnel": {
-            "headline": "Ministry of Youth & Sports — Public Affairs",
+            "headline": "Ministry of Youth & Sports, Public Affairs",
             "summary": "Official communications for Egypt's youth and sports ministry, covering policy, grassroots programmes, and Olympic preparation.",
             "mission": "Empowering 60 million Egyptian youth through sport, creativity, and verified community programmes.",
             "beat": "Youth Policy & Sports",
@@ -856,7 +856,7 @@ PROFILES = [
         "role": "Government",
         "audience": "GOVERNMENT",
         "profile": {
-            "bio": "Egypt's Ministry of Communications & Information Technology — driving Egypt's digital transformation and tech ecosystem.",
+            "bio": "Egypt's Ministry of Communications & Information Technology, driving Egypt's digital transformation and tech ecosystem.",
             "country": "Egypt",
             "city": "Smart Village, Giza",
             "languages": ["Arabic", "English"],
@@ -867,7 +867,7 @@ PROFILES = [
             "social_links": {"twitter": "@MCIT_Egypt"},
         },
         "personnel": {
-            "headline": "MCIT — Digital Egypt Communications",
+            "headline": "MCIT, Digital Egypt Communications",
             "summary": "Driving Egypt's digital transformation through policy, infrastructure, and tech ecosystem development.",
             "mission": "Building a digitally empowered Egypt where technology serves every citizen transparently.",
             "beat": "Digital Policy",
@@ -900,7 +900,7 @@ PROFILES = [
         "wallet_balance": 5000,
         "posts": [
             {
-                "text": "ANNOUNCEMENT: MCIT partners with MASAREN to bring verified digital literacy programmes to 27 governorates. Every learner, every outcome — tracked and verified on-chain.",
+                "text": "ANNOUNCEMENT: MCIT partners with MASAREN to bring verified digital literacy programmes to 27 governorates. Every learner, every outcome, tracked and verified on-chain.",
                 "kind": "announcement",
                 "sdg": 9,
                 "impact_value": 0,
@@ -933,9 +933,9 @@ PROFILES = [
             "social_links": {"twitter": "@UNICEFEgypt", "youtube": "unicefegypt"},
         },
         "personnel": {
-            "headline": "UNICEF Egypt — Communications & Advocacy",
+            "headline": "UNICEF Egypt, Communications & Advocacy",
             "summary": "UNICEF Egypt's public communications covering child rights, education, health, and WASH programmes.",
-            "mission": "Every child in Egypt has the right to survive, thrive and fulfil their potential — verified and transparent.",
+            "mission": "Every child in Egypt has the right to survive, thrive and fulfil their potential, verified and transparent.",
             "beat": "Child Rights & Development",
             "expertise": ["Child Protection", "Education", "WASH", "Health Systems", "Nutrition"],
             "specializations": ["Programme Verification", "Child Rights Advocacy", "Emergency Response"],
@@ -982,7 +982,7 @@ PROFILES = [
         "role": "NGO",
         "audience": "NGO",
         "profile": {
-            "bio": "The Egyptian Red Crescent — part of the International Red Cross and Red Crescent Movement, providing humanitarian aid across Egypt.",
+            "bio": "The Egyptian Red Crescent, part of the International Red Cross and Red Crescent Movement, providing humanitarian aid across Egypt.",
             "country": "Egypt",
             "city": "Cairo",
             "languages": ["Arabic", "English", "French"],
@@ -993,7 +993,7 @@ PROFILES = [
             "social_links": {"twitter": "@ERCSofficial", "instagram": "egyptianredcrescent"},
         },
         "personnel": {
-            "headline": "Egyptian Red Crescent — Disaster Response & First Aid",
+            "headline": "Egyptian Red Crescent, Disaster Response & First Aid",
             "summary": "Leading humanitarian response in Egypt, providing disaster relief, first aid training, and community resilience programmes.",
             "mission": "Alleviating human suffering and protecting life and dignity through verified humanitarian action.",
             "beat": "Humanitarian Response",
@@ -1024,7 +1024,7 @@ PROFILES = [
         "wallet_balance": 3000,
         "posts": [
             {
-                "text": "SYNERGY: The Egyptian Red Crescent adopts MASAREN's POAI system to verify every humanitarian intervention — from earthquake response to first aid training. Verified trust saves lives.",
+                "text": "SYNERGY: The Egyptian Red Crescent adopts MASAREN's POAI system to verify every humanitarian intervention, from earthquake response to first aid training. Verified trust saves lives.",
                 "kind": "synergy",
                 "sdg": 17,
                 "impact_value": 8000,
@@ -1042,7 +1042,7 @@ PROFILES = [
         "role": "Company",
         "audience": "CORPORATE",
         "profile": {
-            "bio": "Cairo Tech Hub — Egypt's leading technology incubator, supporting startups and building the MENA digital ecosystem.",
+            "bio": "Cairo Tech Hub, Egypt's leading technology incubator, supporting startups and building the MENA digital ecosystem.",
             "country": "Egypt",
             "city": "Cairo",
             "languages": ["Arabic", "English"],
@@ -1053,7 +1053,7 @@ PROFILES = [
             "social_links": {"twitter": "@CairoTechHub", "linkedin": "cairo-tech-hub"},
         },
         "personnel": {
-            "headline": "Cairo Tech Hub — Innovation & Ecosystem",
+            "headline": "Cairo Tech Hub, Innovation & Ecosystem",
             "summary": "Building Egypt's tech future through incubation, acceleration, and verified impact programmes.",
             "mission": "Accelerating Egypt's digital economy by empowering startups with transparent, verified support programmes.",
             "beat": "Technology & Innovation",
@@ -1086,7 +1086,7 @@ PROFILES = [
         "wallet_balance": 2000,
         "posts": [
             {
-                "text": "SYNERGY: Cairo Tech Hub × MASAREN — tracking the real impact of our startup programmes. Every job created, every product launched, every metric verified on-chain.",
+                "text": "SYNERGY: Cairo Tech Hub × MASAREN, tracking the real impact of our startup programmes. Every job created, every product launched, every metric verified on-chain.",
                 "kind": "synergy",
                 "sdg": 8,
                 "impact_value": 80,
@@ -1148,7 +1148,7 @@ async def seed():
                         user_id, email, full_name, role, HASHED_PW,
                     )
                     created_users += 1
-                    print(f"  USER  {email} — {full_name} ({role})")
+                    print(f"  USER  {email}, {full_name} ({role})")
                 except Exception as e:
                     if "unique" in str(e).lower() or "duplicate" in str(e).lower():
                         print(f"  SKIP  {email} (race condition, already exists)")
@@ -1261,11 +1261,11 @@ async def seed():
                 await conn.execute(
                     """INSERT INTO coin_transactions
                        (id, owner_id, counterparty_id, type, amount, balance_after, reference, created_at)
-                       VALUES (gen_random_uuid(), $1, NULL, 'EARN', $2, $2, 'Welcome bonus — seed script', NOW())""",
+                       VALUES (gen_random_uuid(), $1, NULL, 'EARN', $2, $2, 'Welcome bonus, seed script', NOW())""",
                     str(user_id), float(balance),
                 )
                 created_wallets += 1
-                print(f"  WALLET {email} — {balance} MRC")
+                print(f"  WALLET {email}, {balance} MRC")
 
             # ── Create posts ──────────────────────────────────────────────
             for post_data in profile.get("posts", []):

@@ -1,5 +1,5 @@
 """
-Workflow aggregate — orchestrates multi-step task sequences.
+Workflow aggregate, orchestrates multi-step task sequences.
 A workflow defines a template of steps; each step maps to a task.
 The workflow engine advances steps as tasks complete.
 """

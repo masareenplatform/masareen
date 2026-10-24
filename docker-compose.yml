@@ -1,4 +1,4 @@
-# MASAREN — full-stack alpha deployment.
+# MASAREN, full-stack alpha deployment.
 #
 #   docker compose up --build
 #
@@ -27,7 +27,7 @@ x-common-env: &common-env
 x-svc: &svc
   restart: unless-stopped
   # Hard cap so the 30+ Python microservices can't balloon the Docker VM.
-  # This is a ceiling, not a reservation — idle services use far less.
+  # This is a ceiling, not a reservation, idle services use far less.
   deploy:
     resources:
       limits:

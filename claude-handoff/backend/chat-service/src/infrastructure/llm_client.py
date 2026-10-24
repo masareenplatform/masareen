@@ -5,7 +5,7 @@ platform (``GOOGLE_API_KEY`` / ``CLOUD_API_KEY``). The client is built lazily
 so the service imports and serves history/persistence even when no key is set; an
 assistant reply is only generated when the provider is configured. When it is not,
 :meth:`ChatLLMClient.reply` returns ``None`` and the API layer emits an honest
-"assistant unavailable" message — never a fabricated answer.
+"assistant unavailable" message, never a fabricated answer.
 """
 from __future__ import annotations
 

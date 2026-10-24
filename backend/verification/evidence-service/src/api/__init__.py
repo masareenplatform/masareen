@@ -1,4 +1,4 @@
-"""Evidence Service API — real PostgreSQL-backed endpoints (no fabricated data).
+"""Evidence Service API, real PostgreSQL-backed endpoints (no fabricated data).
 
 Mirrors the proven pattern used by gps-service: a per-request async session is
 injected into the CQRS command/query buses, which dispatch to the real

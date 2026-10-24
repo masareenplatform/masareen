@@ -1,4 +1,4 @@
-// Persons (creators) — ids, names, avatars
+// Persons (creators), ids, names, avatars
 MERGE (p_layla:Person {id:'u-layla'}) SET p_layla.name='Layla Hassan', p_layla.full_name='Layla Hassan', p_layla.email='layla@masaren.org', p_layla.avatar_url='asset://avatars/p2.jpg', p_layla.pms=91.4;
 MERGE (p_omar:Person {id:'u-omar'}) SET p_omar.name='Omar Said', p_omar.full_name='Omar Said', p_omar.email='omar@masaren.org', p_omar.avatar_url='asset://avatars/p3.jpg', p_omar.pms=84.2;
 MERGE (p_mariam:Person {id:'u-mariam'}) SET p_mariam.name='Mariam Ali', p_mariam.full_name='Mariam Ali', p_mariam.email='mariam@masaren.org', p_mariam.avatar_url='asset://avatars/p4.jpg', p_mariam.pms=78.9;

@@ -1,4 +1,4 @@
-// MASAREN Mobile integration test — drives the four new monetisation surfaces.
+// MASAREN Mobile integration test, drives the four new monetisation surfaces.
 //
 // Run with a real device/emulator:
 //   flutter test integration_test/app_test.dart

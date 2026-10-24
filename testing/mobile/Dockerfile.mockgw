@@ -1,4 +1,4 @@
-# MASAREN mock gateway — stateful contract provider used by the Flutter
+# MASAREN mock gateway, stateful contract provider used by the Flutter
 # end-to-end (Maestro) audit. Implements the exact API surface the mobile
 # app expects (see testing/mobile/mock_gateway.mjs + apps/mobile/lib/services/api_service.dart).
 #

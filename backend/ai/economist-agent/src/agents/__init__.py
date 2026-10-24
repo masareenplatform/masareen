@@ -1,5 +1,5 @@
 """
-Impact Economist Agent — translates verified field activities into
+Impact Economist Agent, translates verified field activities into
 standardised social-economic value metrics.
 
 Frameworks: ILO volunteer valuation, UN SDG indicator mapping,
@@ -19,7 +19,7 @@ from shared.utils.logging import get_logger
 
 log = get_logger(__name__)
 
-ECONOMIST_SYSTEM_PROMPT = """You are MASAREEN's Impact Economist — an expert in social value measurement.
+ECONOMIST_SYSTEM_PROMPT = """You are MASAREEN's Impact Economist, an expert in social value measurement.
 You translate verified field activities into standardised economic and social impact metrics.
 
 Use these international frameworks:

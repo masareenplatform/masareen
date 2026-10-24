@@ -1,7 +1,7 @@
 """Unit tests for the portfolio service pure logic and SQL aggregation.
 
 The endpoints hit PostgreSQL directly, so we inject a mocked async session that
-returns canned rows — no external service required. The `_tier` mapping and the
+returns canned rows, no external service required. The `_tier` mapping and the
 real aggregation math are tested directly.
 """
 from unittest.mock import AsyncMock, MagicMock

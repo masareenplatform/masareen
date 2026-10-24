@@ -45,7 +45,7 @@ class EventConsumer(ABC):
         )
         await self._consumer.start()
         self._running = True
-        logger.info("Consumer started — group=%s topics=%s", self._group_id, self._topics)
+        logger.info("Consumer started, group=%s topics=%s", self._group_id, self._topics)
 
     async def stop(self) -> None:
         self._running = False
@@ -68,7 +68,7 @@ class EventConsumer(ABC):
                 await self._consumer.commit()
             except Exception as exc:
                 logger.exception("Error handling event %s: %s", msg.value.get("event_type"), exc)
-                # Do NOT commit — will retry on restart (at-least-once delivery)
+                # Do NOT commit, will retry on restart (at-least-once delivery)
 
     @abstractmethod
     async def handle_event(

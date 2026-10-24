@@ -1,4 +1,4 @@
-# MASAREN Mobile — Maestro E2E flow (login + the four monetisation surfaces).
+# MASAREN Mobile, Maestro E2E flow (login + the four monetisation surfaces).
 #
 # Drives the already-installed debug APK on the emulator. The app talks to the
 # mock gateway on the host (10.0.2.2:8080). No app rebuild needed between runs.

@@ -143,7 +143,7 @@ export default function RightRail() {
         <section className="rounded-xl bg-white border border-line/50 p-4">
           <div className="flex items-center gap-2 mb-3">
             <IconSparkles size={16} className="text-brand/60" />
-            <p className="text-xs font-medium text-muted/70">MASAREEN — verified impact, made social</p>
+            <p className="text-xs font-medium text-muted/70">MASAREEN, verified impact, made social</p>
           </div>
           <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted/50">
             <span className="hover:text-muted cursor-pointer transition-colors">About</span>

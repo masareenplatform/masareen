@@ -1,4 +1,4 @@
-# MASAREN Mobile — Maestro E2E flow (wallet convert applies brokerage fee).
+# MASAREN Mobile, Maestro E2E flow (wallet convert applies brokerage fee).
 #
 # Run:
 #   maestro test testing/mobile/maestro/flow_wallet_brokerage.yaml --device emulator-5554

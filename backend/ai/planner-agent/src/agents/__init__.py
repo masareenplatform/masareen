@@ -1,5 +1,5 @@
 """
-Planner Agent — AI-powered program and task planning.
+Planner Agent, AI-powered program and task planning.
 Consumes: masaren.execution.program_created.v1
 Emits:    masaren.execution.task_created.v1 (suggested tasks)
 """

@@ -52,7 +52,7 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: "Kafka broker count < 1 — message bus offline"
+          summary: "Kafka broker count < 1, message bus offline"
 
       # ── PostgreSQL ────────────────────────────────────────────────────────
       - alert: PostgresConnectionsHigh
@@ -79,7 +79,7 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: "Outbox relay stalled — {{ $value }} unpublished events"
+          summary: "Outbox relay stalled, {{ $value }} unpublished events"
           description: "Events are not being relayed to Kafka. Check OutboxRelay process."
 
       # ── AI verification ───────────────────────────────────────────────────
@@ -100,7 +100,7 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "Cloud LLM P95 latency > 10s — AI pipeline degraded"
+          summary: "Cloud LLM P95 latency > 10s, AI pipeline degraded"
 
       # ── Business metrics ──────────────────────────────────────────────────
       - alert: FraudRateHigh

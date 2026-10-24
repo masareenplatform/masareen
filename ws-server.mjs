@@ -1,8 +1,8 @@
-// MASAREN realtime broadcast hub — Stage 4.
+// MASAREN realtime broadcast hub, Stage 4.
 //
 // A dependency-free WebSocket fan-out server (Node built-in `http` + `crypto`
 // only) that relays topic messages between connected clients so the web/mobile
-// feed, messenger and notifications update live across tabs AND users — no
+// feed, messenger and notifications update live across tabs AND users, no
 // manual refresh. It pairs with `apps/web/src/services/realtime.ts`, whose
 // protocol is:
 //

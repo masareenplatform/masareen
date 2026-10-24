@@ -1,4 +1,4 @@
-"""Subscription service API — real subscription persistence.
+"""Subscription service API, real subscription persistence.
 
 Plans are real static configuration. Creating/upgrading a subscription writes a
 real row per organization. If the database is unreachable the endpoints return

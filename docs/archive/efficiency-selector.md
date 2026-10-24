@@ -1,4 +1,4 @@
-# EfficiencySelector — Design & Contract
+# EfficiencySelector, Design & Contract
 
 ## Purpose
 Let production choose, per workload, the best engine implementation among available
@@ -27,7 +27,7 @@ an operator (or autoscheduler) pick the variant to route to.
 - `explicit`   → operator-pinned `(language, version)` per capability.
 
 When no measurements exist yet, the selector returns the baseline Python variant
-(always present) — never a fabricated winner.
+(always present), never a fabricated winner.
 
 ## HTTP contract (selector service)
 - `GET  /selector/capabilities` → list capabilities + registered variants
@@ -47,6 +47,6 @@ excluded from selection (honest degradation, no fake fallback).
 ## Honesty guarantees
 - Benchmarks measure real work (the actual scoring/verify function on sample input).
 - No hardcoded performance numbers.
-- If a capability has only the Python variant, selector returns Python — it does
+- If a capability has only the Python variant, selector returns Python, it does
   not invent a faster one.
 - Gateway only routes to a variant whose `health` is green.

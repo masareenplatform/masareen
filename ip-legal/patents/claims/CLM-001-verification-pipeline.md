@@ -1,4 +1,4 @@
-# PATENT CLAIMS — DRAFT
+# PATENT CLAIMS, DRAFT
 
 **CLM-001** | **Related IDF:** IDF-001
 **Title:** Claims for the Verification-to-Asset Pipeline

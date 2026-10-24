@@ -1,4 +1,4 @@
-"""Authorization service API — permission checks and role management."""
+"""Authorization service API, permission checks and role management."""
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
 from typing import List

@@ -11,7 +11,7 @@ How an organization uses MASAREEN to source trusted help and prove outcomes.
 ## Create & verify your organization
 
 1. Register a user, then create an organization: `POST /api/v1/organizations/`.
-2. Set type flags — NGO / GOV / COMPANY / PARTNER (you can be more than one).
+2. Set type flags, NGO / GOV / COMPANY / PARTNER (you can be more than one).
 3. Complete the profile (`PATCH /api/v1/organizations/{id}/profile`).
 4. **Verify** the organization (`POST /api/v1/organizations/{id}/verify`) so opportunities
    you post carry weight.
@@ -21,7 +21,7 @@ How an organization uses MASAREEN to source trusted help and prove outcomes.
 ```bash
 POST /api/v1/opportunities/
 {
-  "title": "Canal cleanup — Block 4",
+  "title": "Canal cleanup, Block 4",
   "description": "Remove solid waste along 500m of canal.",
   "skills": ["physical", "logistics"],
   "sdg": 6,
@@ -30,7 +30,7 @@ POST /api/v1/opportunities/
 }
 ```
 
-`min_pms` gates who can apply — use it to require a baseline of trust.
+`min_pms` gates who can apply, use it to require a baseline of trust.
 
 ## Run programs (multi-step work)
 
@@ -56,7 +56,7 @@ Every verified task produces **verified evidence** that rolls up into your **OII
 
 ## Partnerships
 
-Collaborate via `POST /api/v1/partners/` — co-run opportunities and share verified impact.
+Collaborate via `POST /api/v1/partners/`, co-run opportunities and share verified impact.
 
 ## Why orgs love it
 

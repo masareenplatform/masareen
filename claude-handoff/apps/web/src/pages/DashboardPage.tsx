@@ -74,7 +74,7 @@ export default function DashboardPage() {
                 className="rounded-md px-3 py-1 text-xs font-bold text-white"
                 style={{ background: tierColor[data.pms.tier ?? "BRONZE"] || "#9CA3AF" }}
               >
-                {data.pms.tier ?? "—"}
+                {data.pms.tier ?? "-"}
               </span>
             </div>
           </div>
@@ -89,7 +89,7 @@ export default function DashboardPage() {
               {c.label}
             </p>
             <p className="mt-2 text-2xl font-extrabold text-ink">
-              {typeof c.value === "number" ? c.value.toLocaleString() : String(c.value ?? "—")}
+              {typeof c.value === "number" ? c.value.toLocaleString() : String(c.value ?? "-")}
             </p>
           </div>
         ))}

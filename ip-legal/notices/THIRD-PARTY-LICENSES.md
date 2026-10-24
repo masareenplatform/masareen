@@ -1,4 +1,4 @@
-# Third-Party Open Source Software Licenses — MASAREN Platform
+# Third-Party Open Source Software Licenses, MASAREN Platform
 
 > **Legal Template Notice:** This document is a template and must be reviewed, updated with accurate version numbers, and verified by qualified legal counsel. Version numbers marked `[x.x.x]` must be replaced with the actual pinned versions in use at each release.
 
@@ -475,7 +475,7 @@ These components are deployed as services in MASAREN's infrastructure stack.
 
 ### 4.6 Docker
 - **Version:** As deployed
-- **License:** Apache License 2.0 (Docker Engine open source) / Proprietary (Docker Desktop — not used in production)
+- **License:** Apache License 2.0 (Docker Engine open source) / Proprietary (Docker Desktop, not used in production)
 - **License URL:** https://github.com/moby/moby/blob/master/LICENSE
 - **Copyright:** Copyright © 2013–2026 Docker, Inc.
 - **Use in MASAREN:** Container runtime for packaging and deploying all MASAREN microservices.

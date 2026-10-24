@@ -1,4 +1,4 @@
-// MASAREN Web — FULL route-load E2E audit.
+// MASAREN Web, FULL route-load E2E audit.
 //
 // Serves the built SPA (apps/web/dist) and proxies /api/v1/* to the live
 // combined backend at :8080. Authenticates a real user, then drives a

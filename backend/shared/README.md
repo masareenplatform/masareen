@@ -1,4 +1,4 @@
-# MASAREEN Shared Kernel — Stage 2
+# MASAREEN Shared Kernel, Stage 2
 
 The Shared Kernel is the cross-cutting foundation imported by every microservice.
 It contains zero business logic. It defines contracts, not implementations.
@@ -14,12 +14,12 @@ It contains zero business logic. It defines contracts, not implementations.
 | `exceptions/` | Domain exception hierarchy |
 | `middleware/` | JWT auth, password hashing, RBAC dependency factories |
 | `utils/cqrs.py` | `CommandBus` + `QueryBus` (dispatcher pattern) |
-| `utils/kafka_producer.py` | `EventPublisher` — async Kafka wrapper |
-| `utils/kafka_consumer.py` | `EventConsumer` — abstract base consumer |
+| `utils/kafka_producer.py` | `EventPublisher`, async Kafka wrapper |
+| `utils/kafka_consumer.py` | `EventConsumer`, abstract base consumer |
 | `utils/outbox.py` | `OutboxWriter` + `OutboxRelay` (transactional outbox) |
 | `utils/logging.py` | Structured JSON logging via structlog |
-| `utils/health.py` | `HealthChecker` — composable health report builder |
-| `utils/app_factory.py` | `create_app()` — FastAPI factory with all standard middleware |
+| `utils/health.py` | `HealthChecker`, composable health report builder |
+| `utils/app_factory.py` | `create_app()`, FastAPI factory with all standard middleware |
 | `testing/` | Shared pytest fixtures (in-memory DB, mock publisher, helpers) |
 
 ## Usage in a Service
@@ -46,10 +46,10 @@ app.include_router(router, prefix="/api/v1")
 
 1. **No business logic** in the shared kernel
 2. **No imports** from specific services (no circular dependencies)
-3. **Every service** uses `create_app()` — never builds FastAPI from scratch
-4. **All DB sessions** go through `base_repository/db.py` — no raw connections
+3. **Every service** uses `create_app()`, never builds FastAPI from scratch
+4. **All DB sessions** go through `base_repository/db.py`, no raw connections
 5. **All events** transit through `OutboxWriter` inside transactions
-6. **All Kafka publishing** goes through `EventPublisher` — no direct aiokafka
+6. **All Kafka publishing** goes through `EventPublisher`, no direct aiokafka
 
 ---
 
@@ -63,10 +63,10 @@ This constraint has one architectural consequence:
 ### `utils/cloud_llm_client.py`
 
 Providers implemented:
-- `OpenAIClient` — GPT-4o (text + vision), text-embedding-3-small
-- `GoogleAIClient` — Gemini 1.5 Flash/Pro (text + vision), text-embedding-004
+- `OpenAIClient`, GPT-4o (text + vision), text-embedding-3-small
+- `GoogleAIClient`, Gemini 1.5 Flash/Pro (text + vision), text-embedding-004
 
-Factory: `build_llm_client(provider, api_key)` — reads from `AI_PROVIDER` and `CLOUD_API_KEY` env vars.
+Factory: `build_llm_client(provider, api_key)`, reads from `AI_PROVIDER` and `CLOUD_API_KEY` env vars.
 
 ### Kafka Broker (KRaft Mode)
 

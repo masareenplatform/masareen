@@ -7,7 +7,7 @@ sidebar_position: 3
 # Workflow & Verification Pipelines
 
 This is the heart of MASAREEN. If you read one page, read this one. It explains how an
-intention becomes verified impact — and exactly what a "pipeline" is under the hood.
+intention becomes verified impact, and exactly what a "pipeline" is under the hood.
 
 ## The end-to-end workflow
 
@@ -48,7 +48,7 @@ proximity. The candidate applies (`POST /api/v1/opportunities/{id}/apply`) or is
 Acceptance instantiates a **task** (`POST /api/v1/tasks/`).
 
 ### 3. Execution & evidence capture
-The assignee performs the work and captures **evidence** from the mobile app — a photo,
+The assignee performs the work and captures **evidence** from the mobile app, a photo,
 GPS coordinate, document, or audio note. Evidence is uploaded to a media slot
 (`POST /api/v1/media/upload-slot`) and recorded (`POST /evidence/`).
 
@@ -95,7 +95,7 @@ REJECTED
 Because trust is earned in stages. A pipeline lets you:
 
 - **Explain** a verdict ("approved after AI 0.91 + human review by auditor #42").
-- **Audit** who verified what, and when — critical for donors and regulators.
+- **Audit** who verified what, and when, critical for donors and regulators.
 - **Tune** thresholds per organization or opportunity type.
 - **Re-open** if new evidence arrives (a new submission can spawn a new pipeline).
 
@@ -116,7 +116,7 @@ When a pipeline reaches `VALIDATED`:
 For larger programs, MASAREEN has a dedicated **workflow engine**
 (`/api/v1/workflows/*`): templates define ordered steps; instantiating a template creates
 a workflow **instance** that can be `start`ed, `advance`d, `pause`d, or `cancel`ed. Programs
-(`/api/v1/programs/`) use this to orchestrate multi-organization, multi-task initiatives —
+(`/api/v1/programs/`) use this to orchestrate multi-organization, multi-task initiatives -
 e.g., a reforestation program = enroll → assign plots → capture per-plot evidence →
 aggregate → publish impact report.
 

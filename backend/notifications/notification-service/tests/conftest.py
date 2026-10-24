@@ -1,4 +1,4 @@
-"""pytest config for notification-service — backend root on sys.path for `shared`."""
+"""pytest config for notification-service, backend root on sys.path for `shared`."""
 import sys
 import os
 from unittest.mock import AsyncMock, MagicMock

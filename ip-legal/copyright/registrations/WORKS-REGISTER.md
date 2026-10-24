@@ -1,6 +1,6 @@
-# MASAREN — Copyrightable Works Register
+# MASAREN, Copyrightable Works Register
 
-> **Document Classification:** Confidential — Legal / Intellectual Property  
+> **Document Classification:** Confidential, Legal / Intellectual Property  
 > **Document ID:** MASAREN-CR-REG-001  
 > **Version:** 1.0  
 > **Last Updated:** August 11, 2026  
@@ -30,17 +30,17 @@ All works listed herein are owned exclusively by the **MASAREN Project** under t
 | **Type** | Category: Software / Documentation / UI-UX / Database / Infrastructure / Media / Marketing |
 | **Creation Date** | Date first fixed in tangible form |
 | **Path / Location** | Repository path or description |
-| **Primary Author** | Lead creator (placeholder — to be confirmed by HR/legal) |
+| **Primary Author** | Lead creator (placeholder, to be confirmed by HR/legal) |
 | **Status** | `ACTIVE` / `DEPRECATED` / `PENDING-REVIEW` |
 | **Reg. Number** | External registration number (TBD = not yet filed) |
 
 ---
 
-## CATEGORY 1 — Platform Source Code (Software)
+## CATEGORY 1, Platform Source Code (Software)
 
 | Work ID | Title | Type | Creation Date | Path | Primary Author | Status | Reg. Number |
 |---------|-------|------|---------------|------|----------------|--------|-------------|
-| MASAREN-CW-001 | MASAREN Platform — Complete Codebase (Compilation) | Software | 2026 | `/` (root) | MASAREN Team | ACTIVE | TBD |
+| MASAREN-CW-001 | MASAREN Platform, Complete Codebase (Compilation) | Software | 2026 | `/` (root) | MASAREN Team | ACTIVE | TBD |
 | MASAREN-CW-002 | Shared Kernel Library | Software | 2026 | `backend/shared/` | MASAREN Backend Team | ACTIVE | TBD |
 | MASAREN-CW-003 | Identity Service | Software | 2026 | `backend/identity/identity-service/` | MASAREN Backend Team | ACTIVE | TBD |
 | MASAREN-CW-004 | Authentication Service | Software | 2026 | `backend/identity/authentication-service/` | MASAREN Backend Team | ACTIVE | TBD |
@@ -92,7 +92,7 @@ All works listed herein are owned exclusively by the **MASAREN Project** under t
 
 ---
 
-## CATEGORY 2 — Frontend Applications (Software / UI-UX)
+## CATEGORY 2, Frontend Applications (Software / UI-UX)
 
 | Work ID | Title | Type | Creation Date | Path | Primary Author | Status | Reg. Number |
 |---------|-------|------|---------------|------|----------------|--------|-------------|
@@ -106,11 +106,11 @@ All works listed herein are owned exclusively by the **MASAREN Project** under t
 
 ---
 
-## CATEGORY 3 — Database Schemas (Database / Literary)
+## CATEGORY 3, Database Schemas (Database / Literary)
 
 | Work ID | Title | Type | Creation Date | Path | Primary Author | Status | Reg. Number |
 |---------|-------|------|---------------|------|----------------|--------|-------------|
-| MASAREN-CW-060 | PostgreSQL Database Schema — Complete (V001–V004+) | Database | 2026 | `infrastructure/databases/postgres/migrations/` | MASAREN Data Team | ACTIVE | TBD |
+| MASAREN-CW-060 | PostgreSQL Database Schema, Complete (V001–V004+) | Database | 2026 | `infrastructure/databases/postgres/migrations/` | MASAREN Data Team | ACTIVE | TBD |
 | MASAREN-CW-061 | Neo4j Knowledge Graph Schema | Database | 2026 | `infrastructure/databases/neo4j/` | MASAREN Data Team | ACTIVE | TBD |
 | MASAREN-CW-062 | Redis Cache Schema and Key Conventions | Database | 2026 | `infrastructure/databases/redis/` | MASAREN Data Team | ACTIVE | TBD |
 | MASAREN-CW-063 | OpenSearch Index Mappings | Database | 2026 | `infrastructure/databases/opensearch/` | MASAREN Data Team | ACTIVE | TBD |
@@ -118,7 +118,7 @@ All works listed herein are owned exclusively by the **MASAREN Project** under t
 
 ---
 
-## CATEGORY 4 — Technical Documentation (Documentation / Literary)
+## CATEGORY 4, Technical Documentation (Documentation / Literary)
 
 | Work ID | Title | Type | Creation Date | Path | Primary Author | Status | Reg. Number |
 |---------|-------|------|---------------|------|----------------|--------|-------------|
@@ -138,7 +138,7 @@ All works listed herein are owned exclusively by the **MASAREN Project** under t
 
 ---
 
-## CATEGORY 5 — Infrastructure as Code (Software / Literary)
+## CATEGORY 5, Infrastructure as Code (Software / Literary)
 
 | Work ID | Title | Type | Creation Date | Path | Primary Author | Status | Reg. Number |
 |---------|-------|------|---------------|------|----------------|--------|-------------|
@@ -154,7 +154,7 @@ All works listed herein are owned exclusively by the **MASAREN Project** under t
 
 ---
 
-## CATEGORY 6 — UI/UX Design Assets (UI-UX / Artistic)
+## CATEGORY 6, UI/UX Design Assets (UI-UX / Artistic)
 
 | Work ID | Title | Type | Creation Date | Path | Primary Author | Status | Reg. Number |
 |---------|-------|------|---------------|------|----------------|--------|-------------|
@@ -167,7 +167,7 @@ All works listed herein are owned exclusively by the **MASAREN Project** under t
 
 ---
 
-## CATEGORY 7 — Testing and Quality Assurance (Software)
+## CATEGORY 7, Testing and Quality Assurance (Software)
 
 | Work ID | Title | Type | Creation Date | Path | Primary Author | Status | Reg. Number |
 |---------|-------|------|---------------|------|----------------|--------|-------------|
@@ -179,7 +179,7 @@ All works listed herein are owned exclusively by the **MASAREN Project** under t
 
 ---
 
-## CATEGORY 8 — Marketing and Presentation Materials
+## CATEGORY 8, Marketing and Presentation Materials
 
 | Work ID | Title | Type | Creation Date | Path | Primary Author | Status | Reg. Number |
 |---------|-------|------|---------------|------|----------------|--------|-------------|
@@ -191,7 +191,7 @@ All works listed herein are owned exclusively by the **MASAREN Project** under t
 
 ---
 
-## CATEGORY 9 — Data and Analytical Works
+## CATEGORY 9, Data and Analytical Works
 
 | Work ID | Title | Type | Creation Date | Path | Primary Author | Status | Reg. Number |
 |---------|-------|------|---------------|------|----------------|--------|-------------|

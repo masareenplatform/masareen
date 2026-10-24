@@ -15,7 +15,7 @@ class PMSDimension:
 class ProofOfMissionScore:
     """
     Multidimensional reputation vector for individuals.
-    Weights are configurable — never hardcoded.
+    Weights are configurable, never hardcoded.
     """
     user_id: str
     dimensions: Dict[str, PMSDimension] = field(default_factory=dict)

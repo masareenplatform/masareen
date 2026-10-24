@@ -1,8 +1,8 @@
-"""Platform revenue repository — brokerage config + auditable profit ledger.
+"""Platform revenue repository, brokerage config + auditable profit ledger.
 
 Reads the global fee rate (shared.revenue) and aggregates the platform_revenue
 ledger so the admin panel can show profit margins. All amounts come straight
-from the append-only ledger — never estimated or fabricated.
+from the append-only ledger, never estimated or fabricated.
 """
 from __future__ import annotations
 from typing import List, Optional

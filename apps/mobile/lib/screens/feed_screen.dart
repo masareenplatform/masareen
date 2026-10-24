@@ -106,7 +106,7 @@ class FeedScreenState extends State<FeedScreen> {
       Post(
         id: '__int-1',
         author: Author(id: 'platform', name: 'MASAREEN', role: 'PLATFORM', verified: true),
-        text: 'Interview with Dr. Amira Hassan, founder of Green Hope Initiative: "Sustainability is not just about the environment — it is about creating lasting change for communities."',
+        text: 'Interview with Dr. Amira Hassan, founder of Green Hope Initiative: "Sustainability is not just about the environment, it is about creating lasting change for communities."',
         kind: 'interview',
         likes: 89,
         comments: 12,
@@ -277,7 +277,7 @@ class FeedScreenState extends State<FeedScreen> {
                           padding: const EdgeInsets.all(24),
                           child: Center(
                             child: Text(
-                              'No posts yet — be the first to share impact.',
+                              'No posts yet, be the first to share impact.',
                               style: TextStyle(color: cs.onSurfaceVariant),
                             ),
                           ),

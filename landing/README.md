@@ -1,8 +1,10 @@
+> **Deploy note:** the landing page is now served by the Cloudflare Worker in `../cloudflare` (free), together with the sign-up API and the CEO dashboard at `/admin.html`. The R2 steps below still work for a static-only copy, but sign-up, login tracking and the contact form need the Worker. See `../cloudflare/README.md`.
+
 # MASAREEN landing page (masareen.com)
 Static site: index.html + assets/ + favicon.ico. No build step.
 
 ## Deploy to R2
-1. ./upload-to-r2.sh <bucket>   (sets correct Content-Type — needed or the browser downloads index.html instead of rendering it)
+1. ./upload-to-r2.sh <bucket>   (sets correct Content-Type, needed or the browser downloads index.html instead of rendering it)
 2. R2 > bucket > Settings > Custom Domains > add masareen.com
 3. R2 custom domains do not serve index.html at "/" by default. Add a Cloudflare
    Transform Rule (Rewrite URL, path): when URI Path equals "/" -> rewrite to static "/index.html".

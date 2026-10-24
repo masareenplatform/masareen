@@ -45,7 +45,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       eyebrow: 'COMMUNITY',
       title: 'Stand out',
       subtitle: 'Collect badges. Build your reputation.',
-      body: 'Top Contributor, SDG Champion, 30-Day Streak — show the work and rise in the community.',
+      body: 'Top Contributor, SDG Champion, 30-Day Streak, show the work and rise in the community.',
       gradient: [const Color(0xFFF59E0B), const Color(0xFFEF4444)],
       visual: _BadgeVisual(),
     ),

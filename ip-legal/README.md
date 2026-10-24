@@ -1,6 +1,6 @@
 # MASAREN IP Legal Directory
 
-> **CONFIDENTIAL — PROPRIETARY**
+> **CONFIDENTIAL, PROPRIETARY**
 > This directory contains legally sensitive intellectual property materials belonging exclusively to MASAREN.
 > Unauthorized access, reproduction, or distribution is strictly prohibited and may result in civil and criminal liability.
 
@@ -8,7 +8,7 @@
 
 ## About MASAREN
 
-**MASAREN** (مسارين) — *Impact Infrastructure as a Service (IIaaS)*
+**MASAREN** (مسارين)، *Impact Infrastructure as a Service (IIaaS)*
 
 MASAREN is the world's first Impact Infrastructure Platform, converting every verified real-world field action into immutable, measurable, and economically valuable digital assets. Founded in 2026, MASAREN operates under the core principle:
 
@@ -73,7 +73,7 @@ The following proprietary innovations form the core of MASAREN's IP portfolio. E
 | **Organization Impact Index (OII)** | Patent, Trade Secret | Organizational-level impact scoring and ranking |
 | **Transactional Outbox + Event Sourcing Layer** | Copyright, Trade Secret | Distributed, audit-proof event architecture for immutable action records |
 | **Knowledge Graph Synthesis Engine** | Patent, Trade Secret | Neo4j-based graph engine linking actors, actions, outcomes, and assets |
-| **MASAREN Platform Software** | Copyright | 35+ microservices, Flutter app, React web dashboard — full codebase |
+| **MASAREN Platform Software** | Copyright | 35+ microservices, Flutter app, React web dashboard, full codebase |
 | **MASAREN Brand Identity** | Trademark | Name, logo, Arabic mark (مسارين), tagline, and visual identity system |
 
 ---
@@ -108,7 +108,7 @@ Any access by other parties requires written approval from the MASAREN General C
 
 ## Legal Counsel Contacts
 
-> *Placeholders — update with actual counsel information before distribution.*
+> *Placeholders, update with actual counsel information before distribution.*
 
 | Role | Name | Firm / Organization | Email | Phone |
 |------|------|-------------------|-------|-------|

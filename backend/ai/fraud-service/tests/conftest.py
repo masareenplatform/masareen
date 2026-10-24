@@ -1,4 +1,4 @@
-"""pytest config for fraud-service — adds backend root for `shared` imports."""
+"""pytest config for fraud-service, adds backend root for `shared` imports."""
 import sys
 import os
 

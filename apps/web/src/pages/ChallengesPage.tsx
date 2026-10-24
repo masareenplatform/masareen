@@ -99,7 +99,7 @@ export default function ChallengesPage() {
                   disabled={busy === c.id}
                   onClick={() => toggle(c)}
                 >
-                  {c.joined ? "Joined — tap to leave" : "Join challenge"}
+                  {c.joined ? "Joined, tap to leave" : "Join challenge"}
                 </button>
               </article>
             );

@@ -1,4 +1,4 @@
-"""Unit tests for the WalletRepository — real ledger logic with a mocked session."""
+"""Unit tests for the WalletRepository, real ledger logic with a mocked session."""
 from unittest.mock import MagicMock, AsyncMock
 import pytest
 

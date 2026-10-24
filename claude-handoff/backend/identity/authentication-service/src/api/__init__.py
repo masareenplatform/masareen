@@ -1,4 +1,4 @@
-"""Authentication service API router — wired to real JWT handlers."""
+"""Authentication service API router, wired to real JWT handlers."""
 from fastapi import APIRouter, Depends, Request, status
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional

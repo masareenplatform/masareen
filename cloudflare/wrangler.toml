@@ -1,0 +1,26 @@
+# MASAREEN on Cloudflare (all free tier): Worker API + D1 database + static landing page.
+name = "masareen"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+
+# The landing page is served by the same Worker (Workers Static Assets, free).
+[assets]
+directory = "../landing"
+binding = "ASSETS"
+run_worker_first = ["/api/*"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "masareen"
+database_id = "REPLACE_WITH_ID_FROM_wrangler_d1_create"
+
+[vars]
+# Public OAuth client ID from Google Cloud Console (APIs & Services > Credentials).
+GOOGLE_CLIENT_ID = ""
+# Comma separated Google emails allowed to open /admin.html (the CEO and team).
+ADMIN_EMAILS = "masareen.platform@gmail.com"
+
+# After the domain is on Cloudflare, uncomment to serve at masareen.com:
+# routes = [{ pattern = "masareen.com", custom_domain = true }]
+
+# Secret (never put in this file):  npx wrangler secret put SESSION_SECRET

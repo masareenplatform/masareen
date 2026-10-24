@@ -1,4 +1,4 @@
-// chatService — mock messenger backend with live updates via the realtime bus.
+// chatService, mock messenger backend with live updates via the realtime bus.
 // Swap the in-memory store for `apiClient` calls once a real chat service exists.
 
 import { realtime, TOPICS } from "./realtime";

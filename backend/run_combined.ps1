@@ -1,4 +1,4 @@
-# run_combined.ps1 — single clean MASAREN combined monolith on :8080.
+# run_combined.ps1, single clean MASAREN combined monolith on :8080.
 # Kills any existing combined.main processes, then starts ONE instance with
 # logs to backend/combined_run.log (tail it to watch: Get-Content combined_run.log -Wait).
 $root  = "C:\Users\sherifrashwan\Downloads\MASAREN-FINAL\MASAREN"
@@ -14,7 +14,7 @@ Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match 'combined\.
 Start-Sleep -Seconds 2
 
 # 2) Start one clean instance (cwd=backend so `combined`, `social`, `shared` import as top-level pkgs).
-#    Use Postgres (running locally) — several services use Postgres-only column types
+#    Use Postgres (running locally), several services use Postgres-only column types
 #    (e.g. ARRAY), which fail under the SQLite fallback and abort startup.
 $env:PYTHONPATH        = "."
 $env:DATABASE_URL      = "postgresql+asyncpg://masaren:masaren_password@localhost:5432/masaren"

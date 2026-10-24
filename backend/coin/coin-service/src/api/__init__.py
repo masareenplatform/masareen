@@ -1,8 +1,8 @@
-"""Coin / wallet API — MASAREEN Coin (MRC) wallet, transfers and EGP exchange.
+"""Coin / wallet API, MASAREEN Coin (MRC) wallet, transfers and EGP exchange.
 
 Every mutating endpoint requires a valid JWT (enforced by the gateway and re-checked
 here via ``make_auth_dependency``), and transfers/spend/withdraw require the caller to
-be the wallet owner (or an admin) — money movements are owner-scoped and transactional.
+be the wallet owner (or an admin), money movements are owner-scoped and transactional.
 """
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel

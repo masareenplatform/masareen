@@ -40,22 +40,22 @@ with the primary routes each exposes. (Full OpenAPI is served at `/openapi.json`
 | `ms_reputation` (portfolio) | `/api/v1/portfolio/{user_id}`, assets, certificates, impact-passport |
 | `ms_impact_score` | PMS scoring, `/api/v1/reputation/score` |
 | `ms_org_score` | OII, `/api/v1/oii/{org_id}` |
-| `ms_graph` | `/api/v1/graph/*` — networks, talent match, SDG contributors |
+| `ms_graph` | `/api/v1/graph/*`, networks, talent match, SDG contributors |
 
 ## Marketplace & Social
 | Service | Key routes |
 |--------|-----------|
 | `ms_marketplace` | `/api/v1/opportunities/*`, apply, publish |
-| `ms_matching` | `/api/v1/matching/*` — recommendations, feed |
+| `ms_matching` | `/api/v1/matching/*`, recommendations, feed |
 | `ms_posts` | `/api/v1/posts`, like/comment/save |
 | `ms_chat` | `/api/v1/chat/conversations`, messages |
-| `ms_partner` | `/api/v1/partners/*` — collaborations |
+| `ms_partner` | `/api/v1/partners/*`, collaborations |
 
 ## Reporting, Analytics & Forecast
 | Service | Key routes |
 |--------|-----------|
 | `ms_report` | `/api/v1/reports/generate`, purchase |
-| `ms_analytics` | `/api/v1/analytics/*` — platform/program/user/org/SDG stats |
+| `ms_analytics` | `/api/v1/analytics/*`, platform/program/user/org/SDG stats |
 | `ms_forecast` | `/api/v1/forecast/impact` |
 
 ## Economy (coins, billing, ads)
@@ -75,7 +75,7 @@ with the primary routes each exposes. (Full OpenAPI is served at `/openapi.json`
 ## Admin
 | Service | Key routes |
 |--------|-----------|
-| (admin) | `/admin/pending`, `/admin/approve` — moderation queue |
+| (admin) | `/admin/pending`, `/admin/approve`, moderation queue |
 
 ## Response envelope
 

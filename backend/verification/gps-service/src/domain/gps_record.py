@@ -109,7 +109,7 @@ class GPSRecord(AggregateRoot):
         self.status = GPSRecordStatus.VALIDATING
         self.uploaded_at = datetime.now(timezone.utc)
         self.updated_at = self.uploaded_at
-        # No specific upload event for GPS — LocationReached already emitted on capture
+        # No specific upload event for GPS, LocationReached already emitted on capture
         pass
 
     def submit_for_review(self) -> None:

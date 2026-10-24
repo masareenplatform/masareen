@@ -68,4 +68,4 @@ picks it from the queue and issues a verdict.
 ## If rejected
 
 Read the reason on the pipeline (`GET /api/v1/verification/pipelines/{id}`). Fix the issue
-(e.g., add GPS, clearer photo) and submit a new submission — a new pipeline runs.
+(e.g., add GPS, clearer photo) and submit a new submission, a new pipeline runs.

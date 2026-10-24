@@ -395,7 +395,7 @@ async def health_upstream():
 # A thin Backend-for-Frontend layer for the handful of dashboard views that need
 # data from more than one microservice in a single round-trip. Every value is
 # fetched live from a real service; if a dependency is unreachable the field is
-# reported as null with an explicit `degraded` flag — never fabricated.
+# reported as null with an explicit `degraded` flag, never fabricated.
 
 async def _svc_get(client: httpx.AsyncClient, service: str, path: str,
                    auth: str | None, params: dict | None = None):

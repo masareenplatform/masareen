@@ -1,4 +1,4 @@
-# run_native.ps1 — launch all MASAREN microservices natively (no Docker for the app).
+# run_native.ps1, launch all MASAREN microservices natively (no Docker for the app).
 # Infra (postgres/neo4j/redis/kafka) is assumed running via Docker containers.
 $ErrorActionPreference = "Continue"
 $root = "C:\Users\sherifrashwan\Downloads\MASAREN-FINAL\MASAREN"

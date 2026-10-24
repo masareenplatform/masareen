@@ -1,26 +1,26 @@
-# MASAREN — Agent Handoff (continuity for next agent)
+# MASAREN, Agent Handoff (continuity for next agent)
 
 _Last updated: 2026-07-12. Covers Stages 1–3 of the web+mobile social overhaul and the
 backend social-service, including wiring it into the combined (monolith) backend._
 
 ## Status
 
-- [x] **Stage 1 — Web social backbone** (done in prior session, verified: `tsc` clean + 9 vitest tests pass)
-- [x] **Stage 2 — Mobile (Flutter) parity** (done: `flutter analyze` zero errors)
-- [x] **Stage 3 — Backend wiring** — new `social-service` (posts/likes/comments/bookmarks) + gateway routing + dual-mode frontend integration
-- [x] **Stage 3b — Combined monolith parity** — social-service relocated so the combined backend (`backend/combined/main.py`) now serves `/api/v1/posts` like every other service
-- [x] **Stage 4 — Real-time (WebSocket fan-out)** — done 2026-07-12: added zero-dep
+- [x] **Stage 1, Web social backbone** (done in prior session, verified: `tsc` clean + 9 vitest tests pass)
+- [x] **Stage 2, Mobile (Flutter) parity** (done: `flutter analyze` zero errors)
+- [x] **Stage 3, Backend wiring**, new `social-service` (posts/likes/comments/bookmarks) + gateway routing + dual-mode frontend integration
+- [x] **Stage 3b, Combined monolith parity**, social-service relocated so the combined backend (`backend/combined/main.py`) now serves `/api/v1/posts` like every other service
+- [x] **Stage 4, Real-time (WebSocket fan-out)**, done 2026-07-12: added zero-dep
   `ws-server.mjs` broadcast hub (broadcast to others, no echo; REST `POST /publish`
   inject; `/health`), wired `VITE_WS_URL` (`.env.example` + web Dockerfile + compose
   `realtime` service), and made web `postService` merge remote POST_NEW/REACT/COMMENT
   into the store (id-deduped) so cross-user live feed actually renders.
-- [ ] Stage 5 — Polish (RTL QA, e2e) — **AUDITED 2026-07-12: pending; no empty/loading states, RTL QA, or e2e present.**
+- [ ] Stage 5, Polish (RTL QA, e2e), **AUDITED 2026-07-12: pending; no empty/loading states, RTL QA, or e2e present.**
 
 ## Audit (2026-07-12)
 
 Full audit written to `AUDIT_REPORT.md`. Headline: Stages 1–3 are **verified working
 end-to-end** (web `tsc` clean + 9/9 vitest; backend social-service + combined monolith exercised
-live via TestClient — GET/POST/like/save/saved/401 all correct; gateway `social` registry +
+live via TestClient, GET/POST/like/save/saved/401 all correct; gateway `social` registry +
 `/api/v1/posts` route present; mobile wiring contract-consistent).
 
 Findings (see AUDIT_REPORT.md §4):
@@ -29,7 +29,7 @@ Findings (see AUDIT_REPORT.md §4):
 - B (Low): `service.create_post` crashes if JWT has no `email` claim. Guard `token.email`.
 - C (Low): stale "no backend /posts" comments in web/mobile.
 - D (Medium): client-generated post/bookmark ids desync from server after backend sync.
-- E (Env): `github-gateway-sync` MCP is unauthenticated here — couldn't auto-file issues.
+- E (Env): `github-gateway-sync` MCP is unauthenticated here, couldn't auto-file issues.
 
 Resume next: implement `ws-server.mjs` broadcast hub + set `VITE_WS_URL` (Stage 4), then
 polish (Stage 5). Recommend committing verified Stage 1–3 before starting Stage 4.
@@ -38,19 +38,19 @@ polish (Stage 5). Recommend committing verified Stage 1–3 before starting Stag
 
 Location: `backend/social/posts-service/`  (NOTE: directory name is `posts-service`,
 the combined monolith already expected `("ms_posts","social/posts-service")` in its
-SERVICES list — do NOT rename back to `social_service`).
+SERVICES list, do NOT rename back to `social_service`).
 
 Files:
-- `src/main.py` — `create_app` + `include_router(router, prefix="/api/v1")`, `on_startup=[init_db]`
-- `src/db.py` — async engine. **Uses the SHARED `Base`** (`shared.base_repository.db.Base`)
+- `src/main.py`, `create_app` + `include_router(router, prefix="/api/v1")`, `on_startup=[init_db]`
+- `src/db.py`, async engine. **Uses the SHARED `Base`** (`shared.base_repository.db.Base`)
   so the combined monolith's `Base.metadata.create_all` provisions posts/likes/bookmarks
   tables on the one shared DB. `DATABASE_URL` env is honored (Postgres in combined),
   falling back to local SQLite (`social.db`) for standalone dev.
-- `src/orm.py` — `PostORM`, `LikeORM`, `BookmarkORM`
-- `src/service.py` — ranking (mirrors web `rankScore`), CRUD, like/comment/save
+- `src/orm.py`, `PostORM`, `LikeORM`, `BookmarkORM`
+- `src/service.py`, ranking (mirrors web `rankScore`), CRUD, like/comment/save
 - `src/schemas.py`, `src/security.py` (JWT via `shared.middleware.make_auth_dependency`)
-- `src/seed.py` — demo posts (runs only in standalone `init_db`, not in combined)
-- `src/api/__init__.py` — router, prefix `/posts`
+- `src/seed.py`, demo posts (runs only in standalone `init_db`, not in combined)
+- `src/api/__init__.py`, router, prefix `/posts`
 
 Endpoints (all require Bearer JWT; envelope `{success,data}`):
 `GET/POST /api/v1/posts`, `GET /api/v1/posts/saved`, `GET /api/v1/posts/{id}`,
@@ -82,12 +82,12 @@ Gateway (`backend/gateway/src/main.py`) now has `"social"` in SERVICE_REGISTRY a
 
 ## Frontend wiring (graceful degradation)
 
-- `apps/web/src/services/postService.ts` — `list()` background-syncs from `/posts`;
+- `apps/web/src/services/postService.ts`, `list()` background-syncs from `/posts`;
   `create`/`toggleLike`/`toggleSave` also hit the backend best-effort. Local seed is
   the offline fallback, so the demo works with no backend running.
-- `apps/mobile/lib/features/feed/bookmark_store.dart` — `toggleSave` also calls
+- `apps/mobile/lib/features/feed/bookmark_store.dart`, `toggleSave` also calls
   `ApiService.savePost(id)` best-effort; local `shared_preferences` stays source of truth.
-- `apps/mobile/lib/services/api_service.dart` — added `savePost(postId)`, `getSavedPosts()`.
+- `apps/mobile/lib/services/api_service.dart`, added `savePost(postId)`, `getSavedPosts()`.
 
 Other Stage-2 mobile files (all compiling, zero `flutter analyze` errors):
 `apps/mobile/lib/features/feed/widgets/profile_card.dart`,
@@ -117,20 +117,20 @@ feed filter chips (For You / Saved), app-bar search + notifications bell in
 
 ## 2026-07-12 session continuation (see AGENT_HANDOFF_2026-07-12.md)
 - Combined monolith is THE test backend on :8080. Restart via
-  `backend/run_combined.ps1` (now sets `DATABASE_URL=postgres` — required; SQLite
+  `backend/run_combined.ps1` (now sets `DATABASE_URL=postgres`, required; SQLite
   fallback crashes on ARRAY columns and aborts startup). Logs: `backend/combined_run.log`.
 - E2E login creds fixed: `admin@masaren.org` / `Masaren@1234` (registered + set
   ACTIVE/verified in Postgres; old `password` rejected by new auth policy). `login.yaml` updated.
 - Stage 4 DONE (ws-server.mjs + backend→hub publish + web store merge).
 - Onboarding 1st-screen image fix applied in `onboarding_screen.dart` (_HeroVisual robust
-  layout + errorBuilder) — needs `flutter build apk` + reinstall to verify on emulator.
+  layout + errorBuilder), needs `flutter build apk` + reinstall to verify on emulator.
 - Full audit in `AUDIT_REPORT.md`. github-gateway-sync MCP unauthenticated here.
 
 
 ---
 
 # ══════════════════════════════════════════════════════════════════════════════
-# SESSION APPENDIX — 2026-07-12 (glassmorphism redesign + Home-feed data fix)
+# SESSION APPENDIX, 2026-07-12 (glassmorphism redesign + Home-feed data fix)
 # ══════════════════════════════════════════════════════════════════════════════
 # This session built a LIGHT glassmorphism + glow design system and fixed the
 # mobile Home feed so it actually shows ranked posts. Everything is verified
@@ -146,15 +146,15 @@ feed filter chips (For You / Saved), app-bar search + notifications bell in
     `brandBackdrop(colors)`, `glassRadius` (26).
   - Removed the two OLD `glass` / `glassGreen` getters (replaced by the new
     frosted-glass versions) to avoid duplicate-definition errors.
-- `apps/mobile/lib/core/widgets/glass.dart` — new `GlassContainer` widget
+- `apps/mobile/lib/core/widgets/glass.dart`, new `GlassContainer` widget
   (ClipRRect + BackdropFilter blur + frosted decoration + glow). Reusable.
 - `apps/mobile/lib/features/onboarding/screens/onboarding_screen.dart`
-  — FULL glass + glow redesign: brand-gradient backdrop with ambient glow
+  - FULL glass + glow redesign: brand-gradient backdrop with ambient glow
   blobs, frosted-glass content/visual cards, glowing gradient CTA buttons,
   glass page dots + Skip chip. (audit_splash_onboarding.yaml PASSES.)
 - Shell: `social_app_bar.dart` (glass app bar), `app_shell.dart` (floating glass
   bottom nav), `app_menu_sheet.dart` + `compose_sheet.dart` (glass sheets).
-- `apps/mobile/lib/features/feed/screens/feed_screen.dart` — `_PostCard` now
+- `apps/mobile/lib/features/feed/screens/feed_screen.dart`, `_PostCard` now
   renders as a `GlassContainer` glass card.
 - Central screens (feed/search/dashboard/settings/notifications) switched
   their background to `MasarenTheme.glassBackground`.
@@ -162,19 +162,19 @@ feed filter chips (For You / Saved), app-bar search + notifications bell in
   `prefer_const` hints remain).
 
 ### B. Home feed now shows real, ranked posts (was empty)
-Root cause: `getFeed` called `/matching/feed` — the GRAPH/Neo4j "Explore"
-endpoint — which 422s / needs Neo4j. The Home feed must use the posts
+Root cause: `getFeed` called `/matching/feed`, the GRAPH/Neo4j "Explore"
+endpoint, which 422s / needs Neo4j. The Home feed must use the posts
 ranking service instead.
-- `apps/mobile/lib/services/api_service.dart` — `getFeed` now calls `/posts`
+- `apps/mobile/lib/services/api_service.dart`, `getFeed` now calls `/posts`
   (envelope `data` is unwrapped by the existing response interceptor).
-- `apps/mobile/lib/features/feed/feed_store.dart` — `load()` maps the
+- `apps/mobile/lib/features/feed/feed_store.dart`, `load()` maps the
   social-service post shape → PostCard shape (creator/creatorId/creatorAvatar,
   caption+content from `text`, score=confidence, type defaults to TEXT).
 - Backend `backend/social/posts-service/src/`:
-  - `orm.py` — added `confidence` Float column.
-  - `service.py` `to_dict` — now emits `type` (derived from media[0].type),
+  - `orm.py`, added `confidence` Float column.
+  - `service.py` `to_dict`, now emits `type` (derived from media[0].type),
     `content_url`/`url`, `confidence`.
-  - `seed.py` — expanded to 13 posts across ALL types: TEXT (story/impact/
+  - `seed.py`, expanded to 13 posts across ALL types: TEXT (story/impact/
     program/evidence), IMAGE, VIDEO, AUDIO, ARTICLE, LINK, with `confidence`
     and `media` items `{type, url, ...}`. Web `PostCard` already renders
     `media` as `{type,url}` so this stays web-compatible.
@@ -224,7 +224,7 @@ Docker + emulator + backend all die on restart. Bring them back in order:
   relaunch + reinstall.
 - `flutter build apk --release` from apps/mobile. If the flutter wrapper says
   "Gradle build failed to produce an .apk file", run
-  `android\gradlew.bat assembleRelease` directly — it BUILDS SUCCESSFULLY.
+  `android\gradlew.bat assembleRelease` directly, it BUILDS SUCCESSFULLY.
 - `android/gradle.properties` was tuned for this box: daemon=false,
   -Xmx1024m, -XX:MaxMetaspaceSize=256m. Revert if more RAM is available.
 
@@ -241,7 +241,7 @@ Docker + emulator + backend all die on restart. Bring them back in order:
   _verify_compose.yaml, _verify_feed.yaml.
 
 ## 5. Still OPEN (carry-over Stage 5 from original handoff)
-- Explore tab still hits `/matching/feed` (graph/Neo4j) — needs
+- Explore tab still hits `/matching/feed` (graph/Neo4j), needs
   `docker compose up -d neo4j` to return a personalized feed; not needed for Home.
 - Empty/loading states, RTL (Arabic) QA, accessibility, and the full 14-flow
   e2e audit are still pending.

@@ -142,7 +142,7 @@ export default function WalletPage() {
         <div className="glass-card">
           <p className="text-white/60 text-sm">Exchange rate</p>
           <p className="text-2xl font-bold text-white">
-            1 {currency} = {rateToMrc || "—"} MRC
+            1 {currency} = {rateToMrc || "-"} MRC
           </p>
           {rate?.updated_at && (
             <p className="text-xs text-white/40 mt-1">Updated {rate.updated_at}</p>
@@ -150,7 +150,7 @@ export default function WalletPage() {
         </div>
         <div className="glass-card">
           <p className="text-white/60 text-sm">Owner ID</p>
-          <p className="text-sm font-mono text-white break-all">{meId || "—"}</p>
+          <p className="text-sm font-mono text-white break-all">{meId || "-"}</p>
         </div>
       </div>
 
@@ -291,21 +291,21 @@ export default function WalletPage() {
               <tbody>
                 {txns.map((tx: any, i: number) => (
                   <tr key={tx.id ?? i} className="border-t border-white/10 text-white/80">
-                    <td className="py-2 pr-4">{tx.type ?? "—"}</td>
+                    <td className="py-2 pr-4">{tx.type ?? "-"}</td>
                     <td
                       className={`py-2 pr-4 ${
                         Number(tx.delta) < 0 ? "text-rose-300" : "text-emerald-300"
                       }`}
                     >
-                      {tx.delta != null ? Number(tx.delta).toFixed(2) : "—"}
+                      {tx.delta != null ? Number(tx.delta).toFixed(2) : "-"}
                     </td>
                     <td className="py-2 pr-4">
-                      {tx.balance != null ? Number(tx.balance).toFixed(2) : "—"}
+                      {tx.balance != null ? Number(tx.balance).toFixed(2) : "-"}
                     </td>
                     <td className="py-2 pr-4 font-mono text-xs text-white/50">
-                      {tx.reference ?? "—"}
+                      {tx.reference ?? "-"}
                     </td>
-                    <td className="py-2 pr-4 text-white/50">{tx.created_at ?? "—"}</td>
+                    <td className="py-2 pr-4 text-white/50">{tx.created_at ?? "-"}</td>
                   </tr>
                 ))}
               </tbody>

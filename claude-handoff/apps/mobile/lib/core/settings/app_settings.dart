@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// App-wide user preferences (theme, haptics, sound) persisted on-device.
 ///
 /// Exposes [ValueNotifier]s so the widget tree can react instantly while the
-/// values are durably stored in [SharedPreferences] — this is what makes the
+/// values are durably stored in [SharedPreferences], this is what makes the
 /// light/dark switch and the reaction feedback toggles survive app restarts.
 class AppSettings {
   static const String _kTheme = 'pref.theme_mode';

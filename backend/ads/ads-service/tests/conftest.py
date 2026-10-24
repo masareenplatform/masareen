@@ -1,4 +1,4 @@
-"""Shared pytest configuration — backend root + service root on sys.path + async session fixture."""
+"""Shared pytest configuration, backend root + service root on sys.path + async session fixture."""
 import sys
 import os
 from unittest.mock import AsyncMock

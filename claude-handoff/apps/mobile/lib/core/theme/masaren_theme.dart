@@ -32,7 +32,7 @@ class MasarenTheme {
   static const Color like    = Color(0xFFE25555); // like / favorite
 
   /// Light signature background: a soft white → cool-white vertical wash.
-  /// (No dark navy — keeps the whole app bright per the Android design standard.)
+  /// (No dark navy, keeps the whole app bright per the Android design standard.)
   static BoxDecoration get background => const BoxDecoration(
     gradient: LinearGradient(
       begin: Alignment.topCenter,

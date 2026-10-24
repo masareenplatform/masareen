@@ -1,4 +1,4 @@
-// MASAREN Mobile — end-to-end integration audit (runs on the emulator).
+// MASAREN Mobile, end-to-end integration audit (runs on the emulator).
 //
 // Walks the FULL social app against the mock gateway
 // (testing/mobile/mock_gateway.mjs, reachable from the emulator at
@@ -108,7 +108,7 @@ void main() {
 
   testWidgets('e2e: wallet convert applies the platform brokerage fee', (tester) async {
     await _login(tester);
-    // Navigate into the wallet (no pop back — we act on this screen next).
+    // Navigate into the wallet (no pop back, we act on this screen next).
     await tester.tap(find.byIcon(Icons.menu_rounded));
     await tester.pumpAndSettle();
     await tester.tap(find.text('MASAREN Coin'));

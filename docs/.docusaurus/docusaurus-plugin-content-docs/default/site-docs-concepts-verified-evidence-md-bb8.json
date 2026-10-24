@@ -1,6 +1,6 @@
 {
   "id": "concepts/verified-evidence",
-  "title": "Verified Evidence — What It Actually Is",
+  "title": "Verified Evidence, What It Actually Is",
   "description": "\"Verified evidence\" is the central noun of MASAREEN. This page defines it precisely,",
   "source": "@site/docs/concepts/verified-evidence.md",
   "sourceDirName": "concepts",
@@ -14,7 +14,7 @@
   "sidebarPosition": 4,
   "frontMatter": {
     "id": "verified-evidence",
-    "title": "Verified Evidence — What It Actually Is",
+    "title": "Verified Evidence, What It Actually Is",
     "sidebar_position": 4
   },
   "sidebar": "concepts",

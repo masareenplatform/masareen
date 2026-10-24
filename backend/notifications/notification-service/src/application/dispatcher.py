@@ -2,7 +2,7 @@
 
 Pure delivery component: it selects channels and sends via real providers
 (FCM / SMTP). Persistence is handled by the caller (via ``NotificationRepository``)
-— the dispatcher does not fabricate or double-write records. A channel is only
+- the dispatcher does not fabricate or double-write records. A channel is only
 attempted when a real recipient token/address is supplied.
 """
 from typing import Any, Dict, Optional, Tuple

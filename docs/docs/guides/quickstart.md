@@ -18,7 +18,7 @@ install the Android app from the landing page download link.
 - Click **Create an account** (web) or open the app and tap **Create an account**.
 - Enter email, full name, phone, password. Pick `INDIVIDUAL` and audience
   `PROFESSIONAL` (or `VOLUNTEER`).
-- With the demo config, your account is **auto-verified** — you can sign in right away.
+- With the demo config, your account is **auto-verified**, you can sign in right away.
 
 Demo accounts (already created):
 

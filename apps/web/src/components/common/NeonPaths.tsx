@@ -3,7 +3,7 @@ import * as THREE from "three";
 
 /* Full-width cyberpunk neon convergence.
    Two neon streams (cyan + magenta) race from opposite edges across a dark
-   grid horizon, meet and collide in a burst of light at the centre — the
+   grid horizon, meet and collide in a burst of light at the centre, the
    moment two paths of impact become one verified truth. */
 export default function NeonPaths({ height = 420 }: { height?: number }) {
   const mountRef = useRef<HTMLDivElement | null>(null);

@@ -1,4 +1,4 @@
-"""Real opportunity repository — persists and queries opportunities and
+"""Real opportunity repository, persists and queries opportunities and
 applications against the `opportunities` / `opportunity_applications` tables.
 """
 from __future__ import annotations

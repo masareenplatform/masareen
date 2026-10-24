@@ -31,7 +31,7 @@ class DashboardScreen extends StatelessWidget {
             final pms = (stats['pms'] as Map<String, dynamic>?) ?? {};
             final fullName = me['full_name']?.toString() ?? 'Builder';
             final composite = ((pms['composite_score'] as num?) ?? 0) * 100;
-            final tier = (pms['tier']?.toString() ?? '—').toUpperCase();
+            final tier = (pms['tier']?.toString() ?? '-').toUpperCase();
 
             return Padding(
               padding: const EdgeInsets.all(16),

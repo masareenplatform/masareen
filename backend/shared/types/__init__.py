@@ -1,6 +1,6 @@
 """Shared domain types used across MASAREN bounded contexts.
 
-These are lightweight value objects and type aliases — not ORM models or API schemas.
+These are lightweight value objects and type aliases, not ORM models or API schemas.
 """
 from __future__ import annotations
 

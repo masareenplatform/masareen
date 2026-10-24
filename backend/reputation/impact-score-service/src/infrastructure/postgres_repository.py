@@ -1,4 +1,4 @@
-"""Real PMS repository — persists Proof-of-Mission-Score snapshots to PostgreSQL.
+"""Real PMS repository, persists Proof-of-Mission-Score snapshots to PostgreSQL.
 
 Writes to the canonical ``pms_scores`` table (migration V004) so that downstream
 consumers (portfolio-service, graph-service) read a single source of truth.

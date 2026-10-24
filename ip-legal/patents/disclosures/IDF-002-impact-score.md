@@ -1,9 +1,9 @@
 # INVENTION DISCLOSURE FORM (IDF)
 
 **ID:** IDF-002
-**Title:** Impact Score Algorithm (ISA) — Multi-Dimensional Scoring Engine for Quantifying Real-World Impact
+**Title:** Impact Score Algorithm (ISA), Multi-Dimensional Scoring Engine for Quantifying Real-World Impact
 **Date:** August 11, 2026
-**Classification:** CONFIDENTIAL — PROPRIETARY
+**Classification:** CONFIDENTIAL, PROPRIETARY
 **Status:** 🔴 Draft
 
 ---

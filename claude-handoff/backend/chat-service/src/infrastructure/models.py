@@ -2,7 +2,7 @@
 
 Real persistence: conversations group messages; every message is stored with its
 role (user | assistant | system) and the optional evidence/task context it was
-produced for. No chat content is ever fabricated — assistant replies come from the
+produced for. No chat content is ever fabricated, assistant replies come from the
 configured cloud LLM, or an honest "unavailable" message when not configured.
 """
 from __future__ import annotations

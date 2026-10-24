@@ -1,5 +1,5 @@
 /**
- * MASAREN E2E — UI / UX interactions
+ * MASAREN E2E, UI / UX interactions
  *
  * Covers:
  *  - Navigation sidebar and bottom-nav links
@@ -83,7 +83,7 @@ test("feed filter tabs are clickable", async ({ authedPage: page, BASE }) => {
   await page.screenshot({ path: "e2e-screenshots/feed-filters.png" });
 });
 
-// ── 4. Mobile viewport — bottom nav and responsive layout ────────────────────
+// ── 4. Mobile viewport, bottom nav and responsive layout ────────────────────
 test("mobile viewport shows bottom navigation", async ({ authedPage: page, BASE }) => {
   await page.setViewportSize({ width: 375, height: 812 });
   await page.goto(BASE + "/feed");
@@ -216,7 +216,7 @@ test("client-side navigation works between pages", async ({
     await page.waitForTimeout(1000);
   }
 
-  // Accept either /dashboard or /feed as the "home" landing — the app routes
+  // Accept either /dashboard or /feed as the "home" landing, the app routes
   // authenticated users to /feed when clicking "Home" in the sidebar.
   const finalUrl = page.url();
   expect(
@@ -242,7 +242,7 @@ test("compose area / new post button is accessible", async ({
   ).first();
 
   const hasCompose = await composeEl.count() > 0;
-  // Not all views show compose — just ensure feed loads
+  // Not all views show compose, just ensure feed loads
   expect(page.url().includes("/feed"), "Should be on feed page").toBeTruthy();
 
   await page.screenshot({ path: "e2e-screenshots/compose.png" });

@@ -4,7 +4,7 @@
 - [x] **Zero-Mock Audit**: Comprehensive codebase audit performed; zero production-level mocks, stubs, or simulated data layers remaining.
 - [x] **Code Quality Audit**: System-wide check for `print` statements and `NotImplementedError` in core business logic completed.
 - [ ] All secrets rotated and stored in K8s secrets (not ConfigMaps)
-- [ ] `.env` never committed — verify with `git log --all -- .env`
+- [ ] `.env` never committed, verify with `git log --all -- .env`
 - [ ] Neo4j constraints migration applied on production cluster
 - [ ] SDG seed nodes loaded
 - [ ] Kafka topics pre-created (run `kafka/topics/event_catalog.yaml`)

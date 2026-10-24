@@ -1,5 +1,5 @@
 """
-Fraud Detection Agent — analyses spatial-temporal anomalies.
+Fraud Detection Agent, analyses spatial-temporal anomalies.
 
 Detects: GPS spoofing, duplicate photo hashes across profiles,
 timeline manipulation, impossible travel, coordinated fraud patterns.
@@ -92,7 +92,7 @@ class FraudDetectionAgent(EventConsumer):
         if accuracy > 100:
             anomalies.append(f"Low GPS accuracy: {accuracy}m (threshold: 100m)")
         if lat == 0.0 and lon == 0.0:
-            anomalies.append("GPS coordinates are (0,0) — likely null/default value")
+            anomalies.append("GPS coordinates are (0,0), likely null/default value")
 
         if not anomalies:
             return  # No local anomalies detected
@@ -117,7 +117,7 @@ class FraudDetectionAgent(EventConsumer):
 
         anomalies: List[str] = []
         if not checksum:
-            anomalies.append("Missing content checksum — cannot verify uniqueness")
+            anomalies.append("Missing content checksum, cannot verify uniqueness")
 
         if not anomalies:
             return
@@ -159,7 +159,7 @@ class FraudDetectionAgent(EventConsumer):
                 fraud_type=result.get("fraud_type"),
                 risk_score=result.get("risk_score"),
             )
-            # Emit fraud detected event — downstream services handle suspension/escalation
+            # Emit fraud detected event, downstream services handle suspension/escalation
             from shared.events import DomainEvent
             from dataclasses import dataclass
 

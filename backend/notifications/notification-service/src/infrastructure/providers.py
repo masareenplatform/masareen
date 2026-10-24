@@ -5,7 +5,7 @@ Real integrations only:
 - ``EmailProvider`` → SMTP (any provider: SendGrid/Mailgun/SES/self-hosted).
 
 Neither provider fabricates a delivery receipt. If a provider is not configured
-(missing key/host) it returns ``False`` and logs — it never claims a fake success.
+(missing key/host) it returns ``False`` and logs, it never claims a fake success.
 """
 import asyncio
 import os
@@ -33,13 +33,13 @@ class FCMProvider(NotificationProvider):
     only supported API since Google decommissioned the legacy
     ``/fcm/send`` server-key endpoint in June 2024. Configuration (env):
 
-    - ``FCM_SERVICE_ACCOUNT_FILE`` (or ``GOOGLE_APPLICATION_CREDENTIALS``) — path
+    - ``FCM_SERVICE_ACCOUNT_FILE`` (or ``GOOGLE_APPLICATION_CREDENTIALS``), path
       to the Firebase service-account JSON, and
-    - ``FCM_PROJECT_ID`` — the Firebase project id.
+    - ``FCM_PROJECT_ID``, the Firebase project id.
 
     If a v1 service account is not configured but a legacy server key *is*
     provided (``api_key``), the legacy endpoint is attempted as a fallback. When
-    nothing is configured the provider returns ``False`` and logs — it never
+    nothing is configured the provider returns ``False`` and logs, it never
     fabricates a delivery receipt.
     """
 

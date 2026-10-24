@@ -1,4 +1,4 @@
-"""Forecast engine — real, deterministic time-series projection.
+"""Forecast engine, real, deterministic time-series projection.
 
 No ML/LLM magic: given a series of historical monthly impact values we
 fit a simple ordinary-least-squares linear trend and project it forward.

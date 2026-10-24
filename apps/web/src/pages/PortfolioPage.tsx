@@ -16,7 +16,7 @@ export default function PortfolioPage() {
     portfolioService.forUser(user.id).then(setData).catch(() => setData(null));
   }, [user?.id]);
 
-  const n = (v?: number) => (typeof v === "number" ? v.toLocaleString() : "—");
+  const n = (v?: number) => (typeof v === "number" ? v.toLocaleString() : "-");
 
   return (
     <div>

@@ -1,5 +1,5 @@
 name: masaren
-description: MASAREN — Impact Infrastructure Platform mobile app
+description: MASAREN, Impact Infrastructure Platform mobile app
 version: 0.1.0+1
 publish_to: none
 
@@ -30,7 +30,7 @@ dependencies:
   qr_flutter: ^4.1.0
   # Elegant typography (Cairo for Arabic / Latin)
   google_fonts: ^6.1.0
-  # Local notifications (push via FCM is an optional follow-up — see docs)
+  # Local notifications (push via FCM is an optional follow-up, see docs)
   flutter_local_notifications: ^17.0.0
   # Utilities
   get_it: 7.6.9          # DI (pinned: 7.7.0 removed the top-level `getIt` accessor used app-wide)

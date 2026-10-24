@@ -24,7 +24,7 @@ Impact measurement systems today suffer from several fundamental limitations:
 
 2. **Static Weights:** Domain weights are set manually by experts and never updated, even when outcomes differ from projections.
 
-3. **No Geographic Adjustment:** The same action (e.g., building a well) has vastly different value depending on where it occurs—a fact that current scoring systems ignore.
+3. **No Geographic Adjustment:** The same action (e.g., building a well) has vastly different value depending on where it occurs-a fact that current scoring systems ignore.
 
 4. **No New Actor Incentive:** New participants have no mechanism to bootstrap trust or attract attention in a system dominated by established actors.
 
@@ -65,7 +65,7 @@ Where:
 ### Key Inventive Concepts
 
 a) **Domain-Specific Temporal Decay Functions**
-- Environmental: Exponential decay `exp(-λ × t)` (slow decay—environmental impact persists)
+- Environmental: Exponential decay `exp(-λ × t)` (slow decay-environmental impact persists)
 - Social: Quadratic decay `1 - (t/T_max)²` (social impact fades moderately)
 - Governance: Sigmoid `sigmoid(k × (t - t_half))` (sudden policy changes)
 
@@ -297,13 +297,13 @@ def cross_domain_consistency(self, action_metrics: dict) -> float:
 
 ## ABSTRACT
 
-A multi-dimensional impact scoring algorithm that quantifies real-world impact across six domains—environmental, social, economic, governance, educational, and infrastructure. Each domain contains 3–7 metrics with learnable weights that are dynamically updated via reinforcement learning based on outcome feedback. The algorithm applies domain-specific temporal decay functions, geographic vulnerability adjustment, and actor normalization with a new-participant incentive boost. Cross-domain consistency is enforced through a variance penalty. The final normalized score maps directly to blockchain-backed digital asset value tiers.
+A multi-dimensional impact scoring algorithm that quantifies real-world impact across six domains-environmental, social, economic, governance, educational, and infrastructure. Each domain contains 3–7 metrics with learnable weights that are dynamically updated via reinforcement learning based on outcome feedback. The algorithm applies domain-specific temporal decay functions, geographic vulnerability adjustment, and actor normalization with a new-participant incentive boost. Cross-domain consistency is enforced through a variance penalty. The final normalized score maps directly to blockchain-backed digital asset value tiers.
 
 ---
 
 **Filed:** August 11, 2026
 **Inventors:** MASAREN Engineering Team
 **Attorney:** [To be assigned]
-**Classification:** CONFIDENTIAL — PROPRIETARY
+**Classification:** CONFIDENTIAL, PROPRIETARY
 
 *This is a provisional patent application drafted for internal use pending formal attorney review and USPTO filing.*

@@ -1,4 +1,4 @@
--- MASAREN Coin (MRC) — in-app token wallet, immutable ledger, EGP exchange
+-- MASAREN Coin (MRC), in-app token wallet, immutable ledger, EGP exchange
 -- Migration V012
 -- A single authoritative coin per owner, an append-only transaction ledger so any
 -- balance is reconstructable, and admin-managed fiat (EGP) exchange rates. All

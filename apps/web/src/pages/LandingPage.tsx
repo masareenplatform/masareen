@@ -40,7 +40,7 @@ function Counter({ end, suffix = "", label, icon: Icon, dark = false, decimals =
   );
 }
 
-/* ── top nav (public) — white inverted logo overlaid on dark bar ─────────── */
+/* ── top nav (public), white inverted logo overlaid on dark bar ─────────── */
 
 function Nav() {
   const { isAuthenticated, user } = useAuth();
@@ -115,7 +115,7 @@ function Hero({ onEmail, email, setEmail, sent, reqError }: any) {
           </h1>
           <p className="text-white-soft mt-5 max-w-md text-lg">
             MASAREEN is the verified-impact network where NGOs, governments and communities turn
-            real-world work into trusted, measurable proof — backed by POAI verification.
+            real-world work into trusted, measurable proof, backed by POAI verification.
           </p>
           <form className="mt-7 flex max-w-md flex-col gap-2 sm:flex-row" onSubmit={(e) => { e.preventDefault(); onEmail(); }}>
             <input className="glass-input !bg-white/10 !border-white/20 !text-white placeholder-white/50" placeholder="you@organization.org" value={email} onChange={(e) => setEmail(e.target.value)} type="email" required />
@@ -129,7 +129,7 @@ function Hero({ onEmail, email, setEmail, sent, reqError }: any) {
             </div>
             <div className="mt-3"><GoogleAuth mode="register" /></div>
           </div>
-          {sent && <p className="mt-2 text-sm font-medium text-emerald-300">You're on the list — your alpha account is ready. 🎉</p>}
+          {sent && <p className="mt-2 text-sm font-medium text-emerald-300">You're on the list, your alpha account is ready. 🎉</p>}
           {reqError && <p className="mt-2 text-sm font-medium text-rose-300">{reqError}</p>}
           <div className="mt-6 flex flex-wrap items-center gap-3">
             <StackedAvatars names={["amira.s","yusuf.a","lina.f","omar.t","sara.n","khaled.h"]} size={32} />
@@ -200,7 +200,7 @@ function Features() {
         <Reveal className="max-w-2xl">
           <span className="eyebrow text-white/80"><IconSparkles size={14} /> The platform</span>
           <h2 className="hero-tracking mt-4 font-display text-4xl font-extrabold text-white sm:text-5xl">Everything impact teams need, in one place</h2>
-          <p className="text-white-soft mt-3 text-lg">Social, verified and measurable — built for the people actually doing the work.</p>
+          <p className="text-white-soft mt-3 text-lg">Social, verified and measurable, built for the people actually doing the work.</p>
         </Reveal>
         <div className="bento mt-12">
           {BENTO.map((f, i) => (
@@ -216,12 +216,12 @@ function Features() {
   );
 }
 
-/* ── tabbed explorer (dark) — fixed contrast ──────────────────────────────── */
+/* ── tabbed explorer (dark), fixed contrast ──────────────────────────────── */
 
 const TABS = [
-  { key: "verify", label: "Verify", icon: IconShield, title: "POAI verification, end to end", body: "Submit an outcome. Our pipeline scores evidence, runs an audit trail and stamps it POAI-verified — so funders see proof, not promises.", points: ["Geo-tagged evidence", "Auditable audit trail", "Tamper-resistant scoring"] },
+  { key: "verify", label: "Verify", icon: IconShield, title: "POAI verification, end to end", body: "Submit an outcome. Our pipeline scores evidence, runs an audit trail and stamps it POAI-verified, so funders see proof, not promises.", points: ["Geo-tagged evidence", "Auditable audit trail", "Tamper-resistant scoring"] },
   { key: "programs", label: "Run programs", icon: IconProgram, title: "Programs & tasks that ship", body: "Spin up programs, assign tasks and track them from draft to verified. Everyone sees the same source of truth.", points: ["Lifecycle tracking", "Role-based assignment", "Live progress"] },
-  { key: "coin", label: "Earn", icon: IconWallet, title: "An economy for impact", body: "MASAREEN Coin rewards verified outcomes with transparent brokerage — funding the platform and the people creating change.", points: ["Transparent fees", "On-chain proof", "Impact payouts"] },
+  { key: "coin", label: "Earn", icon: IconWallet, title: "An economy for impact", body: "MASAREEN Coin rewards verified outcomes with transparent brokerage, funding the platform and the people creating change.", points: ["Transparent fees", "On-chain proof", "Impact payouts"] },
 ];
 
 function Explorer() {
@@ -277,7 +277,7 @@ function Convergence() {
         <Reveal className="text-center">
           <span className="eyebrow text-cyan-300 justify-center" style={{ color: "#5ff0ff" }}><IconHandshake size={14} /> Two streams, one truth</span>
           <h2 className="hero-tracking mt-4 font-display text-4xl font-extrabold text-white sm:text-5xl">Where every path meets verified impact</h2>
-          <p className="text-white-soft mx-auto mt-3 max-w-2xl">Two streams of activity — people and organizations — race across the network, converge and collide into a single trusted outcome. That moment of collision is POAI verification.</p>
+          <p className="text-white-soft mx-auto mt-3 max-w-2xl">Two streams of activity, people and organizations, race across the network, converge and collide into a single trusted outcome. That moment of collision is POAI verification.</p>
         </Reveal>
       </div>
       <div className="relative mt-8 w-full">
@@ -321,7 +321,7 @@ function How() {
   );
 }
 
-/* ── stats band (dark) — realistic modest-server numbers ──────────────────── */
+/* ── stats band (dark), realistic modest-server numbers ──────────────────── */
 
 function Stats() {
   return (
@@ -348,7 +348,7 @@ const PROFILES = [
     blurb: "Report program delivery transparently. Citizens see audited outcomes, and agencies track Egypt Vision 2030 progress in real time.",
     example: { name: "Ministry of Environment", handle: "@eg.env", stats: ["340 programs", "Real-time 2030 dashboard", "Public audit trail"] } },
   { key: "sport", icon: IconTrophy, name: "Sport Institution", tag: "Clubs & federations", accent: "#2A9D45",
-    blurb: "Turn matches, academies and community clinics into verified impact — from youth training to stadium sustainability.",
+    blurb: "Turn matches, academies and community clinics into verified impact, from youth training to stadium sustainability.",
     example: { name: "Cairo United FC", handle: "@cairounited", stats: ["240 players tracked", "14 community clinics", "Verified youth academy"] } },
   { key: "company", icon: IconBadge, name: "Company / Entrepreneur", tag: "CSR & startups", accent: "#8B5CF6",
     blurb: "Make CSR and ESG claims auditable instead of aspirational. Startups prove traction with evidence, not screenshots.",
@@ -401,7 +401,7 @@ function Profiles() {
             </div>
           </div>
           <div className="grid place-items-center rounded-2xl bg-aurora-light p-6">
-            <p className="text-center text-sm text-muted">Visual profile preview for <span className="font-semibold text-ink">{p.name}</span> — a verified impact passport tailored to the institution type, with its own proof widgets and public dashboard.</p>
+            <p className="text-center text-sm text-muted">Visual profile preview for <span className="font-semibold text-ink">{p.name}</span>, a verified impact passport tailored to the institution type, with its own proof widgets and public dashboard.</p>
           </div>
         </Reveal>
       </div>
@@ -432,7 +432,7 @@ function Football() {
         <Reveal className="text-center">
           <span className="eyebrow text-white/80 justify-center"><IconTrophy size={14} /> Egyptian football, verified</span>
           <h2 className="hero-tracking mt-4 font-display text-4xl font-extrabold text-white sm:text-5xl">Impact beyond the scoreboard</h2>
-          <p className="text-white-soft mx-auto mt-3 max-w-2xl">Clubs, players and academies turn every match, clinic and community session into verified impact — mapped to the SDGs. Tap a player to explore.</p>
+          <p className="text-white-soft mx-auto mt-3 max-w-2xl">Clubs, players and academies turn every match, clinic and community session into verified impact, mapped to the SDGs. Tap a player to explore.</p>
         </Reveal>
 
         <div className="mt-10 grid gap-6 lg:grid-cols-3">
@@ -496,7 +496,7 @@ function Football() {
 /* ── verification: event-driven + data-driven (visual) ────────────────────── */
 
 const VERIFY_FLOW = [
-  { icon: IconImpact, t: "Event captured", d: "An action fires — a tree planted, a clinic run, a goal scored. It becomes an event in the stream." },
+  { icon: IconImpact, t: "Event captured", d: "An action fires, a tree planted, a clinic run, a goal scored. It becomes an event in the stream." },
   { icon: IconEvidence, t: "Evidence attached", d: "Photos, GPS, receipts and sensors bundle into a tamper-evident evidence package." },
   { icon: IconShield, t: "POAI scoring", d: "The algorithm scores plausibility, completeness and SDG fit in real time." },
   { icon: IconReports, t: "Audit & decision", d: "Low-confidence events route to a human or partner audit; the rest auto-verify." },
@@ -511,7 +511,7 @@ function Verification() {
         <Reveal className="text-center">
           <span className="section-kicker"><IconShield size={14} /> Event-driven & data-driven</span>
           <h2 className="mt-4 font-display text-4xl font-extrabold text-ink">Verification as a live data pipeline</h2>
-          <p className="mx-auto mt-3 max-w-2xl text-muted">Every claim moves through an event-driven pipeline. Evidence and signals stream in, models score continuously, and decisions are logged — so impact is provable, not performative.</p>
+          <p className="mx-auto mt-3 max-w-2xl text-muted">Every claim moves through an event-driven pipeline. Evidence and signals stream in, models score continuously, and decisions are logged, so impact is provable, not performative.</p>
         </Reveal>
 
         <div className="mt-10 grid gap-8 rounded-3xl border border-line bg-white p-6 shadow-card md:grid-cols-2">
@@ -565,7 +565,7 @@ function Sdg() {
         <Reveal className="text-center">
           <span className="section-kicker"><IconGlobe size={14} /> Global alignment</span>
           <h2 className="mt-4 font-display text-4xl font-extrabold text-ink">Built for the UN SDGs & Egypt Vision 2030</h2>
-          <p className="mx-auto mt-3 max-w-xl text-muted">Every verified action maps to a goal — and to Egypt's national transformation agenda.</p>
+          <p className="mx-auto mt-3 max-w-xl text-muted">Every verified action maps to a goal, and to Egypt's national transformation agenda.</p>
         </Reveal>
         <Reveal delay={80} className="mt-8 flex flex-wrap justify-center gap-2">
           {SDGS.map((t) => (
@@ -590,7 +590,7 @@ function Sdg() {
 function Showcase() {
   const sample = [
     { name: "Amira Saleh", org: "GreenRoots NGO", seed: "amira.saleh", text: "Planted 12,000 mangrove saplings with 340 volunteers. Geotagged & verified. 🌱", chip: "Impact", stat: "POAI ✓" },
-    { name: "Youssef Adel", org: "Cairo University", seed: "youssef.adel", text: "New program: Rural literacy bootcamp — 8 weeks, 200 seats. Join the field team.", chip: "Program", stat: "200 seats" },
+    { name: "Youssef Adel", org: "Cairo University", seed: "youssef.adel", text: "New program: Rural literacy bootcamp, 8 weeks, 200 seats. Join the field team.", chip: "Program", stat: "200 seats" },
     { name: "Lina Farouk", org: "Masrena CSR", seed: "lina.farouk", text: "Funded 3 clean-water wells via MASAREEN Coin. Transparent, on-chain impact.", chip: "Story", stat: "3 wells" },
   ];
   return (
@@ -625,7 +625,7 @@ function Showcase() {
           </Reveal>
           <Reveal variant="right" delay={120} className="lg:col-span-3">
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="glass-dark p-5"><VennAvatars names={["amira.s","yusuf.a","lina.f"]} size={44} /><p className="mt-4 text-sm font-semibold text-white">Collaborate in the open</p><p className="mt-1 text-sm text-white/70">Overlapping teams, shared proof — see exactly who drives each outcome.</p></div>
+              <div className="glass-dark p-5"><VennAvatars names={["amira.s","yusuf.a","lina.f"]} size={44} /><p className="mt-4 text-sm font-semibold text-white">Collaborate in the open</p><p className="mt-1 text-sm text-white/70">Overlapping teams, shared proof, see exactly who drives each outcome.</p></div>
               <div className="glass-dark p-5"><StackedAvatars names={["omar.t","sara.n","nada.k","khaled.h","hana.m","tarek.s"]} size={40} max={5} /><p className="mt-4 text-sm font-semibold text-white">Built for people</p><p className="mt-1 text-sm text-white/70">3,200+ members proving change in 9 countries.</p></div>
               <div className="glass-dark p-5 sm:col-span-2"><div className="flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-xl bg-white/10 text-white"><IconShield size={20} /></span><div><p className="text-sm font-semibold text-white">POAI verification</p><p className="text-sm text-white/70">Every claim scored, audited, traceable.</p></div></div></div>
             </div>
@@ -681,7 +681,7 @@ function Download() {
         body: JSON.stringify({ email, full_name: email.split("@")[0], password: "Masaren@" + Math.random().toString(36).slice(2, 8), phone: "", role: "INDIVIDUAL", audience: "PROFESSIONAL" }),
       });
       const data = await res.json();
-      if (res.ok && data?.data) { setReqState("done"); setMsg("You're in! Your account is ready — download the app and sign in with this email."); }
+      if (res.ok && data?.data) { setReqState("done"); setMsg("You're in! Your account is ready, download the app and sign in with this email."); }
       else { setReqState("error"); setMsg(data?.message || "Could not request access. Try again."); }
     } catch { setReqState("error"); setMsg("Network error. Please try again."); }
   }

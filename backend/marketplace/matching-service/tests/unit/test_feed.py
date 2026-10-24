@@ -1,4 +1,4 @@
-"""Unit tests for FeedService — personalized impact feed ranking."""
+"""Unit tests for FeedService, personalized impact feed ranking."""
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 

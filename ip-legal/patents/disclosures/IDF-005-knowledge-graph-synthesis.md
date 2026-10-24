@@ -1,9 +1,9 @@
 # INVENTION DISCLOSURE FORM (IDF)
 
 **ID:** IDF-005
-**Title:** Knowledge Graph Synthesis Engine — Graph-Based System Linking Actors, Actions, Outcomes, and Impact Assets
+**Title:** Knowledge Graph Synthesis Engine, Graph-Based System Linking Actors, Actions, Outcomes, and Impact Assets
 **Date:** August 11, 2026
-**Classification:** CONFIDENTIAL — PROPRIETARY
+**Classification:** CONFIDENTIAL, PROPRIETARY
 **Status:** 🔴 Draft
 
 ---

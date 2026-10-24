@@ -1,4 +1,4 @@
-"""GPS Service API endpoints — uses CQRS command/query bus with proper DI."""
+"""GPS Service API endpoints, uses CQRS command/query bus with proper DI."""
 from fastapi import APIRouter, status, Depends, HTTPException
 from pydantic import BaseModel, Field
 from typing import Optional, AsyncGenerator

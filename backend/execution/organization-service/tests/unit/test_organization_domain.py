@@ -1,4 +1,4 @@
-"""Unit tests for the Organization aggregate — no DB, no I/O."""
+"""Unit tests for the Organization aggregate, no DB, no I/O."""
 import pytest
 
 from src.domain.organization import Organization, OrgType, OrgStatus

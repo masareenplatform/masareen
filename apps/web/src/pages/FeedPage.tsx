@@ -48,7 +48,7 @@ export default function FeedPage() {
         <Composer onPosted={refresh} />
       </div>
 
-      {/* Filter bar — Google-style tab bar */}
+      {/* Filter bar, Google-style tab bar */}
       <div className="sticky top-16 z-10 animate-fade-up" style={{ animationDelay: "100ms" }}>
         <div className="tab-bar">
           {FILTERS.map((f) => (

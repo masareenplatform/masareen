@@ -1,4 +1,4 @@
-"""Unit tests for the AdsRepository — campaign lifecycle + budget-safe delivery."""
+"""Unit tests for the AdsRepository, campaign lifecycle + budget-safe delivery."""
 from unittest.mock import MagicMock, AsyncMock
 import pytest
 

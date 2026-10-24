@@ -1,18 +1,18 @@
 # INVENTION DISCLOSURE FORM (IDF)
 
 **ID:** IDF-001
-**Title:** Verification-to-Asset Pipeline — System and Method for Converting Verified Field Actions into Digital Economic Assets
+**Title:** Verification-to-Asset Pipeline, System and Method for Converting Verified Field Actions into Digital Economic Assets
 **Date:** August 11, 2026
-**Classification:** CONFIDENTIAL — PROPRIETARY
+**Classification:** CONFIDENTIAL, PROPRIETARY
 **Status:** 🔴 Draft
 
 ---
 
 ## 1. SUMMARY
 
-MASAREN's Verification-to-Asset Pipeline is an end-to-end system that transforms verified real-world field actions into immutable, measurable, and economically valuable digital assets. The system ingests raw field evidence (photographs, GPS coordinates, sensor data, behavioral signals), subjects it to a multi-stage AI-powered verification pipeline, and—upon successful verification—mints, registers, and assigns a digital asset on a blockchain-backed ledger that represents the quantified impact of the action.
+MASAREN's Verification-to-Asset Pipeline is an end-to-end system that transforms verified real-world field actions into immutable, measurable, and economically valuable digital assets. The system ingests raw field evidence (photographs, GPS coordinates, sensor data, behavioral signals), subjects it to a multi-stage AI-powered verification pipeline, and-upon successful verification-mints, registers, and assigns a digital asset on a blockchain-backed ledger that represents the quantified impact of the action.
 
-Each validated action produces a **MASAREN Impact Asset (MIA)** — a non-fungible digital token whose metadata encodes the verification provenance, the measured impact metrics, and the economic value attribution. These MIA tokens are then deposited into the user's **Personal Impact Portfolio (PMS)** and can be traded, retired, or used as proof of contribution within the MASAREN ecosystem.
+Each validated action produces a **MASAREN Impact Asset (MIA)**, a non-fungible digital token whose metadata encodes the verification provenance, the measured impact metrics, and the economic value attribution. These MIA tokens are then deposited into the user's **Personal Impact Portfolio (PMS)** and can be traded, retired, or used as proof of contribution within the MASAREN ecosystem.
 
 ---
 
@@ -56,29 +56,29 @@ See PAR-001 (Verification Technology Landscape) and PAR-002 (Impact Measurement 
 
 The Verification-to-Asset Pipeline comprises the following subsystems:
 
-1. **Evidence Ingestion Service (`ms_evidence`)** — Receives evidence submissions from mobile clients, web clients, and IoT integrations. Evidence types include:
+1. **Evidence Ingestion Service (`ms_evidence`)**, Receives evidence submissions from mobile clients, web clients, and IoT integrations. Evidence types include:
    - Photographs (with EXIF metadata)
    - GPS coordinates (with accuracy and timestamp)
    - Accelerometer / gyroscope data (motion patterns)
    - Audio recordings
    - Behavioral telemetry (app usage patterns, session duration)
 
-2. **Verification Pipeline (`ms_verification`)** — Multi-stage processing queue:
-   - **Stage 1: Image Forgery Detection** — Convolutional neural networks trained on a synthetic-real composite dataset to detect image manipulation, splicing, and generative AI artifacts.
-   - **Stage 2: Geospatial Validation** — Cross-checks GPS coordinates against PostGIS geospatial boundaries, satellite imagery, and historical trajectory data. Validates that the reported action occurred at the claimed location.
-   - **Stage 3: Temporal Consistency** — Checks that evidence submission timestamps are consistent with historical device behavior and timezone data.
-   - **Stage 4: Behavioral Authenticity Score** — Aggregates behavioral telemetry to produce a confidence score for the actor's authenticity.
-   - **Stage 5: Multi-Modal Fusion** — Combines all signals into a single verification confidence score (0.0–1.0).
+2. **Verification Pipeline (`ms_verification`)**, Multi-stage processing queue:
+   - **Stage 1: Image Forgery Detection**, Convolutional neural networks trained on a synthetic-real composite dataset to detect image manipulation, splicing, and generative AI artifacts.
+   - **Stage 2: Geospatial Validation**, Cross-checks GPS coordinates against PostGIS geospatial boundaries, satellite imagery, and historical trajectory data. Validates that the reported action occurred at the claimed location.
+   - **Stage 3: Temporal Consistency**, Checks that evidence submission timestamps are consistent with historical device behavior and timezone data.
+   - **Stage 4: Behavioral Authenticity Score**, Aggregates behavioral telemetry to produce a confidence score for the actor's authenticity.
+   - **Stage 5: Multi-Modal Fusion**, Combines all signals into a single verification confidence score (0.0–1.0).
 
-3. **Impact Scoring Service (`ms_impact_score`)** — Takes verified actions and applies the Impact Score Algorithm (see IDF-002) to compute the measurable impact of each action.
+3. **Impact Scoring Service (`ms_impact_score`)**, Takes verified actions and applies the Impact Score Algorithm (see IDF-002) to compute the measurable impact of each action.
 
-4. **Digital Asset Minting Service (`ms_graph` + `ms_orchestrator`)** — Upon successful verification and impact scoring:
+4. **Digital Asset Minting Service (`ms_graph` + `ms_orchestrator`)**, Upon successful verification and impact scoring:
    - Generates a unique Impact Asset ID
    - Registers the asset in the MASAREN Knowledge Graph
    - Mints a digital asset on the blockchain (EVM-compatible or Solana-compatible depending on configuration)
    - Assigns ownership to the actor's PMS profile
 
-5. **Event Store (`ms_media` / transactional outbox)** — All pipeline steps are captured as immutable events in the event-sourced architecture, providing a full audit trail.
+5. **Event Store (`ms_media` / transactional outbox)**, All pipeline steps are captured as immutable events in the event-sourced architecture, providing a full audit trail.
 
 ### 5.2 Method Flow
 

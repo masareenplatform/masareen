@@ -11,7 +11,7 @@
 git clone https://github.com/YOUR_ORG/masaren.git
 cd masaren
 cp .env.example .env
-# Edit .env — set passwords and CLOUD_API_KEY
+# Edit .env, set passwords and CLOUD_API_KEY
 ```
 
 ## 2. Start infrastructure
@@ -29,16 +29,16 @@ docker exec masaren-neo4j cypher-shell -u neo4j -p $NEO4J_PASSWORD   < infrastru
 
 ## 4. Start services (example: identity domain)
 ```bash
-# Terminal 1 — identity-service
+# Terminal 1, identity-service
 cd backend/identity/identity-service
 pip install -r requirements.txt
 uvicorn src.main:app --reload --port 8001
 
-# Terminal 2 — authentication-service
+# Terminal 2, authentication-service
 cd backend/identity/authentication-service
 uvicorn src.main:app --reload --port 8002
 
-# Terminal 3 — gateway
+# Terminal 3, gateway
 cd backend/gateway
 pip install fastapi uvicorn httpx
 uvicorn src.main:app --reload --port 8000

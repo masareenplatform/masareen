@@ -65,7 +65,7 @@ class SQLAlchemyEntityRepository(EntityRepository):
         
         entity = self._to_domain(row)
 
-        # Rehydrate relationships directly (do NOT use add_member — that would
+        # Rehydrate relationships directly (do NOT use add_member, that would
         # emit spurious EntityMemberAdded domain events during reconstruction).
         rels = await self._session.execute(
             select(EntityRelationshipORM).where(EntityRelationshipORM.parent_id == uuid.UUID(entity_id))

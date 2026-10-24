@@ -34,9 +34,9 @@ class EventPublisher:
         )
         try:
             await self._producer.start()
-            logger.info("Kafka producer started — %s", self._bootstrap)
+            logger.info("Kafka producer started, %s", self._bootstrap)
         except Exception as e:  # noqa: BLE001 - Kafka is optional for local E2E
-            logger.warning("Kafka unavailable (%s) — events will not be published", e)
+            logger.warning("Kafka unavailable (%s), events will not be published", e)
             self._producer = None
 
     async def stop(self) -> None:

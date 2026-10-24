@@ -1,4 +1,4 @@
-"""Athlete passport model — implements the canonical sports profile
+"""Athlete passport model, implements the canonical sports profile
 from the MASAREN Sports Profiling Blueprint (Doc 3, §2 Canonical Sports Profile).
 
 The passport is composed of five independent record domains, each owned by
@@ -89,7 +89,7 @@ class VerifiedClaim:
 
 @dataclass
 class ProfileIdentity:
-    """§2 Profile identity — stable athlete identifier with verified personal data.
+    """§2 Profile identity, stable athlete identifier with verified personal data.
 
     Public pages never expose government identifiers, precise home location,
     or private contact details.
@@ -126,7 +126,7 @@ class ProfileIdentity:
 
 @dataclass
 class SportParticipation:
-    """§2 Sport participation — disciplines, teams, registrations, validity periods."""
+    """§2 Sport participation, disciplines, teams, registrations, validity periods."""
     id: UUID = field(default_factory=uuid4)
     sport: str = ""
     discipline: Optional[str] = None         # e.g. "freestyle 100m", "middleweight"
@@ -164,7 +164,7 @@ class SportParticipation:
 
 @dataclass
 class PerformanceMetric:
-    """§2 Performance record — a signed observation from an authorized source."""
+    """§2 Performance record, a signed observation from an authorized source."""
     id: UUID = field(default_factory=uuid4)
     sport: str = ""
     event: str = ""                           # e.g. "100m freestyle", "clean & jerk"
@@ -231,14 +231,14 @@ class DevelopmentRecord:
 
 @dataclass
 class WelfareRecord:
-    """§2 Private welfare record — restricted to authorized personnel only.
+    """§2 Private welfare record, restricted to authorized personnel only.
 
     Public profile may show only a safe availability statement.
     """
     id: UUID = field(default_factory=uuid4)
     status: WelfareStatus = WelfareStatus.ELIGIBLE
     medical_notes_hash: Optional[str] = None  # stored hashed, never exposed
-    injury_summary_public: Optional[str] = None  # e.g. "ankle sprain — recovery in progress"
+    injury_summary_public: Optional[str] = None  # e.g. "ankle sprain, recovery in progress"
     anti_doping_status: Optional[str] = None     # only accessible by authorized officers
     safeguarding_case_id: Optional[str] = None
     return_to_play_date: Optional[date] = None
@@ -246,11 +246,11 @@ class WelfareRecord:
     access_log: List[Dict[str, Any]] = field(default_factory=list)
 
     def to_public_dict(self) -> dict:
-        """Public view — only the welfare status."""
+        """Public view, only the welfare status."""
         return {"welfare_status": self.status.value}
 
     def to_full_dict(self) -> dict:
-        """Full view — restricted to authorized personnel."""
+        """Full view, restricted to authorized personnel."""
         return {
             "id": str(self.id),
             "status": self.status.value,
@@ -263,7 +263,7 @@ class WelfareRecord:
 
 @dataclass
 class PublicShowcase:
-    """§2 Public showcase record — athlete chooses what is visible publicly."""
+    """§2 Public showcase record, athlete chooses what is visible publicly."""
     id: UUID = field(default_factory=uuid4)
     biography: Optional[str] = None
     photo_urls: List[str] = field(default_factory=list)
@@ -295,7 +295,7 @@ class AthletePassport:
     """Canonical athlete passport aggregating all five record domains.
 
     Each domain is independently owned and verified. The passport itself
-    is an aggregation that does NOT own the underlying data — it references
+    is an aggregation that does NOT own the underlying data, it references
     authoritative records from their respective bounded contexts.
     """
     id: UUID = field(default_factory=uuid4)
@@ -309,7 +309,7 @@ class AthletePassport:
     updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     def public_summary(self) -> Dict[str, Any]:
-        """Public-facing summary — excludes private welfare and government IDs."""
+        """Public-facing summary, excludes private welfare and government IDs."""
         return {
             "athlete_id": str(self.id),
             "name": self.identity.preferred_public_name or self.identity.full_name_en,
@@ -322,7 +322,7 @@ class AthletePassport:
         }
 
     def full_dict(self) -> Dict[str, Any]:
-        """Full passport — restricted to the athlete and authorized institutions."""
+        """Full passport, restricted to the athlete and authorized institutions."""
         return {
             "id": str(self.id),
             "identity": self.identity.to_dict(),

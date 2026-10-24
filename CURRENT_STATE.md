@@ -1,4 +1,4 @@
-# MASAREEN Platform — Current State Report
+# MASAREEN Platform, Current State Report
 
 **Last updated**: 2026-07-26  
 **Backup**: `/tmp/masaren_backup_20260725_073126.tar.gz` (250 MB)
@@ -27,7 +27,7 @@
 
 ## 2. Specification Compliance
 
-### Doc 1 — Technical Architecture v2.0.0
+### Doc 1, Technical Architecture v2.0.0
 | Requirement | Status | Implementation |
 |---|---|---|
 | 7-layer architecture | ✅ | Shared kernel implements all layers |
@@ -44,14 +44,14 @@
 | flutter_secure_storage | ✅ | JWT stored via `FlutterSecureStorage` with legacy migration |
 | Global error handling | ✅ | `shared/utils/app_factory.py` catches non-DomainException → JSON response |
 
-### Doc 2 — Media Institutions Blueprint
+### Doc 2, Media Institutions Blueprint
 | Requirement | Status | Implementation |
 |---|---|---|
 | Credibility confidence scoring | ✅ | `shared/utils/confidence.py` |
 | Feed ranking | ✅ | `shared/utils/feed_ranking.py` |
 | Confidence badge in feed UI | ✅ | `_PostCard` in `feed_screen.dart` + web `PostCard.tsx` |
 
-### Doc 3 — Sports Profiling Blueprint
+### Doc 3, Sports Profiling Blueprint
 | Requirement | Status | Implementation |
 |---|---|---|
 | Canonical athlete passport (5 domains) | ✅ | `shared/utils/athlete_passport.py` |
@@ -81,7 +81,7 @@ All fixes complete, TypeScript compiles clean, production build matches live sit
 | `authStore.tsx` | `try-catch` on `JSON.parse(localStorage)`, `isTokenExpired()` check, `useMemo` for context |
 | `LoginPage.tsx` | Fixed double-unwrap, loading/disabled state, `type="email"`, password toggle, form validation |
 | `RegisterPage.tsx` | Fixed double-unwrap auto-login, `type="email"`, `inputMode`, `autoComplete`, `required` |
-| `NotificationsPage.tsx` | Complete rewrite — fixed dark-theme (white on light bg), i18n, timeAgo, unread count, mark all read |
+| `NotificationsPage.tsx` | Complete rewrite, fixed dark-theme (white on light bg), i18n, timeAgo, unread count, mark all read |
 | `DashboardPage.tsx` | Removed ALL hardcoded fake data, wired real API (`bffService.dashboard()`, `coinService.getWallet()`) |
 | `PostCard.tsx` | Null guard on `badge`/`post.media`, confidence badge (Verified/Partial/Unverified), i18n |
 | `Composer.tsx` | Fixed blob URL memory leak, loading state on submit, i18n |
@@ -98,17 +98,17 @@ All fixes complete, TypeScript compiles clean, production build matches live sit
 ## 5. New Files Created (All Gap Fixes)
 
 ```
-backend/shared/constants/__init__.py        — platform-wide constants and enums
-backend/shared/types/__init__.py            — shared value objects (EntityId, Money, GeoPoint, etc.)
-backend/shared/utils/athlete_passport.py    — Doc 3 canonical athlete passport model
-backend/shared/utils/offline_sync.py        — Doc 1 offline evidence capture + draft queue
-backend/shared/utils/health.py              — health check system with HealthChecker class
-backend/shared/utils/token_manager.py       — JWT TokenManager with RS256 + HS256 fallback
-backend/shared/middleware/rbac.py           — RBAC with role hierarchy + permissions
-backend/alembic.ini                         — Alembic configuration
-backend/migrations/env.py                   — async Alembic environment
-backend/migrations/versions/001_initial.py  — initial schema (outbox_events, evidence_drafts)
-k8s/backend.yaml                           — Deployment, Service, Ingress, Redis, Secret
+backend/shared/constants/__init__.py, platform-wide constants and enums
+backend/shared/types/__init__.py, shared value objects (EntityId, Money, GeoPoint, etc.)
+backend/shared/utils/athlete_passport.py, Doc 3 canonical athlete passport model
+backend/shared/utils/offline_sync.py, Doc 1 offline evidence capture + draft queue
+backend/shared/utils/health.py, health check system with HealthChecker class
+backend/shared/utils/token_manager.py, JWT TokenManager with RS256 + HS256 fallback
+backend/shared/middleware/rbac.py, RBAC with role hierarchy + permissions
+backend/alembic.ini, Alembic configuration
+backend/migrations/env.py, async Alembic environment
+backend/migrations/versions/001_initial.py, initial schema (outbox_events, evidence_drafts)
+k8s/backend.yaml, Deployment, Service, Ingress, Redis, Secret
 ```
 
 ---

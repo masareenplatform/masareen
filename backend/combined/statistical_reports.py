@@ -1,4 +1,4 @@
-"""Statistical reports endpoint — Python equivalent of the R analytics scripts.
+"""Statistical reports endpoint, Python equivalent of the R analytics scripts.
 
 Uses the actual platform tables:
   users, programs, tasks, posts, platform_posts, organizations,
@@ -56,7 +56,7 @@ async def _q(session: AsyncSession, sql: str, params: dict | None = None):
 
 @router.get("/reports/evidence")
 async def evidence_report(session: AsyncSession = Depends(_dep_session)):
-    """Submission analytics — uses submission_events + submission_projections."""
+    """Submission analytics, uses submission_events + submission_projections."""
     try:
         by_type = await _q(session, """
             SELECT event_type, COUNT(*)::int AS count
@@ -106,7 +106,7 @@ async def evidence_report(session: AsyncSession = Depends(_dep_session)):
 
 @router.get("/reports/verification")
 async def verification_report(session: AsyncSession = Depends(_dep_session)):
-    """Verification pipeline — uses review_queue + submission_projections."""
+    """Verification pipeline, uses review_queue + submission_projections."""
     try:
         funnel = await _q(session, """
             SELECT status, COUNT(*)::int AS count
@@ -143,7 +143,7 @@ async def verification_report(session: AsyncSession = Depends(_dep_session)):
 
 @router.get("/reports/audit")
 async def audit_report(session: AsyncSession = Depends(_dep_session)):
-    """Submission events breakdown — analogous to audit trail."""
+    """Submission events breakdown, analogous to audit trail."""
     try:
         by_type = await _q(session, """
             SELECT event_type, COUNT(*)::int AS count
@@ -176,7 +176,7 @@ async def audit_report(session: AsyncSession = Depends(_dep_session)):
 
 @router.get("/reports/institutions")
 async def institution_report(session: AsyncSession = Depends(_dep_session)):
-    """Institution performance — programs, members, OII score."""
+    """Institution performance, programs, members, OII score."""
     try:
         rows = await _q(session, """
             SELECT
@@ -211,7 +211,7 @@ async def impact_forecast(
     months: int = Query(6, ge=1, le=24),
     session: AsyncSession = Depends(_dep_session),
 ):
-    """Linear-trend impact projection — uses submission_events over time."""
+    """Linear-trend impact projection, uses submission_events over time."""
     try:
         history_rows = await _q(session, """
             SELECT DATE_TRUNC('month', created_at) AS month,
@@ -268,7 +268,7 @@ async def impact_forecast(
 
 @router.get("/reports/coin")
 async def coin_report(session: AsyncSession = Depends(_dep_session)):
-    """Coin transaction analytics — volume, types, exchange rates."""
+    """Coin transaction analytics, volume, types, exchange rates."""
     try:
         by_type = await _q(session, """
             SELECT type, COUNT(*)::int AS count,
@@ -308,7 +308,7 @@ async def coin_report(session: AsyncSession = Depends(_dep_session)):
 
 @router.get("/reports/engagement")
 async def engagement_report(session: AsyncSession = Depends(_dep_session)):
-    """User engagement — posts, likes, follows, user growth."""
+    """User engagement, posts, likes, follows, user growth."""
     try:
         posts_by_kind = await _q(session, """
             SELECT kind, COUNT(*)::int AS count

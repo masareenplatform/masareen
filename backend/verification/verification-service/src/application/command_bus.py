@@ -7,7 +7,7 @@ log = get_logger(__name__)
 
 
 class CommandBus:
-    """Command bus for executing commands — wraps shared kernel bus."""
+    """Command bus for executing commands, wraps shared kernel bus."""
 
     def __init__(self):
         self._bus = SharedCommandBus()
@@ -20,7 +20,7 @@ class CommandBus:
 
 
 class QueryBus:
-    """Query bus for executing queries — wraps shared kernel bus."""
+    """Query bus for executing queries, wraps shared kernel bus."""
 
     def __init__(self):
         self._bus = SharedQueryBus()

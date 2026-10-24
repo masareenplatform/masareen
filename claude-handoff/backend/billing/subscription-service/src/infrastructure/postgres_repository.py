@@ -1,4 +1,4 @@
-"""Real subscription repository — persists plan selections per organization.
+"""Real subscription repository, persists plan selections per organization.
 
 Plan definitions live in the API (static, real config). Creating/upgrading a
 subscription writes a real row keyed by organization_id; it does not fabricate

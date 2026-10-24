@@ -1,4 +1,4 @@
-"""Reporting service API — real, SDG-aligned impact report generation.
+"""Reporting service API, real, SDG-aligned impact report generation.
 
 All metrics are computed by ``ReportRepository`` from the platform's relational
 tables and persisted in ``impact_reports``. For COMPREHENSIVE reports, an
@@ -24,7 +24,7 @@ router = APIRouter(prefix="/reports", tags=["Reports"])
 
 # Build the LLM client only when a real key is configured. No placeholder keys:
 # without a key, reports are still generated from real metrics (deterministic
-# narrative) — COMPREHENSIVE simply skips AI enrichment.
+# narrative), COMPREHENSIVE simply skips AI enrichment.
 _llm_key = os.getenv("LLM_API_KEY")
 _llm_client = build_llm_client(provider=os.getenv("LLM_PROVIDER", "google"),
                                api_key=_llm_key) if _llm_key else None
@@ -110,7 +110,7 @@ async def purchase_report(report_id: str, body: PurchaseRequest,
 
     Creates a real payment intent (CAPTURED in the local ledger) and, only
     on success, marks the report paid. If billing is unreachable the report
-    stays unpaid and we return 503 — never a fabricated "SUCCESS".
+    stays unpaid and we return 503, never a fabricated "SUCCESS".
     """
     repo = _repo(session)
     existing = await repo.get_report(report_id)

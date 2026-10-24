@@ -1,4 +1,4 @@
-"""Real analytics repository — computes aggregates from the existing platform
+"""Real analytics repository, computes aggregates from the existing platform
 tables (organizations, programs, tasks, evidence, impact_assets, users,
 pms_scores). No fabricated values: every number is a real SQL aggregate.
 """

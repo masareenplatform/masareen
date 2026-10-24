@@ -66,7 +66,7 @@ export default function RightRail() {
         <section className="card overflow-hidden">
           <div className="flex items-center gap-2 bg-gradient-to-r from-brand to-accent px-4 py-3 text-white">
             <IconSparkles size={18} />
-            <p className="text-sm font-semibold">MASAREN — verified impact, made social</p>
+            <p className="text-sm font-semibold">MASAREN, verified impact, made social</p>
           </div>
           <div className="flex flex-wrap gap-x-3 gap-y-1 px-4 py-3 text-xs text-muted">
             <span>About</span><span>Privacy</span><span>Terms</span>

@@ -1,9 +1,9 @@
-# MASAREN — Alpha Deployment Guide
+# MASAREN, Alpha Deployment Guide
 
 This document covers running the **MASAREN** alpha: 36 backend microservices behind a
 single API gateway, plus the **Web**, **Admin**, and **Mobile (Android)** frontends.
 
-> Status: backend is free of mock/fake data — external integrations (Stripe, Vodafone
+> Status: backend is free of mock/fake data, external integrations (Stripe, Vodafone
 > Cash, FCM, CrewAI) are **wired but disabled by default** and fail *honestly*
 > (HTTP 501 / `false`) rather than fabricating success. See "Honest fallbacks" below.
 
@@ -41,8 +41,8 @@ Entry points once healthy:
 | Gateway OpenAPI docs | http://localhost:8080/docs |
 
 The gateway mounts every service under `/api/v1` and adds two composed BFF endpoints:
-- `GET /api/v1/bff/dashboard` — cross-service platform snapshot
-- `GET /api/v1/bff/leaderboard` — top impact contributors
+- `GET /api/v1/bff/dashboard`, cross-service platform snapshot
+- `GET /api/v1/bff/leaderboard`, top impact contributors
 
 ### Admin / HITL
 
@@ -108,10 +108,10 @@ No test doubles, no demo data, and no hardcoded "success" responses are shipped.
 
 See `.env.example`. The important ones:
 
-- `JWT_SECRET` — **required**, must match across gateway + all services.
-- `STRIPE_SECRET_KEY` — enables real payments.
-- `FCM_SERVICE_ACCOUNT_JSON` — enables push.
-- `OPENAI_API_KEY` / `CREWAI_BROKER_URL` — enables AI chat agents.
+- `JWT_SECRET`, **required**, must match across gateway + all services.
+- `STRIPE_SECRET_KEY`, enables real payments.
+- `FCM_SERVICE_ACCOUNT_JSON`, enables push.
+- `OPENAI_API_KEY` / `CREWAI_BROKER_URL`, enables AI chat agents.
 
 ---
 

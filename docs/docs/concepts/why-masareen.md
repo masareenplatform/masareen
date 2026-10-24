@@ -9,7 +9,7 @@ sidebar_position: 1
 ## The problem we are solving
 
 The social-impact sector moves trillions of dollars and billions of volunteer hours every
-year — and yet it runs on **self-reporting**. An NGO's annual report is written by the NGO.
+year, and yet it runs on **self-reporting**. An NGO's annual report is written by the NGO.
 A volunteer's CV lists work no one can confirm. A government program claims outcomes no one
 audited at the ground level.
 
@@ -35,7 +35,7 @@ MASAREEN replaces *assertion* with *attestation*:
 
 ## Who it is for
 
-- **Individuals & professionals** who want their real-world good work to count — and to
+- **Individuals & professionals** who want their real-world good work to count, and to
   unlock better opportunities.
 - **NGOs & clubs** that need trustworthy proof of outcomes for funders.
 - **Government agencies** that must demonstrate program impact transparently.
@@ -50,6 +50,6 @@ into something a volunteer in a village and a funder in a capital can both trust
 
 ## The name
 
-**MASAREEN (مسارين)** — *two paths*. Impact is a loop between **intention** (finding and
+**MASAREEN (مسارين)**, *two paths*. Impact is a loop between **intention** (finding and
 accepting work) and **execution** (doing it and proving it). We named the platform after
 that loop because the loop *is* the product.

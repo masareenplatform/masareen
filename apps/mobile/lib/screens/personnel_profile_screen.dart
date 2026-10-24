@@ -266,7 +266,7 @@ class _PersonnelProfileScreenState extends State<PersonnelProfileScreen> {
                   _listStr(p.languages).take(3).join(', ')),
               _InfoChip(Icons.work, 'Status', p.employmentStatus),
               _InfoChip(Icons.calendar_today, 'Joined',
-                  p.joined?.substring(0, 10) ?? '—'),
+                  p.joined?.substring(0, 10) ?? '-'),
             ],
           ),
         ],

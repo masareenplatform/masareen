@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>MASAREEN Admin</title>
+<link rel="icon" type="image/png" href="assets/favicon-32.png">
+<style>
+:root{--blue:#00539f;--green:#249e3f;--navy:#04285f;--bg:#f4f7fb;--surface:#fff;--text:#0b1b33;--muted:#5b6b82;--border:#dbe3ee;--r:16px;--font:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+@media(prefers-color-scheme:dark){:root{--bg:#07142b;--surface:#0d1f3d;--text:#e8eefb;--muted:#93a4c3;--border:#1c335c}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 var(--font)}
+header{background:linear-gradient(120deg,var(--blue),var(--navy));color:#fff;padding:1rem 1.2rem;display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap}
+header h1{font-size:1.1rem;margin:0;display:flex;align-items:center;gap:.7rem}header img{height:34px;background:#fff;border-radius:8px;padding:3px 6px}
+main{max-width:1200px;margin:0 auto;padding:1.2rem}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1.1rem}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.8rem;margin-bottom:1rem}
+.kpi b{display:block;font-size:1.8rem;color:var(--blue)}.kpi span{color:var(--muted);font-size:.8rem}
+.grid2{display:grid;grid-template-columns:2fr 1fr;gap:1rem;margin-bottom:1rem}@media(max-width:860px){.grid2{grid-template-columns:1fr}}
+h2{font-size:1rem;margin:0 0 .7rem}
+.bar{display:flex;align-items:center;gap:.5rem;font-size:.82rem;margin:.3rem 0}.bar i{display:block;height:10px;border-radius:5px;background:var(--green)}.bar span{min-width:130px;color:var(--muted)}
+.tabs{display:flex;gap:.4rem;margin:1rem 0 .6rem;flex-wrap:wrap}
+button,.btn{font:600 .85rem var(--font);padding:.55rem 1rem;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;text-decoration:none}
+button.on{background:var(--blue);color:#fff;border-color:var(--blue)}.primary{background:var(--green);color:#fff;border-color:var(--green)}
+table{width:100%;border-collapse:collapse;font-size:.84rem}th,td{text-align:start;padding:.55rem .5rem;border-bottom:1px solid var(--border);vertical-align:top}th{color:var(--muted);font-weight:600}
+.wrap{overflow-x:auto}input[type=search]{padding:.55rem .8rem;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);min-width:220px}
+.pill{display:inline-block;padding:.1rem .5rem;border-radius:99px;font-size:.72rem;background:#e3f6e8;color:#14702b;font-weight:700}.pill.no{background:#fdecec;color:#a12626}
+#gate{max-width:420px;margin:12vh auto;text-align:center}#msg{color:#a12626;margin-top:1rem;font-size:.9rem}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<header><h1><img src="assets/logo-sm.png" alt="MASAREEN"> Admin dashboard</h1><div id="who" style="font-size:.85rem"></div></header>
+<main>
+  <section id="gate" class="card">
+    <h2>Team sign-in</h2>
+    <p style="color:var(--muted)">Only approved Google accounts can see registrations and logins.</p>
+    <div id="gBtn" style="display:flex;justify-content:center;min-height:44px"></div>
+    <div id="msg" role="status"></div>
+  </section>
+  <section id="app" hidden>
+    <div class="kpis" id="kpis"></div>
+    <div class="grid2">
+      <div class="card"><h2>Sign-ups and logins, last 30 days</h2><svg id="chart" viewBox="0 0 600 160" width="100%" role="img" aria-label="Daily sign-ups and logins"></svg>
+        <small style="color:var(--muted)"><span style="color:var(--green)">&#9632;</span> sign-ups &nbsp; <span style="color:var(--blue)">&#9632;</span> logins</small></div>
+      <div class="card"><h2>Who is registering</h2><div id="byType"></div><h2 style="margin-top:1rem">Top countries</h2><div id="byCountry"></div></div>
+    </div>
+    <div class="tabs"><button class="on" data-t="users">Registrations</button><button data-t="logins">Logins</button><button data-t="messages">Messages</button>
+      <span style="flex:1"></span><input type="search" id="q" placeholder="Search name, email, org"><a class="btn primary" href="/api/admin/export/users.csv">Download CSV</a></div>
+    <div class="card wrap"><table id="tbl"></table></div>
+    <p style="color:var(--muted);font-size:.78rem">Data lives in your Cloudflare D1 database. Times are UTC.</p>
+  </section>
+</main>
+<script>
+(function(){
+  var $=function(i){return document.getElementById(i)},tab='users';
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  function api(p,m,d){return fetch(p,{method:m||'GET',credentials:'same-origin',headers:d?{'Content-Type':'application/json'}:{},body:d?JSON.stringify(d):undefined}).then(function(r){return r.json().then(function(j){j._s=r.status;return j})})}
+  function fmt(t){return t?String(t).replace('T',' ').slice(0,16):'-'}
+  function show(u){$('gate').hidden=true;$('app').hidden=false;$('who').innerHTML=esc(u.email)+' <button id="out" style="margin-inline-start:.6rem">Sign out</button>';
+    $('out').onclick=function(){api('/api/auth/logout','POST',{}).then(function(){location.reload()})};load()}
+  function bars(el,rows){var m=Math.max.apply(null,rows.map(function(r){return r.c}).concat([1]));el.innerHTML=rows.length?rows.map(function(r){return '<div class="bar"><span>'+esc(r.k)+'</span><i style="width:'+Math.max(4,r.c/m*100)+'px"></i> '+r.c+'</div>'}).join(''):'<small style="color:var(--muted)">No data yet</small>'}
+  function chart(series){var W=600,H=160,max=Math.max.apply(null,series.map(function(s){return Math.max(s.signups,s.logins)}).concat([1])),bw=W/series.length,o='';
+    series.forEach(function(s,i){var x=i*bw,h1=s.signups/max*(H-20),h2=s.logins/max*(H-20);
+      o+='<rect x="'+(x+1)+'" y="'+(H-h2)+'" width="'+(bw/2-1.5)+'" height="'+h2+'" fill="#00539f"><title>'+s.date+': '+s.logins+' logins</title></rect><rect x="'+(x+bw/2)+'" y="'+(H-h1)+'" width="'+(bw/2-1.5)+'" height="'+h1+'" fill="#249e3f"><title>'+s.date+': '+s.signups+' sign-ups</title></rect>'});
+    $('chart').innerHTML=o}
+  function load(){
+    api('/api/admin/stats').then(function(s){
+      if(!s.ok)return;var t=s.totals;
+      $('kpis').innerHTML=[['Registered',t.users],['via Google',t.google],['Profiles complete',t.profileComplete],['New, 7 days',t.signups7d],['New, 30 days',t.signups30d],['Logins, 24h',t.logins24h],['Logins, 7 days',t.logins7d],['Active users, 7d',t.activeUsers7d],['Messages',t.messages]].map(function(k){return '<div class="card kpi"><b>'+k[1]+'</b><span>'+k[0]+'</span></div>'}).join('');
+      bars($('byType'),s.byType);bars($('byCountry'),s.byCountry);chart(s.series)});
+    table()}
+  function table(){
+    var q=$('q').value.trim(),url=tab==='users'?'/api/admin/users?limit=100&q='+encodeURIComponent(q):'/api/admin/'+tab+'?limit=100';
+    $('q').hidden=tab!=='users';
+    api(url).then(function(r){if(!r.ok)return;var h,row;
+      if(tab==='users'){h=['Name','Email','Organization','Type','Country','Method','Profile','Joined','Last login','Logins'];
+        row=function(u){return [esc(u.name),esc(u.email)+(u.email_verified?'':' <span class="pill no">unverified</span>'),esc(u.org),esc(u.org_type),esc(u.country),esc(u.signup_method),u.profile_complete?'<span class="pill">complete</span>':'<span class="pill no">pending</span>',fmt(u.created_at),fmt(u.last_login_at),u.login_count]}}
+      else if(tab==='logins'){h=['When (UTC)','Email','Method','Country'];row=function(l){return [fmt(l.at),esc(l.email),esc(l.method),esc(l.country||'-')]}}
+      else{h=['When (UTC)','Name','Email','Organization','Message'];row=function(m){return [fmt(m.created_at),esc(m.name),esc(m.email),esc(m.org),esc(m.message)]}}
+      $('tbl').innerHTML='<thead><tr>'+h.map(function(x){return '<th>'+x+'</th>'}).join('')+'</tr></thead><tbody>'+(r.rows.length?r.rows.map(function(x){return '<tr>'+row(x).map(function(c){return '<td>'+c+'</td>'}).join('')+'</tr>'}).join(''):'<tr><td colspan="'+h.length+'" style="color:var(--muted)">Nothing here yet.</td></tr>')+'</tbody>'})}
+  [].forEach.call(document.querySelectorAll('[data-t]'),function(b){b.onclick=function(){tab=b.dataset.t;[].forEach.call(document.querySelectorAll('[data-t]'),function(x){x.classList.toggle('on',x===b)});table()}});
+  var tm;$('q').oninput=function(){clearTimeout(tm);tm=setTimeout(table,300)};
+  api('/api/me').then(function(r){if(r.ok&&r.user&&r.user.isAdmin)return show(r.user);return api('/api/config').then(function(c){
+    if(r.ok&&r.user&&!r.user.isAdmin)$('msg').textContent=r.user.email+' is not an admin account.';
+    if(!c.googleClientId){$('msg').textContent='Google sign-in is not configured yet (set GOOGLE_CLIENT_ID).';return}
+    var s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';s.onload=function(){
+      google.accounts.id.initialize({client_id:c.googleClientId,callback:function(x){api('/api/auth/google','POST',{credential:x.credential}).then(function(j){
+        if(j.ok&&j.user.isAdmin)show(j.user);else $('msg').textContent=j.ok?j.user.email+' is not an admin account.':(j.message||'Sign-in failed.')})}});
+      google.accounts.id.renderButton($('gBtn'),{theme:'outline',size:'large',shape:'pill',text:'signin_with'})};
+    document.head.appendChild(s)})}).catch(function(){$('msg').textContent='API not reachable. Deploy the Worker first.'});
+})();
+</script>
+</body>
+</html>

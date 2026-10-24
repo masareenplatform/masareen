@@ -1,5 +1,5 @@
 """
-Broker Agent — funding opportunity discovery and matching.
+Broker Agent, funding opportunity discovery and matching.
 Consumes: masaren.reputation.impact_asset_created.v1
 Emits:    masaren.marketplace.funding_recommended.v1
 """

@@ -26,7 +26,7 @@ apiClient.interceptors.request.use((config) => {
 // just because the access token (short-lived) expired mid-use. If the
 // refresh itself fails (refresh token missing/expired/revoked), the tokens
 // are cleared and a "masaren:session-expired" event is dispatched so the UI
-// (see store/authStore.tsx) can redirect to /login exactly once — even if
+// (see store/authStore.tsx) can redirect to /login exactly once, even if
 // several requests 401'd concurrently.
 let refreshPromise: Promise<string | null> | null = null;
 
@@ -636,7 +636,7 @@ export const challengeService = {
       const r = await apiClient.get("/challenges/");
       return asList(r.data);
     } catch {
-      // Backend /challenges service not deployed yet — fall back to demo data.
+      // Backend /challenges service not deployed yet, fall back to demo data.
       return MOCK_CHALLENGES;
     }
   },

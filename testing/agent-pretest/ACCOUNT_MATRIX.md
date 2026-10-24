@@ -1,4 +1,4 @@
-# MASAREN — Agent Pretest Scheme (pre-alpha, before human testing)
+# MASAREN, Agent Pretest Scheme (pre-alpha, before human testing)
 
 Purpose: a reproducible, structured pretest where one or more AI agents adopt a
 persona (account type), exercise the monetisation + core features against a running
@@ -19,9 +19,9 @@ Mark each: `pass` / `fail` / `blocked` / `na`, with a one-line note + screenshot
 
 - **Auth & profile**: register (persona), login, me() reflects role.
 - **Wallet (coin)**: create wallet, get balance, `exchange/rate`, `exchange/convert`
-  (deposit & withdraw) — assert `fee_mrc` > 0 at default 2.5%; `transfer` — assert
+  (deposit & withdraw), assert `fee_mrc` > 0 at default 2.5%; `transfer`, assert
   recipient net = amount − fee; `earn`/`spend`; transaction history lists rows.
-- **Ads**: create campaign with budget B — assert response `platform_fee_coins = B*0.025`
+- **Ads**: create campaign with budget B, assert response `platform_fee_coins = B*0.025`
   and `budget_coins = B − fee`; list/status toggle; add creative; record impression/click;
   stats show spend.
 - **Payments**: `psp/status` shows Paymob enabled; `psp/paymob/intent` returns
@@ -43,7 +43,7 @@ Mark each: `pass` / `fail` / `blocked` / `na`, with a one-line note + screenshot
 
 ## 4. Report template (each agent writes this)
 ```markdown
-# Pretest report — <persona>
+# Pretest report, <persona>
 - date: 2026-07-09
 - backend: docker | mock
 - account: <id/email>, role: <ROLE>
@@ -73,9 +73,9 @@ into `testing/agent-pretest/SUMMARY.md` with an overall verdict:
 
 ## 6. Running today (Docker blocked)
 Until the container stack is up, agents run the **mock** variant:
-- Web: `testing/web/smoke-test.mjs` (Puppeteer + in-process mock gateway) — already
+- Web: `testing/web/smoke-test.mjs` (Puppeteer + in-process mock gateway), already
   exercises Wallet/Ads/Payments/Revenue UI with realistic data and screenshots.
-- Mobile: `testing/mobile/run_emulator.ps1 -MockAuth` — drives the four screens on an
+- Mobile: `testing/mobile/run_emulator.ps1 -MockAuth`, drives the four screens on an
   emulator; renders UI shells/offline states.
 - Backend brokerage logic: `cd backend/<svc> && python -m pytest tests -q` (green) plus
   the dedicated fee assertions in `test_wallet.py` / `test_ads.py`.

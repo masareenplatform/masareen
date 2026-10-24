@@ -1,9 +1,9 @@
 # INVENTION DISCLOSURE FORM (IDF)
 
 **ID:** IDF-004
-**Title:** AI Multi-Modal Evidence Verification — AI Pipeline for Photographic, GPS, and Behavioral Evidence Verification
+**Title:** AI Multi-Modal Evidence Verification, AI Pipeline for Photographic, GPS, and Behavioral Evidence Verification
 **Date:** August 11, 2026
-**Classification:** CONFIDENTIAL — PROPRIETARY
+**Classification:** CONFIDENTIAL, PROPRIETARY
 **Status:** 🔴 Draft
 
 ---

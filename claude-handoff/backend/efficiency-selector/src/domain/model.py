@@ -1,8 +1,8 @@
-"""EfficiencySelector domain model — capabilities, variants, selection policy.
+"""EfficiencySelector domain model, capabilities, variants, selection policy.
 
 Pure, framework-free logic. A *capability* is a logical function (e.g.
 ``fraud.score``); a *variant* is one concrete implementation of it in a language.
-Selection picks the best variant under a policy using *measured* benchmark data —
+Selection picks the best variant under a policy using *measured* benchmark data -
 never hardcoded performance numbers.
 """
 from __future__ import annotations

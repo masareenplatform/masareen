@@ -1,4 +1,4 @@
-"""social-service API — posts, likes, comments and bookmarks.
+"""social-service API, posts, likes, comments and bookmarks.
 
 Routed by the gateway under ``/api/v1`` (router prefix ``/posts``), so the
 external paths are ``/api/v1/posts``, ``/api/v1/posts/{id}/like``, etc.

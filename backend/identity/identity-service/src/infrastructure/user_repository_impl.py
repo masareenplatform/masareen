@@ -1,6 +1,6 @@
 """
 SQLAlchemy implementation of the UserRepository port.
-The domain never sees SQLAlchemy — this layer translates between ORM and domain.
+The domain never sees SQLAlchemy, this layer translates between ORM and domain.
 """
 from __future__ import annotations
 from typing import List, Optional, Tuple
@@ -133,7 +133,7 @@ class SQLAlchemyUserRepository(UserRepository):
         merged = await self._session.merge(orm)
         await self._session.flush()
         # Re-query with explicit eager loads so _to_domain never triggers a lazy
-        # (sync) load — which fails under AsyncSession with MissingGreenlet.
+        # (sync) load, which fails under AsyncSession with MissingGreenlet.
         stmt = (
             select(UserORM)
             .where(UserORM.id == merged.id)

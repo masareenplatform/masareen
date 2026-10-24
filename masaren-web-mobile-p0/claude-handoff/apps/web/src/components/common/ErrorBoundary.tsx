@@ -37,7 +37,7 @@ export default class ErrorBoundary extends React.Component<ErrorBoundaryProps, E
           <div className="card max-w-md p-6">
             <h1 className="mb-2 text-xl font-bold text-ink">Something went wrong</h1>
             <p className="mb-4 text-sm text-muted">
-              MASAREN hit an unexpected error. Your data is safe — reloading usually fixes this.
+              MASAREN hit an unexpected error. Your data is safe, reloading usually fixes this.
             </p>
             <button className="btn-gold w-full" onClick={this.handleReload}>
               Reload

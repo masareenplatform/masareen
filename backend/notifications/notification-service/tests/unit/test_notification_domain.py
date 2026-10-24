@@ -1,4 +1,4 @@
-"""Unit tests for the Notification aggregate — no DB, no I/O."""
+"""Unit tests for the Notification aggregate, no DB, no I/O."""
 from src.domain.notification import Notification, NotificationStatus
 
 

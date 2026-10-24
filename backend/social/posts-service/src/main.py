@@ -1,6 +1,6 @@
 """social-service entrypoint.
 
-Owns the Impact Feed posts, likes and bookmarks — the real backend behind the
+Owns the Impact Feed posts, likes and bookmarks, the real backend behind the
 web/mobile social UIs (previously client-side mocks). Follows the repo's
 service conventions: ``create_app`` + ``ApiResponse`` envelope + ``/api/v1``
 prefix + ``/health``.

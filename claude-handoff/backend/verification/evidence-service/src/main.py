@@ -1,4 +1,4 @@
-"""Evidence Service — application entrypoint.
+"""Evidence Service, application entrypoint.
 
 Wires the REAL PostgreSQL-backed API (``src.api``) instead of the previous
 fabricated in-memory implementation. All evidence records are persisted via the

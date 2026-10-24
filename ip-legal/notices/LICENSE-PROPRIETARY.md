@@ -8,7 +8,7 @@
 
 **Effective Date:** August 11, 2026
 **Licensor:** MASAREN ("Company," "we," "us," or "our")
-**Platform:** MASAREN — Impact Infrastructure as a Service (IIaaS) (the "Platform" or "Software")
+**Platform:** MASAREN, Impact Infrastructure as a Service (IIaaS) (the "Platform" or "Software")
 
 ---
 
@@ -191,11 +191,11 @@ THE LIMITATIONS IN THIS SECTION REFLECT A REASONABLE ALLOCATION OF RISK AND ARE 
 
 ### 9.1 Governing Law
 
-This Agreement shall be governed by and construed in accordance with the laws of [Jurisdiction — to be specified by legal counsel], without regard to its conflict of law provisions.
+This Agreement shall be governed by and construed in accordance with the laws of [Jurisdiction, to be specified by legal counsel], without regard to its conflict of law provisions.
 
 ### 9.2 Dispute Resolution
 
-Any dispute arising under this Agreement shall be subject to the exclusive jurisdiction of the courts of [Jurisdiction — to be specified by legal counsel], and each party hereby consents to such jurisdiction.
+Any dispute arising under this Agreement shall be subject to the exclusive jurisdiction of the courts of [Jurisdiction, to be specified by legal counsel], and each party hereby consents to such jurisdiction.
 
 ### 9.3 Entire Agreement
 
@@ -227,15 +227,15 @@ Licensee acknowledges that any breach of this Agreement may cause irreparable ha
 
 To obtain a written Commercial License Agreement or to inquire about authorized use:
 
-**MASAREN — Legal & Licensing Department**
+**MASAREN, Legal & Licensing Department**
 Email: legal@masaren.io
-Subject: `[LICENSE INQUIRY] — <Organization Name>`
+Subject: `[LICENSE INQUIRY], <Organization Name>`
 
 ---
 
 *Document Version: 1.0*
 *Effective Date: August 11, 2026*
-*Classification: CONFIDENTIAL — PROPRIETARY*
+*Classification: CONFIDENTIAL, PROPRIETARY*
 
 ---
 

@@ -1,9 +1,9 @@
 # INVENTION DISCLOSURE FORM (IDF)
 
 **ID:** IDF-003
-**Title:** Geo-Fenced Field Verification System — Location-Locked Task Execution and Evidence Verification
+**Title:** Geo-Fenced Field Verification System, Location-Locked Task Execution and Evidence Verification
 **Date:** August 11, 2026
-**Classification:** CONFIDENTIAL — PROPRIETARY
+**Classification:** CONFIDENTIAL, PROPRIETARY
 **Status:** 🔴 Draft
 
 ---
@@ -54,18 +54,18 @@ Geofences are defined as PostGIS polygons with optional:
 
 ### 4.2 Three-Layer Validation
 
-**Layer 1 — Coarse:**
+**Layer 1, Coarse:**
 ```sql
 SELECT ST_Contains(geofence_polygon, ST_SetSRID(ST_MakePoint(lon, lat), 4326))
 FROM geofences WHERE id = :geofence_id
 ```
 
-**Layer 2 — Fine:**
+**Layer 2, Fine:**
 - Check distance to nearest POI within the geofence
 - Radius threshold: ±10 meters for high-confidence areas
 - Use PostGIS `ST_DWithin()` for proximity checks
 
-**Layer 3 — Micro:**
+**Layer 3, Micro:**
 - Continuous GPS monitoring during evidence capture
 - Trajectory stored as a series of GeoHash points
 - Minimum trajectory length required for certain action types

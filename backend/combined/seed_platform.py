@@ -1,4 +1,4 @@
-"""MASAREN Platform Seed Script — populates demo data for the combined backend.
+"""MASAREN Platform Seed Script, populates demo data for the combined backend.
 
 This script creates:
 - Demo users (individuals, organizations)

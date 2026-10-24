@@ -27,7 +27,7 @@ class Repository(ABC, Generic[T]):
 
 
 class ReadRepository(ABC, Generic[T]):
-    """Read-side (query) repository — optimised for projections."""
+    """Read-side (query) repository, optimised for projections."""
 
     @abstractmethod
     async def get_by_id(self, entity_id: UUID) -> Optional[T]: ...

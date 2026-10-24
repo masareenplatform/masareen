@@ -1,4 +1,4 @@
-"""Real notification repository — persists notifications and preferences.
+"""Real notification repository, persists notifications and preferences.
 
 A notification is stored with a real generated id and a QUEUED status. Actual
 device delivery (FCM/APNs/SES) is a downstream channel concern that is not wired

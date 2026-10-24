@@ -11,7 +11,7 @@
 
 ## FIELD OF THE INVENTION
 
-The present invention relates to distributed ledger systems, real-world evidence verification, and digital asset creation. More particularly, this invention relates to a method and system that transforms verifiable real-world actions—such as environmental conservation activities, community service, and educational outreach—into immutable, measurable, and economically valuable digital assets recorded on a blockchain network.
+The present invention relates to distributed ledger systems, real-world evidence verification, and digital asset creation. More particularly, this invention relates to a method and system that transforms verifiable real-world actions-such as environmental conservation activities, community service, and educational outreach-into immutable, measurable, and economically valuable digital assets recorded on a blockchain network.
 
 ---
 
@@ -56,7 +56,7 @@ The present invention provides a **Verification-to-Asset Pipeline** that convert
 
 ### Key Inventive Concepts
 
-a) **Cross-modal Consistency Scoring**: The system computes a correlation score between image, GPS, and behavioral confidence signals. When these signals disagree strongly, the overall confidence is penalized—a technique not found in prior art.
+a) **Cross-modal Consistency Scoring**: The system computes a correlation score between image, GPS, and behavioral confidence signals. When these signals disagree strongly, the overall confidence is penalized-a technique not found in prior art.
 
 b) **Real-time Trajectory Validation**: Unlike static geofencing, the system continuously monitors GPS during evidence capture, checking for geofence crossings and speed consistency.
 
@@ -98,7 +98,7 @@ Evidence is stored in an S3-compatible object store. A unique SHA-256 hash is co
 
 A Celery-based task queue with five stages. Each stage is a Python service:
 
-**Stage 1—Image Forgery Detection:**
+**Stage 1-Image Forgery Detection:**
 ```python
 model = EfficientNetV2L(pretrained='imagenet')
 forgery_head = Dense(1, activation='sigmoid')
@@ -111,7 +111,7 @@ combined = Model(inputs=model.input,
 # Trained on 2M synthetic, 5M authentic, 500k manipulated images
 ```
 
-**Stage 2—Geospatial Validation:**
+**Stage 2-Geospatial Validation:**
 ```sql
 WITH geofence AS (
   SELECT boundary FROM geofences WHERE id = :gfid
@@ -123,13 +123,13 @@ SELECT ST_Contains(geofence.boundary, gps_point) AS is_inside
 FROM geofence;
 ```
 
-**Stage 3—Temporal Consistency:**
+**Stage 3-Temporal Consistency:**
 Validates that evidence timestamps are monotonically increasing and consistent with device clock drift models. Uses Kalman filter to predict next timestamp.
 
-**Stage 4—Behavioral Authenticity:**
+**Stage 4-Behavioral Authenticity:**
 XGBoost model trained on 1M labeled sessions (authentic vs. fraudulent). Features: session duration, interaction density, GPS speed variance, accelerometer pattern entropy.
 
-**Stage 5—Cross-Modal Fusion:**
+**Stage 5-Cross-Modal Fusion:**
 ```python
 vision_confidence = 1.0 - forgery_score
 gps_confidence = float(is_valid)  # 0.0 or 1.0, or 0.5 for boundary cases
@@ -222,7 +222,7 @@ The invention comprises:
 
 ## ABSTRACT
 
-A system and method for converting verified real-world field actions into blockchain-backed digital impact assets. Mobile device evidence—including images, GPS coordinates, and device sensor data—is processed through a multi-stage AI verification pipeline that detects forgery, validates geolocation, and computes a behavioral authenticity score. A cross-modal fusion layer penalizes inter-signal inconsistencies. When a configurable confidence threshold is exceeded, the system computes impact metrics, mints an ERC-721 non-fungible token on a blockchain network, and records the asset and all related entities in a Neo4j knowledge graph for audit, trust propagation, and network analysis.
+A system and method for converting verified real-world field actions into blockchain-backed digital impact assets. Mobile device evidence-including images, GPS coordinates, and device sensor data-is processed through a multi-stage AI verification pipeline that detects forgery, validates geolocation, and computes a behavioral authenticity score. A cross-modal fusion layer penalizes inter-signal inconsistencies. When a configurable confidence threshold is exceeded, the system computes impact metrics, mints an ERC-721 non-fungible token on a blockchain network, and records the asset and all related entities in a Neo4j knowledge graph for audit, trust propagation, and network analysis.
 
 ---
 
@@ -235,6 +235,6 @@ The Verification-to-Asset Pipeline represents a novel integration of AI evidence
 **Filed:** August 11, 2026
 **Inventors:** MASAREN Engineering Team
 **Attorney:** [To be assigned]
-**Classification:** CONFIDENTIAL — PROPRIETARY
+**Classification:** CONFIDENTIAL, PROPRIETARY
 
 *This is a provisional patent application drafted for internal use pending formal attorney review and USPTO filing.*

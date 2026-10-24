@@ -1,8 +1,8 @@
-"""Analytics service API — real aggregates over the platform's relational tables.
+"""Analytics service API, real aggregates over the platform's relational tables.
 
 Every endpoint computes its response from PostgreSQL (see
 infrastructure/postgres_repository.py). If the database is unreachable the
-endpoint returns HTTP 503 — it never returns fabricated zeros.
+endpoint returns HTTP 503, it never returns fabricated zeros.
 """
 from fastapi import APIRouter, Query, Depends, HTTPException
 from typing import Optional

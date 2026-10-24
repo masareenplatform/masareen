@@ -1,4 +1,4 @@
-"""Initial schema — outbox_events and evidence_drafts.
+"""Initial schema, outbox_events and evidence_drafts.
 
 Revision ID: 001_initial
 Revises: None

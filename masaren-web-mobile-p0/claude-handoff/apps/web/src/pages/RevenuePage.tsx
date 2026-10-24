@@ -183,15 +183,15 @@ export default function RevenuePage() {
               <tbody>
                 {events.map((ev: any, i: number) => (
                   <tr key={ev.id ?? i} className="border-t border-white/10 text-white/80">
-                    <td className="py-2 pr-4">{ev.source_service ?? "—"}</td>
+                    <td className="py-2 pr-4">{ev.source_service ?? "-"}</td>
                     <td className="py-2 pr-4 text-gold">
-                      {ev.amount != null ? Number(ev.amount).toLocaleString() : "—"}
+                      {ev.amount != null ? Number(ev.amount).toLocaleString() : "-"}
                     </td>
-                    <td className="py-2 pr-4">{ev.currency ?? "—"}</td>
+                    <td className="py-2 pr-4">{ev.currency ?? "-"}</td>
                     <td className="py-2 pr-4 font-mono text-xs text-white/50">
-                      {ev.reference ?? "—"}
+                      {ev.reference ?? "-"}
                     </td>
-                    <td className="py-2 pr-4 text-white/50">{ev.created_at ?? "—"}</td>
+                    <td className="py-2 pr-4 text-white/50">{ev.created_at ?? "-"}</td>
                   </tr>
                 ))}
               </tbody>

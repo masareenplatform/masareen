@@ -1,5 +1,5 @@
 /**
- * MASAREN E2E — Backend integration
+ * MASAREN E2E, Backend integration
  *
  * Verifies that the web UI actually communicates with the combined backend:
  *  - Backend health endpoint responds
@@ -84,7 +84,7 @@ test("platform stats API returns data", async ({ token }) => {
   const res = await fetch(`${API}/api/v1/platform/stats`, {
     headers: { Authorization: `Bearer ${token.access_token}` },
   });
-  // 200 or 404 (endpoint may not exist in all builds) — just not a 500
+  // 200 or 404 (endpoint may not exist in all builds), just not a 500
   expect(res.status, "Platform stats should not 500").not.toBe(500);
 });
 

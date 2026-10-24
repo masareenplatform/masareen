@@ -143,9 +143,9 @@ class _AdminRevenueScreenState extends State<AdminRevenueScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('MRC: ${totals['MRC'] ?? '—'}'),
-                  Text('EGP: ${totals['EGP'] ?? '—'}'),
-                  Text('Current fee_rate: ${_summary?['fee_rate'] ?? '—'}'),
+                  Text('MRC: ${totals['MRC'] ?? '-'}'),
+                  Text('EGP: ${totals['EGP'] ?? '-'}'),
+                  Text('Current fee_rate: ${_summary?['fee_rate'] ?? '-'}'),
                 ],
               ),
             ),

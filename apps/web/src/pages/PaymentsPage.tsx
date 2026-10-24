@@ -208,11 +208,11 @@ export default function PaymentsPage() {
                   {history.map((p: any, i: number) => (
                     <tr key={p.id ?? i} className="border-t border-line/60 text-ink/80">
                       <td className="py-2 pr-4">
-                        {p.amount ?? p.amount_egp ?? "—"} {p.currency ?? "EGP"}
+                        {p.amount ?? p.amount_egp ?? "-"} {p.currency ?? "EGP"}
                       </td>
-                      <td className="py-2 pr-4">{p.status ?? "—"}</td>
-                      <td className="py-2 pr-4">{p.method ?? p?.psp?.method ?? "—"}</td>
-                      <td className="py-2 pr-4 text-ink/50">{p.created_at ?? "—"}</td>
+                      <td className="py-2 pr-4">{p.status ?? "-"}</td>
+                      <td className="py-2 pr-4">{p.method ?? p?.psp?.method ?? "-"}</td>
+                      <td className="py-2 pr-4 text-ink/50">{p.created_at ?? "-"}</td>
                     </tr>
                   ))}
                 </tbody>

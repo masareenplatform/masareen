@@ -7,11 +7,11 @@ the error is surfaced honestly (never a fabricated intent id or receipt).
 
 Vodafone Cash (Egypt) is represented by an interface stub that raises
 ``PspNotConfiguredError`` until a real merchant integration + credentials are
-supplied — it deliberately does not fake a gateway response.
+supplied, it deliberately does not fake a gateway response.
 
 Config (env):
-- ``STRIPE_SECRET_KEY``   — Stripe secret API key (``sk_live_...`` / ``sk_test_...``)
-- ``STRIPE_API_BASE``     — override for tests / Stripe-compatible gateways
+- ``STRIPE_SECRET_KEY``, Stripe secret API key (``sk_live_...`` / ``sk_test_...``)
+- ``STRIPE_API_BASE``, override for tests / Stripe-compatible gateways
 """
 from __future__ import annotations
 
@@ -85,23 +85,23 @@ class StripePspClient:
         return resp.json()
 
 
-# ── Paymob (Egypt) — real Accept API client with Vodafone Cash ───────────────────
+# ── Paymob (Egypt), real Accept API client with Vodafone Cash ───────────────────
 class PaymobPspClient:
     """Real Paymob Accept API client (Egypt).
 
     Supports card payments through the hosted iframe and **Vodafone Cash** through
     Paymob's wallet flow. Every call hits the live Paymob API; if credentials are
     missing the client reports ``enabled = False`` and callers return an honest 501.
-    Webhook authenticity is verified with Paymob's HMAC-SHA512 scheme — no fabricated
+    Webhook authenticity is verified with Paymob's HMAC-SHA512 scheme, no fabricated
     transaction is ever accepted.
 
     Required config (env):
-    - ``PAYMOB_API_KEY``                 — Paymob API key
-    - ``PAYMOB_HMAC_SECRET``             — webhook HMAC secret
-    - ``PAYMOB_WALLET_INTEGRATION_ID``   — wallet integration id (Vodafone Cash etc.)
-    - ``PAYMOB_VODAFONE_INTEGRATION_ID`` — Vodafone Cash-specific integration id
-    - ``PAYMOB_IFRAME_ID``               — card iframe id
-    - ``PAYMOB_CURRENCY``                — default ``EGP``
+    - ``PAYMOB_API_KEY``, Paymob API key
+    - ``PAYMOB_HMAC_SECRET``, webhook HMAC secret
+    - ``PAYMOB_WALLET_INTEGRATION_ID``, wallet integration id (Vodafone Cash etc.)
+    - ``PAYMOB_VODAFONE_INTEGRATION_ID``, Vodafone Cash-specific integration id
+    - ``PAYMOB_IFRAME_ID``, card iframe id
+    - ``PAYMOB_CURRENCY``, default ``EGP``
     """
 
     def __init__(self, api_key: Optional[str] = None, hmac_secret: Optional[str] = None,

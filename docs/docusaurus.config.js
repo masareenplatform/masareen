@@ -4,7 +4,7 @@ import { themes as prismThemes } from "prism-react-renderer";
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: "MASAREEN",
-  tagline: "Infrastructure for Impact — verified, measurable, trusted.",
+  tagline: "Infrastructure for Impact, verified, measurable, trusted.",
   favicon: "img/favicon.ico",
 
   url: "https://masareen.mediahubnetwork.net",

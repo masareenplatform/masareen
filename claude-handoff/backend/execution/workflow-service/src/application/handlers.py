@@ -1,4 +1,4 @@
-"""Command handlers for workflow-service — now DB-backed via repositories."""
+"""Command handlers for workflow-service, now DB-backed via repositories."""
 from shared.exceptions import NotFoundException
 from shared.utils.cqrs import CommandHandler
 from shared.utils.logging import get_logger

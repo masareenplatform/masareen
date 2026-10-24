@@ -276,37 +276,37 @@ class _AdminScreenState extends State<AdminScreen> {
             _KpiCard(
               icon: Icons.people,
               label: 'Total Users',
-              value: '${s['total_users'] ?? '—'}',
+              value: '${s['total_users'] ?? '-'}',
               color: AppColors.azure,
             ),
             _KpiCard(
               icon: Icons.feed,
               label: 'Total Posts',
-              value: '${s['total_posts'] ?? '—'}',
+              value: '${s['total_posts'] ?? '-'}',
               color: AppColors.accent,
             ),
             _KpiCard(
               icon: Icons.description,
               label: 'Submissions',
-              value: '${s['total_submissions'] ?? '—'}',
+              value: '${s['total_submissions'] ?? '-'}',
               color: _purple,
             ),
             _KpiCard(
               icon: Icons.pending,
               label: 'Pending Reviews',
-              value: '${s['pending_reviews'] ?? '—'}',
+              value: '${s['pending_reviews'] ?? '-'}',
               color: _amber,
             ),
             _KpiCard(
               icon: Icons.check_circle,
               label: 'Approved Today',
-              value: '${s['approved_today'] ?? '—'}',
+              value: '${s['approved_today'] ?? '-'}',
               color: _green,
             ),
             _KpiCard(
               icon: Icons.cancel,
               label: 'Rejected Today',
-              value: '${s['rejected_today'] ?? '—'}',
+              value: '${s['rejected_today'] ?? '-'}',
               color: AppColors.warm,
             ),
           ],
@@ -364,7 +364,7 @@ class _AdminScreenState extends State<AdminScreen> {
             leading: CircleAvatar(
               backgroundColor: _confidenceColor(confidence),
               child: Text(
-                confidence != null ? '${(confidence * 100).toInt()}%' : '—',
+                confidence != null ? '${(confidence * 100).toInt()}%' : '-',
                 style: const TextStyle(
                     color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
               ),
@@ -481,7 +481,7 @@ class _AdminScreenState extends State<AdminScreen> {
                         color: cs.onSurface, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 8),
                 Text(
-                    'Current: ${_rate?['rate_to_mrc'] ?? '—'} MRC per EGP',
+                    'Current: ${_rate?['rate_to_mrc'] ?? '-'} MRC per EGP',
                     style: TextStyle(color: cs.onSurfaceVariant)),
                 const SizedBox(height: 10),
                 Row(

@@ -1,4 +1,4 @@
-"""Unit tests for the Program aggregate — no DB, no I/O."""
+"""Unit tests for the Program aggregate, no DB, no I/O."""
 import pytest
 from datetime import date, timedelta
 

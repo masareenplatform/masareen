@@ -1,4 +1,4 @@
-"""Media Asset entity — manages upload slots, CDN delivery, processing."""
+"""Media Asset entity, manages upload slots, CDN delivery, processing."""
 from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -30,7 +30,7 @@ class ProcessingStatus(str, Enum):
 
 @dataclass
 class MediaAsset(AggregateRoot):
-    """Media asset aggregate root — manages upload slots, CDN delivery, processing."""
+    """Media asset aggregate root, manages upload slots, CDN delivery, processing."""
     owner_id:          str                  = ""
     evidence_id:       Optional[str]        = None
     mime_type:         str                  = ""

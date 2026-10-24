@@ -1,4 +1,4 @@
-"""Repository for chat persistence — real PostgreSQL via SQLAlchemy async sessions."""
+"""Repository for chat persistence, real PostgreSQL via SQLAlchemy async sessions."""
 from __future__ import annotations
 
 from typing import List, Optional

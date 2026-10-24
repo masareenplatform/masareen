@@ -1,4 +1,4 @@
-# MASAREN — real-backend bottom-nav E2E (Maestro).
+# MASAREN, real-backend bottom-nav E2E (Maestro).
 # Logs in against the live combined backend, then walks all 5 primary tabs.
 appId: com.masaren.app
 ---

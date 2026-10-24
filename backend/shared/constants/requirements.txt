@@ -1,1 +1,1 @@
-# No external dependencies — pure Python constants and enums.
+# No external dependencies, pure Python constants and enums.

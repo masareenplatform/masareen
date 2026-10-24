@@ -16,17 +16,17 @@ participation. Created by an organization via `POST /api/v1/opportunities/`.
 
 Key fields:
 
-- `title`, `description` — what needs doing.
-- `skills[]` — required/desired capabilities.
-- `sdg` — the Sustainable Development Goal it advances.
-- `location` — where the work happens (used for GPS verification + proximity matching).
-- `min_pms` — a **minimum PMS score gate** (reputation as access control).
-- `type` — task / program / volunteer-call / paid-role.
+- `title`, `description`, what needs doing.
+- `skills[]`, required/desired capabilities.
+- `sdg`, the Sustainable Development Goal it advances.
+- `location`, where the work happens (used for GPS verification + proximity matching).
+- `min_pms`, a **minimum PMS score gate** (reputation as access control).
+- `type`, task / program / volunteer-call / paid-role.
 
 Opportunities are listed (`GET /api/v1/opportunities/`), fetched individually
 (`GET /api/v1/opportunities/{id}`), and published (`POST /api/v1/opportunities/{id}/publish`).
 
-There is also **platform content** (`/api/v1/opportunities/platform-content`) — curated,
+There is also **platform content** (`/api/v1/opportunities/platform-content`), curated,
 network-wide opportunities surfaced to everyone.
 
 ## From opportunity → task
@@ -35,11 +35,11 @@ When a candidate applies (`POST /api/v1/opportunities/{id}/apply`) and is accept
 opportunity spawns a **task** (`POST /api/v1/tasks/`). The task is the *assigned, executable*
 unit:
 
-- `assign` (`POST /api/v1/tasks/{id}/assign`) — assign to a user.
-- `start` (`POST /api/v1/tasks/{id}/start`) — work begins.
-- `submit` (`POST /api/v1/tasks/{id}/submit`) — evidence submitted.
-- `verify` (`POST /api/v1/tasks/{id}/verify`) — verified after pipeline passes.
-- `complete` / `cancel` — terminal states.
+- `assign` (`POST /api/v1/tasks/{id}/assign`), assign to a user.
+- `start` (`POST /api/v1/tasks/{id}/start`), work begins.
+- `submit` (`POST /api/v1/tasks/{id}/submit`), evidence submitted.
+- `verify` (`POST /api/v1/tasks/{id}/verify`), verified after pipeline passes.
+- `complete` / `cancel`, terminal states.
 
 Tasks carry a history (`GET /api/v1/tasks/{id}/history`) so the lifecycle is auditable.
 
@@ -47,10 +47,10 @@ Tasks carry a history (`GET /api/v1/tasks/{id}/history`) so the lifecycle is aud
 
 The **matching service** connects supply and demand intelligently:
 
-- `POST /api/v1/matching/opportunities-for-user` — opportunities suited to a user.
-- `POST /api/v1/matching/users-for-opportunity` — candidates for an opportunity.
-- `GET /api/v1/matching/recommendations/{user_id}` — personalized feed.
-- `POST /api/v1/matching/feed` — the general discovery feed.
+- `POST /api/v1/matching/opportunities-for-user`, opportunities suited to a user.
+- `POST /api/v1/matching/users-for-opportunity`, candidates for an opportunity.
+- `GET /api/v1/matching/recommendations/{user_id}`, personalized feed.
+- `POST /api/v1/matching/feed`, the general discovery feed.
 
 Ranking uses **PMS score, skills, SDG alignment, and graph proximity** (who you and your
 network have worked with). This is how reputation *unlocks* opportunity: higher PMS →

@@ -100,7 +100,7 @@ async def run_benchmarks(capability: str, reg: Registry = Depends(get_registry))
     """Trigger a real self-benchmark on every variant via its /bench endpoint.
 
     Measurements are taken from the variant's own response (real work, real
-    numbers) — nothing is fabricated here.
+    numbers), nothing is fabricated here.
     """
     import httpx
 
@@ -124,7 +124,7 @@ async def run_benchmarks(capability: str, reg: Registry = Depends(get_registry))
                 else:
                     results.append({"variant": v.key, "measured": False,
                                     "error": f"bench http {r.status_code}"})
-            except Exception as exc:  # network/timeout — honest, not fabricated
+            except Exception as exc:  # network/timeout, honest, not fabricated
                 results.append({"variant": v.key, "measured": False, "error": str(exc)})
     return BenchResult(capability=capability, results=results)
 

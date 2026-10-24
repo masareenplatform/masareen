@@ -1,4 +1,4 @@
-"""Billing service API — real invoice persistence.
+"""Billing service API, real invoice persistence.
 
 Invoices and line items are stored in PostgreSQL. The total is computed from the
 submitted line items (no fabricated data). If the database is unreachable the

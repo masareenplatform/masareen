@@ -1,11 +1,11 @@
-// postService — social feed with graceful backend hydration.
+// postService, social feed with graceful backend hydration.
 //
 // The MASAREEN social-service now owns /api/v1/posts (posts/likes/comments/
 // bookmarks), served by the combined monolith. This service hydrates its store
 // from `/posts` when the gateway is reachable and falls back to a seeded
 // in-memory store (persisted to localStorage) for the offline demo. New posts/
 // likes/comments are fanned out through the realtime bus (see services/realtime)
-// so every open tab updates live — no refresh needed — and remote events from
+// so every open tab updates live, no refresh needed, and remote events from
 // other users are merged back in via `applyRemote`.
 
 import { realtime, TOPICS } from "./realtime";
@@ -61,7 +61,7 @@ function seed(): Post[] {
       id: uid(),
       kind: "impact",
       author: SEED_AUTHORS[4],
-      text: "We just planted 12,000 mangrove saplings along the northern coast with 340 volunteers. Real, verified impact — every seedling geotagged and audited. 🌱",
+      text: "We just planted 12,000 mangrove saplings along the northern coast with 340 volunteers. Real, verified impact, every seedling geotagged and audited. 🌱",
       media: [],
       programTag: "Coastal Restoration",
       sdg: 14,
@@ -93,7 +93,7 @@ function seed(): Post[] {
       id: uid(),
       kind: "evidence",
       author: SEED_AUTHORS[2],
-      text: "Field verification complete for the solar microgrid in Aswan. 98% uptime this quarter — audit trail attached.",
+      text: "Field verification complete for the solar microgrid in Aswan. 98% uptime this quarter, audit trail attached.",
       media: [{ url: "", type: "image", name: "audit-aswan.jpg" }],
       sdg: 7,
       impactValue: 98,
@@ -122,7 +122,7 @@ function seed(): Post[] {
       id: uid(),
       kind: "impact",
       author: SEED_AUTHORS[5],
-      text: "Aswan solar microgrid just crossed 98% uptime for the quarter — clean energy reaching 4 villages. ☀️",
+      text: "Aswan solar microgrid just crossed 98% uptime for the quarter, clean energy reaching 4 villages. ☀️",
       media: [],
       programTag: "Rural Electrification",
       sdg: 7,
@@ -138,7 +138,7 @@ function seed(): Post[] {
       id: uid(),
       kind: "program",
       author: SEED_AUTHORS[6],
-      text: "Scholarships are open for the 2026 EduForAll cohort — 200 places for girls in STEM across 5 governorates.",
+      text: "Scholarships are open for the 2026 EduForAll cohort, 200 places for girls in STEM across 5 governorates.",
       media: [],
       programTag: "EduForAll 2026",
       sdg: 4,
@@ -214,7 +214,7 @@ function seed(): Post[] {
       programTag: "Clean Air Pilot",
       sdg: 11,
       likes: 119,
-      comments: [{ id: uid("c"), author: SEED_AUTHORS[0], text: "Measurable and verified — exactly the standard.", createdAt: ago(12) }],
+      comments: [{ id: uid("c"), author: SEED_AUTHORS[0], text: "Measurable and verified, exactly the standard.", createdAt: ago(12) }],
       shares: 14,
       likedByMe: false,
       createdAt: ago(265),
@@ -235,7 +235,7 @@ function seed(): Post[] {
       id: uid(),
       kind: "impact",
       author: SEED_AUTHORS[6],
-      text: "Girls coding club graduated 60 students this term — 80% from underserved districts. 💻",
+      text: "Girls coding club graduated 60 students this term, 80% from underserved districts. 💻",
       media: [],
       programTag: "Girls Who Code",
       sdg: 5,
@@ -268,7 +268,7 @@ function seed(): Post[] {
       id: uid(),
       kind: "announcement",
       author: PLATFORM_AUTHOR,
-      text: "👋 Welcome to MASAREEN — the professional impact network for verified media, institutions and field reporters. Publish verified reports, earn recognition, and turn your work into a measurable impact portfolio. Tap “Create post” to share your first story.",
+      text: "👋 Welcome to MASAREEN, the professional impact network for verified media, institutions and field reporters. Publish verified reports, earn recognition, and turn your work into a measurable impact portfolio. Tap “Create post” to share your first story.",
       media: [],
       programTag: undefined,
       sdg: 17,
@@ -653,7 +653,7 @@ export const postService = {
   },
 };
 
-// Avatar gradient helper — deterministic colors per handle (used by PostCard,
+// Avatar gradient helper, deterministic colors per handle (used by PostCard,
 // Messenger, TopNav). Pure CSS classes; no network needed.
 export function avatarColors(seed: string): { c1: string; c2: string } {
   const palettes = [

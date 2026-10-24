@@ -151,7 +151,7 @@ export default function ProfilePage() {
             </div>
           ) : (
             <p className="mt-3 text-body-md text-muted">
-              {((user as any)?.bio) || `Impact-driven ${role.toLowerCase()} on MASAREEN. Building verified, measurable change — one post at a time.`}
+              {((user as any)?.bio) || `Impact-driven ${role.toLowerCase()} on MASAREEN. Building verified, measurable change, one post at a time.`}
             </p>
           )}
 
@@ -215,7 +215,7 @@ export default function ProfilePage() {
               </div>
               <div className="flex items-center justify-between py-2 border-b border-line/30">
                 <span className="text-muted">Email</span>
-                <span className="font-medium text-ink">{user?.email ?? "—"}</span>
+                <span className="font-medium text-ink">{user?.email ?? "-"}</span>
               </div>
               {user?.pms_score != null && (
                 <div className="flex items-center justify-between py-2">

@@ -1,5 +1,5 @@
 """
-Users router — identity-service.
+Users router, identity-service.
 Provides CRUD for user profiles, skills, and Impact Passport.
 """
 from __future__ import annotations

@@ -1,4 +1,4 @@
-"""Real collaboration repository — persists hosting requests and their lifecycle.
+"""Real collaboration repository, persists hosting requests and their lifecycle.
 
 State machine (enforced in SQL via the CHECK constraint and guarded in Python):
     SUBMITTED -> APPROVED | REJECTED -> (APPROVED) PROVISIONED

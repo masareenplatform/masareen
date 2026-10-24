@@ -61,7 +61,7 @@ export default function App() {
           <Route path="/docs" element={<DocsPage />} />
           <Route path="/financialreport" element={<FinancialReportPage />} />
 
-          {/* Authenticated app shell — RequireAuth wraps all children */}
+          {/* Authenticated app shell, RequireAuth wraps all children */}
           <Route element={<RequireAuth><Layout /></RequireAuth>}>
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/feed" element={<FeedPage />} />

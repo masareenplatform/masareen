@@ -1,11 +1,11 @@
 """
-MASAREN Demo  —  API Gateway / BFF (Production-Grade)
+MASAREN Demo, API Gateway / BFF (Production-Grade)
 Runs on port 8000, serves the SPA frontend and proxies/aggregates backend services.
 
 Design principles (per platform-genome "never" rules):
   - NO in-memory mock data. All domain state is persisted in SQLite (masaren_demo.db).
   - NO simulated/random values. AI confidence, impact value, GPS, reactions are REAL
-    or explicitly marked PENDING/IN_REVIEW — never faked.
+    or explicitly marked PENDING/IN_REVIEW, never faked.
   - Every endpoint performs a real operation against the persistent store or a real
     backend microservice.
 
@@ -91,7 +91,7 @@ async def _shutdown():
         await http_client.aclose()
 
 
-# ── Persistence (SQLite — real, persistent, no in-memory dicts) ─────────────
+# ── Persistence (SQLite, real, persistent, no in-memory dicts) ─────────────
 def get_conn() -> sqlite3.Connection:
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -321,7 +321,7 @@ PMS_DIMS = [
     "innovation", "consistency", "community_impact"
 ]
 
-# Economic valuation model (deterministic, NOT random) — base USD value per media type.
+# Economic valuation model (deterministic, NOT random), base USD value per media type.
 MEDIA_BASE_VALUE = {"PHOTO": 25.0, "VIDEO": 60.0, "AUDIO": 15.0, "DOCUMENT": 10.0, "GPS_TRACK": 20.0}
 
 
@@ -1293,7 +1293,7 @@ async def verify_evidence_backend(media_type: str, evidence_id: str,
                 }
         except httpx.RequestError:
             pass
-    # Honest fallback — no simulation
+    # Honest fallback, no simulation
     return {
         "status": EvidenceStatus.IN_REVIEW.value,
         "verdict": "IN_REVIEW",
@@ -1361,7 +1361,7 @@ async def sync_evidence(evidence_id: str, u: dict = Depends(get_current_user)):
         if row["impact_asset_id"]:
             return {"evidence_id": evidence_id, "status": "APPROVED", "synced": True}
         media_type = row["media_type"]
-        # Transparent base table — documented pricing per media type (not random).
+        # Transparent base table, documented pricing per media type (not random).
         base = MEDIA_BASE_VALUE.get(media_type, 10.0)
         # Scale by real AI confidence when available; otherwise neutral 1.0.
         conf = float(ai_confidence) if ai_confidence is not None else 1.0
@@ -1711,7 +1711,7 @@ async def search(q: str = "", u: dict = Depends(get_current_user)):
     return {"users": users[:5], "programs": programs[:5], "tasks": tasks[:5]}
 
 
-# ── Seed Data (creates real persisted entities — not mock/random) ────────
+# ── Seed Data (creates real persisted entities, not mock/random) ────────
 def seed_default():
     """Create demo accounts on first boot (real persisted users)."""
     conn = get_conn()

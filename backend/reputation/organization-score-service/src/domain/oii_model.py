@@ -14,7 +14,7 @@ class OIIDimension:
 class OrganizationalImpactIndex:
     """
     Multidimensional reputation profile for organizations.
-    Weights are loaded from config — never hardcoded.
+    Weights are loaded from config, never hardcoded.
     """
     organization_id: str
     dimensions: Dict[str, OIIDimension] = field(default_factory=dict)

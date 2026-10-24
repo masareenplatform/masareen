@@ -1,7 +1,7 @@
 """PostgreSQL implementation of AuditRepository.
 
 Append-only table ensures immutability.
-No UPDATE or DELETE operations — only INSERT and SELECT.
+No UPDATE or DELETE operations, only INSERT and SELECT.
 """
 from typing import List, Optional
 from uuid import uuid4
@@ -17,7 +17,7 @@ log = get_logger(__name__)
 
 
 class PostgresAuditRepository(AuditRepository):
-    """PostgreSQL audit repository — append-only, no updates or deletes."""
+    """PostgreSQL audit repository, append-only, no updates or deletes."""
 
     def __init__(self, session: AsyncSession):
         self._session = session

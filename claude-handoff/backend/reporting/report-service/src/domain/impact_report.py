@@ -1,4 +1,4 @@
-"""Impact Report aggregate — SDG-aligned auto-generated reports."""
+"""Impact Report aggregate, SDG-aligned auto-generated reports."""
 from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import date, datetime, timezone
@@ -57,7 +57,7 @@ class ImpactReport(AggregateRoot):
                 requested_by: str, period_start: Optional[date]=None,
                 period_end: Optional[date]=None) -> "ImpactReport":
         now = datetime.now(timezone.utc)
-        title = f"{report_type.replace('_',' ').title()} — {entity_type} {entity_id[:8]}"
+        title = f"{report_type.replace('_',' ').title()}, {entity_type} {entity_id[:8]}"
         return cls(id=str(uuid4()), report_type=ReportType(report_type),
                    status=ReportStatus.QUEUED, entity_id=entity_id,
                    entity_type=entity_type, period_start=period_start,

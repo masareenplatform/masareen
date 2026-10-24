@@ -8,9 +8,9 @@ sidebar_position: 1
 
 MASAREEN ships two frontends that talk to the same backend:
 
-- **Web app** — React 18 + TypeScript + Vite. The primary surface: landing, marketing,
+- **Web app**, React 18 + TypeScript + Vite. The primary surface: landing, marketing,
   feed, admin dashboard, login, profiles.
-- **Mobile app** — Flutter 3.32 / Dart 3.8. A focused, plugin-free Android client for
+- **Mobile app**, Flutter 3.32 / Dart 3.8. A focused, plugin-free Android client for
   capture-and-verify in the field.
 
 Both share the **same brand identity** (brand `#0250A3`, azure `#0077C8`, accent `#2A9D45`,
@@ -43,5 +43,5 @@ the web consent screen via `url_launcher`.
 
 ## What's next
 
-- [Web app](/docs/frontend/web) — pages, layout, theming, build/run.
-- [Mobile app](/docs/frontend/mobile) — setup, screens, APK, install.
+- [Web app](/docs/frontend/web), pages, layout, theming, build/run.
+- [Mobile app](/docs/frontend/mobile), setup, screens, APK, install.

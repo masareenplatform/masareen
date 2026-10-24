@@ -8,7 +8,7 @@ log_msg <- function(msg) {
 }
 
 log_msg("==============================================")
-log_msg(" MASAREN Impact-as-a-Service — Report Runner")
+log_msg(" MASAREN Impact-as-a-Service, Report Runner")
 log_msg("==============================================")
 
 # ── Source setup (packages, DB connection) ─────────────────────────────────────
@@ -48,7 +48,7 @@ results <- list()
 for (scr in scripts) {
   scr_path <- file.path(script_dir, scr)
   if (!file.exists(scr_path)) {
-    log_msg(sprintf("WARNING: Script not found — %s", scr_path))
+    log_msg(sprintf("WARNING: Script not found, %s", scr_path))
     next
   }
 
@@ -84,7 +84,7 @@ image_files <- unique(image_files)
 csv_files <- list.files(output_dir, pattern = "*.csv", full.names = FALSE)
 
 # ── Build master report content ─────────────────────────────────────────────────
-title <- "MASAREN — Master Analytics Report"
+title <- "MASAREN, Master Analytics Report"
 date_str <- format(Sys.time(), "%Y-%m-%d %H:%M")
 
 images_html <- ""

@@ -116,7 +116,7 @@ export default function ProfilePage() {
           </div>
 
           <p className="mt-3 text-sm text-ink">
-            Impact-driven {role.toLowerCase()} on MASAREN. Building verified, measurable change — one post at a time.
+            Impact-driven {role.toLowerCase()} on MASAREN. Building verified, measurable change, one post at a time.
           </p>
 
           <div className="mt-3 flex flex-wrap gap-2">
@@ -157,8 +157,8 @@ export default function ProfilePage() {
           <section className="card p-4 text-sm text-ink">
             <h3 className="mb-2 font-display font-bold">About</h3>
             <p className="text-muted">Role: <span className="text-ink">{role}</span></p>
-            <p className="mt-1 text-muted">Email: <span className="text-ink">{user?.email ?? "—"}</span></p>
-            <p className="mt-1 text-muted">PMS Score: <span className="text-ink">{user?.pms_score ?? "—"}</span></p>
+            <p className="mt-1 text-muted">Email: <span className="text-ink">{user?.email ?? "-"}</span></p>
+            <p className="mt-1 text-muted">PMS Score: <span className="text-ink">{user?.pms_score ?? "-"}</span></p>
           </section>
         )}
         {tab === "impact" && (

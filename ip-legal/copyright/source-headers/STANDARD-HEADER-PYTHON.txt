@@ -1,8 +1,8 @@
 # ==============================================================================
 # Copyright (c) 2026 MASAREN Project. All Rights Reserved.
 #
-# MASAREN — Impact Infrastructure as a Service (IIaaS)
-# مسارين — منصة البنية التحتية للأثر كخدمة
+# MASAREN, Impact Infrastructure as a Service (IIaaS)
+# مسارين، منصة البنية التحتية للأثر كخدمة
 #
 # This file is part of the MASAREN Platform, a proprietary software system.
 # Unauthorized copying, distribution, modification, or use of this file,

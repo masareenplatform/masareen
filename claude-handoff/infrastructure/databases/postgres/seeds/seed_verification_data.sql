@@ -1,4 +1,4 @@
--- MASAREN Verification Domain — Seed Data
+-- MASAREN Verification Domain, Seed Data
 -- Inserts sample data for development / demo purposes
 
 BEGIN;

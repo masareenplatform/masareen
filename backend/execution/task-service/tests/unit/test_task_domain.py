@@ -1,4 +1,4 @@
-"""Unit tests for the Task aggregate FSM — no DB, no I/O."""
+"""Unit tests for the Task aggregate FSM, no DB, no I/O."""
 import pytest
 from datetime import datetime, timezone, timedelta
 from src.domain.task import Task, TaskStatus, TaskPriority, TaskGeofence

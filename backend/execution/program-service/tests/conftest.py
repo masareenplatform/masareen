@@ -1,4 +1,4 @@
-"""pytest config for program-service — backend root on sys.path for `shared`."""
+"""pytest config for program-service, backend root on sys.path for `shared`."""
 import sys
 import os
 

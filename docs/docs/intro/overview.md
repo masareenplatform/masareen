@@ -5,25 +5,25 @@ slug: /
 sidebar_position: 1
 ---
 
-# MASAREEN — Infrastructure for Impact
+# MASAREEN, Infrastructure for Impact
 
 <blockquote className="masareen-card">
   <strong>Prove impact. Scale change. Earn trust.</strong> MASAREEN is the verified-impact
   network where NGOs, governments, companies, and communities turn real-world work into
-  trusted, measurable proof — backed by AI + GPS verification, on-chain-style reputation,
+  trusted, measurable proof, backed by AI + GPS verification, on-chain-style reputation,
   and a transparent opportunity marketplace.
 </blockquote>
 
-MASAREEN (مسارين — "two paths") is a platform built to solve one stubborn problem in the
+MASAREEN (مسارين، "two paths") is a platform built to solve one stubborn problem in the
 social-impact world: **good work is invisible**. A volunteer plants a thousand trees, a
-municipality runs a recycling program, an NGO delivers food aid — and almost none of it is
+municipality runs a recycling program, an NGO delivers food aid, and almost none of it is
 provable afterward. Paper reports rot, memories fade, and trust is spent on self-reporting.
 
 MASAREEN makes impact **legible, verifiable, and portable**:
 
 - You do field work → you **capture evidence** (photo, GPS, document, audio) from the mobile app.
 - An **AI + human verification pipeline** checks that the evidence is real and on-site.
-- Verified work becomes **reputation** (a "credit score for goodness" — the PMS/OII scores).
+- Verified work becomes **reputation** (a "credit score for goodness", the PMS/OII scores).
 - That reputation **unlocks opportunities** (tasks, funding, partnerships) across the network.
 
 This documentation covers everything: why the platform exists, how its workflow and

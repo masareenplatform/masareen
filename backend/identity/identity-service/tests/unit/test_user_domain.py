@@ -1,4 +1,4 @@
-"""Unit tests for the User aggregate — no DB, no Kafka, no I/O."""
+"""Unit tests for the User aggregate, no DB, no Kafka, no I/O."""
 import pytest
 from src.domain.user import User, UserRole, UserStatus, UserProfile
 from shared.exceptions import ValidationException, ConflictException
@@ -68,7 +68,7 @@ class TestUserEmailVerification:
         user = User.register("a@b.com", "Test User", "pw")
         user.verify_email()
         user.pull_domain_events()
-        user.verify_email()  # Second call — should not emit again
+        user.verify_email()  # Second call, should not emit again
         events = user.pull_domain_events()
         assert not any(e.event_type == "UserVerified" for e in events)
 

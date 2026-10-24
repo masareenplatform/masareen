@@ -1,4 +1,4 @@
-# MASAREN — Agent Handoff (continuation, session 2026-07-13, part 2)
+# MASAREN, Agent Handoff (continuation, session 2026-07-13, part 2)
 
 Continuation of `AGENT_HANDOFF_2026-07-13.md`. This session focused on making
 **alpha registration actually work end-to-end** (the prior blocker: new accounts were
@@ -22,38 +22,38 @@ flipping `admin@masaren.org` to `ACTIVE` in Postgres.
 ## 2. Fixes applied this session
 
 ### A. Alpha auto-verify on registration  (the core fix)
-- `backend/identity/identity-service/config/settings.py` — added
+- `backend/identity/identity-service/config/settings.py`, added
   `auto_verify_on_register: bool = False`.
 - `backend/identity/identity-service/src/application/handlers.py`
-  `RegisterUserHandler.handle()` — when `settings.auto_verify_on_register` is true,
+  `RegisterUserHandler.handle()`, when `settings.auto_verify_on_register` is true,
   calls `user.verify_email()` (sets `email_verified=True`, `status=ACTIVE`) and
   returns `auto_verified: true` + a message telling the user they can sign in now.
 - `backend/identity/identity-service/src/api/schemas.py`
-  `RegisterUserResponse` — added `auto_verified: bool`.
+  `RegisterUserResponse`, added `auto_verified: bool`.
 - Gated by env so production keeps the email-verification flow.
-  - `backend/run_combined.ps1` — sets `$env:AUTO_VERIFY_ON_REGISTER = "true"`.
-  - `docker-compose.yml` — added `AUTO_VERIFY_ON_REGISTER: "true"` to `x-common-env`.
+  - `backend/run_combined.ps1`, sets `$env:AUTO_VERIFY_ON_REGISTER = "true"`.
+  - `docker-compose.yml`, added `AUTO_VERIFY_ON_REGISTER: "true"` to `x-common-env`.
 
 ### B. Registration now captures ALL needed info  (page was collecting fields it never sent)
-- `backend/identity/identity-service/src/api/schemas.py` `RegisterUserRequest` —
+- `backend/identity/identity-service/src/api/schemas.py` `RegisterUserRequest` -
   added optional `national_id`, `university_id`, and `audience`
   (validated against the 5 known audiences).
 - `backend/identity/identity-service/src/application/commands.py`
-  `RegisterUserCommand` — added the same three fields.
-- `backend/identity/identity-service/src/api/users.py` `register_user()` — forwards
+  `RegisterUserCommand`, added the same three fields.
+- `backend/identity/identity-service/src/api/users.py` `register_user()`, forwards
   them to the command.
-- `backend/identity/identity-service/src/application/handlers.py` — forwards them to
+- `backend/identity/identity-service/src/application/handlers.py`, forwards them to
   `User.register(...)` so they are persisted (national_id, university_id on the
   user record; audience on the profile).
 
 ### C. Web `RegisterPage.tsx`
 - Sends **all** fields (full_name, email, password, phone, national_id,
-  university_id, role, audience) — previously only 5 were sent.
+  university_id, role, audience), previously only 5 were sent.
 - Password field shows a live hint and blocks submit until it meets the backend regex
   (8+ chars, upper/lower/digit/special).
 - Added a required Terms/consent checkbox.
 - On success with `auto_verified`, it auto-logs the user in (calls `authService.login`
-  then `useAuth().login`) and routes to `/dashboard` — no dead-end "verify your
+  then `useAuth().login`) and routes to `/dashboard`, no dead-end "verify your
   email" message.
 
 ### D. Mobile `lib/features/auth/screens/register_screen.dart`
@@ -62,7 +62,7 @@ flipping `admin@masaren.org` to `ACTIVE` in Postgres.
 - Password validator matches the backend regex; consent checkbox required.
 - On `auto_verified`, auto-logs in and routes to `/dashboard`.
 - `flutter analyze` on the file: **No issues**. Full-project `flutter analyze`: 155
-  items, all `info`/`warning` (deprecations, lint hints) — **zero errors**.
+  items, all `info`/`warning` (deprecations, lint hints), **zero errors**.
 
 ### E. Gradle build fix (environmental)
 `apps/mobile/android/gradle.properties` `org.gradle.jvmargs` was `-Xmx1024m`,
@@ -85,7 +85,7 @@ native-memory crash). The debug APK now builds.
 - **Flutter**: `flutter analyze` → **0 errors**. `flutter build apk --debug`
   succeeds → `apps/mobile/android/build/app/outputs/flutter-apk/app-debug.apk`
   (122 MB). NOTE: Flutter's CLI prints *"Gradle build failed to produce an .apk
-  file"* — this is a **false negative**; Gradle actually emits the APK under
+  file"*, this is a **false negative**; Gradle actually emits the APK under
   `android/build/...` and Flutter's path check misses it. The APK exists and installs.
 - **On-device**: emulator launched with AVD **`masaren_test`** (the prior
   `pixel_6` AVD would not boot; `masaren_test` does). Uninstalled the old
@@ -102,7 +102,7 @@ native-memory crash). The debug APK now builds.
 cd backend; powershell -NoProfile -ExecutionPolicy Bypass -File run_combined.ps1
 # expect: health: healthy  services_included=36
 
-# Realtime WS hub (:8787) — if you need live feed
+# Realtime WS hub (:8787), if you need live feed
 node ws-server.mjs
 
 # Web dev server (:3000)
@@ -128,7 +128,7 @@ email_verified). New alpha registrations now self-verify and can log in immediat
    can't see rendered UI; logic + boot verified only).
 3. **Audit finding D** (client/server post-id desync) still open.
 4. **Stage 5** remainder: RTL (Arabic) QA, a11y, mobile empty/loading states.
-5. The old `pixel_6` AVD no longer boots here — `masaren_test` is the working one.
+5. The old `pixel_6` AVD no longer boots here, `masaren_test` is the working one.
 6. Consider wiring a real email-verification path for post-alpha; the
    `auto_verify_on_register` flag is the single switch to flip off.
 

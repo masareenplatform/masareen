@@ -707,7 +707,7 @@ function ReportsTab() {
           <div>
             <h3 className="font-display text-lg font-bold text-ink">Statistical Reports</h3>
             <p className="text-xs text-muted">
-              Real data from PostgreSQL — equivalent to R analytics scripts (evidence, verification, audit, institutions, forecast, coin economy, engagement).
+              Real data from PostgreSQL, equivalent to R analytics scripts (evidence, verification, audit, institutions, forecast, coin economy, engagement).
             </p>
           </div>
           <button onClick={loadAll} disabled={loading}
@@ -776,7 +776,7 @@ function ReportsTab() {
         {loading ? <Skeleton rows={4} cols={3} /> : verification ? (
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="rounded-xl bg-canvas p-2"><p className="text-lg font-bold text-ink">{verification.confidence?.avg_confidence ?? "—"}</p><p className="text-[10px] text-muted">Avg approval score</p></div>
+              <div className="rounded-xl bg-canvas p-2"><p className="text-lg font-bold text-ink">{verification.confidence?.avg_confidence ?? "-"}</p><p className="text-[10px] text-muted">Avg approval score</p></div>
               <div className="rounded-xl bg-canvas p-2"><p className="text-lg font-bold text-ink">{verification.confidence?.high_confidence ?? 0}</p><p className="text-[10px] text-muted">High (≥0.8)</p></div>
               <div className="rounded-xl bg-canvas p-2"><p className="text-lg font-bold text-ink">{verification.confidence?.low_confidence ?? 0}</p><p className="text-[10px] text-muted">Low (&lt;0.5)</p></div>
             </div>
@@ -843,8 +843,8 @@ function ReportsTab() {
                   {institutions.institutions.slice(0, 8).map((inst: any, i: number) => (
                     <tr key={i} className="border-b border-line last:border-0">
                       <td className="py-2 pr-3 font-medium text-ink">{inst.org_name}</td>
-                      <td className="py-2 pr-3 text-muted">{inst.org_type ?? "—"}</td>
-                      <td className="py-2 pr-3 text-ink">{inst.oii_score?.toFixed(1) ?? "—"}</td>
+                      <td className="py-2 pr-3 text-muted">{inst.org_type ?? "-"}</td>
+                      <td className="py-2 pr-3 text-ink">{inst.oii_score?.toFixed(1) ?? "-"}</td>
                       <td className="py-2 pr-3 text-ink">{inst.programs}</td>
                       <td className="py-2 text-ink">{inst.members}</td>
                     </tr>
@@ -889,7 +889,7 @@ function ReportsTab() {
               </LineChart>
             </ResponsiveContainer>
           </div>
-        ) : <p className="text-sm text-muted">Insufficient data for forecast — need 2+ months of submissions</p>}
+        ) : <p className="text-sm text-muted">Insufficient data for forecast, need 2+ months of submissions</p>}
       </SectionCard>
 
       {/* ── coin economy ── */}

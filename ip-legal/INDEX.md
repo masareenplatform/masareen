@@ -1,6 +1,6 @@
-# MASAREN IP Legal Directory — Master Index
+# MASAREN IP Legal Directory, Master Index
 
-> **CONFIDENTIAL — PROPRIETARY**
+> **CONFIDENTIAL, PROPRIETARY**
 > Authorized access only. See [README.md](./README.md) for access policy and confidentiality notice.
 
 *Last Updated: August 11, 2026 · Maintained by: MASAREN Legal Team*
@@ -31,7 +31,7 @@
 ```
 ip-legal/
 ├── README.md                          ← Directory overview, access policy, legal contacts
-├── INDEX.md                           ← THIS FILE — master table of contents
+├── INDEX.md                           ← THIS FILE, master table of contents
 │
 ├── copyright/                         ← All copyright protection materials
 │   ├── registrations/                 ← Official registration certificates and filings
@@ -120,7 +120,7 @@ ip-legal/
 
 ### Copyright Section
 
-`copyright/` — Protection of MASAREN's original creative and software works.
+`copyright/`, Protection of MASAREN's original creative and software works.
 
 | ID | File | Description | Classification | Status |
 |----|------|-------------|---------------|--------|
@@ -136,17 +136,17 @@ ip-legal/
 
 ### Patents Section
 
-`patents/` — Protection of MASAREN's novel technical inventions.
+`patents/`, Protection of MASAREN's novel technical inventions.
 
 #### Invention Disclosure Forms (IDFs)
 
 | ID | File | Invention | Inventor(s) | Date Filed | Status |
 |----|------|-----------|------------|-----------|--------|
-| IDF-001 | `disclosures/IDF-001-verification-to-asset.md` | Verification-to-Asset Pipeline — system and method for converting verified field actions into digital economic assets | [TBD] | [TBD] | 🟡 Draft Complete |
-| IDF-002 | `disclosures/IDF-002-impact-score.md` | Impact Score Algorithm — multi-dimensional scoring system for quantifying real-world impact | [TBD] | [TBD] | 🟡 Draft Complete |
-| IDF-003 | `disclosures/IDF-003-geo-fence-verification.md` | Geo-Fenced Field Verification System — location-locked task execution and evidence verification | [TBD] | [TBD] | 🟡 Draft Complete |
-| IDF-004 | `disclosures/IDF-004-ai-evidence-verification.md` | AI Multi-Modal Evidence Verification — AI pipeline for photographic, GPS, and behavioral evidence verification | [TBD] | [TBD] | 🟡 Draft Complete |
-| IDF-005 | `disclosures/IDF-005-knowledge-graph-synthesis.md` | Knowledge Graph Synthesis Engine — graph-based system linking actors, actions, outcomes, and impact assets | [TBD] | [TBD] | 🟡 Draft Complete |
+| IDF-001 | `disclosures/IDF-001-verification-to-asset.md` | Verification-to-Asset Pipeline, system and method for converting verified field actions into digital economic assets | [TBD] | [TBD] | 🟡 Draft Complete |
+| IDF-002 | `disclosures/IDF-002-impact-score.md` | Impact Score Algorithm, multi-dimensional scoring system for quantifying real-world impact | [TBD] | [TBD] | 🟡 Draft Complete |
+| IDF-003 | `disclosures/IDF-003-geo-fence-verification.md` | Geo-Fenced Field Verification System, location-locked task execution and evidence verification | [TBD] | [TBD] | 🟡 Draft Complete |
+| IDF-004 | `disclosures/IDF-004-ai-evidence-verification.md` | AI Multi-Modal Evidence Verification, AI pipeline for photographic, GPS, and behavioral evidence verification | [TBD] | [TBD] | 🟡 Draft Complete |
+| IDF-005 | `disclosures/IDF-005-knowledge-graph-synthesis.md` | Knowledge Graph Synthesis Engine, graph-based system linking actors, actions, outcomes, and impact assets | [TBD] | [TBD] | 🟡 Draft Complete |
 
 #### Patent Claims
 
@@ -179,7 +179,7 @@ ip-legal/
 
 ### Trademarks Section
 
-`trademarks/` — Protection of the MASAREN brand identity.
+`trademarks/`, Protection of the MASAREN brand identity.
 
 #### Trademark Registrations
 
@@ -207,14 +207,14 @@ ip-legal/
 
 ### Trade Secrets Section
 
-`trade-secrets/` — Identification, classification, and protection of MASAREN's proprietary information.
+`trade-secrets/`, Identification, classification, and protection of MASAREN's proprietary information.
 
 #### Policies
 
 | ID | File | Description | Version | Effective Date | Status |
 |----|------|-------------|---------|---------------|--------|
-| TS-POL-001 | `policies/TS-POLICY-001.md` | Trade Secret Identification Policy — criteria for classifying information as a trade secret | v1.0 | [TBD] | 🔴 Draft |
-| TS-POL-002 | `policies/TS-POLICY-002.md` | Employee Trade Secret Handling & Protection Policy — obligations, access controls, departure protocols | v1.0 | [TBD] | 🔴 Draft |
+| TS-POL-001 | `policies/TS-POLICY-001.md` | Trade Secret Identification Policy, criteria for classifying information as a trade secret | v1.0 | [TBD] | 🔴 Draft |
+| TS-POL-002 | `policies/TS-POLICY-002.md` | Employee Trade Secret Handling & Protection Policy, obligations, access controls, departure protocols | v1.0 | [TBD] | 🔴 Draft |
 
 #### NDA Templates
 
@@ -237,7 +237,7 @@ ip-legal/
 
 ### Notices Section
 
-`notices/` — Formal IP legal notices, templates, and correspondence log.
+`notices/`, Formal IP legal notices, templates, and correspondence log.
 
 | ID | File | Description | Status |
 |----|------|-------------|--------|
@@ -249,34 +249,34 @@ ip-legal/
 
 ### Governance Section
 
-`governance/` — The policy, procedure, and training framework for IP management at MASAREN.
+`governance/`, The policy, procedure, and training framework for IP management at MASAREN.
 
 #### Policies
 
 | ID | File | Description | Version | Effective Date | Status |
 |----|------|-------------|---------|---------------|--------|
-| GOV-POL-001 | `governance/policies/GOV-POL-001-ip-ownership.md` | IP Ownership & Assignment Policy — all IP created by employees/contractors belongs to MASAREN | v1.0 | [TBD] | 🔴 Draft |
-| GOV-POL-002 | `governance/policies/GOV-POL-002-open-source.md` | Open Source Usage Policy — approved licenses, prohibited licenses, obligation tracking | v1.0 | [TBD] | 🔴 Draft |
-| GOV-POL-003 | `governance/policies/GOV-POL-003-third-party-software.md` | Third-Party Software Policy — procurement, review, and compliance for all third-party code | v1.0 | [TBD] | 🔴 Draft |
-| GOV-POL-004 | `governance/policies/GOV-POL-004-disclosure-review.md` | Invention Disclosure Review Policy — process and criteria for evaluating IDFs | v1.0 | [TBD] | 🔴 Draft |
+| GOV-POL-001 | `governance/policies/GOV-POL-001-ip-ownership.md` | IP Ownership & Assignment Policy, all IP created by employees/contractors belongs to MASAREN | v1.0 | [TBD] | 🔴 Draft |
+| GOV-POL-002 | `governance/policies/GOV-POL-002-open-source.md` | Open Source Usage Policy, approved licenses, prohibited licenses, obligation tracking | v1.0 | [TBD] | 🔴 Draft |
+| GOV-POL-003 | `governance/policies/GOV-POL-003-third-party-software.md` | Third-Party Software Policy, procurement, review, and compliance for all third-party code | v1.0 | [TBD] | 🔴 Draft |
+| GOV-POL-004 | `governance/policies/GOV-POL-004-disclosure-review.md` | Invention Disclosure Review Policy, process and criteria for evaluating IDFs | v1.0 | [TBD] | 🔴 Draft |
 
 #### Procedures
 
 | ID | File | Description | Version | Status |
 |----|------|-------------|---------|--------|
-| PROC-001 | `governance/procedures/PROC-001-new-invention.md` | New Invention Disclosure Procedure — step-by-step guide for engineers to disclose inventions | v1.0 | 🔴 Draft |
-| PROC-002 | `governance/procedures/PROC-002-patent-filing.md` | Patent Filing Workflow — from IDF approval to provisional to PCT filing | v1.0 | 🔴 Draft |
-| PROC-003 | `governance/procedures/PROC-003-copyright-registration.md` | Copyright Registration Procedure — identifying, preparing, and filing copyright registrations | v1.0 | 🔴 Draft |
-| PROC-004 | `governance/procedures/PROC-004-trademark-watch.md` | Trademark Monitoring Procedure — watch services, opposition filings, and renewal tracking | v1.0 | 🔴 Draft |
-| PROC-005 | `governance/procedures/PROC-005-ip-incident-response.md` | IP Infringement Response Procedure — triage, escalation, and enforcement workflow | v1.0 | 🔴 Draft |
+| PROC-001 | `governance/procedures/PROC-001-new-invention.md` | New Invention Disclosure Procedure, step-by-step guide for engineers to disclose inventions | v1.0 | 🔴 Draft |
+| PROC-002 | `governance/procedures/PROC-002-patent-filing.md` | Patent Filing Workflow, from IDF approval to provisional to PCT filing | v1.0 | 🔴 Draft |
+| PROC-003 | `governance/procedures/PROC-003-copyright-registration.md` | Copyright Registration Procedure, identifying, preparing, and filing copyright registrations | v1.0 | 🔴 Draft |
+| PROC-004 | `governance/procedures/PROC-004-trademark-watch.md` | Trademark Monitoring Procedure, watch services, opposition filings, and renewal tracking | v1.0 | 🔴 Draft |
+| PROC-005 | `governance/procedures/PROC-005-ip-incident-response.md` | IP Infringement Response Procedure, triage, escalation, and enforcement workflow | v1.0 | 🔴 Draft |
 
 #### Training
 
 | ID | File | Audience | Description | Version | Status |
 |----|------|---------|-------------|---------|--------|
-| TRAIN-001 | `governance/training/TRAIN-001-ip-basics.md` | All Employees | IP Basics for Employees — copyright, patents, trademarks, trade secrets; what belongs to MASAREN | v1.0 | 🔴 Draft |
-| TRAIN-002 | `governance/training/TRAIN-002-trade-secret-handling.md` | Engineering & Product | Trade Secret Handling Training — what qualifies, access controls, offboarding protocols | v1.0 | 🔴 Draft |
-| TRAIN-003 | `governance/training/TRAIN-003-open-source-compliance.md` | Engineering | Open Source Compliance Training — license types, obligations, prohibited licenses | v1.0 | 🔴 Draft |
+| TRAIN-001 | `governance/training/TRAIN-001-ip-basics.md` | All Employees | IP Basics for Employees, copyright, patents, trademarks, trade secrets; what belongs to MASAREN | v1.0 | 🔴 Draft |
+| TRAIN-002 | `governance/training/TRAIN-002-trade-secret-handling.md` | Engineering & Product | Trade Secret Handling Training, what qualifies, access controls, offboarding protocols | v1.0 | 🔴 Draft |
+| TRAIN-003 | `governance/training/TRAIN-003-open-source-compliance.md` | Engineering | Open Source Compliance Training, license types, obligations, prohibited licenses | v1.0 | 🔴 Draft |
 
 ---
 
@@ -311,9 +311,9 @@ ip-legal/
 |-----------|-----|-----------------|--------------|-------------------|----------|-------|--------|
 | Verification-to-Asset Pipeline | IDF-001 | Drafting Complete | [Pending] | 12 months from filing | Drafting | PCT-001 | Q4 2026 | 🟡 Ready for Filing |
 | Impact Score Algorithm | IDF-002 | Drafting Complete | [Pending] | 12 months from filing | Drafting | PCT-001 | Q4 2026 | 🟡 Ready for Filing |
-| Geo-Fenced Field Verification | IDF-003 | Drafting Complete | — | — | — | — | Q1 2027 | 🟡 In Drafting |
-| AI Multi-Modal Evidence Verification | IDF-004 | Drafting Complete | — | — | — | — | Q1 2027 | 🟡 In Drafting |
-| Knowledge Graph Synthesis Engine | IDF-005 | Drafting Complete | — | — | — | — | Q2 2027 | 🟡 In Drafting |
+| Geo-Fenced Field Verification | IDF-003 | Drafting Complete | - | - | - | - | Q1 2027 | 🟡 In Drafting |
+| AI Multi-Modal Evidence Verification | IDF-004 | Drafting Complete | - | - | - | - | Q1 2027 | 🟡 In Drafting |
+| Knowledge Graph Synthesis Engine | IDF-005 | Drafting Complete | - | - | - | - | Q2 2027 | 🟡 In Drafting |
 | Knowledge Graph Synthesis Engine | IDF-005 | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] | 🔴 Drafting |
 | Personal Impact Portfolio (PMS) | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] | 🔴 Not Started |
 | Organization Impact Index (OII) | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] | 🔴 Not Started |

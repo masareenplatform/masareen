@@ -5,7 +5,7 @@
  */
 export default {
   "title": "MASAREEN",
-  "tagline": "Infrastructure for Impact — verified, measurable, trusted.",
+  "tagline": "Infrastructure for Impact, verified, measurable, trusted.",
   "favicon": "img/favicon.ico",
   "url": "https://masareen.mediahubnetwork.net",
   "baseUrl": "/docs/",

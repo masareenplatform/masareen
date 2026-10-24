@@ -1,5 +1,5 @@
 """
-Speech AI Agent — audio transcription and voice evidence analysis.
+Speech AI Agent, audio transcription and voice evidence analysis.
 Consumes: masaren.verification.evidence_uploaded.v1 (AUDIO type)
 Emits:    masaren.verification.evidence_transcribed.v1
 

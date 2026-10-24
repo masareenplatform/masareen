@@ -1,4 +1,4 @@
-"""Opportunity service API — real persistence and matching."""
+"""Opportunity service API, real persistence and matching."""
 from fastapi import APIRouter, Query, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any

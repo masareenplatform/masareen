@@ -33,7 +33,7 @@ class EventPublisher:
             compression_type="gzip",
         )
         await self._producer.start()
-        logger.info("Kafka producer started — %s", self._bootstrap)
+        logger.info("Kafka producer started, %s", self._bootstrap)
 
     async def stop(self) -> None:
         if self._producer:

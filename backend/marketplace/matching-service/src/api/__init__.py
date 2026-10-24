@@ -1,4 +1,4 @@
-"""Matching service API — real graph-backed matching and personalised feed.
+"""Matching service API, real graph-backed matching and personalised feed.
 
 All graph access goes through the graph-service REST API via ``GraphClient``.
 If the graph-service is unreachable, endpoints return an honest 503 rather than
@@ -73,7 +73,7 @@ async def get_recommendations(user_id: str, limit: int = Query(5), graph: GraphC
 @router.get("/feed", response_model=ApiResponse[list])
 async def get_personalized_feed(user_id: str, limit: int = Query(20), offset: int = Query(0),
                                 graph: GraphClient = Depends(get_graph_client)):
-    """The Impact Feed — graph-based SDG relevance + verification confidence."""
+    """The Impact Feed, graph-based SDG relevance + verification confidence."""
     try:
         feed_service = FeedService(graph_client=graph)
         feed = await feed_service.get_personalized_feed(user_id, limit, offset)

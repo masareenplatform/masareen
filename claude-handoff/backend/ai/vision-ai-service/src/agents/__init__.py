@@ -1,5 +1,5 @@
 """
-Vision AI Agent — consumes evidence upload events, calls cloud VLM,
+Vision AI Agent, consumes evidence upload events, calls cloud VLM,
 emits EvidenceVerified or EvidenceFlaggedForReview.
 
 Hardware note: 0GB VRAM on deployment server.
@@ -16,7 +16,7 @@ from shared.utils.logging import get_logger
 
 log = get_logger(__name__)
 
-VISION_SYSTEM_PROMPT = """You are MASAREN's Vision AI Agent — a specialized evidence integrity auditor.
+VISION_SYSTEM_PROMPT = """You are MASAREN's Vision AI Agent, a specialized evidence integrity auditor.
 You analyse field evidence photos and videos submitted by participants in social impact programs.
 
 For each image, evaluate and respond ONLY in valid JSON with this exact schema:

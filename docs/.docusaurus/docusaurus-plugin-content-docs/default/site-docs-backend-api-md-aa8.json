@@ -1,7 +1,7 @@
 {
   "id": "backend/api",
   "title": "REST API Reference",
-  "description": "Base URL (public)//masareen.mediahubnetwork.net — all routes are under /api/v1.",
+  "description": "Base URL (public)//masareen.mediahubnetwork.net, all routes are under /api/v1.",
   "source": "@site/docs/backend/api.md",
   "sourceDirName": "backend",
   "slug": "/backend/api",

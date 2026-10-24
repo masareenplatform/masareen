@@ -97,7 +97,7 @@ def create_app(
             content={"success": False, "error": exc.code, "message": exc.message},
         )
 
-    # Catch-all exception handler — ensures ALL errors return JSON
+    # Catch-all exception handler, ensures ALL errors return JSON
     @app.exception_handler(Exception)
     async def global_exception_handler(request: Request, exc: Exception):
         import logging

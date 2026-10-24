@@ -1,4 +1,4 @@
-"""Ads repository — campaigns, creatives and a real delivery/spend ledger.
+"""Ads repository, campaigns, creatives and a real delivery/spend ledger.
 
 Campaigns are funded in MASAREN Coin (MRC). Each impression/click deducts the
 configured cost from the remaining budget and is never allowed to overspend: when

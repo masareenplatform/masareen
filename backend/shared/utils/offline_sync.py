@@ -1,4 +1,4 @@
-"""Offline sync service — local draft queue for evidence capture.
+"""Offline sync service, local draft queue for evidence capture.
 
 Implements the offline evidence capture and draft-queue pattern from the
 MASAREN Technical Architecture (Doc 1, §Offline-Sync):
@@ -34,7 +34,7 @@ class DraftStatus(str, Enum):
     EXPIRED = "expired"          # too old, should be purged
 
 
-# ── SQLAlchemy model — server-side evidence draft queue ───────────────────────
+# ── SQLAlchemy model, server-side evidence draft queue ───────────────────────
 
 class EvidenceDraft(Base):
     """Server-side record of an offline-captured evidence item.

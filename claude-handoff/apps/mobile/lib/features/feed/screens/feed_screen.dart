@@ -167,7 +167,7 @@ class _StoryHighlights extends StatelessWidget {
                   context: context,
                   builder: (_) => AlertDialog(
                     title: Text(c['name']!),
-                    content: const Text('Impact story — verified by POAI Crew.'),
+                    content: const Text('Impact story, verified by POAI Crew.'),
                     actions: [
                       TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
                     ],

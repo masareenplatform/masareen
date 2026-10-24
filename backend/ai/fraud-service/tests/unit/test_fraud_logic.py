@@ -1,4 +1,4 @@
-"""Unit tests for fraud-service pure logic — no Kafka, no LLM, no I/O."""
+"""Unit tests for fraud-service pure logic, no Kafka, no LLM, no I/O."""
 import hashlib
 
 from src.agents import haversine_km, compute_image_hash

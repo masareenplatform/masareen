@@ -12,20 +12,20 @@ platform is built to model that reality instead of forcing everyone into a singl
 
 ## Individuals are not monoliths
 
-When you register (`POST /api/v1/users/register`) you pick a base audience —
-`PROFESSIONAL` or `VOLUNTEER` — and a role such as `INDIVIDUAL`. But that is only your
+When you register (`POST /api/v1/users/register`) you pick a base audience -
+`PROFESSIONAL` or `VOLUNTEER`, and a role such as `INDIVIDUAL`. But that is only your
 starting identity. Over time you accumulate **multiple profile identities**, each with its
 own context:
 
-- **Volunteer identity** — skills, causes (SDGs), hours, verified tasks.
-- **Professional / employee identity** — linked to an organization, with role and
+- **Volunteer identity**, skills, causes (SDGs), hours, verified tasks.
+- **Professional / employee identity**, linked to an organization, with role and
   responsibilities.
-- **Donor / supporter identity** — contributions and the impact they unlocked.
-- **Member identity** — belonging to programs, clubs, or communities.
+- **Donor / supporter identity**, contributions and the impact they unlocked.
+- **Member identity**, belonging to programs, clubs, or communities.
 
 These are not separate accounts. They are **facets of one verified person**, stitched
 together by your user record (`GET /api/v1/users/me`) and your reputation. You switch
-context the way you switch hats — and each hat carries its own proof.
+context the way you switch hats, and each hat carries its own proof.
 
 ## Organizations are not monoliths either
 
@@ -45,7 +45,7 @@ that opportunities it posts carry weight.
 ## Why multiple identities matter
 
 - **Context-appropriate trust.** A government reviewer and a volunteer teammate see the
-  facets relevant to them — not your entire life.
+  facets relevant to them, not your entire life.
 - **No lost reputation.** Switching from "volunteer at NGO A" to "employee at Company B"
   doesn't erase your PMS; it enriches it.
 - **Cleaner matching.** The matching service can match *the right identity* to *the right
@@ -78,5 +78,5 @@ Identities are scoped. You control what each facet exposes, and the authorizatio
 portfolio summary.
 
 > The takeaway: **MASAREEN does not ask "who are you?" once. It asks "which of your
-> verified selves is relevant here?"** — and that is what makes trust both granular and
+> verified selves is relevant here?"**, and that is what makes trust both granular and
 > durable.

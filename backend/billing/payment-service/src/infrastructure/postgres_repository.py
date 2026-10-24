@@ -1,4 +1,4 @@
-"""Real payment repository — a local payment ledger backed by PostgreSQL.
+"""Real payment repository, a local payment ledger backed by PostgreSQL.
 
 Records a payment against an invoice/organization. There is no external PSP in
 this build, so a payment is recorded honestly as CAPTURED/SETTLED against the
@@ -43,7 +43,7 @@ class PaymentRepository:
         """Record a payment initiated with an external PSP (e.g. Stripe).
 
         The PSP's intent id is stored in ``payment_method_id`` as the external
-        reference. Status stays PENDING until the PSP reports success — the row
+        reference. Status stays PENDING until the PSP reports success, the row
         is never pre-marked as settled (no fabricated receipts).
         """
         payment_id = str(uuid4())

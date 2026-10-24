@@ -33,11 +33,11 @@ apps/web/src/
 
 ## Layout & branding
 
-- **TopNav** — sticky dark glass bar; the MASAREEN wordmark sits in a white pill overlaid
+- **TopNav**, sticky dark glass bar; the MASAREEN wordmark sits in a white pill overlaid
   on the bar (logo asset `public/logo-full.png?v=4`).
-- **Sidebar** — app navigation with a 54px logo pill.
-- **App shell** — soft gradient canvas (`app-shell`) for the authenticated experience.
-- **PostCard** — hover-lift cards in the feed.
+- **Sidebar**, app navigation with a 54px logo pill.
+- **App shell**, soft gradient canvas (`app-shell`) for the authenticated experience.
+- **PostCard**, hover-lift cards in the feed.
 
 ## Marketing & landing
 

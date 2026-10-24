@@ -78,7 +78,7 @@ class RegisterUserHandler(CommandHandler):
             "status": saved.status.value,
             "auto_verified": auto_verified,
             "message": (
-                "Registration successful. Your account is verified — you can sign in now."
+                "Registration successful. Your account is verified, you can sign in now."
                 if auto_verified else
                 "Registration successful. Please verify your email to activate your account."
             ),

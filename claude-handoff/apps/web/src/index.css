@@ -132,7 +132,7 @@ h1, h2, h3, h4 {
     @apply text-brand;
   }
 
-  /* Mobile bottom navigation bar — mirrors Flutter NavigationBar */
+  /* Mobile bottom navigation bar, mirrors Flutter NavigationBar */
   .bottom-nav {
     @apply fixed inset-x-0 bottom-0 z-40 flex h-16 items-stretch border-t border-line
            bg-white/95 backdrop-blur;
@@ -148,7 +148,7 @@ h1, h2, h3, h4 {
     @apply flex flex-1 flex-col items-center justify-center;
   }
 
-  /* Compose FAB — mirrors Flutter brand→green gradient FAB */
+  /* Compose FAB, mirrors Flutter brand→green gradient FAB */
   .compose-fab {
     @apply grid place-items-center rounded-full text-white shadow-fab;
     background: linear-gradient(135deg, var(--brand), var(--accent));

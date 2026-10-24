@@ -46,21 +46,21 @@ class _ProfileViewScreenState extends State<ProfileViewScreen> {
         _role = _personnel!.role;
         _bio = _personnel!.bio.isNotEmpty ? _personnel!.bio : null;
       } catch (_) {
-        // personnel failed — try getUser as fallback
+        // personnel failed, try getUser as fallback
         try {
           final user = await AuthApi.getUser(widget.userId);
           _displayName = user.fullName;
           _role = user.role;
           _bio = user.bio;
         } catch (_) {
-          // both failed — try to get name from feed
+          // both failed, try to get name from feed
           try {
             final posts = await AuthApi.feed(authorId: widget.userId);
             if (posts.isNotEmpty) {
               _displayName = posts.first.author.name;
             }
           } catch (_) {
-            // everything failed — show generic
+            // everything failed, show generic
           }
         }
       }

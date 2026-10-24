@@ -1,4 +1,4 @@
-"""Notification service API — real notification persistence + device tokens."""
+"""Notification service API, real notification persistence + device tokens."""
 from fastapi import APIRouter, status, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Any, Dict, List, Optional

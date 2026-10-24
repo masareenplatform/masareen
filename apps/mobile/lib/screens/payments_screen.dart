@@ -306,7 +306,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
               const SizedBox(width: 12),
               _InfoChip(
                 label: 'Methods',
-                value: methodsList.isEmpty ? '—' : methodsList.join(', '),
+                value: methodsList.isEmpty ? '-' : methodsList.join(', '),
                 cs: cs,
               ),
             ],

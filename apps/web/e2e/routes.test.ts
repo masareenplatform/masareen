@@ -1,5 +1,5 @@
 /**
- * MASAREN E2E — Authenticated routes
+ * MASAREN E2E, Authenticated routes
  *
  * Verifies every authenticated page loads without crashing (no JS errors,
  * visible content, correct title/header text). Uses the `authedPage` fixture
@@ -140,7 +140,7 @@ test("chat page loads without crashing", async ({ authedPage: page, BASE }) => {
 
   await checkRoute(page, BASE, "/chat", "Chat", "chat");
 
-  // Chat had a previous bug (.map is not a function) — verify it's fixed
+  // Chat had a previous bug (.map is not a function), verify it's fixed
   const criticalErrors = consoleErrors.filter(
     (e) => e.includes("is not a function") || e.includes("TypeError") || e.includes("Cannot read")
   );

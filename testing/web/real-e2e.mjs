@@ -1,4 +1,4 @@
-// MASAREN Web — REAL end-to-end E2E against the combined backend.
+// MASAREN Web, REAL end-to-end E2E against the combined backend.
 //
 // Serves the built SPA (apps/web/dist) and proxies /api/v1/* to the live
 // combined backend at http://localhost:8080. Drives a real register -> DB

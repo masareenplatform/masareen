@@ -32,7 +32,7 @@ export default function DashboardPage() {
           {cards.map((c) => (
             <div className="card" key={c.label}>
               <div style={{ fontSize: 13, color: "#64748b" }}>{c.label}</div>
-              <div style={{ fontSize: 30, fontWeight: 700, color: "var(--navy)" }}>{c.value ?? "—"}</div>
+              <div style={{ fontSize: 30, fontWeight: 700, color: "var(--navy)" }}>{c.value ?? "-"}</div>
             </div>
           ))}
         </div>

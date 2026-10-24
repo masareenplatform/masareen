@@ -1,7 +1,7 @@
 """
 Proof of Mission Score (PMS) computation engine.
 Aggregates verified activities into a multidimensional reputation vector.
-Weights are configurable — loaded from DB, never hardcoded.
+Weights are configurable, loaded from DB, never hardcoded.
 """
 from __future__ import annotations
 from dataclasses import dataclass, field

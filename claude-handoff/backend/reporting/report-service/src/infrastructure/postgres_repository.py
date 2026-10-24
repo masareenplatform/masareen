@@ -1,4 +1,4 @@
-"""Real report repository — persists and generates impact reports.
+"""Real report repository, persists and generates impact reports.
 
 Generation computes REAL metrics from the platform's relational tables
 (per entity type) instead of returning placeholder "rpt-uuid"/"QUEUED".
@@ -143,7 +143,7 @@ class ReportRepository:
 
         No fabricated receipt: the payment_id comes from the payment-service
         (a real local-ledger intent). If the billing call fails upstream,
-        the report simply stays unpaid — it is never marked paid dishonestly.
+        the report simply stays unpaid, it is never marked paid dishonestly.
         """
         await self._session.execute(text("""
             UPDATE impact_reports SET is_paid = TRUE, paid_payment_id = :pid, updated_at = NOW()

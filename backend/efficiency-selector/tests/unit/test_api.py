@@ -1,7 +1,7 @@
 """API + registry integration tests for the EfficiencySelector.
 
 External HTTP (variant /bench, /health) is mocked because it is, by design, a
-call to a separate service — the selection logic itself is fully real and tested.
+call to a separate service, the selection logic itself is fully real and tested.
 """
 from unittest.mock import AsyncMock, patch
 

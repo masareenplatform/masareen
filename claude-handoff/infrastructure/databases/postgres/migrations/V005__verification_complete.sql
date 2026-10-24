@@ -1,4 +1,4 @@
--- MASAREN Verification Domain — Complete Extension
+-- MASAREN Verification Domain, Complete Extension
 -- Migration V005
 -- Adds tables and columns needed by verification services but missing from V003
 
@@ -74,7 +74,7 @@ CREATE INDEX IF NOT EXISTS idx_evidence_records_task ON evidence_records(task_id
 CREATE INDEX IF NOT EXISTS idx_evidence_records_status ON evidence_records(status);
 CREATE INDEX IF NOT EXISTS idx_evidence_records_checksum ON evidence_records(checksum);
 
--- 4. gps_records — add missing columns
+-- 4. gps_records, add missing columns
 ALTER TABLE gps_records ADD COLUMN IF NOT EXISTS gps_id VARCHAR(255);
 ALTER TABLE gps_records ADD COLUMN IF NOT EXISTS media_type VARCHAR(50);
 ALTER TABLE gps_records ADD COLUMN IF NOT EXISTS mime_type VARCHAR(100);
@@ -87,7 +87,7 @@ ALTER TABLE gps_records ADD COLUMN IF NOT EXISTS verifications JSONB DEFAULT '[]
 ALTER TABLE gps_records ADD COLUMN IF NOT EXISTS submitted_by VARCHAR(255);
 ALTER TABLE gps_records ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
 
--- 5. verification_pipelines — add missing columns
+-- 5. verification_pipelines, add missing columns
 ALTER TABLE verification_pipelines ADD COLUMN IF NOT EXISTS pipeline_id VARCHAR(255);
 ALTER TABLE verification_pipelines ADD COLUMN IF NOT EXISTS evidence_id_new VARCHAR(255);
 ALTER TABLE verification_pipelines ADD COLUMN IF NOT EXISTS submitted_by_new VARCHAR(255);

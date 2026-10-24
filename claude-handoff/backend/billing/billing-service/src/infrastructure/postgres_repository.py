@@ -1,4 +1,4 @@
-"""Real invoice repository — persists invoices and line items to PostgreSQL.
+"""Real invoice repository, persists invoices and line items to PostgreSQL.
 
 No fabricated invoice ids: rows are inserted and the generated UUID is returned.
 Every endpoint that reads/writes goes through this repository; if the database

@@ -1,4 +1,4 @@
-# PATENT CLAIMS — DRAFT
+# PATENT CLAIMS, DRAFT
 
 **CLM-002** | **Related IDF:** IDF-002
 **Title:** Claims for the Impact Score Algorithm (ISA)

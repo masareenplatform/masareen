@@ -1,8 +1,8 @@
-# Verification Domain — Production Validation Report
+# Verification Domain, Production Validation Report
 
 **Date:** 2026-07-07
 **Domain:** Verification (Submissions, Media, Audit, GPS, Verification)
-**Status:** ALL CLEAR — No Critical or High severity issues
+**Status:** ALL CLEAR, No Critical or High severity issues
 
 ---
 
@@ -20,11 +20,11 @@
 ## 2. Architecture Compliance
 
 ### DDD / Hexagonal / Clean Architecture
-- **Domain layer** — All 5 services define aggregates (`AggregateRoot`), entities, value objects, enums, repository interfaces
-- **Application layer** — Commands, queries, command/query handlers follow CQRS pattern using shared `CommandBus`/`QueryBus`
-- **Infrastructure layer** — PostgreSQL repositories (SQLAlchemy async), Kafka (EventPublisher/EventConsumer from shared kernel), Transactional Outbox
-- **API layer** — FastAPI routers with `/health`, `/health/live`, `/health/ready`, Swagger auto-docs
-- **Shared Kernel reused** — `shared.utils.cqrs`, `shared.utils.outbox`, `shared.utils.app_factory`, `shared.events`, `shared.base_entity`, `shared.exceptions`, `shared.dtos`
+- **Domain layer**, All 5 services define aggregates (`AggregateRoot`), entities, value objects, enums, repository interfaces
+- **Application layer**, Commands, queries, command/query handlers follow CQRS pattern using shared `CommandBus`/`QueryBus`
+- **Infrastructure layer**, PostgreSQL repositories (SQLAlchemy async), Kafka (EventPublisher/EventConsumer from shared kernel), Transactional Outbox
+- **API layer**, FastAPI routers with `/health`, `/health/live`, `/health/ready`, Swagger auto-docs
+- **Shared Kernel reused**, `shared.utils.cqrs`, `shared.utils.outbox`, `shared.utils.app_factory`, `shared.events`, `shared.base_entity`, `shared.exceptions`, `shared.dtos`
 
 ### Event-Driven Architecture
 - Domain events emitted during aggregate lifecycle:
@@ -61,15 +61,15 @@
 
 ## 5. API Contracts
 
-### submission-service — `POST /submissions/`, `GET /submissions/{id}`, `GET /submissions/task/{task_id}`, `POST /submissions/{id}/validate`, `POST /submissions/{id}/submit`, `POST /submissions/{id}/reject`, `POST /submissions/{id}/pipeline`
+### submission-service, `POST /submissions/`, `GET /submissions/{id}`, `GET /submissions/task/{task_id}`, `POST /submissions/{id}/validate`, `POST /submissions/{id}/submit`, `POST /submissions/{id}/reject`, `POST /submissions/{id}/pipeline`
 
-### media-service — `POST /media/upload`, `GET /media/{asset_id}`, `GET /media/evidence/{evidence_id}`, `DELETE /media/{asset_id}`
+### media-service, `POST /media/upload`, `GET /media/{asset_id}`, `GET /media/evidence/{evidence_id}`, `DELETE /media/{asset_id}`
 
-### audit-service — `POST /audit/events`, `GET /audit/events/{event_id}`, `GET /audit/aggregate/{aggregate_id}`, `GET /audit/actor/{actor_id}`, `GET /audit/`
+### audit-service, `POST /audit/events`, `GET /audit/events/{event_id}`, `GET /audit/aggregate/{aggregate_id}`, `GET /audit/actor/{actor_id}`, `GET /audit/`
 
-### gps-service — `POST /gps/capture`, `POST /gps/verify`, `GET /gps/{gps_id}`, `GET /gps/task/{task_id}`
+### gps-service, `POST /gps/capture`, `POST /gps/verify`, `GET /gps/{gps_id}`, `GET /gps/task/{task_id}`
 
-### verification-service — `POST /verification/pipeline`, `POST /verification/evidence/{evidence_id}/ai-result`, `POST /verification/evidence/{evidence_id}/human-verdict`, `POST /verification/evidence/{evidence_id}/submit`, `POST /verification/evidence/{evidence_id}/reject`, `GET /verification/evidence/{evidence_id}`, `GET /verification/pipeline/{pipeline_id}`, `GET /verification/pipeline/evidence/{evidence_id}`, `POST /verification/human-review/{pipeline_id}/submit`
+### verification-service, `POST /verification/pipeline`, `POST /verification/evidence/{evidence_id}/ai-result`, `POST /verification/evidence/{evidence_id}/human-verdict`, `POST /verification/evidence/{evidence_id}/submit`, `POST /verification/evidence/{evidence_id}/reject`, `GET /verification/evidence/{evidence_id}`, `GET /verification/pipeline/{pipeline_id}`, `GET /verification/pipeline/evidence/{evidence_id}`, `POST /verification/human-review/{pipeline_id}/submit`
 
 All services expose standard health endpoints: `/health`, `/health/live`, `/health/ready`, `/health/detailed`.
 

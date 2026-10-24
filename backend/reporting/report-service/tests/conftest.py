@@ -1,4 +1,4 @@
-"""Shared pytest configuration — uses shared kernel test fixtures."""
+"""Shared pytest configuration, uses shared kernel test fixtures."""
 import sys
 import os
 from unittest.mock import AsyncMock, MagicMock

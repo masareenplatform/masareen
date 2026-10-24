@@ -43,9 +43,9 @@ export default function TasksPage() {
                     <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold"
                       style={{ background: statusColors[t.status] || "#F3F4F6", color: statusText[t.status] || "#6B7280" }}>{t.status}</span>
                   </td>
-                  <td className="px-4 py-3 text-white/70">{t.assignee_id || "—"}</td>
+                  <td className="px-4 py-3 text-white/70">{t.assignee_id || "-"}</td>
                   <td className="px-4 py-3 text-white/70">{(t.evidence_ids?.length ?? 0)} files</td>
-                  <td className="px-4 py-3 text-white/70">{t.due_date ? new Date(t.due_date).toLocaleDateString() : "—"}</td>
+                  <td className="px-4 py-3 text-white/70">{t.due_date ? new Date(t.due_date).toLocaleDateString() : "-"}</td>
                 </tr>
               ))}
             </tbody>

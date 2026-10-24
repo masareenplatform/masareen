@@ -1,4 +1,4 @@
-"""Evidence aggregate — manages the lifecycle of field evidence."""
+"""Evidence aggregate, manages the lifecycle of field evidence."""
 from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, timezone

@@ -1,14 +1,14 @@
-// MASAREN Mobile — REAL backend end-to-end integration test.
+// MASAREN Mobile, REAL backend end-to-end integration test.
 //
 // Runs on the Android emulator (emulator-5554) against the SAME combined
 // backend the web app was tested against (host :8080, reached from the
-// emulator at 10.0.2.2:8080/api/v1 — the app's default Dio baseUrl).
+// emulator at 10.0.2.2:8080/api/v1, the app's default Dio baseUrl).
 //
 // The test credentials are injected at build time:
 //   flutter test integration_test/app_real_test.dart -d emulator-5554 \
 //     --dart-define=E2E_EMAIL=... --dart-define=E2E_PASSWORD=...
 //
-// (A fresh E2E user is created + DB-verified from the host before running —
+// (A fresh E2E user is created + DB-verified from the host before running -
 // see testing/mobile/run_real_e2e.ps1.)
 
 import 'package:flutter/material.dart';

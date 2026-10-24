@@ -1,4 +1,4 @@
-"""Shared pytest configuration — backend root on sys.path."""
+"""Shared pytest configuration, backend root on sys.path."""
 import sys
 import os
 

@@ -1,4 +1,4 @@
-# MASAREN backend — Docker Compose
+# MASAREN backend, Docker Compose
 #
 # Services:
 #   mock-gateway  (port 8080) Node mock of the full API contract. This is what

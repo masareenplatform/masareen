@@ -15,8 +15,8 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
 
     # Delivery-channel configuration (read from environment; no hardcoded keys).
-    fcm_server_key: str = ""            # FCM_SERVER_KEY — empty => push disabled
-    smtp_host: str = ""                 # SMTP_HOST      — empty => email disabled
+    fcm_server_key: str = ""            # FCM_SERVER_KEY, empty => push disabled
+    smtp_host: str = ""                 # SMTP_HOST, empty => email disabled
     smtp_port: int = 587
     smtp_user: str = ""
     smtp_password: str = ""

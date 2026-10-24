@@ -1,4 +1,4 @@
--- MASAREN Ads manager — campaigns, creatives, coin-funded delivery ledger
+-- MASAREN Ads manager, campaigns, creatives, coin-funded delivery ledger
 -- Migration V013
 -- Campaigns are funded in MASAREN Coin (MRC). Delivery is accumulated per day so
 -- spend never exceeds the campaign budget (the repository auto-pauses at zero).

@@ -17,4 +17,4 @@ Single-node for dev; 3-node KRaft cluster for production.
 - ✅ Simpler deployment (one container vs two)
 - ✅ Better performance for small clusters
 - ✅ Apache-maintained image (vs Confluent licensing concerns)
-- ⚠️ KRaft is production-ready since Kafka 3.3 — no stability concerns
+- ⚠️ KRaft is production-ready since Kafka 3.3, no stability concerns

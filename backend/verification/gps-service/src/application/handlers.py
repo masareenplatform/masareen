@@ -1,4 +1,4 @@
-"""GPS application handlers — both command and query handlers."""
+"""GPS application handlers, both command and query handlers."""
 from typing import Optional, List, Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
 from ..domain.gps_record import GPSRecord

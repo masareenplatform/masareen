@@ -1,4 +1,4 @@
-# Copy to terraform.tfvars — NEVER commit terraform.tfvars
+# Copy to terraform.tfvars, NEVER commit terraform.tfvars
 postgres_password = "change_me"
 neo4j_password    = "change_me"
 cloud_api_key     = "your_google_or_openai_key"

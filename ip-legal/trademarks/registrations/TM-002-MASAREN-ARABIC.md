@@ -1,5 +1,5 @@
 # TRADEMARK APPLICATION RECORD
-## TM-002 — MASAREN Arabic Script Mark (مسارين)
+## TM-002, MASAREN Arabic Script Mark (مسارين)
 
 ---
 
@@ -11,7 +11,7 @@
 | Document Version | 1.0 |
 | Created | 2026-08-11 |
 | Last Updated | 2026-08-11 |
-| Classification | CONFIDENTIAL — IP LEGAL |
+| Classification | CONFIDENTIAL, IP LEGAL |
 | Prepared By | MASAREN Legal Department |
 
 ---
@@ -23,13 +23,13 @@
 | **Mark (Arabic)** | مسارين |
 | **Romanization** | MASAREN |
 | **Transliteration (Formal)** | Masārayn / Masarayn |
-| **Mark Type** | Standard Character / Word Mark — Arabic Script |
+| **Mark Type** | Standard Character / Word Mark, Arabic Script |
 | **Script** | Arabic |
 | **Direction** | Right-to-Left (RTL) |
 | **Language** | Arabic (Modern Standard Arabic / Fusha) |
 | **Literal Meaning** | "Two Paths" (dual form of مسار, masār = path, route, track) |
 | **Pronunciation** | /ma.saː.rayn/ |
-| **Stylization** | None — standard characters; font-independent (covers all Arabic typefaces and handwriting styles) |
+| **Stylization** | None, standard characters; font-independent (covers all Arabic typefaces and handwriting styles) |
 | **Diacritics** | Filed without diacritical marks (tashkeel) to cover all voweled and unvoweled forms |
 
 ---
@@ -39,8 +39,8 @@
 The Arabic word مسارين carries layered meaning relevant to the platform's branding:
 
 - **Grammatical Form:** Dual noun (مثنى, muthannā) of the singular مسار (path/track/trajectory)
-- **Core Meaning:** Literally "Two Paths" — symbolizing the intersection of intention and execution, field work and digital assets, trust and measurable reputation
-- **Conceptual Significance:** The dual form in Arabic implies duality, balance, and complementary forces — directly aligned with the MASAREN platform philosophy
+- **Core Meaning:** Literally "Two Paths", symbolizing the intersection of intention and execution, field work and digital assets, trust and measurable reputation
+- **Conceptual Significance:** The dual form in Arabic implies duality, balance, and complementary forces, directly aligned with the MASAREN platform philosophy
 - **Linguistic Markets:** Primary markets include UAE, Saudi Arabia, Qatar, Kuwait, Bahrain, Oman, Jordan, Egypt, Iraq, Morocco, and global Arabic-speaking diaspora
 
 ---
@@ -66,31 +66,31 @@ The Arabic word مسارين carries layered meaning relevant to the platform's 
 
 *Arabic descriptions provided alongside English for filings in Arabic-language jurisdictions.*
 
-### International Class 42 — Scientific and Technological Services *(Primary)*
+### International Class 42, Scientific and Technological Services *(Primary)*
 
 **English:** Software as a service (SaaS); platform as a service (PaaS); cloud-based software for impact measurement, management, and reporting; software for converting verified field actions into digital assets; artificial intelligence software for impact verification; API services for impact data integration.
 
 **Arabic (للمكاتب المختصة):** البرمجيات كخدمة (SaaS)؛ المنصات كخدمة (PaaS)؛ برمجيات سحابية لقياس الأثر الاجتماعي وإدارته والإبلاغ عنه؛ برمجيات لتحويل الإجراءات الميدانية الموثقة إلى أصول رقمية؛ برمجيات الذكاء الاصطناعي للتحقق من الأثر؛ خدمات واجهة برمجة التطبيقات لدمج بيانات الأثر.
 
-### International Class 35 — Advertising and Business Services *(Secondary)*
+### International Class 35, Advertising and Business Services *(Secondary)*
 
 **English:** Business management services for social impact programs; impact portfolio management; organizational reputation scoring; marketplace for matching volunteers with impact opportunities.
 
 **Arabic:** خدمات إدارة الأعمال لبرامج الأثر الاجتماعي؛ إدارة محافظ الأثر؛ قياس سمعة المنظمات؛ منصة لربط المتطوعين بفرص الأثر.
 
-### International Class 38 — Telecommunications *(Secondary)*
+### International Class 38, Telecommunications *(Secondary)*
 
 **English:** Electronic transmission of impact verification data; providing access to online databases for impact tracking; real-time data transmission services.
 
 **Arabic:** النقل الإلكتروني لبيانات التحقق من الأثر؛ توفير الوصول إلى قواعد البيانات الإلكترونية لتتبع الأثر؛ خدمات نقل البيانات في الوقت الفعلي.
 
-### International Class 36 — Financial Services *(Secondary)*
+### International Class 36, Financial Services *(Secondary)*
 
 **English:** Monetization services for digital impact assets; valuation services for social impact portfolios; economic assessment for social impact activities.
 
 **Arabic:** خدمات تحقيق الدخل من الأصول الرقمية للأثر الاجتماعي؛ خدمات تقييم محافظ الأثر الاجتماعي؛ التقييم الاقتصادي لأنشطة الأثر الاجتماعي.
 
-### International Class 9 — Computer and Scientific *(Secondary)*
+### International Class 9, Computer and Scientific *(Secondary)*
 
 **English:** Downloadable software for impact measurement; computer software for volunteer management; downloadable mobile applications for field activity verification.
 
@@ -143,9 +143,9 @@ The Arabic word مسارين carries layered meaning relevant to the platform's 
 
 | Field | Value |
 |-------|-------|
-| **Overall Status** | PRE-FILING — Internal Record Established |
+| **Overall Status** | PRE-FILING, Internal Record Established |
 | **Current Phase** | Attorney review; Arabic trademark clearance search |
-| **Clearance Search** | PENDING — Arabic script search in GCC and MENA region |
+| **Clearance Search** | PENDING, Arabic script search in GCC and MENA region |
 | **Confusingly Similar Marks** | [TO BE DETERMINED] |
 | **Next Action** | Engage trademark counsel with Arabic-language expertise |
 | **Coordination with TM-001** | File concurrently with English wordmark where possible |
@@ -156,8 +156,8 @@ The Arabic word مسارين carries layered meaning relevant to the platform's 
 |------|--------|-------|
 | 2026-08-11 | Internal Arabic trademark record created | Pre-filing documentation |
 | [DATE] | Arabic clearance search initiated | Covering UAE, KSA, GCC, MENA |
-| [DATE] | Application filed — UAE (Arabic) | App #: [TBD] |
-| [DATE] | Application filed — Saudi Arabia | App #: [TBD] |
+| [DATE] | Application filed, UAE (Arabic) | App #: [TBD] |
+| [DATE] | Application filed, Saudi Arabia | App #: [TBD] |
 
 ---
 
@@ -168,8 +168,8 @@ The Arabic word مسارين carries layered meaning relevant to the platform's 
 | **Date of First Use Anywhere** | 2026-08-11 |
 | **Date of First Use in Commerce** | 2026-08-11 |
 | **Nature of First Use** | Platform services offered under the مسارين mark in Arabic-language markets |
-| **Geographic Scope** | [INSERT — e.g., United Arab Emirates] |
-| **Evidence of Use** | See TRADEMARK-USAGE-LOG.md — Usage Entries UE-001 and UE-002 |
+| **Geographic Scope** | [INSERT, e.g., United Arab Emirates] |
+| **Evidence of Use** | See TRADEMARK-USAGE-LOG.md, Usage Entries UE-001 and UE-002 |
 | **Specimen** | Arabic-language website pages, app store listings in Arabic |
 
 ---
@@ -186,7 +186,7 @@ Unlike in English-speaking markets where "MASAREN" is arbitrary, in Arabic-speak
 The phrase "Two Paths" does not describe software platforms, impact measurement services, AI verification systems, or any of the goods and services claimed. A consumer would not understand "Two Paths" as describing the features or characteristics of a SaaS impact measurement platform.
 
 **2. Conceptual Meaning is Suggestive, Not Descriptive:**
-At most, مسارين is a suggestive mark — it evokes a concept (duality, complementary paths) without directly describing any feature of the services. Suggestive marks are registrable in all GCC jurisdictions.
+At most, مسارين is a suggestive mark, it evokes a concept (duality, complementary paths) without directly describing any feature of the services. Suggestive marks are registrable in all GCC jurisdictions.
 
 **3. No Competitor Need to Use the Term:**
 No competitor in the impact measurement or volunteer management software space would need to use the phrase "Two Paths" to describe their services. The term is not a generic or common descriptor in this industry.
@@ -199,7 +199,7 @@ If any examining authority maintains a descriptiveness rejection, MASAREN can de
 - Media coverage and industry recognition
 
 **5. Analogous Registered Marks:**
-[To be populated with examples of similar dual-meaning Arabic marks registered in GCC — attorney to research]
+[To be populated with examples of similar dual-meaning Arabic marks registered in GCC, attorney to research]
 
 ---
 
@@ -231,8 +231,8 @@ If any examining authority maintains a descriptiveness rejection, MASAREN can de
 | IP Type | Record ID | Description |
 |---------|-----------|-------------|
 | Trademark | TM-001 | MASAREN in Latin script |
-| Trademark | TM-003 | IIaaS — Impact Infrastructure as a Service |
-| Domain | — | masaren.com, masaren.ae, masaren.org |
+| Trademark | TM-003 | IIaaS, Impact Infrastructure as a Service |
+| Domain | - | masaren.com, masaren.ae, masaren.org |
 
 ---
 
@@ -251,7 +251,7 @@ If any examining authority maintains a descriptiveness rejection, MASAREN can de
 - Arabic script clearance search must cover not only identical marks but also phonetically similar Arabic marks.
 - Consider filing Arabic calligraphic logo version as separate device mark (TM-005).
 - Coordinate with IT team on Arabic IDN domain registration.
-- Some GCC trademark offices require Arabic translations of all goods/services descriptions — Arabic descriptions provided in Section 4 above.
+- Some GCC trademark offices require Arabic translations of all goods/services descriptions, Arabic descriptions provided in Section 4 above.
 - Renewal terms in GCC: generally 10 years from filing date.
 
 ---
@@ -260,4 +260,4 @@ If any examining authority maintains a descriptiveness rejection, MASAREN can de
 
 ---
 
-**Document End — TM-002**
+**Document End, TM-002**

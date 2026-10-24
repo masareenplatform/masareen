@@ -1,4 +1,4 @@
-# MASAREN — real-backend login subroutine (Maestro).
+# MASAREN, real-backend login subroutine (Maestro).
 # App defaults its Dio baseUrl to http://10.0.2.2:8080/api/v1 (emulator -> host),
 # so this authenticates against the SAME combined backend the web app uses.
 appId: com.masaren.app

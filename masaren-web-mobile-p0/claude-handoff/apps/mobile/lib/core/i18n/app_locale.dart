@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class AppLocale {
-  /// Global locale notifier — flip to 'ar' for an elegant RTL Arabic experience.
+  /// Global locale notifier, flip to 'ar' for an elegant RTL Arabic experience.
   static ValueNotifier<Locale> currentLocale = ValueNotifier(const Locale('en'));
 
   static bool get isArabic => currentLocale.value.languageCode == 'ar';

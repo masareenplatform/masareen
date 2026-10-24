@@ -6,9 +6,9 @@ import 'package:masaren/core/theme/masaren_theme.dart';
 /// photo exists.
 ///
 /// URL schemes:
-///  * `asset://<path>`  — a bundled Flutter asset (e.g. `asset://avatars/p1.jpg`)
-///  * `http(s)://...`   — a remote image (loads with a graceful fallback)
-///  * anything else / null — initials placeholder
+///  * `asset://<path>`, a bundled Flutter asset (e.g. `asset://avatars/p1.jpg`)
+///  * `http(s)://...`, a remote image (loads with a graceful fallback)
+///  * anything else / null, initials placeholder
 class AppAvatar extends StatefulWidget {
   final String? url;
   final String name;

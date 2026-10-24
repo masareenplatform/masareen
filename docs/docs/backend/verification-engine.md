@@ -35,10 +35,10 @@ evidence ──►│  Submission  │──start──►┌──────�
 
 AI agents analyze the evidence:
 
-- **Media authenticity** — edit detection, duplicate/stock detection, EXIF consistency.
-- **Relevance** — does the artifact depict the claimed work?
-- **GPS cross-check** — claimed location vs. captured GPS (`/gps/verify`).
-- **Document understanding** — reads uploaded docs for consistency.
+- **Media authenticity**, edit detection, duplicate/stock detection, EXIF consistency.
+- **Relevance**, does the artifact depict the claimed work?
+- **GPS cross-check**, claimed location vs. captured GPS (`/gps/verify`).
+- **Document understanding**, reads uploaded docs for consistency.
 
 Output: a **confidence score** plus structured flags.
 
@@ -47,8 +47,8 @@ Output: a **confidence score** plus structured flags.
 When AI confidence is below threshold or fraud flags trip, the pipeline routes to the
 **audit queue** (`GET /api/v1/verification/queue`). A reviewer picks it up:
 
-- `POST /api/v1/verification/pipelines/{id}/human-review` — claim the review.
-- `POST /api/v1/verification/pipelines/{id}/human-verdict` — `approve` / `reject` with reason.
+- `POST /api/v1/verification/pipelines/{id}/human-review`, claim the review.
+- `POST /api/v1/verification/pipelines/{id}/human-verdict`, `approve` / `reject` with reason.
 
 Audit events are recorded (`POST /api/v1/audit/events`) for the tamper-evident trail.
 
@@ -59,8 +59,8 @@ admin moderation queue (`/admin/pending`, `/admin/approve`).
 
 ## Finalizing
 
-- `POST /submissions/{id}/validate` — mark submission validated → task verified.
-- `POST /submissions/{id}/reject` — reject with reason; pipeline → `REJECTED`.
+- `POST /submissions/{id}/validate`, mark submission validated → task verified.
+- `POST /submissions/{id}/reject`, reject with reason; pipeline → `REJECTED`.
 
 ## Inspecting a pipeline
 
@@ -72,7 +72,7 @@ GET /api/v1/verification/pipelines/{pipeline_id}
 GET /api/v1/verification/pipelines/evidence/{evidence_id}
 ```
 
-Both return the stage history, AI confidence, reviewer, and final verdict — the auditable
+Both return the stage history, AI confidence, reviewer, and final verdict, the auditable
 proof behind every reputation point.
 
 ## Design rationale

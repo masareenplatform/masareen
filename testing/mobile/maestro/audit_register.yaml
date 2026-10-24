@@ -9,7 +9,7 @@
 # EMAIL / PASSWORD are injected from the environment (set before running,
 # e.g. `maestro test audit_register.yaml -e EMAIL=... -e PASSWORD=...`
 # or exported in the shell that launches the audit). Use a FRESH email
-# each run — re-registering an existing address returns a 409 conflict.
+# each run, re-registering an existing address returns a 409 conflict.
 appId: com.masaren.app
 ---
 - clearState

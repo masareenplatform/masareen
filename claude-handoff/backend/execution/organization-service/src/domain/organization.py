@@ -1,4 +1,4 @@
-"""Organization aggregate root — Execution domain."""
+"""Organization aggregate root, Execution domain."""
 from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, timezone

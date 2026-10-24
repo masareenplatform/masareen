@@ -1,4 +1,4 @@
-"""Unit tests for PaymentRepository — real logic with a mocked async session."""
+"""Unit tests for PaymentRepository, real logic with a mocked async session."""
 from unittest.mock import AsyncMock, MagicMock
 import pytest
 

@@ -125,7 +125,7 @@ analyze_verification <- function(conn, output_dir = "reports") {
   # ── Generate HTML report ───────────────────────────────────────────────────────
   log_msg("Generating verification HTML report")
 
-  title <- "MASAREN — Verification Pipeline Report"
+  title <- "MASAREN, Verification Pipeline Report"
   date_str <- format(Sys.time(), "%Y-%m-%d %H:%M")
 
   html_content <- sprintf(

@@ -17,7 +17,7 @@ def _build_dispatcher(repo) -> NotificationDispatcher:
     """Construct the dispatcher from real environment configuration.
 
     Missing credentials disable the corresponding channel (honest no-op that
-    returns False) — they never produce fabricated delivery receipts.
+    returns False), they never produce fabricated delivery receipts.
     """
     try:
         from config import settings

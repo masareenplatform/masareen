@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:masaren/core/theme/masaren_theme.dart';
 
 /// Social-style overflow sheet (the "≡"/"⋯" menu) that exposes the secondary
-/// MASAREEN surfaces that don't live on the bottom navigation bar — exactly how
+/// MASAREEN surfaces that don't live on the bottom navigation bar, exactly how
 /// Instagram/LinkedIn tuck settings & tools behind a single menu.
 class AppMenuSheet extends StatelessWidget {
   const AppMenuSheet({super.key});

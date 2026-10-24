@@ -1,4 +1,4 @@
-# MASAREN — Code Patterns (trimmed exemplars)
+# MASAREN, Code Patterns (trimmed exemplars)
 
 > Read this AFTER `PLATFORM_GENOME.md`. These are real, trimmed snippets so you can
 > match conventions when extending a service. The full source is NOT in this package
@@ -6,7 +6,7 @@
 
 ## 1. Service entrypoint (FastAPI, via shared factory)
 
-Every service's `src/main.py` is identical in shape — only the name/description change:
+Every service's `src/main.py` is identical in shape, only the name/description change:
 
 ```python
 from shared.utils.app_factory import create_app
@@ -104,10 +104,10 @@ Domain events are published **only** through `shared.utils.outbox` (Transactiona
 ## 4. AI agent pattern (`backend/ai/verification_orchestrator_service`)
 
 POAI deliberative crew. Structure:
-- `src/agents/*.py` — agent definitions
-- `src/tasks/*.py` — task definitions
-- `src/tools/*.py` — kafka / blackboard tools
-- `src/utils/*.py` — helpers
+- `src/agents/*.py`, agent definitions
+- `src/tasks/*.py`, task definitions
+- `src/tools/*.py`, kafka / blackboard tools
+- `src/utils/*.py`, helpers
 
 Cloud LLM calls go through `shared.utils.cloud_llm_client`. Other AI modules
 (`auditor-agent`, `economist-agent`, `fraud-service/python`, `vision-ai-service`, …)

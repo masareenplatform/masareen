@@ -40,7 +40,7 @@ class MediaEventConsumer:
             auto_offset_reset="earliest",
         )
         await self._consumer.start()
-        logger.info("Media event consumer started — %s", bootstrap)
+        logger.info("Media event consumer started, %s", bootstrap)
 
         # Start message processing loop
         asyncio.create_task(self._consume_loop())

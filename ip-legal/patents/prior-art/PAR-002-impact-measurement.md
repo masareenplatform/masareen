@@ -3,7 +3,7 @@
 **PAR-002** | **Domain:** Impact Measurement & Scoring
 **Title:** Impact Measurement Prior Art and Freedom-to-Operate Analysis
 **Date:** August 11, 2026
-**Classification:** CONFIDENTIAL — PROPRIETARY
+**Classification:** CONFIDENTIAL, PROPRIETARY
 **Status:** 🔴 Complete
 
 ---
@@ -35,7 +35,7 @@ This report surveys prior art in impact measurement, sustainability scoring, and
 
 ### 2.3 Date Range
 
-January 1, 2010 — August 11, 2026
+January 1, 2010, August 11, 2026
 
 ---
 

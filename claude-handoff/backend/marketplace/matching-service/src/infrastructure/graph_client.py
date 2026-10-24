@@ -1,7 +1,7 @@
 """Real HTTP client for the graph-service knowledge graph.
 
 Talks to the graph-service REST API (``POST /graph/query`` for Cypher and the
-specialised GET endpoints). No embedded Neo4j driver here — matching-service is
+specialised GET endpoints). No embedded Neo4j driver here, matching-service is
 a consumer of the graph bounded context, not its owner.
 """
 from typing import Any, Dict, List
