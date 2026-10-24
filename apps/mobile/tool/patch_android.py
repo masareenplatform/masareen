@@ -135,4 +135,12 @@ try:
 except Exception as e:
     print('icon step skipped:', e)
 
+# ---- flutter create drops a template widget test for the default MyApp -----
+try:
+    t = os.path.join(ROOT, 'test', 'widget_test.dart')
+    if os.path.exists(t) and 'MyApp' in open(t, encoding='utf-8').read():
+        os.remove(t)
+except Exception as e:
+    print('template test cleanup skipped:', e)
+
 print('Android project patched: id=%s label=%s' % (APP_ID, LABEL))
