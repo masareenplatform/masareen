@@ -8,7 +8,7 @@ class ApiClient {
   /// `--dart-define=API_BASE_URL=https://your.server`.
   static const String defaultBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://41.33.197.134:8088',
+    defaultValue: 'https://api.masareen.com',
   );
 
   ApiClient({String baseUrl = defaultBaseUrl}) : _base = _clean(baseUrl);

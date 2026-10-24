@@ -21,7 +21,10 @@ const sess = (res) => (res.headers.get('set-cookie') || '').split(';')[0];
 test('health and config', async () => {
   const env = mkEnv();
   assert.equal((await (await call(env, 'GET', '/api/health')).json()).googleConfigured, true);
-  assert.equal((await (await call(env, 'GET', '/api/config')).json()).googleClientId, CLIENT);
+  const cfg = await (await call(env, 'GET', '/api/config')).json();
+  assert.equal(cfg.googleClientId, CLIENT);
+  assert.ok(cfg.roles.includes('Student'));
+  assert.ok(cfg.orgTypes.includes('University'));
 });
 
 test('google sign up creates user, logs login, sets session; profile completes registration', async () => {
@@ -34,8 +37,14 @@ test('google sign up creates user, logs login, sets session; profile completes r
   assert.equal((await (await call(env, 'GET', '/api/me', null, cookie)).json()).user.name, 'Nour Hassan');
   // profile requires consent + fields
   assert.equal((await call(env, 'POST', '/api/profile', { org: 'X' }, cookie)).status, 400);
-  const p = await call(env, 'POST', '/api/profile', { org: 'Cairo Univ', orgType: 'University', country: 'Egypt', consent: true }, cookie);
-  assert.equal((await p.json()).user.profileComplete, true);
+  const p = await call(env, 'POST', '/api/profile', {
+    role: 'Student', university: 'Cairo University', universityId: '2023001',
+    department: 'Computer Science', academicYear: 'Year 3', degreeLevel: 'Bachelor',
+    country: 'Egypt', consent: true,
+  }, cookie);
+  const pj = await p.json();
+  assert.equal(pj.user.profileComplete, true);
+  assert.equal(pj.user.role, 'Student'); assert.equal(pj.user.universityId, '2023001');
   // second login: not new, count increments, event logged
   const r2 = await call(env, 'POST', '/api/auth/google', { credential: await idToken() });
   assert.equal((await r2.json()).isNew, false);
@@ -65,7 +74,7 @@ test('tampered session cookie is rejected', async () => {
 
 test('email registration, duplicates, validation, honeypot', async () => {
   const env = mkEnv();
-  const ok = { name: 'Ali', email: 'ali@x.org', org: 'NGO One', orgType: 'NGO / civil society', country: 'Egypt', consent: true };
+  const ok = { name: 'Ali', email: 'ali@x.org', role: 'Organization / institution', org: 'NGO One', orgType: 'NGO / civil society', country: 'Egypt', consent: true };
   assert.equal((await call(env, 'POST', '/api/auth/register', ok)).status, 200);
   assert.equal((await (await call(env, 'POST', '/api/auth/register', ok)).json()).alreadyRegistered, true);
   assert.equal((await call(env, 'POST', '/api/auth/register', { ...ok, email: 'bad' })).status, 400);
@@ -106,6 +115,34 @@ test('cross-origin POST blocked, unknown route 404, logout clears cookie', async
   assert.equal(r.status, 403);
   assert.equal((await call(env, 'GET', '/api/nope')).status, 404);
   assert.match((await call(env, 'POST', '/api/auth/logout')).headers.get('set-cookie'), /Max-Age=0/);
+});
+
+test('role-aware profile asks for the details that match the role', async () => {
+  const env = mkEnv();
+  const cookie = sess(await call(env, 'POST', '/api/auth/google', { credential: await idToken() }));
+  const base = { country: 'Egypt', consent: true };
+  assert.equal((await call(env, 'POST', '/api/profile', { ...base, role: 'Student', university: 'Cairo University' }, cookie)).status, 400);
+  const student = { ...base, role: 'Student', university: 'Cairo University', universityId: '2023001', department: 'CS', academicYear: 'Year 3', degreeLevel: 'Bachelor' };
+  const r = await call(env, 'POST', '/api/profile', student, cookie);
+  assert.equal(r.status, 200);
+  const u = (await r.json()).user;
+  assert.equal(u.role, 'Student'); assert.equal(u.universityId, '2023001'); assert.equal(u.department, 'CS'); assert.equal(u.degreeLevel, 'Bachelor');
+  // professional needs employer + job title
+  const c2 = sess(await call(env, 'POST', '/api/auth/google', { credential: await idToken({ sub: 'g-pro', email: 'pro@example.com' }) }));
+  assert.equal((await call(env, 'POST', '/api/profile', { ...base, role: 'Professional', employer: 'Acme' }, c2)).status, 400);
+  assert.equal((await call(env, 'POST', '/api/profile', { ...base, role: 'Professional', employer: 'Acme', jobTitle: 'Engineer' }, c2)).status, 200);
+});
+
+test('CORS allows the configured R2 site, handles preflight, blocks other origins', async () => {
+  const env = mkEnv({ ALLOWED_ORIGINS: 'https://masareen.com' });
+  const ok = await handle(new Request('https://api.masareen.test/api/config', { headers: { origin: 'https://masareen.com' } }), env, {});
+  assert.equal(ok.headers.get('access-control-allow-origin'), 'https://masareen.com');
+  assert.equal(ok.headers.get('access-control-allow-credentials'), 'true');
+  const pre = await handle(new Request('https://api.masareen.test/api/contact', { method: 'OPTIONS', headers: { origin: 'https://masareen.com' } }), env, {});
+  assert.equal(pre.status, 204);
+  assert.equal(pre.headers.get('access-control-allow-methods'), 'GET, POST, OPTIONS');
+  const evil = await handle(new Request('https://api.masareen.test/api/contact', { method: 'POST', headers: { 'content-type': 'application/json', origin: 'https://evil.com' }, body: '{}' }), env, {});
+  assert.equal(evil.status, 403);
 });
 
 test('google not configured returns 503', async () => {

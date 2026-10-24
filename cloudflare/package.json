@@ -7,7 +7,9 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "db:init": "wrangler d1 execute masareen --remote --file=schema.sql",
-    "db:init:local": "wrangler d1 execute masareen --local --file=schema.sql"
+    "db:init:local": "wrangler d1 execute masareen --local --file=schema.sql",
+    "db:migrate": "wrangler d1 execute masareen --remote --file=migrations/001-profile-fields.sql",
+    "db:migrate:local": "wrangler d1 execute masareen --local --file=migrations/001-profile-fields.sql"
   },
-  "devDependencies": { "wrangler": "^3.99.0" }
+  "devDependencies": { "wrangler": "^4.152.0" }
 }

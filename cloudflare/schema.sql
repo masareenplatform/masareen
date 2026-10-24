@@ -6,10 +6,22 @@ CREATE TABLE IF NOT EXISTS users (
   email_verified INTEGER NOT NULL DEFAULT 0,
   name          TEXT NOT NULL DEFAULT '',
   picture       TEXT,
+  -- Who the person is, and the details that depend on that role.
+  role          TEXT,
   org           TEXT,
   org_type      TEXT,
   country       TEXT,
+  city          TEXT,
   interest      TEXT,
+  -- Student / academic details
+  university    TEXT,
+  university_id TEXT,
+  department    TEXT,
+  academic_year TEXT,
+  degree_level  TEXT,
+  -- Professional / journalist / organisation details
+  employer      TEXT,
+  job_title     TEXT,
   consent_at    TEXT,
   profile_complete INTEGER NOT NULL DEFAULT 0,
   signup_method TEXT NOT NULL DEFAULT 'google',
@@ -20,6 +32,7 @@ CREATE TABLE IF NOT EXISTS users (
   login_count   INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_users_created ON users(created_at);
+CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 
 CREATE TABLE IF NOT EXISTS login_events (
   id        INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -3,6 +3,7 @@ import http from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { webcrypto } from 'node:crypto';
 import { extname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { handle } from '../src/index.js';
 import { makeDb } from './d1-shim.mjs';
 
@@ -19,7 +20,7 @@ export async function fakeGoogleToken(claims) {
 const MIME = { '.html': 'text/html', '.png': 'image/png', '.ico': 'image/x-icon', '.js': 'text/javascript', '.css': 'text/css' };
 export function start(port, admins = 'ceo@example.com') {
   const env = { DB: makeDb(), GOOGLE_CLIENT_ID: CLIENT, SESSION_SECRET: 'local-secret', ADMIN_EMAILS: admins, __fetch: async () => new Response(JSON.stringify({ keys: [jwk] })) };
-  const root = new URL('../../landing/', import.meta.url).pathname;
+  const root = fileURLToPath(new URL('../../landing/', import.meta.url));
   const server = http.createServer(async (req, res) => {
     const chunks = []; for await (const c of req) chunks.push(c);
     const url = `http://localhost:${port}${req.url}`;

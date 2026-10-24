@@ -4,7 +4,8 @@
 git-ignored, so a clean clone has none).
 
 Run from apps/mobile:  python3 tool/patch_android.py
-Idempotent. Pinned/tested against Flutter 3.24.x (Groovy build.gradle)."""
+Idempotent. Supports the Groovy DSL (android/app/build.gradle, Flutter 3.24.x)
+and the Kotlin DSL (android/app/build.gradle.kts, Flutter 3.29+)."""
 import os, re, sys, shutil
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -20,16 +21,19 @@ def rw(path, fn):
 
 def die(m): print('ERROR:', m); sys.exit(1)
 
-gradle = os.path.join(A, 'app', 'build.gradle')
+GRADLE_GROOVY = os.path.join(A, 'app', 'build.gradle')
+GRADLE_KTS = os.path.join(A, 'app', 'build.gradle.kts')
+use_kts = os.path.exists(GRADLE_KTS)
+gradle = GRADLE_KTS if use_kts else GRADLE_GROOVY
 manifest = os.path.join(A, 'app', 'src', 'main', 'AndroidManifest.xml')
 if not os.path.exists(gradle):
-    die('android/app/build.gradle not found (Groovy). Use Flutter 3.24.x or run `flutter create --platforms=android .` first.')
+    die('android/app/build.gradle(.kts) not found. Run `flutter create --platforms=android .` first.')
 
 # ---- discover generated package, then move to APP_ID --------------------
 g = open(gradle, encoding='utf-8').read()
 m = re.search(r'namespace\s*=?\s*["\']([\w.]+)["\']', g)
 old_pkg = m.group(1) if m else None
-if not old_pkg: die('could not find namespace in build.gradle')
+if not old_pkg: die('could not find namespace in build file')
 
 def gradle_fix(s):
     s = re.sub(r'(namespace\s*=?\s*)["\'][\w.]+["\']', r'\1"%s"' % APP_ID, s)
@@ -42,7 +46,43 @@ def gradle_fix(s):
         s += "\ndependencies {\n    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'\n}\n"
     # keep the template's debug-key signing for release => installable APK.
     return s
-rw(gradle, gradle_fix)
+
+def kts_fix(s):
+    s = re.sub(r'(namespace\s*=\s*)"[^"]*"', r'\1"%s"' % APP_ID, s)
+    s = re.sub(r'(applicationId\s*=\s*)"[^"]*"', r'\1"%s"' % APP_ID, s)
+    s = re.sub(r'(minSdk\s*)=\s*flutter\.minSdkVersion', r'\1= 24', s)
+    s = re.sub(r'(minSdk\s*)=\s*=\s*(\d+)', r'\1= \2', s)
+    if 'corelibrarydesugaringenabled' not in s.lower():
+        s = re.sub(r'(compileOptions\s*\{)', lambda mm: mm.group(1) + '\n        isCoreLibraryDesugaringEnabled = true', s, count=1)
+    if 'desugar_jdk_libs' not in s:
+        s = s.rstrip() + "\ndependencies {\n    coreLibraryDesugaring(\"com.android.tools:desugar_jdk_libs:2.0.4\")\n}\n"
+    # keep the template's debug-key signing for release => installable APK.
+    return s
+
+rw(gradle, kts_fix if use_kts else gradle_fix)
+
+# Kotlin DSL: some plugins (flutter_webrtc) still declare compileSdk 31, which
+# AGP 9 rejects. Force every library module to compile against SDK 36.
+if use_kts:
+    root_gradle = os.path.join(A, 'build.gradle.kts')
+    overrides = '''subprojects {
+    afterEvaluate {
+        val androidExt = extensions.findByName("android") ?: return@afterEvaluate
+        val methods = androidExt.javaClass.methods
+        methods.firstOrNull {
+            it.name == "setCompileSdk" && it.parameterTypes.size == 1
+        }?.let { runCatching { it.invoke(androidExt, 36) } }
+    }
+}
+'''
+    def root_fix(s):
+        if 'setCompileSdk' in s:
+            return s
+        marker = 'subprojects {\n    project.evaluationDependsOn(":app")\n}'
+        if marker in s:
+            return s.replace(marker, overrides + '\n' + marker, 1)
+        return overrides + '\n' + s
+    rw(root_gradle, root_fix)
 
 # move MainActivity to the new package
 for lang in ('kotlin', 'java'):

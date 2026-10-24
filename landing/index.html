@@ -6,6 +6,12 @@
 <title>MASAREEN مسارين، Egypt's National Impact Infrastructure Platform</title>
 <meta name="description" content="MASAREEN (مسارين)، Two Paths, One Impact. Egypt's sovereign digital public infrastructure that turns development activity into verified evidence, trusted communication and measurable national value.">
 <meta name="theme-color" content="#00539f">
+<script>
+/* Where the API Worker lives. Leave "" when the Worker is routed at /api/* on
+   this same domain (recommended with the R2 landing page). If the API is on a
+   separate host, set it, e.g. "https://api.masareen.com". */
+window.MASAREEN_API_BASE = window.MASAREEN_API_BASE || "";
+</script>
 <link rel="canonical" href="https://masareen.com/">
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
@@ -370,6 +376,8 @@ textarea.in-ctl{min-height:110px;resize:vertical}
 .authdlg .btn{width:100%;justify-content:center;margin-top:1rem}
 .authdlg .consent{display:flex;gap:.6rem;align-items:flex-start;font-size:.8rem;color:var(--text-2);margin-top:.9rem}
 .authdlg .consent input{margin-top:.2rem;accent-color:var(--green)}
+.authdlg .pfgroup[hidden]{display:none!important}
+.authdlg select.in-ctl{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 18px) 55%,calc(100% - 13px) 55%;background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-inline-end:2.2rem}
 .gwrap{display:flex;justify-content:center;min-height:44px;margin-top:1rem}
 .acct{display:flex;gap:.9rem;align-items:center;margin:1rem 0}
 .acct img{width:52px;height:52px;border-radius:50%;object-fit:cover;background:var(--bg-soft)}
@@ -647,7 +655,7 @@ textarea.in-ctl{min-height:110px;resize:vertical}
         <img src="assets/mark.png" alt="" width="72" style="margin:0 auto .6rem;display:block">
         <h3 data-en="Download for Android" data-ar="تنزيل لأندرويد">Download for Android</h3>
         <p style="color:var(--muted);font-size:.88rem" data-en="Android 7+ · APK file · built from the project's open repository" data-ar="أندرويد 7 فأحدث · ملف APK · مبني من مستودع المشروع">Android 7+ · APK file · built from the project's open repository</p>
-        <a class="btn btn-green" id="apkBtn" href="https://github.com/SRashwan/masareen/releases/download/latest-apk/masareen.apk" style="margin-top:1rem"><span data-en="Download APK" data-ar="تنزيل APK">Download APK</span></a>
+        <a class="btn btn-green" id="apkBtn" href="https://masareen.com/downloads/masareen.apk" style="margin-top:1rem"><span data-en="Download APK" data-ar="تنزيل APK">Download APK</span></a>
         <ol style="text-align:start;margin:1.2rem 0 0;padding-inline-start:1.2rem;font-size:.85rem;color:var(--text-2);display:grid;gap:.35rem">
           <li data-en="Open this page on your Android phone and tap Download APK." data-ar="افتح هذه الصفحة على هاتفك وانقر تنزيل APK.">Open this page on your Android phone and tap Download APK.</li>
           <li data-en="If asked, allow “Install unknown apps” for your browser." data-ar="إذا طُلب منك، فعّل «تثبيت التطبيقات غير المعروفة» للمتصفح.">If asked, allow “Install unknown apps” for your browser.</li>
@@ -1054,7 +1062,7 @@ textarea.in-ctl{min-height:110px;resize:vertical}
     var data={name:n,email:em,org:form.org.value.trim(),type:form.type.value,message:ms,lang:root.lang,page:location.href};
     data.orgType=data.type;
     show('ok',L('Sending…','جارٍ الإرسال…'));
-    fetch('/api/contact',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)})
+    fetch(String(window.MASAREEN_API_BASE||'').replace(/\/+$/,'')+'/api/contact',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)})
       .then(function(r){return r.json()}).then(function(j){
         if(!j.ok)throw new Error(j.message||'fail');
         form.reset();show('ok',L('Thank you, '+n+'. Your message reached the MASAREEN team.','شكرًا '+n+'، وصلت رسالتك إلى فريق مسارين.'));
@@ -1070,18 +1078,72 @@ textarea.in-ctl{min-height:110px;resize:vertical}
   window.__rerender();
 
   /* ===== accounts: Google sign-in + registration, backed by the Cloudflare Worker API ===== */
-  var me=null,cfg={googleClientId:'',orgTypes:[]},gReady=false;
+  var me=null,cfg={googleClientId:'',orgTypes:[],roles:[]},gReady=false;
+  var API_BASE=String(window.MASAREEN_API_BASE||'').replace(/\/+$/,'');
   function api(path,method,data){
-    return fetch(path,{method:method||'GET',credentials:'same-origin',headers:data?{'Content-Type':'application/json'}:{},body:data?JSON.stringify(data):undefined})
+    return fetch(API_BASE+path,{method:method||'GET',credentials:'include',headers:data?{'Content-Type':'application/json'}:{},body:data?JSON.stringify(data):undefined})
       .then(function(r){return r.json().catch(function(){return{ok:false,error:'bad_response'}}).then(function(j){j._status=r.status;return j})});
   }
   var ORGS=[['Ministry / government','جهة حكومية / وزارة'],['University','جامعة'],['NGO / civil society','منظمة مجتمع مدني'],['Company / CSR','شركة / مسؤولية مجتمعية'],['Donor / international partner','جهة مانحة / شريك دولي'],['Student / volunteer','طالب / متطوع'],['Journalist / media','صحفي / إعلام'],['Other','أخرى']];
+  var ROLES=[['Student','طالب/طالبة'],['Academic / researcher','أكاديمي / باحث'],['Organization / institution','مؤسسة / جهة'],['Professional','مهني / موظف'],['Volunteer / individual','متطوع / فرد'],['Journalist / media','صحفي / إعلام'],['Donor / international partner','جهة مانحة / شريك دولي'],['Other','أخرى']];
+  var YEARS=[['Year 1','السنة الأولى'],['Year 2','السنة الثانية'],['Year 3','السنة الثالثة'],['Year 4','السنة الرابعة'],['Year 5','السنة الخامسة'],['Year 6','السنة السادسة'],['Graduate','خريج'],['Postgraduate','دراسات عليا']];
+  var DEGREES=[['Bachelor','بكالوريوس'],['Master','ماجستير'],['PhD','دكتوراه'],['Diploma','دبلوم'],['Other','أخرى']];
+  function label(t){return '<label class="f">'+t+'</label>'}
+  function sel(name,list,placeholder){
+    return '<select class="in-ctl" name="'+name+'">'+(placeholder?'<option value="">'+placeholder+'</option>':'')+list.map(function(o){return '<option value="'+o[0]+'">'+(root.lang==='ar'?o[1]:o[0])+'</option>'}).join('')+'</select>';
+  }
+  function group(role,html){return '<div class="pfgroup" data-role="'+role+'" hidden>'+html+'</div>'}
+  function pair(a,b){return '<div class="row2">'+a+b+'</div>'}
   function profileFields(){
-    return '<div class="row2"><div><label class="f" data-en="Organization" data-ar="الجهة">'+L('Organization','الجهة')+'</label><input class="in-ctl" name="org" maxlength="120" autocomplete="organization"></div>'+
-      '<div><label class="f">'+L('I am a','أنا')+'</label><select class="in-ctl" name="orgType">'+ORGS.map(function(o){return '<option value="'+o[0]+'">'+(root.lang==='ar'?o[1]:o[0])+'</option>'}).join('')+'</select></div></div>'+
-      '<div class="row2"><div><label class="f">'+L('Country','الدولة')+'</label><input class="in-ctl" name="country" maxlength="80" value="'+(root.lang==='ar'?'مصر':'Egypt')+'"></div>'+
-      '<div><label class="f">'+L('Interest (optional)','اهتمامك (اختياري)')+'</label><input class="in-ctl" name="interest" maxlength="600"></div></div>'+
+    var who=pair('<div>'+label(L('I am a','أنا'))+sel('role',ROLES,L('Select…','اختر…'))+'</div>',
+      '<div>'+label(L('Country','الدولة'))+'<input class="in-ctl" name="country" maxlength="80" value="'+(root.lang==='ar'?'مصر':'Egypt')+'"></div>');
+    var student=group('Student',
+      pair('<div>'+label(L('University','الجامعة'))+'<input class="in-ctl" name="university" maxlength="160"></div>',
+        '<div>'+label(L('University ID / student number','الرقم الجامعي'))+'<input class="in-ctl" name="universityId" maxlength="60"></div>')+
+      pair('<div>'+label(L('Faculty / department','الكلية / القسم'))+'<input class="in-ctl" name="department" maxlength="160"></div>',
+        '<div>'+label(L('Academic year','السنة الدراسية'))+sel('academicYear',YEARS,L('Select…','اختر…'))+'</div>')+
+      '<div style="margin-top:.8rem">'+label(L('Degree level','الدرجة العلمية'))+sel('degreeLevel',DEGREES,L('Select…','اختر…'))+'</div>');
+    var academic=group('Academic / researcher',
+      pair('<div>'+label(L('University / research centre','الجامعة / مركز البحث'))+'<input class="in-ctl" name="university" maxlength="160"></div>',
+        '<div>'+label(L('Academic title','المسمى الأكاديمي'))+'<input class="in-ctl" name="jobTitle" maxlength="120" placeholder="'+L('Lecturer, Professor…','مدرس، أستاذ…')+'"></div>')+
+      '<div style="margin-top:.8rem">'+label(L('Faculty / department (optional)','الكلية / القسم (اختياري)'))+'<input class="in-ctl" name="department" maxlength="160"></div>');
+    var org=group('Organization / institution',
+      pair('<div>'+label(L('Organization','الجهة'))+'<input class="in-ctl" name="org" maxlength="120" autocomplete="organization"></div>',
+        '<div>'+label(L('Organization type','نوع الجهة'))+sel('orgType',ORGS)+'</div>')+
+      '<div style="margin-top:.8rem">'+label(L('Your role there','دورك فيها'))+'<input class="in-ctl" name="jobTitle" maxlength="120"></div>');
+    var pro=group('Professional',
+      pair('<div>'+label(L('Employer','جهة العمل'))+'<input class="in-ctl" name="employer" maxlength="160" autocomplete="organization"></div>',
+        '<div>'+label(L('Job title','المسمى الوظيفي'))+'<input class="in-ctl" name="jobTitle" maxlength="120"></div>')+
+      '<div style="margin-top:.8rem">'+label(L('Department (optional)','القسم (اختياري)'))+'<input class="in-ctl" name="department" maxlength="160"></div>');
+    var volunteer=group('Volunteer / individual',
+      pair('<div>'+label(L('City / governorate','المدينة / المحافظة'))+'<input class="in-ctl" name="city" maxlength="80"></div>',
+        '<div>'+label(L('Field of interest','مجال الاهتمام'))+'<input class="in-ctl" name="interest" maxlength="600"></div>'));
+    var media=group('Journalist / media',
+      pair('<div>'+label(L('Outlet / employer','المؤسسة الإعلامية'))+'<input class="in-ctl" name="employer" maxlength="160"></div>',
+        '<div>'+label(L('Role','الدور'))+'<input class="in-ctl" name="jobTitle" maxlength="120"></div>'));
+    var donor=group('Donor / international partner',
+      pair('<div>'+label(L('Organization','الجهة'))+'<input class="in-ctl" name="org" maxlength="120"></div>',
+        '<div>'+label(L('Organization type','نوع الجهة'))+sel('orgType',ORGS)+'</div>')+
+      '<div style="margin-top:.8rem">'+label(L('Your role there','دورك فيها'))+'<input class="in-ctl" name="jobTitle" maxlength="120"></div>');
+    var other=group('Other',
+      '<div style="margin-top:.8rem">'+label(L('How would you like to be involved?','كيف تود المشاركة؟'))+'<input class="in-ctl" name="interest" maxlength="600"></div>');
+    return who+student+academic+org+pro+volunteer+media+donor+other+
       '<label class="consent"><input type="checkbox" name="consent"><span>'+L('I agree that MASAREEN stores these details to manage my account and contact me about the pilot.','أوافق على أن تحفظ «مسارين» هذه البيانات لإدارة حسابي والتواصل معي بشأن المشروع التجريبي.')+'</span></label>';
+  }
+  function syncProfile(form){
+    var r=form.elements.role;
+    if(!r)return;
+    var role=r.value;
+    [].forEach.call(form.querySelectorAll('.pfgroup'),function(g){
+      var on=g.getAttribute('data-role')===role;
+      g.hidden=!on;
+      [].forEach.call(g.querySelectorAll('input,select,textarea'),function(el){el.disabled=!on});
+    });
+  }
+  function bindProfile(form){
+    var r=form.elements.role;
+    if(r&&!r.getAttribute('data-bound')){r.setAttribute('data-bound','1');r.addEventListener('change',function(){syncProfile(form)})}
+    syncProfile(form);
   }
   var dlg=$('authDlg');
   function step(id){['stStart','stProfile','stDone'].forEach(function(s){$(s).classList.toggle('on',s===id)})}
@@ -1089,6 +1151,7 @@ textarea.in-ctl{min-height:110px;resize:vertical}
   function renderAuth(){
     $('regProfile').innerHTML=profileFields();
     $('profFields').innerHTML=profileFields();
+    bindProfile($('regForm'));bindProfile($('profForm'));
     var b=$('authBtn');
     if(me){var first=(me.name||me.email).split(' ')[0];b.setAttribute('data-en','Hi, '+first);b.setAttribute('data-ar','أهلًا '+first);b.textContent=L('Hi, '+first,'أهلًا '+first)}
     else{b.setAttribute('data-en','Sign up');b.setAttribute('data-ar','إنشاء حساب');b.textContent=L('Sign up','إنشاء حساب')}
@@ -1134,24 +1197,51 @@ textarea.in-ctl{min-height:110px;resize:vertical}
     s.onerror=function(){$('gOff').hidden=false};
     document.head.appendChild(s);
   }
+  function fval(form,name){
+    var g=form.querySelector('.pfgroup:not([hidden])');
+    var el=g&&g.querySelector('[name="'+name+'"]');
+    if(!el){
+      var all=form.querySelectorAll('[name="'+name+'"]');
+      for(var i=0;i<all.length;i++){if(!all[i].closest('.pfgroup')){el=all[i];break}}
+    }
+    return el?String(el.value==null?'':el.value).trim():'';
+  }
   function collectProfile(form){
-    return {org:form.org.value.trim(),orgType:form.orgType.value,country:form.country.value.trim(),interest:form.interest.value.trim(),consent:form.consent.checked,locale:root.lang};
+    return {
+      role:fval(form,'role'),org:fval(form,'org'),orgType:fval(form,'orgType'),
+      country:fval(form,'country'),city:fval(form,'city'),interest:fval(form,'interest'),
+      university:fval(form,'university'),universityId:fval(form,'universityId'),
+      department:fval(form,'department'),academicYear:fval(form,'academicYear'),
+      degreeLevel:fval(form,'degreeLevel'),employer:fval(form,'employer'),
+      jobTitle:fval(form,'jobTitle'),
+      consent:!!(form.querySelector('[name="consent"]')||{}).checked,locale:root.lang
+    };
+  }
+  function profileError(d){
+    if(!d.role)return L('Please choose who you are.','يرجى اختيار صفتك.');
+    if(!d.country)return L('Please add your country.','يرجى إدخال الدولة.');
+    if(d.role==='Student'&&(!d.university||!d.universityId||!d.department||!d.academicYear||!d.degreeLevel))return L('Please add your university, student ID, department, academic year and degree level.','يرجى إدخال الجامعة والرقم الجامعي والكلية والسنة الدراسية والدرجة العلمية.');
+    if((d.role==='Organization / institution'||d.role==='Donor / international partner')&&(!d.org||!d.orgType))return L('Please add your organization and its type.','يرجى إدخال الجهة ونوعها.');
+    if((d.role==='Professional'||d.role==='Journalist / media')&&(!d.employer||!d.jobTitle))return L('Please add your employer and job title.','يرجى إدخال جهة العمل والمسمى الوظيفي.');
+    if(d.role==='Academic / researcher'&&(!d.university||!d.jobTitle))return L('Please add your university and academic title.','يرجى إدخال الجامعة والمسمى الأكاديمي.');
+    if((d.role==='Volunteer / individual'||d.role==='Other')&&!d.interest)return L('Please tell us how you would like to be involved.','يرجى إخبارنا بكيفية المشاركة.');
+    if(!d.consent)return L('Please tick the box to agree.','يرجى تحديد المربع للموافقة.');
+    return '';
   }
   $('regForm').addEventListener('submit',function(e){
     e.preventDefault();var f=e.target,m=$('regMsg');
     var d=collectProfile(f);d.name=f.name.value.trim();d.email=f.email.value.trim();d.website=f.website.value;
-    if(!d.name||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(d.email)||!d.org||!d.country){setMsg(m,'err',L('Please fill in your name, a valid email, organization and country.','يرجى إدخال الاسم وبريد صحيح والجهة والدولة.'));return}
-    if(!d.consent){setMsg(m,'err',L('Please tick the box to agree.','يرجى تحديد المربع للموافقة.'));return}
+    if(!d.name||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(d.email)){setMsg(m,'err',L('Please add your name and a valid email.','يرجى إدخال الاسم وبريد إلكتروني صحيح.'));return}
+    var pe=profileError(d);if(pe){setMsg(m,'err',pe);return}
     setMsg(m,'ok',L('Creating your account…','جارٍ إنشاء حسابك…'));
     api('/api/auth/register','POST',d).then(function(r){
       if(!r.ok){setMsg(m,'err',r.message||L('Could not register. Please try again.','تعذّر التسجيل. حاول مرة أخرى.'));return}
-      f.reset();setMsg(m,'ok',r.alreadyRegistered?L('This email is already registered. Thank you!','هذا البريد مسجّل بالفعل. شكرًا لك!'):L('You are registered. We will email you about the pilot. Tip: use Google sign-in to verify your email.','تم تسجيلك. سنراسلك بشأن المشروع التجريبي. نصيحة: استخدم تسجيل جوجل لتوثيق بريدك.'));
+      f.reset();syncProfile(f);setMsg(m,'ok',r.alreadyRegistered?L('This email is already registered. Thank you!','هذا البريد مسجّل بالفعل. شكرًا لك!'):L('You are registered. We will email you about the pilot. Tip: use Google sign-in to verify your email.','تم تسجيلك. سنراسلك بشأن المشروع التجريبي. نصيحة: استخدم تسجيل جوجل لتوثيق بريدك.'));
     }).catch(function(){setMsg(m,'err',L('The server is not reachable right now.','الخادم غير متاح حاليًا.'))});
   });
   $('profForm').addEventListener('submit',function(e){
     e.preventDefault();var f=e.target,m=$('profMsg'),d=collectProfile(f);
-    if(!d.org||!d.country){setMsg(m,'err',L('Please add your organization and country.','يرجى إدخال الجهة والدولة.'));return}
-    if(!d.consent){setMsg(m,'err',L('Please tick the box to agree.','يرجى تحديد المربع للموافقة.'));return}
+    var pe=profileError(d);if(pe){setMsg(m,'err',pe);return}
     api('/api/profile','POST',d).then(function(r){
       if(!r.ok){setMsg(m,'err',r.message||L('Could not save. Please try again.','تعذّر الحفظ. حاول مرة أخرى.'));return}
       me=r.user;renderAuth();step('stDone');
