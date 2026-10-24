@@ -667,6 +667,48 @@ textarea.in-ctl{min-height:110px;resize:vertical}
   </div>
 </section>
 
+<!-- TESTERS -->
+<section id="testers">
+  <div class="container">
+    <div class="split" style="align-items:start">
+      <div class="reveal">
+        <span class="eyebrow" data-en="Android closed test" data-ar="اختبار أندرويد المغلق">Android closed test</span>
+        <h2 class="title" data-en="Become one of our first 20 testers." data-ar="كن واحدًا من أول 20 مختبِرًا.">Become one of our first 20 testers.</h2>
+        <p class="sub" data-en="Google Play requires 20 committed testers before a new app can go public. Join the closed test, use MASAREEN for 14 days, and your feedback shapes the launch." data-ar="يشترط Google Play وجود 20 مختبِرًا ملتزمًا قبل نشر أي تطبيق جديد. انضم إلى الاختبار المغلق، واستخدم «مسارين» لمدة 14 يومًا، وستصنع ملاحظاتك إطلاق المنصة.">Google Play requires 20 committed testers before a new app can go public. Join the closed test, use MASAREEN for 14 days, and your feedback shapes the launch.</p>
+        <ul class="check" style="margin-top:1.4rem">
+          <li data-en="Install the app from the private Play testing link we email you." data-ar="ثبّت التطبيق من رابط الاختبار الخاص الذي نرسله إلى بريدك.">Install the app from the private Play testing link we email you.</li>
+          <li data-en="Use it for two weeks: post one update, rate one impact, follow one profile." data-ar="استخدمه لأسبوعين: انشر تحديثًا، وقيّم أثرًا، وتابع ملفًا واحدًا.">Use it for two weeks: post one update, rate one impact, follow one profile.</li>
+          <li data-en="Send us a short weekly note. Bugs, confusion, ideas — all welcome." data-ar="أرسل لنا ملاحظة أسبوعية قصيرة. الأخطاء والالتباس والأفكار، كلها مرحّب بها.">Send us a short weekly note. Bugs, confusion, ideas — all welcome.</li>
+        </ul>
+        <p class="note" data-en="No spam. One email with your testing link, one reminder, and a thank-you at the end." data-ar="لا رسائل مزعجة. رسالة واحدة برابط الاختبار، وتذكير واحد، وشكر في النهاية.">No spam. One email with your testing link, one reminder, and a thank-you at the end.</p>
+        <p style="margin-top:1rem;font-weight:700;color:var(--green)" id="testerCount" data-en="Join the testers already on the list." data-ar="انضم إلى المختبِرين المسجّلين بالفعل.">Join the testers already on the list.</p>
+      </div>
+      <div class="card pad reveal" style="padding:1.8rem">
+        <h3 data-en="Join the closed test" data-ar="انضم إلى الاختبار المغلق">Join the closed test</h3>
+        <p style="color:var(--muted);font-size:.88rem;margin:.3rem 0 1rem" data-en="We only use these details to send your Play testing link and understand device coverage." data-ar="نستخدم هذه البيانات فقط لإرسال رابط الاختبار وفهم تغطية الأجهزة.">We only use these details to send your Play testing link and understand device coverage.</p>
+        <form id="testerForm" novalidate>
+          <div class="row" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+            <div><label class="f" for="tName" data-en="Full name" data-ar="الاسم الكامل">Full name</label><input class="in-ctl" id="tName" name="name" maxlength="90" autocomplete="name"></div>
+            <div><label class="f" for="tEmail" data-en="Email" data-ar="البريد الإلكتروني">Email</label><input class="in-ctl" id="tEmail" name="email" type="email" maxlength="254" autocomplete="email"></div>
+          </div>
+          <div class="row" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:.9rem">
+            <div><label class="f" for="tCountry" data-en="Country" data-ar="الدولة">Country</label><input class="in-ctl" id="tCountry" name="country" maxlength="60" autocomplete="country-name"></div>
+            <div><label class="f" for="tDevice" data-en="Android device" data-ar="جهاز أندرويد">Android device</label><input class="in-ctl" id="tDevice" name="device" maxlength="80" placeholder="Pixel 7, Galaxy A54…"></div>
+          </div>
+          <div style="margin-top:.9rem">
+            <label class="f" for="tAndroid" data-en="Android version (optional)" data-ar="إصدار أندرويد (اختياري)">Android version (optional)</label>
+            <input class="in-ctl" id="tAndroid" name="android_version" maxlength="40" placeholder="14, 15…">
+          </div>
+          <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+          <label class="chk" style="margin-top:1rem"><input type="checkbox" name="consent"><span><small><span data-en="I agree to be contacted about the closed test and to the pilot terms." data-ar="أوافق على التواصل معي بخصوص الاختبار المغلق وشروط المشروع التجريبي.">I agree to be contacted about the closed test and to the pilot terms.</span></small></span></label>
+          <button class="btn btn-green" type="submit" style="width:100%;justify-content:center;margin-top:1rem"><span data-en="Reserve my testing spot" data-ar="احجز مكاني في الاختبار">Reserve my testing spot</span></button>
+          <div id="testerMsg" class="msg" role="status" aria-live="polite" style="margin-top:.8rem"></div>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- STACK -->
 <section id="platform">
   <div class="container">
@@ -1072,6 +1114,30 @@ textarea.in-ctl{min-height:110px;resize:vertical}
         show('err',L('We could not reach the server, so your email app is opening instead.','تعذّر الوصول إلى الخادم، لذلك سيُفتح تطبيق البريد بدلًا من ذلك.'));
       });
   });
+
+  /* ---- Google Play closed-test signup ---- */
+  var tf=$('testerForm');
+  function testerMsg(c,t){var m=$('testerMsg');if(!m)return;m.className='msg '+c;m.textContent=t}
+  function paintTesterCount(n){var el=$('testerCount');if(!el)return;if(!n){return}el.textContent=L(n+' '+(n===1?'tester':'testers')+' already on the list. Join them.','انضم إلى '+n+' '+(n===1?'مختبِر':'مختبِرًا')+' مسجّلين بالفعل.');}
+  if(tf){
+    fetch(String(window.MASAREEN_API_BASE||'').replace(/\/+$/,'')+'/api/testers/stats').then(function(r){return r.json()}).then(function(j){if(j&&j.ok)paintTesterCount(j.count||0)}).catch(function(){});
+    tf.addEventListener('submit',function(e){
+      e.preventDefault();
+      if(tf.website.value)return;
+      var n=tf.name.value.trim(),em=tf.email.value.trim(),country=tf.country.value.trim(),device=tf.device.value.trim(),android=tf.android_version.value.trim();
+      if(n.length<2||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){testerMsg('err',L('Please add your name and a valid email.','يرجى إدخال الاسم وبريد إلكتروني صحيح.'));return}
+      if(!tf.consent.checked){testerMsg('err',L('Please tick the consent box so we can email you.','يرجى تحديد مربع الموافقة حتى نتمكن من مراسلتك.'));return}
+      var btn=tf.querySelector('button[type=submit]');btn.disabled=true;
+      testerMsg('ok',L('Saving your spot…','جارٍ حفظ مكانك…'));
+      fetch(String(window.MASAREEN_API_BASE||'').replace(/\/+$/,'')+'/api/testers',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,email:em,country:country,device:device,android_version:android,source:'landing',consent:true,lang:root.lang})})
+        .then(function(r){return r.json()}).then(function(j){
+          if(!j.ok)throw new Error(j.message||'fail');
+          tf.reset();testerMsg('ok',j.message||L("You're on the list. We'll email your testing link.",'أنت على القائمة. سنرسل رابط الاختبار إلى بريدك.'));
+          paintTesterCount(j.count||0);
+        }).catch(function(){testerMsg('err',L('Could not save right now. Please try again in a moment.','تعذّر الحفظ حاليًا. حاول مرة أخرى بعد قليل.'))})
+        .then(function(){btn.disabled=false});
+    });
+  }
 
   window.__rerender=function(){renderVerify();renderActs();renderPass();renderSDG();onScroll2()};
   $('passLogo').src=$('logoSrc').src;

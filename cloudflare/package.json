@@ -1,15 +1,21 @@
 {
-  "name": "masareen-api",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "test": "node --test --no-warnings test/worker.test.mjs",
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
-    "db:init": "wrangler d1 execute masareen --remote --file=schema.sql",
-    "db:init:local": "wrangler d1 execute masareen --local --file=schema.sql",
-    "db:migrate": "wrangler d1 execute masareen --remote --file=migrations/001-profile-fields.sql",
-    "db:migrate:local": "wrangler d1 execute masareen --local --file=migrations/001-profile-fields.sql"
-  },
-  "devDependencies": { "wrangler": "^4.152.0" }
+    "name":  "masareen-api",
+    "private":  true,
+    "type":  "module",
+    "scripts":  {
+                    "test":  "node --test --no-warnings test/worker.test.mjs test/social.test.mjs",
+                    "dev":  "wrangler dev",
+                    "deploy":  "wrangler deploy",
+                    "db:init":  "wrangler d1 execute masareen --remote --file=schema.sql",
+                    "db:init:local":  "wrangler d1 execute masareen --local --file=schema.sql",
+                    "db:migrate":  "wrangler d1 execute masareen --remote --file=migrations/001-profile-fields.sql",
+                    "db:migrate:local":  "wrangler d1 execute masareen --local --file=migrations/001-profile-fields.sql",
+                    "db:migrate:social":  "wrangler d1 execute masareen --remote --file=migrations/002-social.sql",
+                    "db:migrate:social:local":  "wrangler d1 execute masareen --local --file=migrations/002-social.sql",
+                    "db:seed":  "wrangler d1 execute masareen --remote --file=seed.sql",
+                    "db:seed:local":  "wrangler d1 execute masareen --local --file=seed.sql"
+                },
+    "devDependencies":  {
+                            "wrangler":  "^4.152.0"
+                        }
 }

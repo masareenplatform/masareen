@@ -3,6 +3,8 @@
 // It works either same-origin (Worker route masareen.com/api/*) or on a subdomain
 // (api.masareen.com) thanks to the CORS handling below.
 
+import { socialRoutes } from './social.js';
+
 const enc = new TextEncoder();
 const dec = new TextDecoder();
 const SESSION_DAYS = 14;
@@ -61,8 +63,8 @@ function corsHeaders(req, env) {
   return {
     'access-control-allow-origin': origin,
     'access-control-allow-credentials': 'true',
-    'access-control-allow-methods': 'GET, POST, OPTIONS',
-    'access-control-allow-headers': 'content-type',
+    'access-control-allow-methods': 'GET, POST, PATCH, DELETE, OPTIONS',
+    'access-control-allow-headers': 'content-type, authorization',
     'access-control-max-age': '86400',
     vary: 'Origin',
   };
@@ -324,6 +326,10 @@ async function adminStats(env) {
   const l7 = await one('SELECT COUNT(*) c FROM login_events WHERE at>?', daysAgo(7));
   const active7 = await one('SELECT COUNT(DISTINCT user_id) c FROM login_events WHERE at>?', daysAgo(7));
   const msgs = await one('SELECT COUNT(*) c FROM contact_messages');
+  const testers = await one('SELECT COUNT(*) c FROM testers');
+  const testersInvited = await one("SELECT COUNT(*) c FROM testers WHERE status IN ('invited','active')");
+  const posts = await one('SELECT COUNT(*) c FROM posts WHERE hidden=0');
+  const votes = await one('SELECT COUNT(*) c FROM post_impact_votes');
   const byType = (await env.DB.prepare("SELECT COALESCE(org_type,'Unknown') k, COUNT(*) c FROM users GROUP BY 1 ORDER BY c DESC").all()).results || [];
   const byRole = (await env.DB.prepare("SELECT COALESCE(NULLIF(role,''),'Not specified') k, COUNT(*) c FROM users GROUP BY 1 ORDER BY c DESC").all()).results || [];
   const byCountry = (await env.DB.prepare("SELECT COALESCE(country,'Unknown') k, COUNT(*) c FROM users GROUP BY 1 ORDER BY c DESC LIMIT 10").all()).results || [];
@@ -334,7 +340,7 @@ async function adminStats(env) {
     const d = new Date(Date.now() - i * 86400_000).toISOString().slice(0, 10);
     series.push({ date: d, signups: (su.find((x) => x.d === d) || {}).c || 0, logins: (lo.find((x) => x.d === d) || {}).c || 0 });
   }
-  return { totals: { users: total.c || 0, google: google.c || 0, profileComplete: complete.c || 0, signups7d: s7.c || 0, signups30d: s30.c || 0, logins24h: l24.c || 0, logins7d: l7.c || 0, activeUsers7d: active7.c || 0, messages: msgs.c || 0 }, byType, byRole, byCountry, series };
+  return { totals: { users: total.c || 0, google: google.c || 0, profileComplete: complete.c || 0, signups7d: s7.c || 0, signups30d: s30.c || 0, logins24h: l24.c || 0, logins7d: l7.c || 0, activeUsers7d: active7.c || 0, messages: msgs.c || 0, testers: testers.c || 0, testersInvited: testersInvited.c || 0, posts: posts.c || 0, impactVotes: votes.c || 0 }, byType, byRole, byCountry, series };
 }
 function page(url, def = 50, max = 200) {
   const limit = Math.min(max, Math.max(1, parseInt(url.searchParams.get('limit') || def, 10) || def));
@@ -433,6 +439,37 @@ async function adminRoutes(req, env, url) {
     const csv = [USER_COLUMNS.join(',')].concat(rows.map((r) => USER_COLUMNS.map((c) => csvCell(r[c])).join(','))).join('\n');
     return new Response(csv, { headers: { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': 'attachment; filename="masareen-users.csv"', 'cache-control': 'no-store' } });
   }
+  if (path === '/api/admin/testers') {
+    const { limit, offset } = page(url);
+    const rows = (await env.DB.prepare('SELECT * FROM testers ORDER BY created_at DESC LIMIT ? OFFSET ?').bind(limit, offset).all()).results;
+    const total = (await env.DB.prepare('SELECT COUNT(*) c FROM testers').first()).c || 0;
+    return json({ ok: true, total, rows });
+  }
+  if (path === '/api/admin/testers.csv') {
+    const cols = ['name', 'email', 'country', 'device', 'android_version', 'source', 'status', 'created_at'];
+    const rows = (await env.DB.prepare(`SELECT ${cols.join(',')} FROM testers ORDER BY created_at DESC`).all()).results;
+    const csv = [cols.join(',')].concat(rows.map((r) => cols.map((c) => csvCell(r[c])).join(','))).join('\n');
+    return new Response(csv, { headers: { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': 'attachment; filename="masareen-testers.csv"', 'cache-control': 'no-store' } });
+  }
+  const testerStatus = /^\/api\/admin\/testers\/(\d+)\/status$/.exec(path);
+  if (testerStatus && req.method === 'POST') {
+    const b = await req.json().catch(() => ({}));
+    const status = ['pending', 'invited', 'active', 'declined'].includes(b.status) ? b.status : null;
+    if (!status) throw new HttpError(400, 'invalid_status', 'Choose pending, invited, active or declined.');
+    await env.DB.prepare("UPDATE testers SET status=?, invited_at=CASE WHEN ?='invited' THEN ? ELSE invited_at END WHERE id=?")
+      .bind(status, status, nowIso(), Number(testerStatus[1])).run();
+    return json({ ok: true });
+  }
+  if (path === '/api/admin/social') {
+    const one = async (sql) => (await env.DB.prepare(sql).first()) || {};
+    const p = await one('SELECT COUNT(*) c FROM posts WHERE hidden=0');
+    const l = await one('SELECT COUNT(*) c FROM post_likes');
+    const cm = await one('SELECT COUNT(*) c FROM post_comments WHERE hidden=0');
+    const v = await one('SELECT COUNT(*) c FROM post_impact_votes');
+    const avg = await one('SELECT COALESCE(AVG(impact_value),0) a, COALESCE(AVG(confidence_score),0) c FROM posts WHERE hidden=0');
+    const top = (await env.DB.prepare('SELECT id, text, impact_value, confidence_score FROM posts WHERE hidden=0 ORDER BY impact_value DESC LIMIT 10').all()).results;
+    return json({ ok: true, totals: { posts: p.c || 0, likes: l.c || 0, comments: cm.c || 0, impactVotes: v.c || 0, avgImpact: Number((avg.a || 0).toFixed(2)), avgConfidence: Math.round(avg.c || 0) }, top });
+  }
   throw new HttpError(404, 'not_found', 'Unknown admin route.');
 }
 
@@ -447,6 +484,8 @@ async function route(req, env, ctx) {
         throw new HttpError(403, 'bad_origin', 'Cross-site requests are not allowed.');
     }
     if (p === '/api/health') return json({ ok: true, service: 'masareen-api', time: nowIso(), googleConfigured: !!env.GOOGLE_CLIENT_ID });
+    if (p.startsWith('/api/v1/') || p === '/api/testers' || p === '/api/testers/stats')
+      return await socialRoutes(req, env, ctx);
     if (p === '/api/config' && m === 'GET') return json({ ok: true, googleClientId: env.GOOGLE_CLIENT_ID || '', orgTypes: ORG_TYPES, roles: ROLES });
     if (p === '/api/me' && m === 'GET') { const u = await currentUser(req, env); return json({ ok: true, user: publicUser(u, env) || null }); }
     if (p === '/api/auth/google' && m === 'POST') return await googleAuth(req, env, ctx);
@@ -454,7 +493,7 @@ async function route(req, env, ctx) {
     if (p === '/api/auth/logout' && m === 'POST') return json({ ok: true }, 200, { 'set-cookie': sessionCookie('', req, 0, env) });
     if (p === '/api/profile' && m === 'POST') return await saveProfile(req, env);
     if (p === '/api/contact' && m === 'POST') return await contact(req, env, ctx);
-    if (p.startsWith('/api/admin/') && m === 'GET') return await adminRoutes(req, env, url);
+    if (p.startsWith('/api/admin/') && (m === 'GET' || m === 'POST')) return await adminRoutes(req, env, url);
     throw new HttpError(404, 'not_found', 'Unknown API route.');
   } catch (e) {
     if (e instanceof HttpError) return err(e.status, e.code, e.message);

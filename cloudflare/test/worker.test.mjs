@@ -140,7 +140,7 @@ test('CORS allows the configured R2 site, handles preflight, blocks other origin
   assert.equal(ok.headers.get('access-control-allow-credentials'), 'true');
   const pre = await handle(new Request('https://api.masareen.test/api/contact', { method: 'OPTIONS', headers: { origin: 'https://masareen.com' } }), env, {});
   assert.equal(pre.status, 204);
-  assert.equal(pre.headers.get('access-control-allow-methods'), 'GET, POST, OPTIONS');
+  assert.equal(pre.headers.get('access-control-allow-methods'), 'GET, POST, PATCH, DELETE, OPTIONS');
   const evil = await handle(new Request('https://api.masareen.test/api/contact', { method: 'POST', headers: { 'content-type': 'application/json', origin: 'https://evil.com' }, body: '{}' }), env, {});
   assert.equal(evil.status, 403);
 });

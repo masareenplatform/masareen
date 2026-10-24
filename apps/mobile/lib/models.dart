@@ -123,6 +123,7 @@ class Post {
   final String? confidenceLabel;
   final Map<String, dynamic>? confidenceFactors;
   final double? rankingScore;
+  final String? rankingReason;
 
   Post({
     required this.id,
@@ -145,6 +146,7 @@ class Post {
     this.confidenceLabel,
     this.confidenceFactors,
     this.rankingScore,
+    this.rankingReason,
   });
 
   factory Post.fromJson(Map<String, dynamic> j) => Post(
@@ -182,6 +184,7 @@ class Post {
         rankingScore: j['ranking_score'] is num
             ? (j['ranking_score'] as num).toDouble()
             : null,
+        rankingReason: j['ranking_reason'],
       );
 
   Post copyWith({
@@ -194,6 +197,9 @@ class Post {
     String? confidenceLabel,
     Map<String, dynamic>? confidenceFactors,
     double? rankingScore,
+    String? rankingReason,
+    double? impactValue,
+    String? impactLabel,
   }) =>
       Post(
         id: id,
@@ -202,8 +208,8 @@ class Post {
         kind: kind,
         programTag: programTag,
         sdg: sdg,
-        impactValue: impactValue,
-        impactLabel: impactLabel,
+        impactValue: impactValue ?? this.impactValue,
+        impactLabel: impactLabel ?? this.impactLabel,
         type: type,
         contentUrl: contentUrl,
         likes: likes ?? this.likes,
@@ -211,10 +217,12 @@ class Post {
         shares: shares ?? this.shares,
         likedByMe: likedByMe ?? this.likedByMe,
         commentList: commentList ?? this.commentList,
+        createdAt: createdAt,
         confidenceScore: confidenceScore ?? this.confidenceScore,
         confidenceLabel: confidenceLabel ?? this.confidenceLabel,
         confidenceFactors: confidenceFactors ?? this.confidenceFactors,
         rankingScore: rankingScore ?? this.rankingScore,
+        rankingReason: rankingReason ?? this.rankingReason,
       );
 }
 

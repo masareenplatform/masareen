@@ -8,7 +8,7 @@ class ApiClient {
   /// `--dart-define=API_BASE_URL=https://your.server`.
   static const String defaultBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://api.masareen.com',
+    defaultValue: 'https://masareen.com',
   );
 
   ApiClient({String baseUrl = defaultBaseUrl}) : _base = _clean(baseUrl);
@@ -126,15 +126,46 @@ class AuthApi {
   static Future<List<Post>> feed({
     String? authorId,
     String? kind,
+    String mode = 'for_you',
     int limit = 40,
     int offset = 0,
   }) async {
-    final query = <String, dynamic>{'limit': limit, 'offset': offset};
+    final query = <String, dynamic>{'limit': limit, 'offset': offset, 'mode': mode};
     if (authorId != null) query['author_id'] = authorId;
     if (kind != null) query['kind'] = kind;
     final data = await api.get('/api/v1/posts', query);
     final list = data is List ? data : <dynamic>[];
     return list.map((e) => Post.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  static Future<Map<String, dynamic>> rateImpact(
+    String postId, {
+    required int stars,
+    List<String> categories = const [],
+    String? note,
+  }) async {
+    final data = await api.post('/api/v1/posts/$postId/impact', {
+      'stars': stars,
+      'categories': categories,
+      if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
+    });
+    return data as Map<String, dynamic>;
+  }
+
+  static Future<List<Comment>> comments(String postId) async {
+    final data = await api.get('/api/v1/posts/$postId/comments');
+    final list = data is List ? data : <dynamic>[];
+    return list.map((e) => Comment.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  static Future<Map<String, dynamic>> share(String postId) async {
+    final data = await api.post('/api/v1/posts/$postId/share');
+    return data as Map<String, dynamic>;
+  }
+
+  static Future<Map<String, dynamic>> toggleFollow(String userId) async {
+    final data = await api.post('/api/v1/users/$userId/follow');
+    return data as Map<String, dynamic>;
   }
 
   static Future<Post> createPost(Map<String, dynamic> body) async {

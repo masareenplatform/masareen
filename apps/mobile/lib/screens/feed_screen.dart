@@ -41,6 +41,14 @@ class FeedScreenState extends State<FeedScreen> {
   int _offset = 0;
   final int _limit = 20;
   String _filter = 'all';
+  String _mode = 'for_you';
+
+  static const _modes = [
+    ('for_you', 'For you', Icons.auto_awesome),
+    ('following', 'Following', Icons.people_outline),
+    ('latest', 'Latest', Icons.schedule),
+    ('impact', 'Impact', Icons.verified_outlined),
+  ];
 
   static const _filters = [
     'all',
@@ -148,7 +156,7 @@ class FeedScreenState extends State<FeedScreen> {
     }
     setState(() => _loading = reset || _posts.isEmpty);
     try {
-      final data = await AuthApi.feed(limit: _limit, offset: _offset);
+      final data = await AuthApi.feed(limit: _limit, offset: _offset, mode: _mode);
       if (reset) {
         _posts = data;
       } else {
@@ -157,13 +165,6 @@ class FeedScreenState extends State<FeedScreen> {
       _hasMore = data.length >= _limit;
       _offset += data.length;
       _error = null;
-      _posts.sort((a, b) {
-        if (a.type == 'ARTICLE' && b.type != 'ARTICLE') return -1;
-        if (b.type == 'ARTICLE' && a.type != 'ARTICLE') return 1;
-        final aImpact = a.impactValue ?? 0;
-        final bImpact = b.impactValue ?? 0;
-        return bImpact.compareTo(aImpact);
-      });
     } on ApiException catch (e) {
       _error = e.message;
     } catch (e) {
@@ -173,6 +174,52 @@ class FeedScreenState extends State<FeedScreen> {
   }
 
   void refresh() => _load(reset: true);
+
+  void _setMode(String mode) {
+    if (mode == _mode) return;
+    setState(() {
+      _mode = mode;
+      _posts = [];
+      _filter = 'all';
+    });
+    _load(reset: true);
+  }
+
+  Future<void> _onShare(Post p) async {
+    try {
+      final res = await AuthApi.share(p.id);
+      final i = _posts.indexWhere((e) => e.id == p.id);
+      if (i != -1) {
+        final shares = (res['shares'] as num?)?.toInt() ?? (p.shares + 1);
+        _posts[i] = _posts[i].copyWith(shares: shares);
+        if (mounted) setState(() {});
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _onImpact(Post p) async {
+    final result = await showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => _ImpactSheet(post: p),
+    );
+    if (result == null) return;
+    final i = _posts.indexWhere((e) => e.id == p.id);
+    if (i == -1) return;
+    _posts[i] = _posts[i].copyWith(
+      impactValue: (result['impact_value'] as num?)?.toDouble(),
+      impactLabel: result['impact_label'] as String?,
+      confidenceScore: (result['confidence_score'] as num?)?.toDouble(),
+      confidenceLabel: result['confidence_label'] as String?,
+    );
+    if (mounted) {
+      setState(() {});
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Rating saved. Impact score is now ${_posts[i].impactValue?.toStringAsFixed(1) ?? '—'}/10.')),
+      );
+    }
+  }
 
   void _openPost(Post p) {
     Navigator.of(context).push(MaterialPageRoute(
@@ -261,6 +308,7 @@ class FeedScreenState extends State<FeedScreen> {
                         },
                       ),
                       _FeaturedCarousel(posts: _visiblePosts.take(5).toList()),
+                      _FeedModeBar(modes: _modes, active: _mode, onSelect: _setMode),
                       _FilterChips(
                         filters: _filters,
                         active: _filter,
@@ -294,6 +342,8 @@ class FeedScreenState extends State<FeedScreen> {
                                     currentUser: widget.user,
                                     onLike: () => _onLike(p),
                                     onComment: () => _openPost(p),
+                                    onImpact: () => _onImpact(p),
+                                    onShare: () => _onShare(p),
                                     onImageTap: p.contentUrl != null
                                         ? () => showEnlargedImage(context, p.contentUrl!)
                                         : null,
@@ -553,6 +603,58 @@ class _FilterChips extends StatelessWidget {
   }
 }
 
+class _FeedModeBar extends StatelessWidget {
+  final List<(String, String, IconData)> modes;
+  final String active;
+  final ValueChanged<String> onSelect;
+  const _FeedModeBar({required this.modes, required this.active, required this.onSelect});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.4))),
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
+        child: Row(
+          children: modes.map((m) {
+            final isActive = m.$1 == active;
+            return Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(999),
+                onTap: () => onSelect(m.$1),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isActive ? cs.primary : cs.surface,
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(color: isActive ? cs.primary : cs.outlineVariant),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(m.$3, size: 15, color: isActive ? cs.onPrimary : cs.onSurfaceVariant),
+                      const SizedBox(width: 6),
+                      Text(m.$2,
+                          style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                              color: isActive ? cs.onPrimary : cs.onSurface)),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+}
+
 class _RecognitionBanner extends StatelessWidget {
   final List<Map<String, String>> items;
   final ValueChanged<String> onTap;
@@ -748,6 +850,8 @@ class _PostCard extends StatelessWidget {
   final User currentUser;
   final VoidCallback onLike;
   final VoidCallback onComment;
+  final VoidCallback onImpact;
+  final VoidCallback onShare;
   final VoidCallback? onImageTap;
   final VoidCallback onAuthor;
   final VoidCallback onOpen;
@@ -756,6 +860,8 @@ class _PostCard extends StatelessWidget {
     required this.currentUser,
     required this.onLike,
     required this.onComment,
+    required this.onImpact,
+    required this.onShare,
     this.onImageTap,
     required this.onAuthor,
     required this.onOpen,
@@ -881,6 +987,25 @@ class _PostCard extends StatelessWidget {
                           Text(post.programTag!,
                               style: TextStyle(
                                   color: cs.onSurfaceVariant, fontSize: 12)),
+                        if (post.rankingReason != null && post.rankingReason!.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 3),
+                            child: Row(
+                              children: [
+                                Icon(Icons.auto_awesome, size: 12, color: cs.primary),
+                                const SizedBox(width: 4),
+                                Flexible(
+                                  child: Text(post.rankingReason!,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                          color: cs.primary,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600)),
+                                ),
+                              ],
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -1011,14 +1136,172 @@ class _PostCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 18),
                 _Action(
+                  icon: Icons.fact_check_outlined,
+                  label: 'Rate impact',
+                  onTap: onImpact,
+                ),
+                const SizedBox(width: 18),
+                _Action(
                   icon: Icons.share_outlined,
                   label: '${post.shares}',
-                  onTap: () {},
+                  onTap: onShare,
                 ),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ImpactSheet extends StatefulWidget {
+  final Post post;
+  const _ImpactSheet({required this.post});
+
+  @override
+  State<_ImpactSheet> createState() => _ImpactSheetState();
+}
+
+class _ImpactSheetState extends State<_ImpactSheet> {
+  int _stars = 4;
+  bool _saving = false;
+  String? _error;
+  final _note = TextEditingController();
+  final Set<String> _cats = {};
+
+  static const _categories = {
+    'verified_evidence': 'Verified evidence',
+    'community_voice': 'Community voice',
+    'policy_change': 'Policy change',
+    'innovation': 'Innovation',
+    'scale': 'Scale',
+    'transparency': 'Transparency',
+  };
+
+  @override
+  void dispose() {
+    _note.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      final res = await AuthApi.rateImpact(
+        widget.post.id,
+        stars: _stars,
+        categories: _cats.toList(),
+        note: _note.text,
+      );
+      if (mounted) Navigator.of(context).pop(res);
+    } on ApiException catch (e) {
+      if (mounted) setState(() => _error = e.message);
+    } catch (e) {
+      if (mounted) setState(() => _error = e.toString());
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.fact_check_outlined, color: cs.primary),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text('Rate this impact',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: cs.onSurface)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text('Your rating updates the verified impact score for everyone.',
+                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(5, (i) {
+                  final value = i + 1;
+                  return IconButton(
+                    onPressed: _saving ? null : () => setState(() => _stars = value),
+                    icon: Icon(
+                      value <= _stars ? Icons.star_rounded : Icons.star_outline_rounded,
+                      size: 38,
+                      color: value <= _stars ? Colors.amber.shade600 : cs.outline,
+                    ),
+                    tooltip: '$value of 5',
+                  );
+                }),
+              ),
+              Center(
+                child: Text(
+                  const ['', 'Weak signal', 'Some evidence', 'Solid evidence', 'Strong evidence', 'Verified, high impact'][_stars],
+                  style: TextStyle(color: cs.primary, fontWeight: FontWeight.w600, fontSize: 13),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text('What makes it credible?', style: TextStyle(fontWeight: FontWeight.w600, color: cs.onSurface)),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _categories.entries.map((e) {
+                  final on = _cats.contains(e.key);
+                  return FilterChip(
+                    label: Text(e.value, style: const TextStyle(fontSize: 12)),
+                    selected: on,
+                    onSelected: _saving
+                        ? null
+                        : (_) => setState(() => on ? _cats.remove(e.key) : _cats.add(e.key)),
+                    selectedColor: cs.primaryContainer,
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: _note,
+                enabled: !_saving,
+                maxLength: 300,
+                maxLines: 3,
+                minLines: 2,
+                decoration: InputDecoration(
+                  hintText: 'Optional: what did you see or verify?',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              if (_error != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text(_error!, style: TextStyle(color: cs.error, fontSize: 12)),
+                ),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: _saving ? null : _submit,
+                  icon: _saving
+                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Icons.verified_outlined),
+                  label: Text(_saving ? 'Saving…' : 'Submit impact rating'),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

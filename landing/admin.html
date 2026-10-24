@@ -50,7 +50,7 @@ table{width:100%;border-collapse:collapse;font-size:.84rem}th,td{text-align:star
         <small style="color:var(--muted)"><span style="color:var(--green)">&#9632;</span> sign-ups &nbsp; <span style="color:var(--blue)">&#9632;</span> logins</small></div>
       <div class="card"><h2>Who is registering</h2><div id="byType"></div><h2 style="margin-top:1rem">By role</h2><div id="byRole"></div><h2 style="margin-top:1rem">Top countries</h2><div id="byCountry"></div></div>
     </div>
-    <div class="tabs"><button class="on" data-t="users">Registrations</button><button data-t="logins">Logins</button><button data-t="messages">Messages</button>
+    <div class="tabs"><button class="on" data-t="users">Registrations</button><button data-t="testers">Play testers</button><button data-t="logins">Logins</button><button data-t="messages">Messages</button>
       <span style="flex:1"></span><input type="search" id="q" placeholder="Search name, email, org, university"><a class="btn primary" id="csv" href="/api/admin/export/users.csv">Download CSV</a></div>
     <div class="card wrap"><table id="tbl"></table></div>
     <p style="color:var(--muted);font-size:.78rem">Data lives in your Cloudflare D1 database. Times are UTC.</p>
@@ -74,20 +74,27 @@ table{width:100%;border-collapse:collapse;font-size:.84rem}th,td{text-align:star
   function load(){
     api('/api/admin/stats').then(function(s){
       if(!s.ok)return;var t=s.totals;
-      $('kpis').innerHTML=[['Registered',t.users],['via Google',t.google],['Profiles complete',t.profileComplete],['New, 7 days',t.signups7d],['New, 30 days',t.signups30d],['Logins, 24h',t.logins24h],['Logins, 7 days',t.logins7d],['Active users, 7d',t.activeUsers7d],['Messages',t.messages]].map(function(k){return '<div class="card kpi"><b>'+k[1]+'</b><span>'+k[0]+'</span></div>'}).join('');
+      $('kpis').innerHTML=[['Registered',t.users],['via Google',t.google],['Profiles complete',t.profileComplete],['New, 7 days',t.signups7d],['New, 30 days',t.signups30d],['Logins, 24h',t.logins24h],['Logins, 7 days',t.logins7d],['Active users, 7d',t.activeUsers7d],['Play testers',t.testers||0],['Testers invited',t.testersInvited||0],['Posts',t.posts||0],['Impact ratings',t.impactVotes||0],['Messages',t.messages]].map(function(k){return '<div class="card kpi"><b>'+k[1]+'</b><span>'+k[0]+'</span></div>'}).join('');
       bars($('byType'),s.byType);bars($('byRole'),s.byRole||[]);bars($('byCountry'),s.byCountry);chart(s.series)});
     table()}
   function table(){
-    var q=$('q').value.trim(),url=tab==='users'?'/api/admin/users?limit=100&q='+encodeURIComponent(q):'/api/admin/'+tab+'?limit=100';
+    var q=$('q').value.trim(),url=tab==='users'?'/api/admin/users?limit=100&q='+encodeURIComponent(q):tab==='testers'?'/api/admin/testers?limit=200':'/api/admin/'+tab+'?limit=100';
     $('q').hidden=tab!=='users';
+    $('csv').href=API_BASE+(tab==='testers'?'/api/admin/testers.csv':'/api/admin/export/users.csv');
     api(url).then(function(r){if(!r.ok)return;var h,row;
       if(tab==='users'){h=['Name','Email','Role','Organization','Details','Country','Method','Profile','Joined','Last login','Logins'];
         row=function(u){var details=[u.university,u.department,u.academic_year,u.degree_level,u.employer,u.job_title].filter(Boolean).join(' · ');
           var org=[u.org||u.university||u.employer||'',u.org_type?'('+u.org_type+')':''].filter(Boolean).join(' ');
           return [esc(u.name),esc(u.email)+(u.email_verified?'':' <span class="pill no">unverified</span>'),esc(u.role||'-'),esc(org),esc(details),esc(u.country),esc(u.signup_method),u.profile_complete?'<span class="pill">complete</span>':'<span class="pill no">pending</span>',fmt(u.created_at),fmt(u.last_login_at),u.login_count]}}
+      else if(tab==='testers'){h=['Name','Email','Country','Device','Android','Source','Status','Joined','Set status'];
+        row=function(x){var badge=x.status==='active'?'<span class="pill">active</span>':x.status==='invited'?'<span class="pill" style="background:#fff7e6;color:#8a6100">invited</span>':x.status==='declined'?'<span class="pill no">declined</span>':'<span class="pill no">pending</span>';
+          var actions=['invited','active','declined'].map(function(s){return '<button class="btn" data-tid="'+x.id+'" data-st="'+s+'" style="padding:.25rem .5rem;font-size:.72rem;margin:0 .15rem .15rem 0">'+s+'</button>'}).join('');
+          return [esc(x.name),esc(x.email),esc(x.country||'-'),esc(x.device||'-'),esc(x.android_version||'-'),esc(x.source||'-'),badge,fmt(x.created_at),actions]}}
       else if(tab==='logins'){h=['When (UTC)','Email','Method','Country'];row=function(l){return [fmt(l.at),esc(l.email),esc(l.method),esc(l.country||'-')]}}
       else{h=['When (UTC)','Name','Email','Organization','Message'];row=function(m){return [fmt(m.created_at),esc(m.name),esc(m.email),esc(m.org),esc(m.message)]}}
-      $('tbl').innerHTML='<thead><tr>'+h.map(function(x){return '<th>'+x+'</th>'}).join('')+'</tr></thead><tbody>'+(r.rows.length?r.rows.map(function(x){return '<tr>'+row(x).map(function(c){return '<td>'+c+'</td>'}).join('')+'</tr>'}).join(''):'<tr><td colspan="'+h.length+'" style="color:var(--muted)">Nothing here yet.</td></tr>')+'</tbody>'})}
+      $('tbl').innerHTML='<thead><tr>'+h.map(function(x){return '<th>'+x+'</th>'}).join('')+'</tr></thead><tbody>'+(r.rows.length?r.rows.map(function(x){return '<tr>'+row(x).map(function(c){return '<td>'+c+'</td>'}).join('')+'</tr>'}).join(''):'<tr><td colspan="'+h.length+'" style="color:var(--muted)">Nothing here yet.</td></tr>')+'</tbody>';
+      [].forEach.call(document.querySelectorAll('[data-st]'),function(b){b.onclick=function(){b.disabled=true;api('/api/admin/testers/'+b.dataset.tid+'/status','POST',{status:b.dataset.st}).then(function(j){if(j.ok)table();else b.disabled=false})}});
+    })}
   [].forEach.call(document.querySelectorAll('[data-t]'),function(b){b.onclick=function(){tab=b.dataset.t;[].forEach.call(document.querySelectorAll('[data-t]'),function(x){x.classList.toggle('on',x===b)});table()}});
   var tm;$('q').oninput=function(){clearTimeout(tm);tm=setTimeout(table,300)};
   api('/api/me').then(function(r){if(r.ok&&r.user&&r.user.isAdmin)return show(r.user);return api('/api/config').then(function(c){
