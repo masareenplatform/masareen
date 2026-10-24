@@ -49,6 +49,10 @@ async function signToken(payload, secret) {
   const sig = await crypto.subtle.sign('HMAC', await hmacKey(secret), enc.encode(body));
   return body + '.' + b64u.enc(sig);
 }
+export async function appTokenFor(user, env) {
+  return signToken({ uid: user.id, exp: Date.now() + TOKEN_DAYS * 86400000 }, env.SESSION_SECRET || '');
+}
+
 async function readToken(token, secret) {
   if (!token || !secret) return null;
   const [body, sig] = token.split('.');
@@ -158,6 +162,7 @@ async function userJson(env, u, viewer) {
     bio: u.bio || '',
     country: u.country || null,
     city: u.city || null,
+    is_tester: !!u.is_tester,
     created_at: u.created_at,
     profile: {
       bio: u.bio || '',
@@ -170,7 +175,7 @@ async function userJson(env, u, viewer) {
       impact_total: Number((posts.total || 0).toFixed(1)),
       impact_average: Number((posts.avg || 0).toFixed(2)),
       ratings_cast: votes.c || 0,
-      cover_url: null,
+      cover_url: u.cover_url || null,
     },
     followers_count: followers,
     following_count: following,
@@ -261,6 +266,14 @@ async function recomputeImpact(env, postId) {
       JSON.stringify(factors), postId).run();
   return { impact_value: Number(score.toFixed(2)), impact_label: impactLabelFor(score, confidence),
     confidence_score: Math.round(confidence), confidence_factors: factors };
+}
+
+async function notify(env, userId, type, title, body, actorId, postId) {
+  if (!userId || Number(userId) === Number(actorId)) return;
+  try {
+    await env.DB.prepare('INSERT INTO notifications (user_id,type,title,body,actor_id,post_id,read,created_at) VALUES (?,?,?,?,?,?,0,?)')
+      .bind(userId, type, clean(title, 140), clean(body, 300) || null, actorId || null, postId || null, nowIso()).run();
+  } catch { /* notifications must never break the action */ }
 }
 
 function hash01(str) {
@@ -369,15 +382,21 @@ async function register(req, env) {
   const email = clean(b.email, 254).toLowerCase();
   const name = clean(b.full_name || b.name, 90);
   const password = typeof b.password === 'string' ? b.password : '';
+  const isTester = b.is_tester === true || b.is_tester === 'true' || b.tester === true;
+  const audience = clean(b.audience, 40).toUpperCase() || null;
   if (!isEmail(email)) throw new HttpError(400, 'invalid_email', 'Please enter a valid email address.');
   if (name.length < 2) throw new HttpError(400, 'invalid_name', 'Please enter your full name.');
+  if (name.length > 90) throw new HttpError(400, 'invalid_name', 'Name is too long.');
   if (password.length < 8) throw new HttpError(400, 'weak_password', 'Password must be at least 8 characters.');
+  if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password))
+    throw new HttpError(400, 'weak_password', 'Password must include letters and numbers.');
+  if (password.length > 200) throw new HttpError(400, 'weak_password', 'Password is too long.');
   const existing = await env.DB.prepare('SELECT * FROM users WHERE email=?').bind(email).first();
   if (existing) {
     if (existing.password_hash) throw new HttpError(409, 'email_taken', 'An account with this email already exists. Please sign in.');
     const { salt, hash } = await hashPassword(password);
-    await env.DB.prepare('UPDATE users SET password_hash=?, password_salt=?, name=COALESCE(NULLIF(?,\'\'),name), signup_method=? WHERE id=?')
-      .bind(hash, salt, name, 'password', existing.id).run();
+    await env.DB.prepare('UPDATE users SET password_hash=?, password_salt=?, name=COALESCE(NULLIF(?,\'\'),name), signup_method=?, is_tester=CASE WHEN ? THEN 1 ELSE is_tester END, audience=COALESCE(?,audience), consent_at=COALESCE(consent_at,?) WHERE id=?')
+      .bind(hash, salt, name, 'password', isTester ? 1 : 0, audience, nowIso(), existing.id).run();
     const u = await env.DB.prepare('SELECT * FROM users WHERE id=?').bind(existing.id).first();
     return json({ ok: true, access_token: await signToken({ uid: u.id, exp: Date.now() + TOKEN_DAYS * 86400000 }, env.SESSION_SECRET), token_type: 'bearer', user: await userJson(env, u, u) });
   }
@@ -385,10 +404,11 @@ async function register(req, env) {
   const { salt, hash } = await hashPassword(password);
   const at = nowIso();
   const r = await env.DB.prepare(`INSERT INTO users (email, email_verified, name, role, country, city, interest, phone,
-      password_hash, password_salt, handle, bio, consent_at, profile_complete, signup_method, created_at, last_login_at, login_count)
-      VALUES (?,0,?,?,?,?,?,?,?,?,?,?,?,1,'password',?,?,1)`)
+      password_hash, password_salt, handle, bio, audience, is_tester, consent_at, profile_complete, signup_method, created_at, last_login_at, login_count)
+      VALUES (?,0,?,?,?,?,?,?,?,?,?,?,?,?,?,1,'password',?,?,1)`)
     .bind(email, name, role, clean(b.country, 60) || null, clean(b.city, 80) || null, clean(b.interest, 120) || null,
-      clean(b.phone, 40) || null, hash, salt, handleFor(name, '0'), clean(b.bio, 400) || null, at, at, at).run();
+      clean(b.phone, 40) || null, hash, salt, handleFor(name, '0'), clean(b.bio, 400) || null, audience, isTester ? 1 : 0,
+      at, at, at).run();
   const id = r.meta.last_row_id;
   await env.DB.prepare('UPDATE users SET handle=? WHERE id=?').bind(handleFor(name, id), id).run();
   const u = await env.DB.prepare('SELECT * FROM users WHERE id=?').bind(id).first();
@@ -485,7 +505,7 @@ async function createPost(req, env) {
 
 async function toggleLike(req, env, id) {
   const u = await requireUser(req, env);
-  const post = await env.DB.prepare('SELECT id FROM posts WHERE id=? AND hidden=0').bind(id).first();
+  const post = await env.DB.prepare('SELECT id, author_id FROM posts WHERE id=? AND hidden=0').bind(id).first();
   if (!post) throw new HttpError(404, 'post_not_found', 'This post no longer exists.');
   const has = await env.DB.prepare('SELECT 1 x FROM post_likes WHERE post_id=? AND user_id=?').bind(id, u.id).first();
   if (has) {
@@ -498,6 +518,7 @@ async function toggleLike(req, env, id) {
       env.DB.prepare('INSERT INTO post_likes (post_id,user_id,created_at) VALUES (?,?,?)').bind(id, u.id, nowIso()),
       env.DB.prepare('UPDATE posts SET like_count=like_count+1 WHERE id=?').bind(id),
     ]);
+    await notify(env, post.author_id, 'like', `${u.name || 'Someone'} liked your update`, 'Your impact update is getting attention.', u.id, id);
     await recomputeImpact(env, id);
   }
   const row = await getPostRow(env, id);
@@ -509,12 +530,13 @@ async function addComment(req, env, id) {
   const b = await req.json().catch(() => ({}));
   const text = clean(b.text, 800);
   if (!text) throw new HttpError(400, 'empty_comment', 'Write a comment first.');
-  const post = await env.DB.prepare('SELECT id FROM posts WHERE id=? AND hidden=0').bind(id).first();
+  const post = await env.DB.prepare('SELECT id, author_id FROM posts WHERE id=? AND hidden=0').bind(id).first();
   if (!post) throw new HttpError(404, 'post_not_found', 'This post no longer exists.');
   const at = nowIso();
   const r = await env.DB.prepare('INSERT INTO post_comments (post_id,user_id,text,created_at) VALUES (?,?,?,?)')
     .bind(id, u.id, text, at).run();
   await env.DB.prepare('UPDATE posts SET comment_count=comment_count+1 WHERE id=?').bind(id).run();
+  await notify(env, post.author_id, 'comment', `${u.name || 'Someone'} commented on your update`, text, u.id, id);
   await recomputeImpact(env, id);
   return json({ id: String(r.meta.last_row_id), text, author_id: String(u.id), author_name: u.name,
     author_handle: u.handle || handleFor(u.name, u.id), created_at: at }, 201);
@@ -543,6 +565,7 @@ async function castImpactVote(req, env, id) {
   await env.DB.prepare(`INSERT INTO post_impact_votes (post_id,user_id,stars,categories,note,created_at) VALUES (?,?,?,?,?,?)
     ON CONFLICT(post_id,user_id) DO UPDATE SET stars=excluded.stars, categories=excluded.categories, note=excluded.note, created_at=excluded.created_at`)
     .bind(id, u.id, stars, JSON.stringify(cats), note, nowIso()).run();
+  await notify(env, post.author_id, 'impact', `${u.name || 'Someone'} rated your impact ${stars}/5`, note || 'A verified community member rated this update.', u.id, id);
   const impact = await recomputeImpact(env, id);
   const mine = JSON.parse((await env.DB.prepare('SELECT categories FROM post_impact_votes WHERE post_id=? AND user_id=?').bind(id, u.id).first()).categories || '[]');
   return json({ ok: true, ...impact, my_vote: { stars, categories: mine, note } });
@@ -634,11 +657,197 @@ async function adminRoutes(req, env, url) {
   throw new HttpError(404, 'not_found', 'Unknown admin route.');
 }
 
+/* ---------------- courses ---------------- */
+const COURSE_LEVELS = new Set(['Beginner', 'Intermediate', 'Advanced']);
+
+function courseJson(c, enrolledByMe) {
+  return {
+    id: String(c.id), title: c.title, description: c.description || null, provider: c.provider || null,
+    level: c.level || 'Beginner', sdg: c.sdg == null ? null : Number(c.sdg),
+    lessons: Number(c.lessons || 0), duration_min: Number(c.duration_min || 0),
+    thumbnail: c.thumbnail || null, status: c.status || 'PUBLISHED',
+    enrolled_count: Number(c.enrolled_count || 0), enrolled_by_me: !!enrolledByMe,
+    author: { id: String(c.author_id), name: c.author_name || 'MASAREEN' }, created_at: c.created_at,
+  };
+}
+
+async function listCourses(env, viewer) {
+  const rows = (await env.DB.prepare(`SELECT c.*, u.name author_name,
+    (SELECT COUNT(*) FROM course_enrollments e WHERE e.course_id=c.id) enrolled_count
+    FROM courses c LEFT JOIN users u ON u.id=c.author_id
+    WHERE c.status='PUBLISHED' ORDER BY c.created_at DESC LIMIT 100`).all()).results || [];
+  const enrolled = new Set();
+  if (viewer) {
+    const mine = (await env.DB.prepare('SELECT course_id FROM course_enrollments WHERE user_id=?').bind(viewer.id).all()).results || [];
+    for (const m of mine) enrolled.add(Number(m.course_id));
+  }
+  return rows.map((c) => courseJson(c, enrolled.has(Number(c.id))));
+}
+
+async function createCourse(req, env) {
+  const u = await requireUser(req, env);
+  const b = await req.json().catch(() => ({}));
+  const title = clean(b.title, 120);
+  const description = clean(b.description, 2000);
+  if (title.length < 3) throw new HttpError(400, 'invalid_title', 'Course title must be at least 3 characters.');
+  const level = COURSE_LEVELS.has(b.level) ? b.level : 'Beginner';
+  const sdg = num(b.sdg);
+  if (sdg != null && (!Number.isInteger(sdg) || sdg < 1 || sdg > 17)) throw new HttpError(400, 'invalid_sdg', 'Choose an SDG from 1 to 17.');
+  const lessons = clamp(parseInt(b.lessons, 10) || 0, 0, 500);
+  const duration = clamp(parseInt(b.duration_min, 10) || 0, 0, 60000);
+  const at = nowIso();
+  const r = await env.DB.prepare(`INSERT INTO courses (author_id,title,description,provider,level,sdg,lessons,duration_min,thumbnail,status,created_at)
+    VALUES (?,?,?,?,?,?,?,?,?,'PUBLISHED',?)`)
+    .bind(u.id, title, description || null, clean(b.provider, 120) || u.name || null, level, sdg, lessons, duration,
+      clean(b.thumbnail, 500) || null, at).run();
+  const row = await env.DB.prepare('SELECT * FROM courses WHERE id=?').bind(r.meta.last_row_id).first();
+  return json(courseJson(row, false), 201);
+}
+
+async function enrollCourse(req, env, id) {
+  const u = await requireUser(req, env);
+  const course = await env.DB.prepare('SELECT id FROM courses WHERE id=?').bind(id).first();
+  if (!course) throw new HttpError(404, 'course_not_found', 'Course not found.');
+  const has = await env.DB.prepare('SELECT 1 x FROM course_enrollments WHERE course_id=? AND user_id=?').bind(id, u.id).first();
+  if (!has) await env.DB.prepare('INSERT INTO course_enrollments (course_id,user_id,created_at) VALUES (?,?,?)').bind(id, u.id, nowIso()).run();
+  const count = (await env.DB.prepare('SELECT COUNT(*) c FROM course_enrollments WHERE course_id=?').bind(id).first()).c || 0;
+  return json({ ok: true, enrolled: true, enrolled_count: count });
+}
+
+/* ---------------- events ---------------- */
+function eventJson(e, attending) {
+  return {
+    id: String(e.id), title: e.title, description: e.description || null,
+    starts_at: e.starts_at, ends_at: e.ends_at || null, location: e.location || null,
+    is_online: !!e.is_online, link_url: e.link_url || null,
+    sdg: e.sdg == null ? null : Number(e.sdg), capacity: e.capacity == null ? null : Number(e.capacity),
+    status: e.status || 'PUBLISHED', attendees_count: Number(e.attendees_count || 0),
+    attending: !!attending, author: { id: String(e.author_id), name: e.author_name || 'MASAREEN' },
+    created_at: e.created_at,
+  };
+}
+
+async function listEvents(env, viewer) {
+  const rows = (await env.DB.prepare(`SELECT e.*, u.name author_name,
+    (SELECT COUNT(*) FROM event_attendees a WHERE a.event_id=e.id) attendees_count
+    FROM events e LEFT JOIN users u ON u.id=e.author_id
+    WHERE e.status='PUBLISHED' ORDER BY e.starts_at ASC LIMIT 100`).all()).results || [];
+  const mine = new Set();
+  if (viewer) {
+    const going = (await env.DB.prepare('SELECT event_id FROM event_attendees WHERE user_id=?').bind(viewer.id).all()).results || [];
+    for (const g of going) mine.add(Number(g.event_id));
+  }
+  return rows.map((e) => eventJson(e, mine.has(Number(e.id))));
+}
+
+async function createEvent(req, env) {
+  const u = await requireUser(req, env);
+  const b = await req.json().catch(() => ({}));
+  const title = clean(b.title, 140);
+  const starts = clean(b.starts_at, 40);
+  const ends = clean(b.ends_at, 40);
+  if (title.length < 3) throw new HttpError(400, 'invalid_title', 'Event title must be at least 3 characters.');
+  const t = Date.parse(starts);
+  if (!Number.isFinite(t)) throw new HttpError(400, 'invalid_date', 'Add a valid start date and time.');
+  if (ends && !Number.isFinite(Date.parse(ends))) throw new HttpError(400, 'invalid_date', 'End date is not valid.');
+  const isOnline = b.is_online === true || b.is_online === 'true' || b.is_online === 1;
+  const location = clean(b.location, 200);
+  const link = clean(b.link_url, 500);
+  if (!isOnline && !location) throw new HttpError(400, 'invalid_location', 'Add a venue or mark the event as online.');
+  if (isOnline && !link) throw new HttpError(400, 'invalid_link', 'Add the online meeting link.');
+  const sdg = num(b.sdg);
+  if (sdg != null && (!Number.isInteger(sdg) || sdg < 1 || sdg > 17)) throw new HttpError(400, 'invalid_sdg', 'Choose an SDG from 1 to 17.');
+  const capacity = num(b.capacity);
+  const at = nowIso();
+  const r = await env.DB.prepare(`INSERT INTO events (author_id,title,description,starts_at,ends_at,location,is_online,link_url,sdg,capacity,status,created_at)
+    VALUES (?,?,?,?,?,?,?,?,?,?,'PUBLISHED',?)`)
+    .bind(u.id, title, clean(b.description, 2000) || null, new Date(t).toISOString(), ends ? new Date(Date.parse(ends)).toISOString() : null,
+      location || null, isOnline ? 1 : 0, link || null, sdg, capacity != null ? clamp(Math.trunc(capacity), 1, 1000000) : null, at).run();
+  const row = await env.DB.prepare('SELECT * FROM events WHERE id=?').bind(r.meta.last_row_id).first();
+  return json(eventJson(row, false), 201);
+}
+
+async function joinEvent(req, env, id) {
+  const u = await requireUser(req, env);
+  const ev = await env.DB.prepare('SELECT * FROM events WHERE id=?').bind(id).first();
+  if (!ev) throw new HttpError(404, 'event_not_found', 'Event not found.');
+  const has = await env.DB.prepare('SELECT 1 x FROM event_attendees WHERE event_id=? AND user_id=?').bind(id, u.id).first();
+  if (has) {
+    await env.DB.prepare('DELETE FROM event_attendees WHERE event_id=? AND user_id=?').bind(id, u.id).run();
+  } else {
+    const count = (await env.DB.prepare('SELECT COUNT(*) c FROM event_attendees WHERE event_id=?').bind(id).first()).c || 0;
+    if (ev.capacity != null && count >= ev.capacity) throw new HttpError(409, 'event_full', 'This event is full.');
+    await env.DB.prepare('INSERT INTO event_attendees (event_id,user_id,created_at) VALUES (?,?,?)').bind(id, u.id, nowIso()).run();
+    await notify(env, ev.author_id, 'event', `${u.name || 'Someone'} is attending ${ev.title}`, 'A new attendee joined your event.', u.id, null);
+  }
+  const count = (await env.DB.prepare('SELECT COUNT(*) c FROM event_attendees WHERE event_id=?').bind(id).first()).c || 0;
+  return json({ ok: true, attending: !has, attendees_count: count });
+}
+
+/* ---------------- notifications ---------------- */
+async function listNotifications(req, env, userId) {
+  const viewer = await requireUser(req, env);
+  if (viewer.id !== Number(userId) && !isAdminUser(env, viewer))
+    throw new HttpError(403, 'forbidden', 'You can only read your own notifications.');
+  const rows = (await env.DB.prepare('SELECT * FROM notifications WHERE user_id=? ORDER BY created_at DESC LIMIT 100')
+    .bind(Number(userId)).all()).results || [];
+  return json(rows.map((n) => ({ id: String(n.id), type: n.type, title: n.title, body: n.body,
+    read: !!n.read, created_at: n.created_at, actor_id: n.actor_id == null ? null : String(n.actor_id),
+    post_id: n.post_id == null ? null : String(n.post_id) })));
+}
+
+async function notificationRoutes(req, env, path) {
+  if (path === '/api/v1/notifications/read-all' && req.method === 'POST') {
+    const viewer = await requireUser(req, env);
+    await env.DB.prepare('UPDATE notifications SET read=1 WHERE user_id=?').bind(viewer.id).run();
+    return json({ ok: true });
+  }
+  const readMatch = /^\/api\/v1\/notifications\/(\d+)\/read$/.exec(path);
+  if (readMatch && req.method === 'POST') {
+    const viewer = await requireUser(req, env);
+    await env.DB.prepare('UPDATE notifications SET read=1 WHERE id=? AND user_id=?').bind(Number(readMatch[1]), viewer.id).run();
+    return json({ ok: true });
+  }
+  const listMatch = /^\/api\/v1\/notifications\/(\d+)$/.exec(path);
+  if (listMatch && req.method === 'GET') return await listNotifications(req, env, Number(listMatch[1]));
+  return null;
+}
+
+/* ---------------- media uploads (R2) ---------------- */
+const IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+const VIDEO_TYPES = new Set(['video/mp4', 'video/webm', 'video/quicktime']);
+
+async function uploadMedia(req, env, kind) {
+  const u = await requireUser(req, env);
+  if (!env.MEDIA) throw new HttpError(503, 'media_unavailable', 'Media uploads are not configured yet.');
+  let form;
+  try { form = await req.formData(); } catch { throw new HttpError(400, 'bad_upload', 'Choose a file to upload.'); }
+  const file = form.get('file');
+  if (!file || typeof file === 'string') throw new HttpError(400, 'bad_upload', 'Choose a file to upload.');
+  if (file.size > 12 * 1024 * 1024) throw new HttpError(413, 'too_large', 'Files must be 12 MB or smaller.');
+  const ct = String(file.type || '').toLowerCase();
+  const isImage = IMAGE_TYPES.has(ct);
+  const isVideo = VIDEO_TYPES.has(ct);
+  if (!isImage && !isVideo) throw new HttpError(415, 'unsupported_type', 'Use a JPG, PNG, WEBP, GIF, MP4 or WEBM file.');
+  if (kind === 'avatar' || kind === 'cover') {
+    if (!isImage) throw new HttpError(415, 'unsupported_type', 'Profile photos must be images.');
+  }
+  const ext = ct === 'image/jpeg' ? 'jpg' : ct === 'video/quicktime' ? 'mov' : ct.split('/')[1];
+  const folder = kind === 'avatar' ? 'avatars' : kind === 'cover' ? 'covers' : kind === 'video' ? 'videos' : 'posts';
+  const key = `media/${folder}/${u.id}-${Date.now()}.${ext}`;
+  await env.MEDIA.put(key, await file.arrayBuffer(), { httpMetadata: { contentType: ct, cacheControl: 'public, max-age=31536000, immutable' } });
+  const base = (env.MEDIA_PUBLIC_BASE || 'https://masareen.com').replace(/\/+$/, '');
+  const url = `${base}/${key}`;
+  if (kind === 'avatar') await env.DB.prepare('UPDATE users SET picture=? WHERE id=?').bind(url, u.id).run();
+  if (kind === 'cover') await env.DB.prepare('UPDATE users SET cover_url=? WHERE id=?').bind(url, u.id).run();
+  return json({ ok: true, url, avatar_url: kind === 'avatar' ? url : null,
+    cover_url: kind === 'cover' ? url : null, content_type: ct, size: file.size });
+}
+
 /* ---------------- misc app endpoints (graceful stubs) ---------------- */
 const emptyListRoutes = new Set([
   '/api/v1/programs', '/api/v1/programs/', '/api/v1/opportunities', '/api/v1/opportunities/',
-  '/api/v1/campaigns', '/api/v1/campaigns/', '/api/v1/courses', '/api/v1/courses/',
-  '/api/v1/notifications', '/api/v1/users/me/notifications', '/api/v1/coin/transactions',
+  '/api/v1/campaigns', '/api/v1/campaigns/', '/api/v1/coin/transactions',
   '/api/v1/payments', '/api/v1/ads', '/api/v1/projects',
 ]);
 
@@ -672,7 +881,10 @@ async function userRoutes(req, env, url, viewer) {
     if (!exists) throw new HttpError(404, 'user_not_found', 'Profile not found.');
     const has = await env.DB.prepare('SELECT 1 x FROM follows WHERE follower_id=? AND followee_id=?').bind(viewer.id, target).first();
     if (has) await env.DB.prepare('DELETE FROM follows WHERE follower_id=? AND followee_id=?').bind(viewer.id, target).run();
-    else await env.DB.prepare('INSERT INTO follows (follower_id,followee_id,created_at) VALUES (?,?,?)').bind(viewer.id, target, nowIso()).run();
+    else {
+      await env.DB.prepare('INSERT INTO follows (follower_id,followee_id,created_at) VALUES (?,?,?)').bind(viewer.id, target, nowIso()).run();
+      await notify(env, target, 'follow', `${viewer.name || 'Someone'} started following you`, 'Open their profile to follow back.', viewer.id, null);
+    }
     return json({ ok: true, following: !has, followers_count: await followCount(env, target, 'followee_id') });
   }
   const idMatch = /^\/api\/v1\/users\/(\d+)$/.exec(path);
@@ -700,6 +912,54 @@ export async function socialRoutes(req, env, ctx) {
     if (path === '/api/v1/users/register' && req.method === 'POST') return await register(req, env);
     if (path === '/api/v1/auth/login' && req.method === 'POST') return await login(req, env);
     if (path.startsWith('/api/v1/admin/')) return await adminRoutes(req, env, url);
+    if (path === '/api/v1/courses' || path === '/api/v1/courses/') {
+      if (req.method === 'GET') return json(await listCourses(env, await currentUser(req, env)));
+      if (req.method === 'POST') return await createCourse(req, env);
+    }
+    const courseMatch = /^\/api\/v1\/courses\/(\d+)(\/enroll)?$/.exec(path);
+    if (courseMatch) {
+      if (courseMatch[2] === '/enroll' && req.method === 'POST') return await enrollCourse(req, env, Number(courseMatch[1]));
+      if (!courseMatch[2] && req.method === 'GET') {
+        const row = await env.DB.prepare(`SELECT c.*, u.name author_name,
+          (SELECT COUNT(*) FROM course_enrollments e WHERE e.course_id=c.id) enrolled_count
+          FROM courses c LEFT JOIN users u ON u.id=c.author_id WHERE c.id=?`).bind(Number(courseMatch[1])).first();
+        if (!row) throw new HttpError(404, 'course_not_found', 'Course not found.');
+        const viewer = await currentUser(req, env);
+        const mine = viewer ? await env.DB.prepare('SELECT 1 x FROM course_enrollments WHERE course_id=? AND user_id=?')
+          .bind(row.id, viewer.id).first() : null;
+        return json(courseJson(row, !!mine));
+      }
+    }
+    if (path === '/api/v1/events' || path === '/api/v1/events/') {
+      if (req.method === 'GET') return json(await listEvents(env, await currentUser(req, env)));
+      if (req.method === 'POST') return await createEvent(req, env);
+    }
+    const eventMatch = /^\/api\/v1\/events\/(\d+)(\/join)?$/.exec(path);
+    if (eventMatch) {
+      if (eventMatch[2] === '/join' && req.method === 'POST') return await joinEvent(req, env, Number(eventMatch[1]));
+      if (!eventMatch[2] && req.method === 'GET') {
+        const row = await env.DB.prepare(`SELECT e.*, u.name author_name,
+          (SELECT COUNT(*) FROM event_attendees a WHERE a.event_id=e.id) attendees_count
+          FROM events e LEFT JOIN users u ON u.id=e.author_id WHERE e.id=?`).bind(Number(eventMatch[1])).first();
+        if (!row) throw new HttpError(404, 'event_not_found', 'Event not found.');
+        const viewer = await currentUser(req, env);
+        const mine = viewer ? await env.DB.prepare('SELECT 1 x FROM event_attendees WHERE event_id=? AND user_id=?')
+          .bind(row.id, viewer.id).first() : null;
+        return json(eventJson(row, !!mine));
+      }
+    }
+    if (path.startsWith('/api/v1/notifications') || path === '/api/v1/users/me/notifications') {
+      if (path === '/api/v1/users/me/notifications' && req.method === 'GET') {
+        const viewer = await requireUser(req, env);
+        return await listNotifications(req, env, viewer.id);
+      }
+      const handled = await notificationRoutes(req, env, path);
+      if (handled) return handled;
+    }
+    if (path === '/api/v1/users/me/avatar' && req.method === 'POST') return await uploadMedia(req, env, 'avatar');
+    if (path === '/api/v1/users/me/cover' && req.method === 'POST') return await uploadMedia(req, env, 'cover');
+    if (path === '/api/v1/media/upload' && req.method === 'POST') return await uploadMedia(req, env, 'post');
+    if (path === '/api/v1/videos/upload' && req.method === 'POST') return await uploadMedia(req, env, 'video');
     if (path === '/api/v1/posts' && req.method === 'GET') return await listPosts(req, env, url);
     if (path === '/api/v1/posts' && req.method === 'POST') return await createPost(req, env);
     const postMatch = /^\/api\/v1\/posts\/(\d+)(\/[a-z]+)?$/.exec(path);

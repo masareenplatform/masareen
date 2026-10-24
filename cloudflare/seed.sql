@@ -74,3 +74,44 @@ FROM users WHERE email='nilecare@masareen.example' AND NOT EXISTS (SELECT 1 FROM
 INSERT INTO posts (author_id, text, kind, sdg, impact_value, impact_label, confidence_score, confidence_label, confidence_factors, like_count, comment_count, share_count, created_at)
 SELECT id, 'Exam prep sessions for 60 students in my neighborhood start tonight. We need three more volunteer tutors for physics and chemistry. Reply here if you can help.', 'UPDATE', 4, 6.0, 'Emerging impact', 63, 'Moderate confidence', '{"ratings":2,"average_stars":4.0,"method":"seed"}', 14, 6, 3, strftime('%Y-%m-%dT%H:%M:%SZ','now','-45 minutes')
 FROM users WHERE email='amina@masareen.example' AND NOT EXISTS (SELECT 1 FROM posts WHERE text LIKE 'Exam prep sessions for 60 students%');
+
+-- ── Courses ────────────────────────────────────────────────────────────────
+INSERT INTO courses (author_id,title,description,provider,level,sdg,lessons,duration_min,status,created_at)
+SELECT id, 'Impact Measurement Fundamentals', 'Learn to design indicators, collect credible evidence and report outcomes that funders and communities trust. Includes templates for baseline surveys and verification logs.', 'MASAREEN Academy', 'Beginner', 17, 6, 95, 'PUBLISHED', strftime('%Y-%m-%dT%H:%M:%SZ','now','-12 days')
+FROM users WHERE email='youssef@masareen.example' AND NOT EXISTS (SELECT 1 FROM courses WHERE title='Impact Measurement Fundamentals');
+
+INSERT INTO courses (author_id,title,description,provider,level,sdg,lessons,duration_min,status,created_at)
+SELECT id, 'Community Organizing for SDG Action', 'Practical field course on mapping stakeholders, running listening sessions and turning community priorities into a measurable action plan.', 'MASAREEN Academy', 'Intermediate', 11, 5, 70, 'PUBLISHED', strftime('%Y-%m-%dT%H:%M:%SZ','now','-8 days')
+FROM users WHERE email='amina@masareen.example' AND NOT EXISTS (SELECT 1 FROM courses WHERE title='Community Organizing for SDG Action');
+
+INSERT INTO courses (author_id,title,description,provider,level,sdg,lessons,duration_min,status,created_at)
+SELECT id, 'Climate Resilience in Practice', 'Adaptation planning for local teams: risk screening, nature-based options, community early warning and financing pathways.', 'Green Delta', 'Advanced', 13, 8, 140, 'PUBLISHED', strftime('%Y-%m-%dT%H:%M:%SZ','now','-5 days')
+FROM users WHERE email='greendelta@masareen.example' AND NOT EXISTS (SELECT 1 FROM courses WHERE title='Climate Resilience in Practice');
+
+INSERT INTO course_enrollments (course_id,user_id,created_at)
+SELECT c.id, u.id, strftime('%Y-%m-%dT%H:%M:%SZ','now','-3 days')
+FROM courses c, users u WHERE c.title='Impact Measurement Fundamentals' AND u.email='sara@masareen.example'
+  AND NOT EXISTS (SELECT 1 FROM course_enrollments e WHERE e.course_id=c.id AND e.user_id=u.id);
+
+INSERT INTO course_enrollments (course_id,user_id,created_at)
+SELECT c.id, u.id, strftime('%Y-%m-%dT%H:%M:%SZ','now','-2 days')
+FROM courses c, users u WHERE c.title='Impact Measurement Fundamentals' AND u.email='omar@masareen.example'
+  AND NOT EXISTS (SELECT 1 FROM course_enrollments e WHERE e.course_id=c.id AND e.user_id=u.id);
+
+-- ── Events ─────────────────────────────────────────────────────────────────
+INSERT INTO events (author_id,title,description,starts_at,ends_at,location,is_online,link_url,sdg,capacity,status,created_at)
+SELECT id, 'Impact Verification Clinic', 'Bring one project and walk out with a verification plan. Small-group clinic with mentors from the MASAREEN review team.', strftime('%Y-%m-%dT%H:%M:%SZ','now','+7 days'), strftime('%Y-%m-%dT%H:%M:%SZ','now','+7 days','+2 hours'), 'Cairo Innovation Hub', 0, NULL, 17, 40, 'PUBLISHED', strftime('%Y-%m-%dT%H:%M:%SZ','now','-4 days')
+FROM users WHERE email='youssef@masareen.example' AND NOT EXISTS (SELECT 1 FROM events WHERE title='Impact Verification Clinic');
+
+INSERT INTO events (author_id,title,description,starts_at,ends_at,location,is_online,link_url,sdg,capacity,status,created_at)
+SELECT id, 'Delta Mangrove Volunteer Day', 'Join the planting team for a morning on the Delta shoreline. Transportation from the city meeting point is provided.', strftime('%Y-%m-%dT%H:%M:%SZ','now','+12 days'), strftime('%Y-%m-%dT%H:%M:%SZ','now','+12 days','+5 hours'), 'Rosetta meeting point', 0, NULL, 13, 120, 'PUBLISHED', strftime('%Y-%m-%dT%H:%M:%SZ','now','-2 days')
+FROM users WHERE email='greendelta@masareen.example' AND NOT EXISTS (SELECT 1 FROM events WHERE title='Delta Mangrove Volunteer Day');
+
+INSERT INTO events (author_id,title,description,starts_at,ends_at,location,is_online,link_url,sdg,capacity,status,created_at)
+SELECT id, 'Open Data for SDGs · Online Session', 'How to publish reproducible, anonymized datasets that communities and researchers can actually reuse.', strftime('%Y-%m-%dT%H:%M:%SZ','now','+3 days'), strftime('%Y-%m-%dT%H:%M:%SZ','now','+3 days','+90 minutes'), 'Online', 1, 'https://masareen.com', 17, 500, 'PUBLISHED', strftime('%Y-%m-%dT%H:%M:%SZ','now','-1 day')
+FROM users WHERE email='youssef@masareen.example' AND NOT EXISTS (SELECT 1 FROM events WHERE title='Open Data for SDGs · Online Session');
+
+INSERT INTO event_attendees (event_id,user_id,created_at)
+SELECT e.id, u.id, strftime('%Y-%m-%dT%H:%M:%SZ','now','-1 day')
+FROM events e, users u WHERE e.title='Open Data for SDGs · Online Session' AND u.email='sara@masareen.example'
+  AND NOT EXISTS (SELECT 1 FROM event_attendees a WHERE a.event_id=e.id AND a.user_id=u.id);

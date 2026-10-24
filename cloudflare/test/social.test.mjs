@@ -1,4 +1,4 @@
-import test from 'node:test';
+﻿import test from 'node:test';
 import assert from 'node:assert/strict';
 import { handle } from '../src/index.js';
 import { makeDb } from './d1-shim.mjs';
@@ -12,7 +12,7 @@ const call = (env, method, path, body, token) => handle(new Request('https://mas
 }), env, {});
 
 async function signup(env, email = 'amina@example.com', name = 'Amina Test') {
-  const r = await call(env, 'POST', '/api/v1/users/register', { email, full_name: name, password: 'correct-horse', role: 'STUDENT' });
+  const r = await call(env, 'POST', '/api/v1/users/register', { email, full_name: name, password: 'correct-horse9', role: 'STUDENT' });
   assert.equal(r.status, 201);
   const j = await r.json();
   assert.match(j.access_token, /\./);
@@ -31,12 +31,12 @@ test('register, login and profile shape match the app models', async () => {
 
   const bad = await call(env, 'POST', '/api/v1/auth/login', { email: 'amina@example.com', password: 'wrong-pass' });
   assert.equal(bad.status, 401);
-  const ok = await call(env, 'POST', '/api/v1/auth/login', { email: 'amina@example.com', password: 'correct-horse' });
+  const ok = await call(env, 'POST', '/api/v1/auth/login', { email: 'amina@example.com', password: 'correct-horse9' });
   const login = await ok.json();
   assert.ok(login.access_token);
   assert.equal(login.user.email, 'amina@example.com');
 
-  const dup = await call(env, 'POST', '/api/v1/users/register', { email: 'amina@example.com', full_name: 'Amina', password: 'correct-horse' });
+  const dup = await call(env, 'POST', '/api/v1/users/register', { email: 'amina@example.com', full_name: 'Amina', password: 'correct-horse9' });
   assert.equal(dup.status, 409);
 });
 
@@ -160,3 +160,100 @@ test('invalid input is rejected with helpful codes', async () => {
   assert.equal((await call(env, 'GET', '/api/v1/posts?limit=5000', null, token)).status, 200);
   assert.equal((await call(env, 'POST', '/api/v1/posts/1/impact', { stars: 0 }, token)).status, 400);
 });
+
+
+test('courses: create, list, enroll and validate', async () => {
+  const env = mkEnv();
+  const author = await signup(env, 'teacher@example.com', 'Mona Teacher');
+  const short = await call(env, 'POST', '/api/v1/courses', { title: 'A' }, author);
+  assert.equal(short.status, 400);
+  const created = await call(env, 'POST', '/api/v1/courses', {
+    title: 'Measuring community impact', description: 'A practical course for field teams.',
+    level: 'Intermediate', sdg: 4, lessons: 6, duration_min: 90,
+  }, author);
+  assert.equal(created.status, 201);
+  const course = await created.json();
+  assert.equal(course.title, 'Measuring community impact');
+  assert.equal(course.enrolled_count, 0);
+
+  const listed = await (await call(env, 'GET', '/api/v1/courses', null, author)).json();
+  assert.equal(listed.length, 1);
+  assert.equal(listed[0].enrolled_by_me, false);
+
+  const student = await signup(env, 'student@example.com', 'Omar Student');
+  const enrolled = await (await call(env, 'POST', `/api/v1/courses/${course.id}/enroll`, null, student)).json();
+  assert.equal(enrolled.enrolled_count, 1);
+  const again = await (await call(env, 'POST', `/api/v1/courses/${course.id}/enroll`, null, student)).json();
+  assert.equal(again.enrolled_count, 1);
+  const mine = await (await call(env, 'GET', '/api/v1/courses', null, student)).json();
+  assert.equal(mine[0].enrolled_by_me, true);
+});
+
+test('events: create, list, join and capacity validation', async () => {
+  const env = mkEnv();
+  const host = await signup(env, 'host@example.com', 'Nour Host');
+  const bad = await call(env, 'POST', '/api/v1/events', { title: 'Cleanup day', starts_at: 'not-a-date', location: 'Cairo' }, host);
+  assert.equal(bad.status, 400);
+  const created = await call(env, 'POST', '/api/v1/events', {
+    title: 'Nile cleanup day', description: 'Bring gloves.', starts_at: '2030-06-05T09:00:00Z',
+    location: 'Cairo', sdg: 6, capacity: 1,
+  }, host);
+  assert.equal(created.status, 201);
+  const event = await created.json();
+  assert.equal(event.attendees_count, 0);
+
+  const a = await signup(env, 'a4@example.com', 'A Four');
+  const joined = await (await call(env, 'POST', `/api/v1/events/${event.id}/join`, null, a)).json();
+  assert.equal(joined.attending, true);
+  assert.equal(joined.attendees_count, 1);
+
+  const b = await signup(env, 'b4@example.com', 'B Four');
+  const full = await call(env, 'POST', `/api/v1/events/${event.id}/join`, null, b);
+  assert.equal(full.status, 409);
+
+  const left = await (await call(env, 'POST', `/api/v1/events/${event.id}/join`, null, a)).json();
+  assert.equal(left.attending, false);
+  const canJoin = await (await call(env, 'POST', `/api/v1/events/${event.id}/join`, null, b)).json();
+  assert.equal(canJoin.attending, true);
+});
+
+test('notifications are created by social actions and stay private', async () => {
+  const env = mkEnv();
+  const author = await signup(env, 'notify-author@example.com', 'Yara Notify');
+  const reader = await signup(env, 'notify-reader@example.com', 'Ali Notify');
+  const post = await (await call(env, 'POST', '/api/v1/posts', { text: 'A new community clinic opened today.' }, author)).json();
+  await call(env, 'POST', `/api/v1/posts/${post.id}/like`, null, reader);
+  await call(env, 'POST', `/api/v1/posts/${post.id}/comment`, { text: 'Great news.' }, reader);
+  const authorId = (await (await call(env, 'GET', '/api/v1/users/me', null, author)).json()).id;
+  const readerId = (await (await call(env, 'GET', '/api/v1/users/me', null, reader)).json()).id;
+
+  const list = await (await call(env, 'GET', `/api/v1/notifications/${authorId}`, null, author)).json();
+  assert.ok(list.length >= 2);
+  assert.ok(list.some((n) => n.type === 'like'));
+  assert.ok(list.some((n) => n.type === 'comment'));
+  assert.equal(list[0].read, false);
+
+  const denied = await call(env, 'GET', `/api/v1/notifications/${authorId}`, null, reader);
+  assert.equal(denied.status, 403);
+
+  const marked = await call(env, 'POST', '/api/v1/notifications/read-all', null, author);
+  assert.equal(marked.status, 200);
+  const after = await (await call(env, 'GET', `/api/v1/notifications/${authorId}`, null, author)).json();
+  assert.equal(after.every((n) => n.read), true);
+
+  assert.equal((await call(env, 'GET', `/api/v1/notifications/${readerId}`)).status, 401);
+});
+
+test('registration accepts the tester flag and exposes it on the profile', async () => {
+  const env = mkEnv();
+  const r = await call(env, 'POST', '/api/v1/users/register', {
+    email: 'tester@example.com', full_name: 'Tester One', password: 'beta-test-9',
+    role: 'STUDENT', is_tester: true, audience: 'STUDENT', consent: true,
+  });
+  assert.equal(r.status, 201);
+  const j = await r.json();
+  assert.equal(j.user.is_tester, true);
+  const me = await (await call(env, 'GET', '/api/v1/users/me', null, j.access_token)).json();
+  assert.equal(me.is_tester, true);
+});
+

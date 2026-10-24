@@ -21,6 +21,12 @@ binding = "DB"
 database_name = "masareen"
 database_id = "a14a1b7c-a93e-4030-b58a-eaa908e61e37"
 
+# Profile photos, post media and video uploads. The bucket is public through
+# the masareen.com custom domain, so uploaded files are served from /media/*.
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "masareen-landing"
+
 [vars]
 # Public OAuth client ID from Google Cloud Console (project "masareen").
 # Authorized JavaScript origin already configured: https://masareen.com

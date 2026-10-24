@@ -62,6 +62,7 @@ test('rejects forged, wrong-audience and expired tokens', async () => {
   assert.equal((await call(env, 'POST', '/api/auth/google', { credential: await idToken({ exp: 1 }) })).status, 401);
   assert.equal((await call(env, 'POST', '/api/auth/google', { credential: await idToken({}, 'nokid') })).status, 401);
   assert.equal((await call(env, 'POST', '/api/auth/google', { credential: await idToken({ email_verified: false }) })).status, 403);
+  assert.equal((await call(env, 'POST', '/api/v1/auth/google', { credential: 'fake.token.value' })).status, 401);
   assert.equal(env.DB.raw.prepare('SELECT COUNT(*) c FROM users').get().c, 0);
 });
 

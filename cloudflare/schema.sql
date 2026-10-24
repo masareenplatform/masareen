@@ -32,6 +32,9 @@ CREATE TABLE IF NOT EXISTS users (
   handle        TEXT,
   bio           TEXT,
   phone         TEXT,
+  cover_url     TEXT,
+  audience      TEXT,
+  is_tester     INTEGER NOT NULL DEFAULT 0,
   created_at    TEXT NOT NULL,
   last_login_at TEXT,
   login_count   INTEGER NOT NULL DEFAULT 0
@@ -145,3 +148,64 @@ CREATE TABLE IF NOT EXISTS post_views (
   seen_at  TEXT NOT NULL,
   PRIMARY KEY (user_id, post_id)
 );
+
+-- ---------- Courses, events and notifications (v1 app features) ----------
+CREATE TABLE IF NOT EXISTS courses (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  author_id   INTEGER NOT NULL,
+  title       TEXT NOT NULL,
+  description TEXT,
+  provider    TEXT,
+  level       TEXT NOT NULL DEFAULT 'Beginner',
+  sdg         INTEGER,
+  lessons     INTEGER NOT NULL DEFAULT 0,
+  duration_min INTEGER NOT NULL DEFAULT 0,
+  thumbnail   TEXT,
+  status      TEXT NOT NULL DEFAULT 'PUBLISHED',
+  created_at  TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_courses_created ON courses(created_at);
+
+CREATE TABLE IF NOT EXISTS course_enrollments (
+  course_id  INTEGER NOT NULL,
+  user_id    INTEGER NOT NULL,
+  created_at TEXT NOT NULL,
+  PRIMARY KEY (course_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS events (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  author_id   INTEGER NOT NULL,
+  title       TEXT NOT NULL,
+  description TEXT,
+  starts_at   TEXT NOT NULL,
+  ends_at     TEXT,
+  location    TEXT,
+  is_online   INTEGER NOT NULL DEFAULT 0,
+  link_url    TEXT,
+  sdg         INTEGER,
+  capacity    INTEGER,
+  status      TEXT NOT NULL DEFAULT 'PUBLISHED',
+  created_at  TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_events_starts ON events(starts_at);
+
+CREATE TABLE IF NOT EXISTS event_attendees (
+  event_id   INTEGER NOT NULL,
+  user_id    INTEGER NOT NULL,
+  created_at TEXT NOT NULL,
+  PRIMARY KEY (event_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS notifications (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id    INTEGER NOT NULL,
+  type       TEXT NOT NULL,
+  title      TEXT NOT NULL,
+  body       TEXT,
+  actor_id   INTEGER,
+  post_id    INTEGER,
+  read       INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, created_at);

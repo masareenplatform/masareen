@@ -27,6 +27,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     setState(() => _loading = true);
     try {
       _items = await AuthApi.notifications(widget.userId);
+      if (_items.any((n) => !n.read)) {
+        try {
+          await AuthApi.markNotificationsRead();
+        } catch (_) {}
+      }
     } on ApiException catch (e) {
       _error = e.message;
     } catch (e) {

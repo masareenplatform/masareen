@@ -3,7 +3,7 @@
 // It works either same-origin (Worker route masareen.com/api/*) or on a subdomain
 // (api.masareen.com) thanks to the CORS handling below.
 
-import { socialRoutes } from './social.js';
+import { socialRoutes, appTokenFor } from './social.js';
 
 const enc = new TextEncoder();
 const dec = new TextDecoder();
@@ -138,14 +138,24 @@ async function googleKeys(fetcher) {
 export async function verifyGoogleIdToken(idToken, clientId, fetcher = fetch) {
   const parts = String(idToken || '').split('.');
   if (parts.length !== 3) throw new HttpError(401, 'bad_token', 'Invalid Google token.');
-  const header = JSON.parse(dec.decode(b64u.dec(parts[0])));
-  const claims = JSON.parse(dec.decode(b64u.dec(parts[1])));
+  let header, claims;
+  try {
+    header = JSON.parse(dec.decode(b64u.dec(parts[0])));
+    claims = JSON.parse(dec.decode(b64u.dec(parts[1])));
+  } catch {
+    throw new HttpError(401, 'bad_token', 'Invalid Google token.');
+  }
   if (header.alg !== 'RS256') throw new HttpError(401, 'bad_token', 'Unsupported token algorithm.');
   let jwk = (await googleKeys(fetcher)).find((k) => k.kid === header.kid);
   if (!jwk) { certCache.keys = null; jwk = (await googleKeys(fetcher)).find((k) => k.kid === header.kid); }
   if (!jwk) throw new HttpError(401, 'bad_token', 'Unknown signing key.');
   const key = await crypto.subtle.importKey('jwk', jwk, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['verify']);
-  const valid = await crypto.subtle.verify('RSASSA-PKCS1-v1_5', key, b64u.dec(parts[2]), enc.encode(parts[0] + '.' + parts[1]));
+  let valid = false;
+  try {
+    valid = await crypto.subtle.verify('RSASSA-PKCS1-v1_5', key, b64u.dec(parts[2]), enc.encode(parts[0] + '.' + parts[1]));
+  } catch {
+    throw new HttpError(401, 'bad_token', 'Invalid Google token.');
+  }
   if (!valid) throw new HttpError(401, 'bad_token', 'Token signature check failed.');
   if (!['accounts.google.com', 'https://accounts.google.com'].includes(claims.iss)) throw new HttpError(401, 'bad_token', 'Wrong issuer.');
   if (claims.aud !== clientId) throw new HttpError(401, 'bad_token', 'Token was issued for another app.');
@@ -162,6 +172,7 @@ const publicUser = (u, env) => u && ({
   academicYear: u.academic_year, degreeLevel: u.degree_level,
   employer: u.employer, jobTitle: u.job_title,
   profileComplete: !!u.profile_complete, signupMethod: u.signup_method,
+  isTester: !!u.is_tester,
   isAdmin: admins(env).includes(u.email.toLowerCase()),
 });
 
@@ -210,6 +221,34 @@ async function googleAuth(req, env, ctx) {
     ctx && ctx.waitUntil && ctx.waitUntil(sendWelcomeEmail(env, user));
   }
   return json({ ok: true, isNew, user: publicUser(user, env) }, 200, { 'set-cookie': await startSession(env, req, user) });
+}
+
+async function googleAuthToken(req, env) {
+  if (!env.GOOGLE_CLIENT_ID) throw new HttpError(503, 'google_not_configured', 'Google sign-in is not configured yet.');
+  if (!env.SESSION_SECRET) throw new HttpError(503, 'server_not_configured', 'Server secret missing.');
+  const b = await body(req);
+  const claims = await verifyGoogleIdToken(b.credential, env.GOOGLE_CLIENT_ID, env.__fetch || fetch);
+  if (claims.email_verified === false || claims.email_verified === 'false')
+    throw new HttpError(403, 'email_unverified', 'Your Google email is not verified.');
+  const email = claims.email.toLowerCase();
+  const isTester = b.is_tester === true || b.is_tester === 'true' || b.tester === true;
+  const locale = ['en', 'ar'].includes(b.locale) ? b.locale : null;
+  let user = await env.DB.prepare('SELECT * FROM users WHERE google_sub=? OR email=?').bind(claims.sub, email).first();
+  let isNew = false;
+  if (!user) {
+    isNew = true;
+    await env.DB.prepare(`INSERT INTO users (google_sub,email,email_verified,name,picture,signup_method,locale,signup_country,is_tester,created_at)
+      VALUES (?,?,1,?,?,'google',?,?,?,?)`)
+      .bind(claims.sub, email, clean(claims.name || email.split('@')[0], 120), clean(claims.picture, 300) || null,
+        locale, req.cf?.country || null, isTester ? 1 : 0, nowIso()).run();
+  } else {
+    await env.DB.prepare(`UPDATE users SET google_sub=?, email_verified=1, picture=COALESCE(?,picture),
+      name=CASE WHEN name='' THEN ? ELSE name END, is_tester=CASE WHEN ? THEN 1 ELSE is_tester END WHERE id=?`)
+      .bind(claims.sub, clean(claims.picture, 300) || null, clean(claims.name, 120), isTester ? 1 : 0, user.id).run();
+  }
+  user = await env.DB.prepare('SELECT * FROM users WHERE email=?').bind(email).first();
+  await recordLogin(env, req, user, 'google_app');
+  return json({ ok: true, isNew, access_token: await appTokenFor(user, env), token_type: 'bearer', user: publicUser(user, env) });
 }
 
 function validateProfile(b, strict) {
@@ -484,6 +523,7 @@ async function route(req, env, ctx) {
         throw new HttpError(403, 'bad_origin', 'Cross-site requests are not allowed.');
     }
     if (p === '/api/health') return json({ ok: true, service: 'masareen-api', time: nowIso(), googleConfigured: !!env.GOOGLE_CLIENT_ID });
+    if (p === '/api/v1/auth/google' && m === 'POST') return await googleAuthToken(req, env);
     if (p.startsWith('/api/v1/') || p === '/api/testers' || p === '/api/testers/stats')
       return await socialRoutes(req, env, ctx);
     if (p === '/api/config' && m === 'GET') return json({ ok: true, googleClientId: env.GOOGLE_CLIENT_ID || '', orgTypes: ORG_TYPES, roles: ROLES });

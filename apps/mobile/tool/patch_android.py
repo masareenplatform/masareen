@@ -116,6 +116,15 @@ def manifest_fix(s):
     if 'usesCleartextTraffic' not in s:
         # the default API endpoint is plain http://; Android 9+ blocks that otherwise
         s = s.replace('<application', '<application\n        android:usesCleartextTraffic="true"', 1)
+    if 'android:scheme="masaren"' not in s:
+        deep_link = '''            <intent-filter android:autoVerify="false">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="masaren" android:host="auth" />
+            </intent-filter>
+'''
+        s = s.replace('        </activity>', deep_link + '        </activity>', 1)
     return s
 rw(manifest, manifest_fix)
 

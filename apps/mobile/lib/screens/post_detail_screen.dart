@@ -23,10 +23,27 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   final _commentCtl = TextEditingController();
   bool _busy = false;
 
+  bool _loadingComments = true;
+
   @override
   void initState() {
     super.initState();
     _post = widget.post;
+    _loadComments();
+  }
+
+  Future<void> _loadComments() async {
+    try {
+      final list = await AuthApi.comments(_post.id);
+      if (!mounted) return;
+      setState(() {
+        _post = _post.copyWith(commentList: list, comments: list.length);
+        _loadingComments = false;
+      });
+      widget.onChanged(_post);
+    } catch (_) {
+      if (mounted) setState(() => _loadingComments = false);
+    }
   }
 
   Future<void> _toggleLike() async {
@@ -36,7 +53,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     try {
       final res = await AuthApi.toggleLike(_post.id);
       setState(() => _post = _post.copyWith(
-            likedByMe: res['likedByMe'] ?? !was,
+            likedByMe: res['liked'] ?? res['likedByMe'] ?? !was,
             likes: (res['likes'] is num)
                 ? (res['likes'] as num).toInt()
                 : _post.likes,
@@ -178,18 +195,20 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                 ),
                 const Divider(),
                 const SectionTitle(title: 'Comments'),
-                ..._post.commentList.isEmpty
-                    ? [
-                        const Padding(
-                          padding: EdgeInsets.all(16),
-                          child: Text('No comments yet. Start the conversation.',
-                              style: TextStyle(color: AppColors.muted)),
-                        )
-                      ]
-                    : _post.commentList
-                        .map((c) => _CommentTile(comment: c))
-                        .toList()
-                        .cast<Widget>(),
+                if (_loadingComments)
+                  const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                else if (_post.commentList.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Text('No comments yet. Start the conversation.',
+                        style: TextStyle(color: AppColors.muted)),
+                  )
+                else
+                  ..._post.commentList
+                      .map((c) => _CommentTile(comment: c)),
               ],
             ),
           ),

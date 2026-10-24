@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MASAREEN · Continue with Google</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; display: grid; place-items: center;
+    background: radial-gradient(circle at 20% 0%, #123d3e 0%, #0d1b3e 45%, #070f1c 100%);
+    font-family: Inter, "Segoe UI", Helvetica, Arial, sans-serif; color: #eaf3f3; padding: 24px;
+  }
+  .card {
+    width: 100%; max-width: 420px; text-align: center; padding: 40px 28px;
+    background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12);
+    border-radius: 28px; backdrop-filter: blur(14px);
+    box-shadow: 0 30px 80px rgba(0,0,0,.45);
+  }
+  .brand { font-size: 25px; letter-spacing: .34em; font-weight: 800; color: #fff; }
+  .tag { margin: 10px 0 30px; color: #8fd3d3; font-size: 13px; letter-spacing: .1em; }
+  h1 { font-size: 22px; margin: 0 0 10px; }
+  p { color: #a9c0c0; font-size: 14px; line-height: 1.6; margin: 0 0 22px; }
+  #google { display: flex; justify-content: center; min-height: 44px; }
+  #status { min-height: 42px; margin-top: 20px; font-size: 13px; color: #b9d6d6; }
+  #status.error { color: #ff9b9b; }
+  #open {
+    display: none; width: 100%; margin-top: 12px; padding: 14px 18px; border: 0; cursor: pointer;
+    border-radius: 999px; font-weight: 700; font-size: 14px; color: #06231f;
+    background: linear-gradient(90deg, #7fe3d4 0%, #bda36a 100%);
+  }
+  .foot { margin-top: 26px; font-size: 11px; color: #6f8a8a; letter-spacing: .08em; }
+</style>
+</head>
+<body>
+  <main class="card">
+    <div class="brand">MASAREEN</div>
+    <div class="tag">PROVE IMPACT · SCALE CHANGE</div>
+    <h1 id="title">Continue to MASAREEN</h1>
+    <p id="copy">Sign in with Google to open the app and start proving your impact.</p>
+    <div id="google" class="g_id_signin"
+         data-type="standard" data-shape="pill" data-theme="filled_black"
+         data-text="continue_with" data-size="large" data-logo_alignment="left"></div>
+    <button id="open" type="button">Open MASAREEN</button>
+    <div id="status" role="status" aria-live="polite"></div>
+    <div class="foot">SECURE SIGN-IN · MASAREEN.COM</div>
+  </main>
+
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script>
+    const CLIENT_ID = '336070303963-cksadpqp8d591afvir53vsb86fl41cqj.apps.googleusercontent.com';
+    const tester = new URLSearchParams(location.search).has('tester');
+    const titleEl = document.getElementById('title');
+    const copyEl = document.getElementById('copy');
+    const statusEl = document.getElementById('status');
+    const openEl = document.getElementById('open');
+    let tokenLink = '';
+
+    if (tester) {
+      titleEl.textContent = 'Join as a beta tester';
+      copyEl.textContent = 'Sign in with Google, then return to the app. Your account is automatically enrolled in the tester program.';
+    }
+
+    function setStatus(text, isError) {
+      statusEl.textContent = text || '';
+      statusEl.className = isError ? 'error' : '';
+    }
+
+    function appLink(token) {
+      return 'masaren://auth?token=' + encodeURIComponent(token);
+    }
+
+    function showOpen(link) {
+      tokenLink = link;
+      openEl.style.display = 'block';
+      openEl.onclick = () => { location.href = link; };
+    }
+
+    async function onCredential(response) {
+      if (!response || !response.credential) {
+        setStatus('Google did not return a sign-in token. Please try again.', true);
+        return;
+      }
+      setStatus('Signing you in…');
+      try {
+        const res = await fetch('/api/v1/auth/google', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ credential: response.credential, is_tester: tester, locale: (navigator.language || 'en').slice(0, 2) })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.access_token) {
+          setStatus(data.message || 'Sign-in failed. Please return to the app and try again.', true);
+          return;
+        }
+        const link = appLink(data.access_token);
+        showOpen(link);
+        setStatus(data.isNew ? 'Account created. Opening MASAREEN…' : 'Welcome back. Opening MASAREEN…');
+        location.href = link;
+        setTimeout(() => setStatus('If the app did not open, tap “Open MASAREEN” below.'), 1600);
+      } catch (err) {
+        setStatus('Network error. Check your connection and try again.', true);
+      }
+    }
+
+    window.onCredential = onCredential;
+
+    window.addEventListener('load', () => {
+      if (!window.google || !google.accounts || !google.accounts.id) {
+        setStatus('Google sign-in could not load. Refresh the page or open masareen.com in your browser.', true);
+        return;
+      }
+      google.accounts.id.initialize({
+        client_id: CLIENT_ID,
+        callback: onCredential,
+        ux_mode: 'popup',
+        auto_select: false
+      });
+      google.accounts.id.renderButton(document.getElementById('google'), {
+        type: 'standard', shape: 'pill', theme: 'filled_black',
+        text: tester ? 'signup_with' : 'continue_with', size: 'large', logo_alignment: 'left'
+      });
+    });
+  </script>
+</body>
+</html>

@@ -225,13 +225,13 @@ class AuthApi {
 
   static Future<String> uploadMedia(
       List<int> bytes, String filename, String contentType) async {
-    final data = await api.multipart('/api/v1/users/me/avatar',
+    final data = await api.multipart('/api/v1/media/upload',
         field: 'file',
         bytes: bytes,
         filename: filename,
         contentType: contentType);
-    final url = (data as Map<String, dynamic>)['avatar_url'] as String?;
-    return url ?? '';
+    final map = data as Map<String, dynamic>;
+    return (map['url'] ?? map['avatar_url'] ?? '') as String;
   }
 
   static Future<Map<String, dynamic>> uploadVideo(
@@ -364,6 +364,31 @@ class AuthApi {
     return list
         .map((e) => AppNotification.fromJson(e as Map<String, dynamic>))
         .toList();
+  }
+
+  static Future<void> markNotificationsRead() async {
+    await api.post('/api/v1/notifications/read-all');
+  }
+
+  static Future<void> markNotificationRead(String id) async {
+    await api.post('/api/v1/notifications/$id/read');
+  }
+
+  // ── Events ────────────────────────────────────────────────────────────────
+  static Future<List<Event>> events() async {
+    final data = await api.get('/api/v1/events');
+    final list = data is List ? data : <dynamic>[];
+    return list.map((e) => Event.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  static Future<Event> createEvent(Map<String, dynamic> body) async {
+    final data = await api.post('/api/v1/events', body);
+    return Event.fromJson(data as Map<String, dynamic>);
+  }
+
+  static Future<Map<String, dynamic>> joinEvent(String id) async {
+    final data = await api.post('/api/v1/events/$id/join');
+    return data as Map<String, dynamic>;
   }
 
   // ── Programs ───────────────────────────────────────────────────────────────

@@ -40,6 +40,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     _KindOption('task', 'Task', Icons.check_circle, Color(0xFF0D652D)),
     _KindOption('announcement', 'Platform', Icons.campaign, Color(0xFFF4B400)),
     _KindOption('recognition', 'Recognition', Icons.emoji_events, Color(0xFFEA4335)),
+    _KindOption('course', 'Course', Icons.school, Color(0xFF1E8E3E)),
+    _KindOption('event', 'Event', Icons.event, Color(0xFFE37400)),
   ];
 
   static const _sdgLabels = [
@@ -513,6 +515,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   }
 
   String _kindHint() {
+    if (_kind == 'course') return 'Share a course: title, who it is for, lessons and how to enroll. Create it in Courses for enrollment.';
+    if (_kind == 'event') return 'Share an event: date, venue or online link, and who should attend. Create it in Events for RSVPs.';
     switch (_kind) {
       case 'impact': return 'Describe the verified impact outcome…';
       case 'evidence': return 'Describe the evidence you captured in the field…';

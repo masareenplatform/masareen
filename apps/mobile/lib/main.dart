@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:app_links/app_links.dart';
 import 'package:masaren/api_client.dart';
 import 'package:masaren/models.dart';
 import 'package:masaren/theme.dart';
@@ -20,6 +21,7 @@ import 'package:masaren/screens/opportunities_screen.dart';
 // programs_screen imported where used (programs tab in HomeShell)
 import 'package:masaren/screens/profile_screen.dart';
 import 'package:masaren/screens/courses_screen.dart';
+import 'package:masaren/screens/events_screen.dart';
 import 'package:masaren/screens/projects_screen.dart';
 import 'package:masaren/screens/verification_screen.dart';
 import 'package:masaren/screens/admin_screen.dart';
@@ -81,12 +83,44 @@ class _MasarenAppState extends State<MasarenApp> {
   final ThemeProvider _theme = ThemeProvider();
   _AppPhase _phase = _AppPhase.splash;
   Locale _locale = const Locale('en');
+  final AppLinks _appLinks = AppLinks();
+  StreamSubscription<Uri>? _linkSub;
 
   @override
   void initState() {
     super.initState();
     _loadLocale();
+    _initAuthLinks();
     _bootstrap();
+  }
+
+  Future<void> _initAuthLinks() async {
+    _linkSub = _appLinks.uriLinkStream.listen(_handleAuthLink, onError: (_) {});
+    try {
+      final initial = await _appLinks.getInitialLink();
+      if (initial != null) await _handleAuthLink(initial);
+    } catch (_) {}
+  }
+
+  Future<void> _handleAuthLink(Uri uri) async {
+    if (uri.scheme != 'masaren' || uri.host != 'auth') return;
+    final token = uri.queryParameters['token'];
+    if (token == null || token.isEmpty) return;
+    api.setToken(token);
+    try {
+      final me = await AuthApi.me();
+      setSession(token, me);
+    } catch (_) {
+      api.setToken(null);
+      await _deleteToken();
+      if (mounted) setState(() => _phase = _AppPhase.login);
+    }
+  }
+
+  @override
+  void dispose() {
+    _linkSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadLocale() async {
@@ -301,6 +335,7 @@ class _HomeShellState extends State<HomeShell> {
         if (_user != null) Navigator.of(context).push(_route(NotificationsScreen(userId: _user!.id)));
       }, badge: _unreadNotifications),
       _MoreItem(Icons.school_outlined, loc(context, 'nav.courses'), () => Navigator.of(context).push(_route(CoursesScreen(user: u!)))),
+      _MoreItem(Icons.event_outlined, 'Events', () => Navigator.of(context).push(_route(EventsScreen(user: u!)))),
       _MoreItem(Icons.handshake_outlined, loc(context, 'nav.projects'), () => Navigator.of(context).push(_route(ProjectsScreen(user: u!)))),
       _MoreItem(Icons.verified_user_outlined, loc(context, 'nav.verification'), () => Navigator.of(context).push(_route(VerificationScreen(user: u!)))),
       _MoreItem(Icons.account_balance_wallet_outlined, loc(context, 'nav.wallet'), () => Navigator.of(context).push(_route(WalletScreen(user: u!)))),

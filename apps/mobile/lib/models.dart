@@ -13,6 +13,7 @@ class User {
   final String? city;
   final int? followersCount;
   final String? coverUrl;
+  final bool isTester;
 
   User({
     required this.id,
@@ -29,6 +30,7 @@ class User {
     this.city,
     this.followersCount,
     this.coverUrl,
+    this.isTester = false,
   });
 
   User copyWith({
@@ -79,6 +81,7 @@ class User {
             ? (j['profile']?['followers_count'] as num).toInt()
             : null,
         coverUrl: j['profile']?['cover_url'],
+        isTester: j['is_tester'] ?? false,
       );
 
   /// Classifies the account into one of the platform's profile archetypes so the
@@ -473,6 +476,8 @@ class Course {
   final int durationMin;
   final String? thumbnail;
   final String status;
+  final int enrolledCount;
+  final bool enrolledByMe;
   Course({
     required this.id,
     required this.title,
@@ -484,6 +489,8 @@ class Course {
     this.durationMin = 0,
     this.thumbnail,
     this.status = 'PUBLISHED',
+    this.enrolledCount = 0,
+    this.enrolledByMe = false,
   });
   factory Course.fromJson(Map<String, dynamic> j) => Course(
         id: j['id'] ?? '',
@@ -497,6 +504,57 @@ class Course {
             j['duration_min'] is num ? (j['duration_min'] as num).toInt() : 0,
         thumbnail: j['thumbnail'],
         status: j['status'] ?? 'PUBLISHED',
+        enrolledCount: j['enrolled_count'] is num ? (j['enrolled_count'] as num).toInt() : 0,
+        enrolledByMe: j['enrolled_by_me'] == true,
+      );
+}
+
+class Event {
+  final String id;
+  final String title;
+  final String? description;
+  final String startsAt;
+  final String? endsAt;
+  final String? location;
+  final bool isOnline;
+  final String? linkUrl;
+  final int? sdg;
+  final int? capacity;
+  final int attendeesCount;
+  final bool attending;
+  final String? authorName;
+  final String? createdAt;
+  Event({
+    required this.id,
+    required this.title,
+    this.description,
+    required this.startsAt,
+    this.endsAt,
+    this.location,
+    this.isOnline = false,
+    this.linkUrl,
+    this.sdg,
+    this.capacity,
+    this.attendeesCount = 0,
+    this.attending = false,
+    this.authorName,
+    this.createdAt,
+  });
+  factory Event.fromJson(Map<String, dynamic> j) => Event(
+        id: j['id']?.toString() ?? '',
+        title: j['title'] ?? 'Event',
+        description: j['description'],
+        startsAt: j['starts_at'] ?? j['startsAt'] ?? '',
+        endsAt: j['ends_at'] ?? j['endsAt'],
+        location: j['location'],
+        isOnline: j['is_online'] == true || j['is_online'] == 1,
+        linkUrl: j['link_url'],
+        sdg: j['sdg'] is num ? (j['sdg'] as num).toInt() : null,
+        capacity: j['capacity'] is num ? (j['capacity'] as num).toInt() : null,
+        attendeesCount: j['attendees_count'] is num ? (j['attendees_count'] as num).toInt() : 0,
+        attending: j['attending'] == true,
+        authorName: j['author']?['name'],
+        createdAt: j['created_at'],
       );
 }
 

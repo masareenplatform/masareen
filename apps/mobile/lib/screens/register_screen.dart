@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:masaren/api_client.dart';
 import 'package:masaren/theme.dart';
 import 'package:masaren/widgets.dart';
@@ -24,13 +25,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _email = TextEditingController();
   final _fullName = TextEditingController();
   final _password = TextEditingController();
+  final _confirm = TextEditingController();
   final _phone = TextEditingController();
   final _nationalId = TextEditingController();
   final _universityId = TextEditingController();
   String _role = 'INDIVIDUAL';
   String _audience = 'STUDENT';
   bool _consent = false;
+  bool _isTester = false;
   bool _busy = false;
+  bool _googleBusy = false;
   String? _error;
   bool _obscurePassword = true;
 
@@ -39,10 +43,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _email.dispose();
     _fullName.dispose();
     _password.dispose();
+    _confirm.dispose();
     _phone.dispose();
     _nationalId.dispose();
     _universityId.dispose();
     super.dispose();
+  }
+
+  Future<void> _google() async {
+    setState(() {
+      _googleBusy = true;
+      _error = null;
+    });
+    final url = Uri.parse('${api.baseUrl}/mobile-auth.html${_isTester ? "?tester=1" : ""}');
+    try {
+      if (!await canLaunchUrl(url)) throw Exception('Could not open the browser');
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error = 'Could not open Google sign up. Check your connection and try again.');
+      }
+    } finally {
+      if (mounted) setState(() => _googleBusy = false);
+    }
   }
 
   String? _validateEmail(String? v) {
@@ -61,8 +84,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
   String? _validatePassword(String? v) {
     if (v == null || v.isEmpty) return 'Password is required';
     if (v.length < 8) return 'Password must be at least 8 characters';
-    if (!RegExp(r'[A-Z]').hasMatch(v)) return 'Include at least one uppercase letter';
+    if (!RegExp(r'[A-Za-z]').hasMatch(v)) return 'Include at least one letter';
     if (!RegExp(r'[0-9]').hasMatch(v)) return 'Include at least one number';
+    return null;
+  }
+
+  String? _validateConfirm(String? v) {
+    if (v == null || v.isEmpty) return 'Confirm your password';
+    if (v != _password.text) return 'Passwords do not match';
     return null;
   }
 
@@ -85,6 +114,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         'national_id': _nationalId.text.trim(),
         'role': _role,
         'audience': _audience,
+        'is_tester': _isTester,
+        'consent': _consent,
         if (_audience == 'STUDENT')
           'university_id': _universityId.text.trim(),
       };
@@ -171,6 +202,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
+                      controller: _confirm,
+                      decoration: const InputDecoration(labelText: 'Confirm Password *'),
+                      obscureText: true,
+                      validator: _validateConfirm,
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
                       controller: _phone,
                       decoration: const InputDecoration(labelText: 'Phone Number (optional)'),
                       keyboardType: TextInputType.phone,
@@ -217,6 +255,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           style: TextStyle(color: AppColors.muted, fontSize: 13)),
                       activeColor: AppColors.azure,
                     ),
+                    CheckboxListTile(
+                      value: _isTester,
+                      onChanged: (v) => setState(() => _isTester = v ?? false),
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text(
+                          'I want to join the MASAREEN beta tester program.',
+                          style: TextStyle(color: AppColors.muted, fontSize: 13)),
+                      subtitle: const Text(
+                          'Testers help shape the app before the public launch.',
+                          style: TextStyle(color: AppColors.muted, fontSize: 11)),
+                      activeColor: AppColors.azure,
+                    ),
                     if (_error != null)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 8),
@@ -242,6 +292,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     _busy
                         ? const CircularProgressIndicator()
                         : gradientButton(label: 'Create account', onPressed: _register),
+                    const SizedBox(height: 12),
+                    OutlinedButton.icon(
+                      onPressed: _googleBusy ? null : _google,
+                      icon: _googleBusy
+                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Icon(Icons.g_mobiledata, size: 22),
+                      label: const Text('Sign up with Google'),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(50),
+                        foregroundColor: Colors.white,
+                        side: BorderSide(color: AppColors.muted.withValues(alpha: 0.4)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                    ),
                     const SizedBox(height: 12),
                     TextButton(
                       onPressed: () => Navigator.pop(context),

@@ -18,17 +18,49 @@ class _LoginScreenState extends State<LoginScreen> {
   final _email = TextEditingController();
   final _password = TextEditingController();
   bool _busy = false;
+  bool _obscurePassword = true;
+  bool _googleBusy = false;
   String? _error;
+  String? _notice;
 
   Future<void> _google() async {
-    final url = Uri.parse('${api.baseUrl}/login?google=1');
-    if (await canLaunchUrl(url)) {
+    setState(() {
+      _googleBusy = true;
+      _error = null;
+      _notice = 'Complete sign in in your browser, then return to the app.';
+    });
+    final url = Uri.parse('${api.baseUrl}/mobile-auth.html');
+    try {
+      if (!await canLaunchUrl(url)) throw Exception('Could not open the browser');
       await launchUrl(url, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      if (mounted) setState(() => _error = 'Could not open Google sign in. Check your connection and try again.');
+    } finally {
+      if (mounted) setState(() => _googleBusy = false);
     }
   }
 
+  String? _validate() {
+    final email = _email.text.trim();
+    if (email.isEmpty) return 'Email is required';
+    if (!RegExp(r'^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,}$').hasMatch(email)) {
+      return 'Enter a valid email address';
+    }
+    if (_password.text.isEmpty) return 'Password is required';
+    return null;
+  }
+
   Future<void> _login() async {
-    setState(() => _busy = true);
+    final invalid = _validate();
+    if (invalid != null) {
+      setState(() => _error = invalid);
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _error = null;
+      _notice = null;
+    });
     try {
       final data = await AuthApi.login(_email.text.trim(), _password.text);
       final token = data['access_token'] as String? ?? '';
@@ -143,8 +175,16 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             labelStyle: TextStyle(color: AppColors.azure.withOpacity(0.7)),
             hintStyle: TextStyle(color: AppColors.azure.withOpacity(0.5)),
+            suffixIcon: IconButton(
+              icon: Icon(
+                _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                color: AppColors.azure.withOpacity(0.7),
+                size: 20,
+              ),
+              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+            ),
           ),
-          obscureText: true,
+          obscureText: _obscurePassword,
           style: TextStyle(color: Colors.white70),
         ),
         const SizedBox(height: 10),
@@ -153,6 +193,13 @@ class _LoginScreenState extends State<LoginScreen> {
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Text(_error!,
                 style: const TextStyle(color: Colors.redAccent, fontSize: 13)),
+          ),
+        if (_notice != null)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Text(_notice!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: AppColors.azure, fontSize: 12)),
           ),
         const SizedBox(height: 4),
         _busy
@@ -163,8 +210,10 @@ class _LoginScreenState extends State<LoginScreen> {
             : gradientButton(label: 'Sign in', onPressed: _login),
         const SizedBox(height: 14),
         OutlinedButton.icon(
-          onPressed: _google,
-          icon: const Icon(Icons.g_mobiledata, size: 22),
+          onPressed: _googleBusy ? null : _google,
+          icon: _googleBusy
+              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+              : const Icon(Icons.g_mobiledata, size: 22),
           label: const Text('Continue with Google'),
           style: OutlinedButton.styleFrom(
             minimumSize: const Size.fromHeight(50),
