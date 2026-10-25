@@ -328,3 +328,286 @@ INSERT INTO story_packs (submission_id,author_id,title,summary,status,created_at
 SELECT s.id, s.owner_id, 'Water filters that stay in use: the 30-day check', 'Why independent follow-up matters and what 300 household visits revealed about maintenance.', 'READY', strftime('%Y-%m-%dT%H:%M:%SZ','now','-12 days')
 FROM submissions s WHERE s.title='300 households still using filters after 30 days'
   AND NOT EXISTS (SELECT 1 FROM story_packs WHERE title='Water filters that stay in use: the 30-day check');
+
+INSERT OR IGNORE INTO user_profiles (user_id, headline, summary, mission, beat, expertise, specializations, skills, languages, education, experience, certificates, awards, publications, memberships, employment_status, availability, website, social_links, coverage_regions, coverage_hours, visibility, completeness, updated_at)
+SELECT u.id, 'Computer Science Student & Literacy Volunteer', 'Computer science student building community-led learning circles and simple digital tools for first-generation readers.', 'Make digital inclusion practical for every neighbourhood in Cairo.', 'Digital inclusion', '["Youth literacy","Community technology","SDG 4"]', '["Community learning","Web development"]', '["Python","Flutter","Data analysis","Facilitation"]', '["Arabic","English"]', '[{"school":"Cairo University","degree":"BSc Computer Science","from":"2023","to":"2027"}]', '[{"role":"Literacy Circle Lead","org":"Neighbourhood Learning Collective","from":"2025","to":"Present"}]', '[]', '[]', '[]', '["Cairo University Student Union"]', 'Student', 'Open to internships', NULL, '{}', '["Cairo","Giza"]', 180, 'PUBLIC', 86, strftime('%Y-%m-%dT%H:%M:%SZ','now')
+FROM users u WHERE u.email='amina@masareen.example'
+  AND NOT EXISTS (SELECT 1 FROM user_profiles p WHERE p.user_id=u.id);
+
+INSERT OR IGNORE INTO user_profiles (user_id, headline, summary, mission, beat, expertise, specializations, skills, languages, education, experience, certificates, awards, publications, memberships, employment_status, availability, website, social_links, coverage_regions, coverage_hours, visibility, completeness, updated_at)
+SELECT u.id, 'Water Systems Researcher & Impact Measurement Lead', 'Researcher translating water-system evidence into programmes that survive the first dry season and the second budget cycle.', 'Put credible measurement behind every water and agriculture investment in the region.', 'Water & agriculture', '["Water systems","Agricultural resilience","Impact measurement"]', '["Hydrology","Remote sensing","Programme evaluation"]', '["Hydrology","GIS","Research design","R","Impact evaluation"]', '["Arabic","English","French"]', '[{"school":"University of Jordan","degree":"PhD Water Resources","from":"2014","to":"2019"}]', '[{"role":"Research Fellow","org":"Cairo University","from":"2021","to":"Present"}]', '[{"name":"Impact Measurement Fundamentals","issuer":"MASAREEN","year":"2026"}]', '["Regional Water Research Award 2025"]', '[{"title":"Groundwater recharge in the lower Jordan basin","outlet":"Journal of Arid Environments","year":"2024","url":null}]', '["International Water Association"]', 'Research Fellow', 'Open to research collaborations', 'https://example.org/youssef', '{"linkedin":"https://linkedin.com/in/youssefhaddad","orcid":"0000-0002-1825-0097"}', '["Jordan","Egypt","Lebanon"]', 920, 'PUBLIC', 94, strftime('%Y-%m-%dT%H:%M:%SZ','now')
+FROM users u WHERE u.email='youssef@masareen.example'
+  AND NOT EXISTS (SELECT 1 FROM user_profiles p WHERE p.user_id=u.id);
+
+INSERT OR IGNORE INTO user_profiles (user_id, headline, summary, mission, beat, expertise, specializations, skills, languages, education, experience, certificates, awards, publications, memberships, employment_status, availability, website, social_links, coverage_regions, coverage_hours, visibility, completeness, updated_at)
+SELECT u.id, 'Community Health & Clean Water Programmes', 'Community health foundation operating water, sanitation and primary-care programmes with village health teams in Upper Egypt.', 'Every household in our coverage area should have safe water within a ten-minute walk.', 'WASH & public health', '["WASH","Public health","Community health"]', '["Rural water systems","Health worker training"]', '["Program management","Monitoring & evaluation","Field operations","Partnership building"]', '["Arabic","English"]', '[]', '[{"role":"Programme Owner","org":"Nile Care Foundation","from":"2018","to":"Present"}]', '[]', '["Ministry of Health partner 2025"]', '[]', '["Egypt WASH Alliance"]', 'Nonprofit', 'Open to CSR partnerships', 'https://example.org/nilecare', '{}', '["Assiut","Sohag","Minya"]', 2400, 'PUBLIC', 91, strftime('%Y-%m-%dT%H:%M:%SZ','now')
+FROM users u WHERE u.email='nilecare@masareen.example'
+  AND NOT EXISTS (SELECT 1 FROM user_profiles p WHERE p.user_id=u.id);
+
+INSERT OR IGNORE INTO user_profiles (user_id, headline, summary, mission, beat, expertise, specializations, skills, languages, education, experience, certificates, awards, publications, memberships, employment_status, availability, website, social_links, coverage_regions, coverage_hours, visibility, completeness, updated_at)
+SELECT u.id, 'National Education Programmes & Teacher Development', 'Official channel for national education initiatives, teacher development and school-level impact reporting.', 'Make national education progress visible, measurable and open to public scrutiny.', 'Education policy', '["Education policy","Teacher development","SDG 4"]', '["National programmes","Learning assessment"]', '["Policy design","Partnership building","Public communication"]', '["Arabic","English"]', '[]', '[]', '[]', '[]', '[]', '["Global Partnership for Education"]', 'Government', 'Open to implementation partners', NULL, '{}', '["Egypt"]', 0, 'PUBLIC', 78, strftime('%Y-%m-%dT%H:%M:%SZ','now')
+FROM users u WHERE u.email='moe@masareen.example'
+  AND NOT EXISTS (SELECT 1 FROM user_profiles p WHERE p.user_id=u.id);
+
+INSERT OR IGNORE INTO user_profiles (user_id, headline, summary, mission, beat, expertise, specializations, skills, languages, education, experience, certificates, awards, publications, memberships, employment_status, availability, website, social_links, coverage_regions, coverage_hours, visibility, completeness, updated_at)
+SELECT u.id, 'Environmental Journalist, Eastern Mediterranean', 'Independent environmental journalist covering climate, water and coastal livelihoods across the Eastern Mediterranean.', 'Report the climate transition with evidence, context and the voices of the people living it.', 'Climate & water', '["Investigative reporting","Climate policy","Water diplomacy"]', '["Cross-border investigations","Data journalism"]', '["Investigative journalism","Data journalism","Interviewing","Photojournalism"]', '["Arabic","English","French"]', '[{"school":"American University of Beirut","degree":"MA Media Studies","from":"2015","to":"2017"}]', '[{"role":"Senior Environmental Correspondent","org":"Masareen Media Network","from":"2023","to":"Present"}]', '[]', '["Climate Journalism Fellowship 2025"]', '[{"title":"The disappearing delta","outlet":"Masareen Media","year":"2025","url":null},{"title":"Water diplomacy after the drought","outlet":"Masareen Media","year":"2024","url":null}]', '["Investigative Reporters and Editors"]', 'Journalist', 'Open to editorial collaborations', 'https://example.org/layla', '{"x":"https://x.com/laylam","linkedin":"https://linkedin.com/in/laylamansour"}', '["Lebanon","Syria","Jordan","Egypt","Cyprus"]', 1680, 'PUBLIC', 97, strftime('%Y-%m-%dT%H:%M:%SZ','now')
+FROM users u WHERE u.email='layla@masareen.example'
+  AND NOT EXISTS (SELECT 1 FROM user_profiles p WHERE p.user_id=u.id);
+
+INSERT OR IGNORE INTO user_profiles (user_id, headline, summary, mission, beat, expertise, specializations, skills, languages, education, experience, certificates, awards, publications, memberships, employment_status, availability, website, social_links, coverage_regions, coverage_hours, visibility, completeness, updated_at)
+SELECT u.id, 'Community Volunteer Coordinator', 'Volunteer coordinator connecting neighbourhood food, recycling and mutual-aid drives with reliable logistics.', 'Make volunteering dependable for the people who show up every week.', 'Community mobilisation', '["Food security","Recycling","Volunteer mobilisation"]', '["Local logistics","Mutual aid"]', '["Community organizing","Logistics","Facilitation","Partnership building"]', '["Arabic","French","English"]', '[]', '[{"role":"Volunteer Coordinator","org":"Green Delta Initiative","from":"2024","to":"Present"}]', '[]', '["Neighbourhood Volunteer of the Year 2025"]', '[]', '["Rabat Mutual Aid Network"]', 'Volunteer', 'Open to volunteer leadership roles', NULL, '{}', '["Rabat","Sale"]', 640, 'PUBLIC', 88, strftime('%Y-%m-%dT%H:%M:%SZ','now')
+FROM users u WHERE u.email='omar@masareen.example'
+  AND NOT EXISTS (SELECT 1 FROM user_profiles p WHERE p.user_id=u.id);
+
+INSERT OR IGNORE INTO user_profiles (user_id, headline, summary, mission, beat, expertise, specializations, skills, languages, education, experience, certificates, awards, publications, memberships, employment_status, availability, website, social_links, coverage_regions, coverage_hours, visibility, completeness, updated_at)
+SELECT u.id, 'Restoring Nile Delta Ecosystems', 'Restoration initiative working with farming communities on mangroves, soil health and climate adaptation.', 'Restore the Delta with the people who depend on it.', 'Climate adaptation', '["Mangroves","Climate adaptation","Sustainable agriculture"]', '["Community restoration","Coastal resilience"]', '["Restoration","Community engagement","Remote sensing","Monitoring & evaluation"]', '["Arabic","English"]', '[]', '[{"role":"Founding Director","org":"Green Delta Initiative","from":"2019","to":"Present"}]', '[]', '["Delta Restoration Award 2025"]', '[]', '["Egypt Climate Coalition"]', 'Nonprofit', 'Open to programme partnerships', 'https://example.org/greendelta', '{}', '["Tanta","Kafr El-Sheikh","Damietta"]', 3100, 'PUBLIC', 95, strftime('%Y-%m-%dT%H:%M:%SZ','now')
+FROM users u WHERE u.email='greendelta@masareen.example'
+  AND NOT EXISTS (SELECT 1 FROM user_profiles p WHERE p.user_id=u.id);
+
+INSERT OR IGNORE INTO user_profiles (user_id, headline, summary, mission, beat, expertise, specializations, skills, languages, education, experience, certificates, awards, publications, memberships, employment_status, availability, website, social_links, coverage_regions, coverage_hours, visibility, completeness, updated_at)
+SELECT u.id, 'Engineering Student & Girls Coding Club Lead', 'Engineering student running a girls coding club and building accessible STEM pathways for public-school students.', 'Make a first line of code normal for every girl in Tunis.', 'STEM education', '["STEM education","Gender equality","Web development"]', '["Youth mentoring","Curriculum design"]', '["JavaScript","Mentoring","Curriculum design","Public speaking"]', '["Arabic","French","English"]', '[{"school":"Tunis Engineering School","degree":"BSc Software Engineering","from":"2023","to":"2028"}]', '[{"role":"Coding Club Lead","org":"Tunis Engineering School","from":"2025","to":"Present"}]', '[]', '["National STEM Hackathon Winner 2025"]', '[]', '["Girls Who Code Tunis"]', 'Student', 'Open to mentorships', NULL, '{}', '["Tunis"]', 240, 'PUBLIC', 84, strftime('%Y-%m-%dT%H:%M:%SZ','now')
+FROM users u WHERE u.email='sara@masareen.example'
+  AND NOT EXISTS (SELECT 1 FROM user_profiles p WHERE p.user_id=u.id);
+
+INSERT INTO organizations (owner_id, name, slug, type, description, country, city, verified, verification_level, pms_score, oii_score, created_at)
+SELECT u.id, 'Green Delta Initiative', 'green-delta', 'NGO', 'Community-led mangrove and soil restoration across the Nile Delta.', 'Egypt', 'Tanta', 1, 'VERIFIED', 81, 76, strftime('%Y-%m-%dT%H:%M:%SZ','now','-400 days')
+FROM users u WHERE u.email='greendelta@masareen.example'
+  AND NOT EXISTS (SELECT 1 FROM organizations WHERE name='Green Delta Initiative');
+
+INSERT INTO organizations (owner_id, name, slug, type, description, country, city, verified, verification_level, pms_score, oii_score, created_at)
+SELECT u.id, 'Nile Care Foundation', 'nile-care', 'NGO', 'Clean water, sanitation and community health programmes in Upper Egypt.', 'Egypt', 'Assiut', 1, 'VERIFIED', 76, 72, strftime('%Y-%m-%dT%H:%M:%SZ','now','-500 days')
+FROM users u WHERE u.email='nilecare@masareen.example'
+  AND NOT EXISTS (SELECT 1 FROM organizations WHERE name='Nile Care Foundation');
+
+INSERT INTO organizations (owner_id, name, slug, type, description, country, city, verified, verification_level, pms_score, oii_score, created_at)
+SELECT u.id, 'Ministry of Education', 'ministry-of-education', 'GOVERNMENT', 'National education programmes, teacher development and learning assessment.', 'Egypt', 'Cairo', 1, 'VERIFIED', 88, 84, strftime('%Y-%m-%dT%H:%M:%SZ','now','-600 days')
+FROM users u WHERE u.email='moe@masareen.example'
+  AND NOT EXISTS (SELECT 1 FROM organizations WHERE name='Ministry of Education');
+
+INSERT INTO organizations (name, slug, type, description, country, city, verified, verification_level, pms_score, oii_score, created_at)
+SELECT 'Masareen Media Network', 'masareen-media', 'MEDIA', 'Independent regional newsroom covering climate, water and public accountability.', 'Lebanon', 'Beirut', 1, 'VERIFIED', 79, 74, strftime('%Y-%m-%dT%H:%M:%SZ','now','-300 days')
+WHERE NOT EXISTS (SELECT 1 FROM organizations WHERE name='Masareen Media Network');
+
+INSERT INTO organizations (name, slug, type, description, country, city, verified, verification_level, pms_score, oii_score, created_at)
+SELECT 'Cairo University', 'cairo-university', 'ACADEMIC', 'Public research university and partner for water, health and education research.', 'Egypt', 'Cairo', 1, 'VERIFIED', 90, 87, strftime('%Y-%m-%dT%H:%M:%SZ','now','-800 days')
+WHERE NOT EXISTS (SELECT 1 FROM organizations WHERE name='Cairo University');
+
+INSERT INTO organizations (name, slug, type, description, country, city, verified, verification_level, pms_score, oii_score, created_at)
+SELECT 'Tunis Engineering School', 'tunis-engineering', 'ACADEMIC', 'Engineering school supporting student-led STEM outreach.', 'Tunisia', 'Tunis', 1, 'VERIFIED', 73, 69, strftime('%Y-%m-%dT%H:%M:%SZ','now','-700 days')
+WHERE NOT EXISTS (SELECT 1 FROM organizations WHERE name='Tunis Engineering School');
+
+INSERT OR IGNORE INTO organization_members (organization_id, user_id, role, title, start_date, created_at)
+SELECT o.id, u.id, 'SENIOR_CORRESPONDENT', 'Senior Environmental Correspondent', '2023-01-01', strftime('%Y-%m-%dT%H:%M:%SZ','now','-300 days')
+FROM organizations o, users u WHERE o.name='Masareen Media Network' AND u.email='layla@masareen.example';
+
+INSERT OR IGNORE INTO organization_members (organization_id, user_id, role, title, start_date, created_at)
+SELECT o.id, u.id, 'RESEARCH_FELLOW', 'Research Fellow', '2021-09-01', strftime('%Y-%m-%dT%H:%M:%SZ','now','-800 days')
+FROM organizations o, users u WHERE o.name='Cairo University' AND u.email='youssef@masareen.example';
+
+INSERT OR IGNORE INTO organization_members (organization_id, user_id, role, title, start_date, created_at)
+SELECT o.id, u.id, 'STUDENT', 'Computer Science Student', '2023-09-01', strftime('%Y-%m-%dT%H:%M:%SZ','now','-700 days')
+FROM organizations o, users u WHERE o.name='Cairo University' AND u.email='amina@masareen.example';
+
+INSERT OR IGNORE INTO organization_members (organization_id, user_id, role, title, start_date, created_at)
+SELECT o.id, u.id, 'STUDENT', 'Software Engineering Student', '2023-09-01', strftime('%Y-%m-%dT%H:%M:%SZ','now','-700 days')
+FROM organizations o, users u WHERE o.name='Tunis Engineering School' AND u.email='sara@masareen.example';
+
+INSERT OR IGNORE INTO organization_members (organization_id, user_id, role, title, start_date, created_at)
+SELECT o.id, u.id, 'VOLUNTEER_COORDINATOR', 'Community Volunteer Coordinator', '2024-03-01', strftime('%Y-%m-%dT%H:%M:%SZ','now','-400 days')
+FROM organizations o, users u WHERE o.name='Green Delta Initiative' AND u.email='omar@masareen.example';
+
+INSERT OR IGNORE INTO organization_members (organization_id, user_id, role, title, start_date, created_at)
+SELECT o.id, u.id, 'OWNER', 'Founding Director', '2019-01-01', strftime('%Y-%m-%dT%H:%M:%SZ','now','-400 days')
+FROM organizations o, users u WHERE o.name='Green Delta Initiative' AND u.email='greendelta@masareen.example';
+
+INSERT OR IGNORE INTO organization_members (organization_id, user_id, role, title, start_date, created_at)
+SELECT o.id, u.id, 'OWNER', 'Executive Director', '2018-01-01', strftime('%Y-%m-%dT%H:%M:%SZ','now','-500 days')
+FROM organizations o, users u WHERE o.name='Nile Care Foundation' AND u.email='nilecare@masareen.example';
+
+INSERT OR IGNORE INTO organization_members (organization_id, user_id, role, title, start_date, created_at)
+SELECT o.id, u.id, 'OWNER', 'Official Account', '2020-01-01', strftime('%Y-%m-%dT%H:%M:%SZ','now','-600 days')
+FROM organizations o, users u WHERE o.name='Ministry of Education' AND u.email='moe@masareen.example';
+
+INSERT INTO profile_achievements (user_id, title, detail, kind, earned_at)
+SELECT u.id, 'Climate Journalism Fellowship 2025', 'Selected for a regional investigative climate reporting fellowship.', 'FELLOWSHIP', strftime('%Y-%m-%dT%H:%M:%SZ','now','-120 days')
+FROM users u WHERE u.email='layla@masareen.example'
+  AND NOT EXISTS (SELECT 1 FROM profile_achievements a WHERE a.user_id=u.id AND a.title='Climate Journalism Fellowship 2025');
+
+INSERT INTO profile_achievements (user_id, title, detail, kind, earned_at)
+SELECT u.id, 'Verified cross-border investigation', 'A five-part water investigation passed full evidence review.', 'VERIFICATION', strftime('%Y-%m-%dT%H:%M:%SZ','now','-60 days')
+FROM users u WHERE u.email='layla@masareen.example'
+  AND NOT EXISTS (SELECT 1 FROM profile_achievements a WHERE a.user_id=u.id AND a.title='Verified cross-border investigation');
+
+INSERT INTO profile_achievements (user_id, title, detail, kind, earned_at)
+SELECT u.id, 'Published 12 peer-reviewed papers', 'Water systems, recharge and agricultural resilience.', 'PUBLICATION', strftime('%Y-%m-%dT%H:%M:%SZ','now','-200 days')
+FROM users u WHERE u.email='youssef@masareen.example'
+  AND NOT EXISTS (SELECT 1 FROM profile_achievements a WHERE a.user_id=u.id AND a.title='Published 12 peer-reviewed papers');
+
+INSERT INTO profile_achievements (user_id, title, detail, kind, earned_at)
+SELECT u.id, 'Regional Water Research Award 2025', 'Recognised for applied groundwater research.', 'AWARD', strftime('%Y-%m-%dT%H:%M:%SZ','now','-150 days')
+FROM users u WHERE u.email='youssef@masareen.example'
+  AND NOT EXISTS (SELECT 1 FROM profile_achievements a WHERE a.user_id=u.id AND a.title='Regional Water Research Award 2025');
+
+INSERT INTO profile_achievements (user_id, title, detail, kind, earned_at)
+SELECT u.id, 'Literacy circle founder', 'Founded a neighbourhood literacy circle with 92 percent attendance.', 'COMMUNITY', strftime('%Y-%m-%dT%H:%M:%SZ','now','-45 days')
+FROM users u WHERE u.email='amina@masareen.example'
+  AND NOT EXISTS (SELECT 1 FROM profile_achievements a WHERE a.user_id=u.id AND a.title='Literacy circle founder');
+
+INSERT INTO profile_achievements (user_id, title, detail, kind, earned_at)
+SELECT u.id, 'Women Techmakers scholar', 'Selected for a regional women in technology scholarship.', 'SCHOLARSHIP', strftime('%Y-%m-%dT%H:%M:%SZ','now','-90 days')
+FROM users u WHERE u.email='amina@masareen.example'
+  AND NOT EXISTS (SELECT 1 FROM profile_achievements a WHERE a.user_id=u.id AND a.title='Women Techmakers scholar');
+
+INSERT INTO profile_achievements (user_id, title, detail, kind, earned_at)
+SELECT u.id, '1,200 volunteers mobilised', 'Coordinated food, recycling and mutual-aid drives across Rabat.', 'COMMUNITY', strftime('%Y-%m-%dT%H:%M:%SZ','now','-75 days')
+FROM users u WHERE u.email='omar@masareen.example'
+  AND NOT EXISTS (SELECT 1 FROM profile_achievements a WHERE a.user_id=u.id AND a.title='1,200 volunteers mobilised');
+
+INSERT INTO profile_achievements (user_id, title, detail, kind, earned_at)
+SELECT u.id, 'Girls coding club founder', 'Weekly coding club reaching 60 public-school students.', 'COMMUNITY', strftime('%Y-%m-%dT%H:%M:%SZ','now','-50 days')
+FROM users u WHERE u.email='sara@masareen.example'
+  AND NOT EXISTS (SELECT 1 FROM profile_achievements a WHERE a.user_id=u.id AND a.title='Girls coding club founder');
+
+INSERT INTO profile_achievements (user_id, title, detail, kind, earned_at)
+SELECT u.id, 'National STEM Hackathon Winner 2025', 'First place for an accessible learning platform.', 'AWARD', strftime('%Y-%m-%dT%H:%M:%SZ','now','-110 days')
+FROM users u WHERE u.email='sara@masareen.example'
+  AND NOT EXISTS (SELECT 1 FROM profile_achievements a WHERE a.user_id=u.id AND a.title='National STEM Hackathon Winner 2025');
+
+INSERT INTO profile_achievements (user_id, title, detail, kind, earned_at)
+SELECT u.id, '20,000 mangroves planted', 'Verified survival above 85 percent at 90 days.', 'IMPACT', strftime('%Y-%m-%dT%H:%M:%SZ','now','-30 days')
+FROM users u WHERE u.email='greendelta@masareen.example'
+  AND NOT EXISTS (SELECT 1 FROM profile_achievements a WHERE a.user_id=u.id AND a.title='20,000 mangroves planted');
+
+INSERT INTO profile_achievements (user_id, title, detail, kind, earned_at)
+SELECT u.id, '300 households with clean water', 'Independent 30-day follow-up confirmed continued filter use.', 'IMPACT', strftime('%Y-%m-%dT%H:%M:%SZ','now','-12 days')
+FROM users u WHERE u.email='nilecare@masareen.example'
+  AND NOT EXISTS (SELECT 1 FROM profile_achievements a WHERE a.user_id=u.id AND a.title='300 households with clean water');
+
+INSERT OR IGNORE INTO profile_recommendations (user_id, author_id, relation, text, status, created_at)
+SELECT target.id, author.id, 'Research collaborator', 'Layla turns complex water evidence into reporting that policymakers can act on. Her field notes are unusually rigorous.', 'PUBLISHED', strftime('%Y-%m-%dT%H:%M:%SZ','now','-40 days')
+FROM users target, users author WHERE target.email='layla@masareen.example' AND author.email='youssef@masareen.example';
+
+INSERT OR IGNORE INTO profile_recommendations (user_id, author_id, relation, text, status, created_at)
+SELECT target.id, author.id, 'Mentee', 'Layla opened her newsroom to our coding club and showed the students what evidence-led storytelling looks like.', 'PUBLISHED', strftime('%Y-%m-%dT%H:%M:%SZ','now','-25 days')
+FROM users target, users author WHERE target.email='layla@masareen.example' AND author.email='sara@masareen.example';
+
+INSERT OR IGNORE INTO profile_recommendations (user_id, author_id, relation, text, status, created_at)
+SELECT target.id, author.id, 'Journalist partner', 'Dr. Haddad is the first person I call when a water story needs a number that will survive scrutiny.', 'PUBLISHED', strftime('%Y-%m-%dT%H:%M:%SZ','now','-38 days')
+FROM users target, users author WHERE target.email='youssef@masareen.example' AND author.email='layla@masareen.example';
+
+INSERT OR IGNORE INTO profile_recommendations (user_id, author_id, relation, text, status, created_at)
+SELECT target.id, author.id, 'Programme partner', 'Youssef helped our team rebuild its monitoring framework around evidence we could actually defend.', 'PUBLISHED', strftime('%Y-%m-%dT%H:%M:%SZ','now','-70 days')
+FROM users target, users author WHERE target.email='youssef@masareen.example' AND author.email='nilecare@masareen.example';
+
+INSERT OR IGNORE INTO profile_recommendations (user_id, author_id, relation, text, status, created_at)
+SELECT target.id, author.id, 'Club mentor', 'Amina is the reason our literacy circle kept going after the first difficult month. She makes learning feel possible.', 'PUBLISHED', strftime('%Y-%m-%dT%H:%M:%SZ','now','-18 days')
+FROM users target, users author WHERE target.email='amina@masareen.example' AND author.email='sara@masareen.example';
+
+INSERT OR IGNORE INTO profile_recommendations (user_id, author_id, relation, text, status, created_at)
+SELECT target.id, author.id, 'Volunteer lead', 'Amina shows up prepared, follows through and brings other students with her. That is rare.', 'PUBLISHED', strftime('%Y-%m-%dT%H:%M:%SZ','now','-22 days')
+FROM users target, users author WHERE target.email='amina@masareen.example' AND author.email='omar@masareen.example';
+
+INSERT OR IGNORE INTO profile_recommendations (user_id, author_id, relation, text, status, created_at)
+SELECT target.id, author.id, 'Programme director', 'Omar can turn a WhatsApp group into a functioning distribution network in a day. Our field teams trust him completely.', 'PUBLISHED', strftime('%Y-%m-%dT%H:%M:%SZ','now','-35 days')
+FROM users target, users author WHERE target.email='omar@masareen.example' AND author.email='greendelta@masareen.example';
+
+INSERT OR IGNORE INTO profile_recommendations (user_id, author_id, relation, text, status, created_at)
+SELECT target.id, author.id, 'Peer coordinator', 'Omar is the person who makes sure nobody is left with the hardest job alone.', 'PUBLISHED', strftime('%Y-%m-%dT%H:%M:%SZ','now','-28 days')
+FROM users target, users author WHERE target.email='omar@masareen.example' AND author.email='nilecare@masareen.example';
+
+INSERT OR IGNORE INTO profile_recommendations (user_id, author_id, relation, text, status, created_at)
+SELECT target.id, author.id, 'Programme partner', 'Green Delta measures restoration honestly, including the plots that fail. That is why we co-fund their work.', 'PUBLISHED', strftime('%Y-%m-%dT%H:%M:%SZ','now','-55 days')
+FROM users target, users author WHERE target.email='greendelta@masareen.example' AND author.email='nilecare@masareen.example';
+
+INSERT OR IGNORE INTO profile_recommendations (user_id, author_id, relation, text, status, created_at)
+SELECT target.id, author.id, 'Community partner', 'Green Delta brings farmers into the design from day one. The result is restoration that local people protect.', 'PUBLISHED', strftime('%Y-%m-%dT%H:%M:%SZ','now','-48 days')
+FROM users target, users author WHERE target.email='greendelta@masareen.example' AND author.email='omar@masareen.example';
+
+INSERT OR IGNORE INTO profile_recommendations (user_id, author_id, relation, text, status, created_at)
+SELECT target.id, author.id, 'Student mentee', 'Sara built a coding club that makes space for beginners, not just the students who already code.', 'PUBLISHED', strftime('%Y-%m-%dT%H:%M:%SZ','now','-20 days')
+FROM users target, users author WHERE target.email='sara@masareen.example' AND author.email='amina@masareen.example';
+
+INSERT OR IGNORE INTO profile_recommendations (user_id, author_id, relation, text, status, created_at)
+SELECT target.id, author.id, 'Journalist mentor', 'Sara is a natural teacher. She explains technical ideas without making anyone feel behind.', 'PUBLISHED', strftime('%Y-%m-%dT%H:%M:%SZ','now','-30 days')
+FROM users target, users author WHERE target.email='sara@masareen.example' AND author.email='layla@masareen.example';
+
+INSERT OR IGNORE INTO profile_recommendations (user_id, author_id, relation, text, status, created_at)
+SELECT target.id, author.id, 'Health partner', 'Nile Care shares its follow-up data even when the results are inconvenient. That transparency is the standard.', 'PUBLISHED', strftime('%Y-%m-%dT%H:%M:%SZ','now','-42 days')
+FROM users target, users author WHERE target.email='nilecare@masareen.example' AND author.email='greendelta@masareen.example';
+
+INSERT OR IGNORE INTO profile_recommendations (user_id, author_id, relation, text, status, created_at)
+SELECT target.id, author.id, 'Media partner', 'Nile Care gets journalists to the field safely and gives them the context they need to report accurately.', 'PUBLISHED', strftime('%Y-%m-%dT%H:%M:%SZ','now','-33 days')
+FROM users target, users author WHERE target.email='nilecare@masareen.example' AND author.email='layla@masareen.example';
+
+INSERT OR IGNORE INTO profile_recommendations (user_id, author_id, relation, text, status, created_at)
+SELECT target.id, author.id, 'Education partner', 'The Ministry team publishes programme data in a form that schools can actually use.', 'PUBLISHED', strftime('%Y-%m-%dT%H:%M:%SZ','now','-65 days')
+FROM users target, users author WHERE target.email='moe@masareen.example' AND author.email='amina@masareen.example';
+
+INSERT OR IGNORE INTO profile_analytics (user_id, bucket, impact_score, reach, engagement, verified_reports, evidence, trust_score, knowledge, influence, created_at)
+SELECT u.id, 'May', 42, 18400, 860, 3, 4, 61, 54, 38, strftime('%Y-%m-%dT%H:%M:%SZ','now','-5 months') FROM users u WHERE u.email='layla@masareen.example';
+INSERT OR IGNORE INTO profile_analytics (user_id, bucket, impact_score, reach, engagement, verified_reports, evidence, trust_score, knowledge, influence, created_at)
+SELECT u.id, 'Jun', 51, 22600, 1040, 4, 5, 64, 58, 44, strftime('%Y-%m-%dT%H:%M:%SZ','now','-4 months') FROM users u WHERE u.email='layla@masareen.example';
+INSERT OR IGNORE INTO profile_analytics (user_id, bucket, impact_score, reach, engagement, verified_reports, evidence, trust_score, knowledge, influence, created_at)
+SELECT u.id, 'Jul', 58, 28300, 1310, 5, 7, 68, 63, 51, strftime('%Y-%m-%dT%H:%M:%SZ','now','-3 months') FROM users u WHERE u.email='layla@masareen.example';
+INSERT OR IGNORE INTO profile_analytics (user_id, bucket, impact_score, reach, engagement, verified_reports, evidence, trust_score, knowledge, influence, created_at)
+SELECT u.id, 'Aug', 63, 31900, 1490, 6, 8, 71, 67, 56, strftime('%Y-%m-%dT%H:%M:%SZ','now','-2 months') FROM users u WHERE u.email='layla@masareen.example';
+INSERT OR IGNORE INTO profile_analytics (user_id, bucket, impact_score, reach, engagement, verified_reports, evidence, trust_score, knowledge, influence, created_at)
+SELECT u.id, 'Sep', 69, 36200, 1680, 7, 9, 74, 71, 61, strftime('%Y-%m-%dT%H:%M:%SZ','now','-1 months') FROM users u WHERE u.email='layla@masareen.example';
+INSERT OR IGNORE INTO profile_analytics (user_id, bucket, impact_score, reach, engagement, verified_reports, evidence, trust_score, knowledge, influence, created_at)
+SELECT u.id, 'Oct', 78, 42800, 2010, 9, 11, 79, 76, 68, strftime('%Y-%m-%dT%H:%M:%SZ','now') FROM users u WHERE u.email='layla@masareen.example';
+
+INSERT OR IGNORE INTO profile_analytics (user_id, bucket, impact_score, reach, engagement, verified_reports, evidence, trust_score, knowledge, influence, created_at)
+SELECT u.id, 'May', 48, 12200, 540, 2, 6, 72, 68, 33, strftime('%Y-%m-%dT%H:%M:%SZ','now','-5 months') FROM users u WHERE u.email='youssef@masareen.example';
+INSERT OR IGNORE INTO profile_analytics (user_id, bucket, impact_score, reach, engagement, verified_reports, evidence, trust_score, knowledge, influence, created_at)
+SELECT u.id, 'Jun', 54, 14800, 660, 3, 7, 74, 71, 37, strftime('%Y-%m-%dT%H:%M:%SZ','now','-4 months') FROM users u WHERE u.email='youssef@masareen.example';
+INSERT OR IGNORE INTO profile_analytics (user_id, bucket, impact_score, reach, engagement, verified_reports, evidence, trust_score, knowledge, influence, created_at)
+SELECT u.id, 'Jul', 59, 17100, 720, 3, 8, 76, 74, 41, strftime('%Y-%m-%dT%H:%M:%SZ','now','-3 months') FROM users u WHERE u.email='youssef@masareen.example';
+INSERT OR IGNORE INTO profile_analytics (user_id, bucket, impact_score, reach, engagement, verified_reports, evidence, trust_score, knowledge, influence, created_at)
+SELECT u.id, 'Aug', 66, 19400, 830, 4, 9, 78, 78, 46, strftime('%Y-%m-%dT%H:%M:%SZ','now','-2 months') FROM users u WHERE u.email='youssef@masareen.example';
+INSERT OR IGNORE INTO profile_analytics (user_id, bucket, impact_score, reach, engagement, verified_reports, evidence, trust_score, knowledge, influence, created_at)
+SELECT u.id, 'Sep', 71, 21900, 910, 5, 10, 81, 81, 50, strftime('%Y-%m-%dT%H:%M:%SZ','now','-1 months') FROM users u WHERE u.email='youssef@masareen.example';
+INSERT OR IGNORE INTO profile_analytics (user_id, bucket, impact_score, reach, engagement, verified_reports, evidence, trust_score, knowledge, influence, created_at)
+SELECT u.id, 'Oct', 79, 25400, 1080, 6, 12, 84, 85, 57, strftime('%Y-%m-%dT%H:%M:%SZ','now') FROM users u WHERE u.email='youssef@masareen.example';
+
+INSERT OR IGNORE INTO profile_analytics (user_id, bucket, impact_score, reach, engagement, verified_reports, evidence, trust_score, knowledge, influence, created_at)
+SELECT u.id, 'May', 12, 3200, 190, 0, 1, 42, 28, 8, strftime('%Y-%m-%dT%H:%M:%SZ','now','-5 months') FROM users u WHERE u.email='amina@masareen.example';
+INSERT OR IGNORE INTO profile_analytics (user_id, bucket, impact_score, reach, engagement, verified_reports, evidence, trust_score, knowledge, influence, created_at)
+SELECT u.id, 'Jun', 18, 4100, 240, 1, 1, 46, 32, 11, strftime('%Y-%m-%dT%H:%M:%SZ','now','-4 months') FROM users u WHERE u.email='amina@masareen.example';
+INSERT OR IGNORE INTO profile_analytics (user_id, bucket, impact_score, reach, engagement, verified_reports, evidence, trust_score, knowledge, influence, created_at)
+SELECT u.id, 'Jul', 24, 5200, 310, 1, 2, 51, 37, 14, strftime('%Y-%m-%dT%H:%M:%SZ','now','-3 months') FROM users u WHERE u.email='amina@masareen.example';
+INSERT OR IGNORE INTO profile_analytics (user_id, bucket, impact_score, reach, engagement, verified_reports, evidence, trust_score, knowledge, influence, created_at)
+SELECT u.id, 'Aug', 31, 6800, 390, 2, 2, 55, 43, 18, strftime('%Y-%m-%dT%H:%M:%SZ','now','-2 months') FROM users u WHERE u.email='amina@masareen.example';
+INSERT OR IGNORE INTO profile_analytics (user_id, bucket, impact_score, reach, engagement, verified_reports, evidence, trust_score, knowledge, influence, created_at)
+SELECT u.id, 'Sep', 38, 7900, 460, 2, 3, 59, 49, 22, strftime('%Y-%m-%dT%H:%M:%SZ','now','-1 months') FROM users u WHERE u.email='amina@masareen.example';
+INSERT OR IGNORE INTO profile_analytics (user_id, bucket, impact_score, reach, engagement, verified_reports, evidence, trust_score, knowledge, influence, created_at)
+SELECT u.id, 'Oct', 46, 9400, 560, 3, 4, 63, 55, 27, strftime('%Y-%m-%dT%H:%M:%SZ','now') FROM users u WHERE u.email='amina@masareen.example';
+
+INSERT OR IGNORE INTO profile_analytics (user_id, bucket, impact_score, reach, engagement, verified_reports, evidence, trust_score, knowledge, influence, created_at)
+SELECT u.id, 'May', 44, 15200, 720, 2, 5, 68, 61, 31, strftime('%Y-%m-%dT%H:%M:%SZ','now','-5 months') FROM users u WHERE u.email='greendelta@masareen.example';
+INSERT OR IGNORE INTO profile_analytics (user_id, bucket, impact_score, reach, engagement, verified_reports, evidence, trust_score, knowledge, influence, created_at)
+SELECT u.id, 'Jun', 52, 18100, 860, 3, 6, 71, 65, 36, strftime('%Y-%m-%dT%H:%M:%SZ','now','-4 months') FROM users u WHERE u.email='greendelta@masareen.example';
+INSERT OR IGNORE INTO profile_analytics (user_id, bucket, impact_score, reach, engagement, verified_reports, evidence, trust_score, knowledge, influence, created_at)
+SELECT u.id, 'Jul', 61, 22400, 1030, 4, 7, 74, 69, 43, strftime('%Y-%m-%dT%H:%M:%SZ','now','-3 months') FROM users u WHERE u.email='greendelta@masareen.example';
+INSERT OR IGNORE INTO profile_analytics (user_id, bucket, impact_score, reach, engagement, verified_reports, evidence, trust_score, knowledge, influence, created_at)
+SELECT u.id, 'Aug', 68, 26700, 1190, 5, 8, 77, 73, 49, strftime('%Y-%m-%dT%H:%M:%SZ','now','-2 months') FROM users u WHERE u.email='greendelta@masareen.example';
+INSERT OR IGNORE INTO profile_analytics (user_id, bucket, impact_score, reach, engagement, verified_reports, evidence, trust_score, knowledge, influence, created_at)
+SELECT u.id, 'Sep', 73, 30100, 1340, 6, 9, 80, 77, 54, strftime('%Y-%m-%dT%H:%M:%SZ','now','-1 months') FROM users u WHERE u.email='greendelta@masareen.example';
+INSERT OR IGNORE INTO profile_analytics (user_id, bucket, impact_score, reach, engagement, verified_reports, evidence, trust_score, knowledge, influence, created_at)
+SELECT u.id, 'Oct', 82, 35600, 1580, 8, 11, 84, 82, 62, strftime('%Y-%m-%dT%H:%M:%SZ','now') FROM users u WHERE u.email='greendelta@masareen.example';
+
+INSERT OR IGNORE INTO pms_scores (user_id, reliability, execution_quality, leadership, documentation_quality, verification_confidence, learning_velocity, technical_skills, innovation, consistency, community_impact, total, tier, updated_at)
+SELECT u.id, 82, 80, 71, 88, 79, 74, 77, 69, 84, 78, 79, 'GOLD', strftime('%Y-%m-%dT%H:%M:%SZ','now') FROM users u WHERE u.email='layla@masareen.example';
+INSERT OR IGNORE INTO pms_scores (user_id, reliability, execution_quality, leadership, documentation_quality, verification_confidence, learning_velocity, technical_skills, innovation, consistency, community_impact, total, tier, updated_at)
+SELECT u.id, 91, 88, 82, 92, 86, 79, 89, 81, 90, 80, 86, 'PLATINUM', strftime('%Y-%m-%dT%H:%M:%SZ','now') FROM users u WHERE u.email='youssef@masareen.example';
+INSERT OR IGNORE INTO pms_scores (user_id, reliability, execution_quality, leadership, documentation_quality, verification_confidence, learning_velocity, technical_skills, innovation, consistency, community_impact, total, tier, updated_at)
+SELECT u.id, 66, 58, 61, 57, 54, 78, 64, 63, 60, 58, 62, 'SILVER', strftime('%Y-%m-%dT%H:%M:%SZ','now') FROM users u WHERE u.email='amina@masareen.example';
+INSERT OR IGNORE INTO pms_scores (user_id, reliability, execution_quality, leadership, documentation_quality, verification_confidence, learning_velocity, technical_skills, innovation, consistency, community_impact, total, tier, updated_at)
+SELECT u.id, 84, 79, 77, 72, 70, 68, 66, 74, 78, 83, 76, 'GOLD', strftime('%Y-%m-%dT%H:%M:%SZ','now') FROM users u WHERE u.email='nilecare@masareen.example';
+INSERT OR IGNORE INTO pms_scores (user_id, reliability, execution_quality, leadership, documentation_quality, verification_confidence, learning_velocity, technical_skills, innovation, consistency, community_impact, total, tier, updated_at)
+SELECT u.id, 92, 90, 94, 89, 88, 72, 80, 84, 91, 93, 88, 'PLATINUM', strftime('%Y-%m-%dT%H:%M:%SZ','now') FROM users u WHERE u.email='moe@masareen.example';
+INSERT OR IGNORE INTO pms_scores (user_id, reliability, execution_quality, leadership, documentation_quality, verification_confidence, learning_velocity, technical_skills, innovation, consistency, community_impact, total, tier, updated_at)
+SELECT u.id, 76, 72, 74, 64, 63, 70, 58, 66, 73, 81, 71, 'GOLD', strftime('%Y-%m-%dT%H:%M:%SZ','now') FROM users u WHERE u.email='omar@masareen.example';
+INSERT OR IGNORE INTO pms_scores (user_id, reliability, execution_quality, leadership, documentation_quality, verification_confidence, learning_velocity, technical_skills, innovation, consistency, community_impact, total, tier, updated_at)
+SELECT u.id, 87, 84, 82, 86, 83, 71, 84, 79, 85, 88, 83, 'GOLD', strftime('%Y-%m-%dT%H:%M:%SZ','now') FROM users u WHERE u.email='greendelta@masareen.example';
+INSERT OR IGNORE INTO pms_scores (user_id, reliability, execution_quality, leadership, documentation_quality, verification_confidence, learning_velocity, technical_skills, innovation, consistency, community_impact, total, tier, updated_at)
+SELECT u.id, 62, 57, 64, 53, 50, 82, 71, 76, 59, 61, 60, 'SILVER', strftime('%Y-%m-%dT%H:%M:%SZ','now') FROM users u WHERE u.email='sara@masareen.example';

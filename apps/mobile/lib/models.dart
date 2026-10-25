@@ -715,6 +715,12 @@ class Personnel {
   final double fieldActivityScore;
   final double professionalConsistency;
   final Map<String, dynamic> kpi;
+  final int completeness;
+  final double pmsScore;
+  final String pmsTier;
+  final Map<String, dynamic> pms;
+  final List<dynamic> badges;
+  final List<dynamic> coverageRegions;
 
   Personnel({
     required this.userId,
@@ -766,6 +772,12 @@ class Personnel {
     required this.fieldActivityScore,
     required this.professionalConsistency,
     required this.kpi,
+    this.completeness = 0,
+    this.pmsScore = 0,
+    this.pmsTier = 'BRONZE',
+    this.pms = const {},
+    this.badges = const [],
+    this.coverageRegions = const [],
   });
 
   factory Personnel.fromJson(Map<String, dynamic> j) => Personnel(
@@ -839,6 +851,14 @@ class Personnel {
             ? (j['professional_consistency'] as num).toDouble()
             : 0,
         kpi: j['kpi'] is Map ? Map<String, dynamic>.from(j['kpi'] as Map) : const {},
+        completeness: j['completeness'] is num ? (j['completeness'] as num).toInt() : 0,
+        pmsScore: (j['pms_score'] is num) ? (j['pms_score'] as num).toDouble() : 0,
+        pmsTier: j['pms_tier'] ?? 'BRONZE',
+        pms: j['pms'] is Map ? Map<String, dynamic>.from(j['pms'] as Map) : const {},
+        badges: j['badges'] is List ? List<dynamic>.from(j['badges']) : const [],
+        coverageRegions: j['coverage_regions'] is List
+            ? List<dynamic>.from(j['coverage_regions'])
+            : const [],
       );
 }
 

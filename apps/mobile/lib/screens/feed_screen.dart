@@ -13,7 +13,7 @@ import 'package:masaren/screens/government_profile_screen.dart';
 import 'package:masaren/screens/player_showcase_screen.dart';
 import 'package:masaren/screens/organization_profile_screen.dart';
 import 'package:masaren/screens/profile_screen.dart';
-import 'package:masaren/screens/profile_view_screen.dart';
+import 'package:masaren/screens/personnel_profile_screen.dart';
 import 'package:masaren/screens/post_detail_screen.dart';
 import 'package:masaren/screens/create_post_screen.dart';
 
@@ -269,7 +269,8 @@ class FeedScreenState extends State<FeedScreen> {
           builder: (_) => OrganizationProfileScreen(orgId: a.id, currentUser: widget.user)));
     } else {
       Navigator.of(context).push(MaterialPageRoute(
-          builder: (_) => ProfileViewScreen(userId: a.id, currentUser: widget.user)));
+          builder: (_) =>
+              PersonnelProfileScreen(userId: a.id, currentUser: widget.user)));
     }
   }
 

@@ -543,6 +543,12 @@ class AuthApi {
     return data is List ? List<dynamic>.from(data) : <dynamic>[];
   }
 
+  static Future<Personnel> updatePersonnelProfile(
+      Map<String, dynamic> body) async {
+    final data = await api.patch('/api/v1/personnel/me', body);
+    return Personnel.fromJson(data as Map<String, dynamic>);
+  }
+
   static Future<Map<String, dynamic>> follow(String userId) async {
     final data = await api.post('/api/v1/users/$userId/follow');
     return data as Map<String, dynamic>;

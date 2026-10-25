@@ -7,6 +7,7 @@ import 'package:masaren/widgets.dart';
 import 'package:masaren/models.dart';
 import 'package:masaren/screens/post_detail_screen.dart';
 import 'package:masaren/screens/edit_profile_screen.dart';
+import 'package:masaren/screens/personnel_profile_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   final User user;
@@ -128,6 +129,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                     _buildUserInfo(context, cs, u, roleLabel),
                     const SizedBox(height: 20),
                     _buildEditButton(context, cs),
+                    const SizedBox(height: 10),
+                    _buildProfessionalButton(context, cs),
                     const SizedBox(height: 24),
                     _buildStatsRow(context, cs, dark),
                     const SizedBox(height: 8),
@@ -436,6 +439,33 @@ class _ProfileScreenState extends State<ProfileScreen>
           style: OutlinedButton.styleFrom(
             foregroundColor: cs.primary,
             side: BorderSide(color: cs.outlineVariant, width: 1.5),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfessionalButton(BuildContext context, ColorScheme cs) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: SizedBox(
+        width: double.infinity,
+        height: 48,
+        child: FilledButton.icon(
+          onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => PersonnelProfileScreen(
+                  userId: _user.id, currentUser: _user))),
+          icon: const Icon(Icons.workspace_premium_outlined, size: 18),
+          label: const Text(
+            'Open professional profile',
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+          ),
+          style: FilledButton.styleFrom(
+            backgroundColor: cs.primary,
+            foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(14),
             ),

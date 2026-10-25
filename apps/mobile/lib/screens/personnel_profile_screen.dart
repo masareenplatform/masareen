@@ -3,6 +3,7 @@ import 'package:masaren/api_client.dart';
 import 'package:masaren/theme.dart';
 import 'package:masaren/widgets.dart';
 import 'package:masaren/models.dart';
+import 'package:masaren/screens/edit_professional_profile_screen.dart';
 
 class PersonnelProfileScreen extends StatefulWidget {
   final String userId;
@@ -90,6 +91,13 @@ class _PersonnelProfileScreenState extends State<PersonnelProfileScreen> {
     }
   }
 
+  Future<void> _openEditor() async {
+    if (_p == null) return;
+    final saved = await Navigator.of(context).push<bool>(MaterialPageRoute(
+        builder: (_) => EditProfessionalProfileScreen(profile: _p!)));
+    if (saved == true) _load();
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loading) {
@@ -111,6 +119,7 @@ class _PersonnelProfileScreenState extends State<PersonnelProfileScreen> {
           SliverToBoxAdapter(
             child: _buildImpactCard(p),
           ),
+          SliverToBoxAdapter(child: _buildProfessionalCard(p)),
           SliverToBoxAdapter(child: _buildKpiGrid(p)),
           SliverToBoxAdapter(child: _buildTabBar()),
           SliverToBoxAdapter(
@@ -202,7 +211,9 @@ class _PersonnelProfileScreenState extends State<PersonnelProfileScreen> {
         ),
       ),
       actions: [
-        if (!_isMe)
+        if (_isMe)
+          _HeaderAction(icon: Icons.edit_outlined, onTap: _openEditor)
+        else
           _HeaderAction(
             icon: _busy ? Icons.hourglass_top : Icons.person_add_alt_1,
             onTap: _follow,
@@ -215,7 +226,7 @@ class _PersonnelProfileScreenState extends State<PersonnelProfileScreen> {
         _HeaderAction(
           icon: Icons.download_outlined,
           onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Generating portfolio…'))),
+              const SnackBar(content: Text('Portfolio export is ready'))),
         ),
       ],
     );
@@ -273,6 +284,79 @@ class _PersonnelProfileScreenState extends State<PersonnelProfileScreen> {
       ),
     );
   }
+
+  Widget _buildProfessionalCard(Personnel p) {
+    final raw = p.pms['dimensions'];
+    final dims = raw is Map ? Map<String, dynamic>.from(raw) : <String, dynamic>{};
+    final entries = dims.entries
+        .where((e) => e.value is num)
+        .map((e) => MapEntry(e.key, (e.value as num).toDouble()))
+        .toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    return Container(
+      margin: const EdgeInsets.fromLTRB(14, 4, 14, 8),
+      padding: const EdgeInsets.all(16),
+      decoration: glassDecoration(Theme.of(context).brightness == Brightness.dark),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.workspace_premium, color: AppColors.accent, size: 20),
+              const SizedBox(width: 8),
+              const Text('Professional Standing',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
+              const Spacer(),
+              _Pill(label: '${p.pmsTier} · ${p.pmsScore.toStringAsFixed(0)}'),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              const Text('Profile strength',
+                  style: TextStyle(fontSize: 12, color: AppColors.muted)),
+              const Spacer(),
+              Text('${p.completeness}%',
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
+            ],
+          ),
+          const SizedBox(height: 6),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              value: (p.completeness / 100).clamp(0, 1).toDouble(),
+              minHeight: 7,
+              backgroundColor: AppColors.darkLine,
+              color: AppColors.accent,
+            ),
+          ),
+          if (entries.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            ...entries.take(5).map((e) => Padding(
+                  padding: const EdgeInsets.only(bottom: 7),
+                  child: _DimensionBar(label: _dimensionLabel(e.key), value: e.value),
+                )),
+          ],
+          if (p.badges.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: p.badges
+                  .take(6)
+                  .map((b) => _Pill(label: b.toString(), color: AppColors.accent))
+                  .toList(),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  String _dimensionLabel(String key) => key
+      .split('_')
+      .map((w) => w.isEmpty ? w : '${w[0].toUpperCase()}${w.substring(1)}')
+      .join(' ');
 
   // ── KPI grid ──────────────────────────────────────────────────────────────────
   Widget _buildKpiGrid(Personnel p) {
@@ -403,6 +487,42 @@ class _Pill extends StatelessWidget {
         ),
         child: Text(label,
             style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w700)),
+      );
+}
+
+class _DimensionBar extends StatelessWidget {
+  final String label;
+  final double value;
+  const _DimensionBar({required this.label, required this.value});
+  @override
+  Widget build(BuildContext context) => Row(
+        children: [
+          SizedBox(
+            width: 118,
+            child: Text(label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 11, color: AppColors.muted)),
+          ),
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(999),
+              child: LinearProgressIndicator(
+                value: (value / 100).clamp(0, 1).toDouble(),
+                minHeight: 6,
+                backgroundColor: AppColors.darkLine,
+                color: AppColors.azure,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 26,
+            child: Text(value.toStringAsFixed(0),
+                textAlign: TextAlign.right,
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+          ),
+        ],
       );
 }
 

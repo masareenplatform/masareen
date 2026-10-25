@@ -1242,6 +1242,518 @@ async function passportFor(env, userId) {
   });
 }
 
+const PMS_WEIGHTS = {
+  reliability: 0.15, execution_quality: 0.15, leadership: 0.10, documentation_quality: 0.10,
+  verification_confidence: 0.15, learning_velocity: 0.08, technical_skills: 0.10,
+  innovation: 0.07, consistency: 0.05, community_impact: 0.05,
+};
+
+function safeArray(v, fallback = []) {
+  if (Array.isArray(v)) return v;
+  if (typeof v !== 'string' || !v) return fallback;
+  try { const parsed = JSON.parse(v); return Array.isArray(parsed) ? parsed : fallback; } catch { return fallback; }
+}
+function safeObject(v) {
+  if (v && typeof v === 'object' && !Array.isArray(v)) return v;
+  if (typeof v !== 'string' || !v) return {};
+  try { const parsed = JSON.parse(v); return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {}; } catch { return {}; }
+}
+function roleLabel(role) {
+  const r = String(role || 'INDIVIDUAL').replace(/_/g, ' ').toLowerCase();
+  return r.replace(/\b\w/g, (c) => c.toUpperCase());
+}
+function pmsTier(total) {
+  if (total >= 85) return 'PLATINUM';
+  if (total >= 70) return 'GOLD';
+  if (total >= 50) return 'SILVER';
+  return 'BRONZE';
+}
+function titleCaseTier(tier) {
+  return String(tier || 'BRONZE').charAt(0) + String(tier || 'BRONZE').slice(1).toLowerCase();
+}
+function profileArray(v, max = 30) {
+  if (Array.isArray(v)) return v.slice(0, max).map((x) => typeof x === 'string' ? clean(x, 180) : x);
+  if (typeof v === 'string') return v.split(',').map((s) => clean(s, 180)).filter(Boolean).slice(0, max);
+  return null;
+}
+function profileCompleteness(profile, user) {
+  const p = profile || {};
+  const checks = [
+    p.headline, p.summary, p.mission, safeArray(p.expertise).length, safeArray(p.skills).length,
+    safeArray(p.languages).length, safeArray(p.education).length || safeArray(p.experience).length,
+    p.employment_status, p.website || Object.keys(safeObject(p.social_links)).length,
+    safeArray(p.coverage_regions).length || user.country || user.city,
+  ];
+  return Math.round((checks.filter(Boolean).length / checks.length) * 100);
+}
+function headlineFromText(text, max = 110) {
+  const value = String(text || '').replace(/\s+/g, ' ').trim();
+  if (value.length <= max) return value;
+  const cut = value.slice(0, max);
+  return cut.slice(0, cut.lastIndexOf(' ')) + '…';
+}
+function pmsDimensions(row, ctx) {
+  const fallback = {
+    reliability: clamp(40 + ctx.verifiedPosts * 10 + (ctx.emailVerified ? 10 : 0) + ctx.verifiedSubmissions * 6, 0, 100),
+    execution_quality: clamp(30 + ctx.verifiedTasks * 15 + ctx.verifiedSubmissions * 10 + ctx.projects * 4, 0, 100),
+    leadership: clamp(25 + ctx.ownedPrograms * 12 + ctx.ownedProjects * 8 + (ctx.ownerOrg ? 15 : 0) + ctx.followers * 0.3, 0, 100),
+    documentation_quality: clamp(30 + ctx.evidence * 8 + ctx.posts * 2 + ctx.submissions * 3, 0, 100),
+    verification_confidence: clamp(ctx.confidence || 50, 0, 100),
+    learning_velocity: clamp(30 + ctx.courses * 10 + ctx.certificates * 6, 0, 100),
+    technical_skills: clamp(30 + ctx.skills * 10 + ctx.endorsements * 2, 0, 100),
+    innovation: clamp(30 + ctx.projects * 6 + ctx.innovationPosts * 10, 0, 100),
+    consistency: clamp(30 + ctx.activeMonths * 8, 0, 100),
+    community_impact: clamp(20 + ctx.followers * 2 + ctx.recommendations * 8 + ctx.impactPosts * 4, 0, 100),
+  };
+  if (!row) return fallback;
+  const result = {};
+  for (const key of Object.keys(PMS_WEIGHTS)) result[key] = Math.round(Number(row[key] ?? fallback[key]));
+  return result;
+}
+function weightedPms(dimensions) {
+  let total = 0;
+  for (const [key, weight] of Object.entries(PMS_WEIGHTS)) total += Number(dimensions[key] || 0) * weight;
+  return Number(total.toFixed(1));
+}
+
+async function personnelJson(env, user, viewer) {
+  const uid = Number(user.id);
+  const profile = await env.DB.prepare('SELECT * FROM user_profiles WHERE user_id=?').bind(uid).first();
+  const [postStats, submissionStats, taskStats, evidenceRow, programRow, projectRow, ownedProgramRow, ownedProjectRow,
+    recommendationRow, endorsementRows, orgRows, courseRow, pmsRow, followerTotal, followingTotal, growthRow] = await Promise.all([
+    env.DB.prepare(`SELECT COUNT(*) c, COALESCE(SUM(impact_value),0) impact, COALESCE(AVG(confidence_score),0) confidence,
+      COALESCE(SUM(like_count),0) likes, COALESCE(SUM(comment_count),0) comments, COALESCE(SUM(share_count),0) shares,
+      COALESCE(SUM(CASE WHEN confidence_score>=70 THEN 1 ELSE 0 END),0) verified,
+      COUNT(DISTINCT substr(created_at,1,7)) months,
+      COALESCE(SUM(CASE WHEN kind='IMPACT' THEN 1 ELSE 0 END),0) impact_posts,
+      COALESCE(SUM(CASE WHEN kind='INNOVATION' THEN 1 ELSE 0 END),0) innovation_posts
+      FROM posts WHERE author_id=? AND hidden=0`).bind(uid).first(),
+    env.DB.prepare(`SELECT COUNT(*) c, COALESCE(SUM(CASE WHEN status='VERIFIED' THEN 1 ELSE 0 END),0) verified,
+      COALESCE(AVG(confidence),0) confidence FROM submissions WHERE owner_id=?`).bind(uid).first(),
+    env.DB.prepare(`SELECT COUNT(*) c, COALESCE(SUM(CASE WHEN status='VERIFIED' THEN 1 ELSE 0 END),0) verified
+      FROM tasks WHERE assignee_id=?`).bind(uid).first(),
+    env.DB.prepare('SELECT COUNT(*) c FROM evidence WHERE owner_id=?').bind(uid).first(),
+    env.DB.prepare('SELECT COUNT(*) c FROM program_members WHERE user_id=?').bind(uid).first(),
+    env.DB.prepare('SELECT COUNT(*) c FROM project_members WHERE user_id=?').bind(uid).first(),
+    env.DB.prepare('SELECT COUNT(*) c FROM programs WHERE author_id=?').bind(uid).first(),
+    env.DB.prepare('SELECT COUNT(*) c FROM projects WHERE author_id=?').bind(uid).first(),
+    env.DB.prepare('SELECT COUNT(*) c FROM profile_recommendations WHERE user_id=? AND status=\'PUBLISHED\'').bind(uid).first(),
+    env.DB.prepare('SELECT skill, COUNT(*) c FROM profile_endorsements WHERE user_id=? GROUP BY skill').bind(uid).all(),
+    env.DB.prepare(`SELECT o.*, om.role member_role, om.title member_title, om.start_date, om.end_date
+      FROM organization_members om JOIN organizations o ON o.id=om.organization_id
+      WHERE om.user_id=? ORDER BY om.created_at DESC`).bind(uid).all(),
+    env.DB.prepare('SELECT COUNT(*) c FROM course_enrollments WHERE user_id=?').bind(uid).first(),
+    env.DB.prepare('SELECT * FROM pms_scores WHERE user_id=?').bind(uid).first(),
+    followCount(env, uid, 'followee_id'),
+    followCount(env, uid, 'follower_id'),
+    env.DB.prepare(`SELECT COALESCE(SUM(CASE WHEN created_at>=date('now','-30 days') THEN 1 ELSE 0 END),0) recent,
+      COALESCE(SUM(CASE WHEN created_at<date('now','-30 days') AND created_at>=date('now','-60 days') THEN 1 ELSE 0 END),0) prior
+      FROM posts WHERE author_id=? AND hidden=0`).bind(uid).first(),
+  ]);
+  const endorsements = endorsementRows.results || [];
+  const endorsementBySkill = {};
+  for (const row of endorsements) endorsementBySkill[row.skill] = Number(row.c || 0);
+  const orgs = orgRows.results || [];
+  const skills = safeArray(profile && profile.skills).map((s) => {
+    const name = typeof s === 'string' ? s : String(s && s.name || '');
+    return { name, endorsements: endorsementBySkill[name] || 0 };
+  }).filter((s) => s.name);
+  const certificates = safeArray(profile && profile.certificates);
+  const publications = safeArray(profile && profile.publications);
+  const posts = Number(postStats.c || 0);
+  const verifiedPosts = Number(postStats.verified || 0);
+  const submissions = Number(submissionStats.c || 0);
+  const verifiedSubmissions = Number(submissionStats.verified || 0);
+  const tasks = Number(taskStats.c || 0);
+  const verifiedTasks = Number(taskStats.verified || 0);
+  const evidence = Number(evidenceRow.c || 0);
+  const programs = Number(programRow.c || 0);
+  const projects = Number(projectRow.c || 0);
+  const ownedPrograms = Number(ownedProgramRow.c || 0);
+  const ownedProjects = Number(ownedProjectRow.c || 0);
+  const recommendations = Number(recommendationRow.c || 0);
+  const courses = Number(courseRow.c || 0);
+  const followers = Number(followerTotal || 0);
+  const following = Number(followingTotal || 0);
+  const confidence = Math.round(Number(postStats.confidence || submissionStats.confidence || 0));
+  const dimensions = pmsDimensions(pmsRow, {
+    verifiedPosts, verifiedSubmissions, verifiedTasks, projects, ownedPrograms, ownedProjects,
+    ownerOrg: orgs.some((o) => String(o.member_role).toUpperCase() === 'OWNER'),
+    followers, evidence, posts, submissions, confidence, courses, certificates: certificates.length,
+    skills: skills.length, endorsements: endorsements.length,
+    innovationPosts: Number(postStats.innovation_posts || 0), activeMonths: Number(postStats.months || 0),
+    recommendations, impactPosts: Number(postStats.impact_posts || 0), emailVerified: !!user.email_verified,
+  });
+  const pmsTotal = pmsRow ? Number(pmsRow.total || weightedPms(dimensions)) : weightedPms(dimensions);
+  const tier = pmsRow && pmsRow.tier ? pmsRow.tier : pmsTier(pmsTotal);
+  const impactScore = Number((Number(postStats.impact || 0) + verifiedSubmissions * 2 + verifiedTasks * 1.5 + projects + programs * 0.5).toFixed(1));
+  const trustScore = Number(clamp(
+    (posts ? (verifiedPosts / posts) * 35 : 0) + (submissions ? (verifiedSubmissions / submissions) * 35 : 0) +
+    (user.email_verified ? 15 : 0) + Math.min(15, recommendations * 3), 0, 100).toFixed(1));
+  const engagement = Number(postStats.likes || 0) + Number(postStats.comments || 0) + Number(postStats.shares || 0);
+  const currentReach = Number(postStats.likes || 0) * 35 + Number(postStats.comments || 0) * 20 + Number(postStats.shares || 0) * 90 + posts * 120;
+  const recent = Number(growthRow.recent || 0);
+  const prior = Number(growthRow.prior || 0);
+  const audienceGrowth = prior > 0 ? Number((((recent - prior) / prior) * 100).toFixed(1)) : (recent > 0 ? 100 : 0);
+  const coverageRegions = safeArray(profile && profile.coverage_regions).length
+    ? safeArray(profile && profile.coverage_regions)
+    : [user.country, user.city].filter(Boolean);
+  const expertise = safeArray(profile && profile.expertise).length
+    ? safeArray(profile && profile.expertise)
+    : String(user.interest || '').split(',').map((v) => SDG_NAMES[Number(v)]).filter(Boolean);
+  const experience = safeArray(profile && profile.experience).length
+    ? safeArray(profile && profile.experience)
+    : orgs.map((o) => ({ role: o.member_title || roleLabel(o.member_role), org: o.name, from: String(o.start_date || '').slice(0, 4), to: o.end_date ? String(o.end_date).slice(0, 4) : 'Present' }));
+  const badges = [];
+  if (user.email_verified) badges.push('Verified professional');
+  if (verifiedSubmissions > 0) badges.push('Verified contributor');
+  if (verifiedSubmissions >= 3) badges.push('Evidence champion');
+  if (programs > 0) badges.push('Program member');
+  if (projects > 0) badges.push('Project builder');
+  if (verifiedTasks > 0) badges.push('Task finisher');
+  if (recommendations >= 2) badges.push('Recommended by peers');
+  if (pmsTotal >= 70) badges.push(`PMS ${titleCaseTier(tier)}`);
+  const isMe = !!(viewer && Number(viewer.id) === uid);
+  let isFollowing = false;
+  if (viewer && !isMe) {
+    const f = await env.DB.prepare('SELECT 1 x FROM follows WHERE follower_id=? AND followee_id=?').bind(viewer.id, uid).first();
+    isFollowing = !!f;
+  }
+  return {
+    user_id: String(uid), name: user.name || 'MASAREEN member',
+    email: isMe ? (user.email || '') : '', role: roleLabel(user.role), role_type: user.role || 'INDIVIDUAL',
+    status: 'ACTIVE', email_verified: !!user.email_verified,
+    avatar_url: user.picture || null, cover_url: user.cover_url || null,
+    country: user.country || null, city: user.city || null,
+    website: (profile && profile.website) || null,
+    social_links: safeObject(profile && profile.social_links),
+    bio: user.bio || '', joined: user.created_at, member_since: user.created_at,
+    headline: (profile && profile.headline) || [user.job_title, user.employer].filter(Boolean).join(' at ') || `${roleLabel(user.role)} on MASAREEN`,
+    summary: (profile && profile.summary) || user.bio || '',
+    mission: (profile && profile.mission) || '',
+    beat: (profile && profile.beat) || 'Cross-sector impact',
+    expertise, specializations: safeArray(profile && profile.specializations),
+    skills, languages: safeArray(profile && profile.languages).length ? safeArray(profile && profile.languages) : ['Arabic', 'English'],
+    education: safeArray(profile && profile.education), experience,
+    certificates, awards: safeArray(profile && profile.awards), publications,
+    memberships: safeArray(profile && profile.memberships),
+    employment_status: (profile && profile.employment_status) || (String(user.role).toUpperCase() === 'STUDENT' ? 'Student' : 'Independent'),
+    availability: (profile && profile.availability) || 'Open to opportunities',
+    verification_level: user.email_verified ? 'VERIFIED' : 'UNVERIFIED',
+    impact_tier: titleCaseTier(tier), professional_rank: roleLabel(user.role),
+    impact_score: impactScore, trust_score: trustScore,
+    verification_confidence: confidence, community_rating: Number((posts ? clamp(engagement / posts / 8, 0, 5) : 0).toFixed(1)),
+    current_reach: currentReach, lifetime_reach: Number((currentReach + impactScore * 400).toFixed(0)),
+    average_reach: Number((posts ? currentReach / posts : 0).toFixed(0)),
+    audience_growth: audienceGrowth, average_engagement: Number((posts ? engagement / posts : 0).toFixed(1)),
+    media_value: Number((currentReach * 0.02).toFixed(0)),
+    contribution_score: verifiedSubmissions * 10 + verifiedTasks * 8 + projects * 5 + programs * 4,
+    knowledge_score: Number(clamp(posts * 3 + publications.length * 5 + certificates.length * 4, 0, 100).toFixed(0)),
+    field_activity_score: Number(clamp((posts + submissions + evidence) * 5, 0, 100).toFixed(0)),
+    professional_consistency: Math.round(dimensions.consistency),
+    kpi: {
+      total_reports: posts, verified_reports: verifiedPosts, evidence_submitted: evidence, verified_missions: verifiedTasks,
+      trust_score: trustScore, ai_confidence: confidence, community_rating: Number((posts ? clamp(engagement / posts / 8, 0, 5) : 0).toFixed(1)),
+      followers, countries_covered: coverageRegions.length, coverage_hours: Number((profile && profile.coverage_hours) || 0),
+      average_quality_score: confidence, monthly_growth: audienceGrowth,
+    },
+    pms: { dimensions, weights: PMS_WEIGHTS, total: pmsTotal, tier },
+    pms_score: pmsTotal, pms_tier: tier,
+    completeness: profileCompleteness(profile, user),
+    badges, followers_count: followers, following_count: following, posts_count: posts,
+    recommendations_count: recommendations, endorsements_count: endorsements.length,
+    organizations_count: orgs.length, is_following: isFollowing, is_me: isMe,
+    coverage_regions: coverageRegions,
+    profile_visibility: (profile && profile.visibility) || 'PUBLIC',
+  };
+}
+
+async function personnelReports(env, userId, limit = 40) {
+  const rows = (await env.DB.prepare(`SELECT * FROM posts WHERE author_id=? AND hidden=0
+    ORDER BY created_at DESC LIMIT ?`).bind(userId, clamp(Number(limit) || 40, 1, 100)).all()).results || [];
+  return rows.map((r) => ({
+    id: String(r.id), headline: headlineFromText(r.text), text: r.text,
+    category: String(r.kind || 'UPDATE').toLowerCase(), program_tag: r.sdg ? SDG_NAMES[r.sdg] || null : null,
+    sdg: r.sdg == null ? 0 : Number(r.sdg), status: 'PUBLISHED',
+    verification_status: Number(r.confidence_score || 0) >= 70 ? 'VERIFIED' : 'REVIEW',
+    published_at: r.created_at,
+    reach: 120 + Number(r.like_count || 0) * 35 + Number(r.comment_count || 0) * 20 + Number(r.share_count || 0) * 90,
+    engagement: Number(r.like_count || 0) + Number(r.comment_count || 0) + Number(r.share_count || 0),
+    evidence_count: Number(r.confidence_score || 0) >= 70 ? 1 : 0,
+    quality_score: Number(r.confidence_score || 0), impact_score: Number(r.impact_value || 0),
+    cover_image: r.media_url || null, comments: Number(r.comment_count || 0), likes: Number(r.like_count || 0),
+  }));
+}
+
+async function personnelAnalytics(env, userId) {
+  const rows = (await env.DB.prepare('SELECT * FROM profile_analytics WHERE user_id=? ORDER BY created_at ASC').bind(userId).all()).results || [];
+  if (rows.length) {
+    return rows.map((r) => ({
+      bucket: r.bucket, impact_score: Number(r.impact_score || 0), reach: Number(r.reach || 0),
+      engagement: Number(r.engagement || 0), verified_reports: Number(r.verified_reports || 0),
+      evidence: Number(r.evidence || 0), trust_score: Number(r.trust_score || 0),
+      knowledge: Number(r.knowledge || 0), influence: Number(r.influence || 0),
+    }));
+  }
+  const grouped = (await env.DB.prepare(`SELECT substr(created_at,1,7) bucket, COUNT(*) c,
+    COALESCE(SUM(impact_value),0) impact, COALESCE(SUM(like_count),0) likes,
+    COALESCE(SUM(comment_count),0) comments, COALESCE(SUM(share_count),0) shares,
+    COALESCE(AVG(confidence_score),0) confidence,
+    COALESCE(SUM(CASE WHEN confidence_score>=70 THEN 1 ELSE 0 END),0) verified
+    FROM posts WHERE author_id=? AND hidden=0 AND created_at>=date('now','-6 months')
+    GROUP BY bucket ORDER BY bucket ASC`).bind(userId).all()).results || [];
+  const byBucket = new Map(grouped.map((r) => [r.bucket, r]));
+  const now = new Date();
+  const out = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1));
+    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+    const r = byBucket.get(key);
+    const reach = r ? 120 * Number(r.c || 0) + Number(r.likes || 0) * 35 + Number(r.comments || 0) * 20 + Number(r.shares || 0) * 90 : 0;
+    out.push({
+      bucket: d.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' }),
+      impact_score: r ? Number(r.impact || 0) + Number(r.verified || 0) * 2 : 0,
+      reach, engagement: r ? Number(r.likes || 0) + Number(r.comments || 0) + Number(r.shares || 0) : 0,
+      verified_reports: r ? Number(r.verified || 0) : 0, evidence: 0,
+      trust_score: r ? Number(r.confidence || 0) : 0, knowledge: r ? Number(r.c || 0) * 3 : 0,
+      influence: Number((reach / 1000).toFixed(1)),
+    });
+  }
+  return out;
+}
+
+async function personnelTimeline(env, userId) {
+  const rows = (await env.DB.prepare(`SELECT 'report' kind, p.text title, p.created_at happened_at FROM posts p WHERE p.author_id=? AND p.hidden=0
+    UNION ALL SELECT 'evidence', s.title, s.created_at FROM submissions s WHERE s.owner_id=?
+    UNION ALL SELECT 'mission', 'Joined ' || pr.title, pm.created_at FROM program_members pm JOIN programs pr ON pr.id=pm.program_id WHERE pm.user_id=?
+    UNION ALL SELECT 'mission', 'Joined ' || x.title, xm.created_at FROM project_members xm JOIN projects x ON x.id=xm.project_id WHERE xm.user_id=?
+    UNION ALL SELECT 'award', a.title, a.earned_at FROM profile_achievements a WHERE a.user_id=?
+    UNION ALL SELECT 'org', 'Joined ' || o.name, om.created_at FROM organization_members om JOIN organizations o ON o.id=om.organization_id WHERE om.user_id=?
+    ORDER BY happened_at DESC LIMIT 40`).bind(userId, userId, userId, userId, userId, userId).all()).results || [];
+  return rows.map((r) => ({
+    kind: r.kind, title: r.kind === 'report' ? headlineFromText(r.title) : r.title,
+    happened_at: r.happened_at,
+  }));
+}
+
+async function personnelAchievements(env, userId) {
+  const rows = (await env.DB.prepare('SELECT * FROM profile_achievements WHERE user_id=? ORDER BY earned_at DESC LIMIT 40').bind(userId).all()).results || [];
+  const items = rows.map((r) => ({ id: String(r.id), title: r.title, detail: r.detail, kind: r.kind, earned_at: r.earned_at }));
+  const seen = new Set(items.map((i) => i.title));
+  const count = async (sql) => Number((await env.DB.prepare(sql).bind(userId).first()).c || 0);
+  const verifiedSubs = await count("SELECT COUNT(*) c FROM submissions WHERE owner_id=? AND status='VERIFIED'");
+  const programs = await count('SELECT COUNT(*) c FROM program_members WHERE user_id=?');
+  const projects = await count('SELECT COUNT(*) c FROM project_members WHERE user_id=?');
+  const tasks = await count("SELECT COUNT(*) c FROM tasks WHERE assignee_id=? AND status='VERIFIED'");
+  const followers = await followCount(env, userId, 'followee_id');
+  const dynamic = [
+    [verifiedSubs > 0, 'Verified contributor', `${verifiedSubs} verified claim${verifiedSubs === 1 ? '' : 's'} in the impact record.`],
+    [programs > 0, 'Program member', `Active in ${programs} programme${programs === 1 ? '' : 's'}.`],
+    [projects > 0, 'Project builder', `Contributing to ${projects} project${projects === 1 ? '' : 's'}.`],
+    [tasks > 0, 'Task finisher', `${tasks} verified task${tasks === 1 ? '' : 's'} completed.`],
+    [followers >= 10, 'Community builder', `${followers} people follow this work.`],
+  ];
+  for (const [show, title, detail] of dynamic) {
+    if (show && !seen.has(title)) items.push({ id: null, title, detail, kind: 'BADGE', earned_at: null });
+  }
+  return items;
+}
+
+async function personnelOrganizations(env, userId) {
+  const rows = (await env.DB.prepare(`SELECT o.*, om.role member_role, om.title member_title, om.start_date, om.end_date
+    FROM organization_members om JOIN organizations o ON o.id=om.organization_id
+    WHERE om.user_id=? ORDER BY om.created_at DESC`).bind(userId).all()).results || [];
+  return rows.map((o) => {
+    const start = o.start_date ? String(o.start_date).slice(0, 4) : '';
+    const end = o.end_date ? String(o.end_date).slice(0, 4) : 'Present';
+    return {
+      id: String(o.id), name: o.name, type: o.type, role: o.member_title || roleLabel(o.member_role),
+      member_role: o.member_role, description: o.description, logo_url: o.logo_url, cover_url: o.cover_url,
+      country: o.country, city: o.city, verified: !!o.verified, verification_level: o.verification_level,
+      pms_score: Number(o.pms_score || 0), oii_score: Number(o.oii_score || 0),
+      start_date: o.start_date, end_date: o.end_date, duration: start ? `${start} – ${end}` : '',
+    };
+  });
+}
+
+async function personnelRecommendations(env, userId) {
+  const rows = (await env.DB.prepare(`SELECT r.*, u.name author_name, u.picture author_avatar, u.role author_role
+    FROM profile_recommendations r JOIN users u ON u.id=r.author_id
+    WHERE r.user_id=? AND r.status='PUBLISHED' ORDER BY r.created_at DESC LIMIT 40`).bind(userId).all()).results || [];
+  return rows.map((r) => ({
+    id: String(r.id), author_id: String(r.author_id), author_name: r.author_name || 'MASAREEN member',
+    author_avatar: r.author_avatar || null, author_role: roleLabel(r.author_role), relation: r.relation,
+    text: r.text, created_at: r.created_at,
+  }));
+}
+
+async function personnelCoverage(env, userId) {
+  const profile = await env.DB.prepare('SELECT * FROM user_profiles WHERE user_id=?').bind(userId).first();
+  const user = await env.DB.prepare('SELECT * FROM users WHERE id=?').bind(userId).first();
+  const regions = safeArray(profile && profile.coverage_regions).length
+    ? safeArray(profile && profile.coverage_regions) : [user && user.country, user && user.city].filter(Boolean);
+  return {
+    country: (user && user.country) || null, city: (user && user.city) || null,
+    regions, lat: null, lng: null, radius_km: null,
+    countries_covered: new Set(regions.map((r) => typeof r === 'string' ? r : r.country || '')).size,
+    coverage_hours: Number((profile && profile.coverage_hours) || 0),
+  };
+}
+
+async function personnelMedia(env, userId) {
+  const rows = (await env.DB.prepare(`SELECT id, text, media_url, kind, created_at FROM posts
+    WHERE author_id=? AND hidden=0 AND media_url IS NOT NULL AND media_url<>'' ORDER BY created_at DESC LIMIT 50`).bind(userId).all()).results || [];
+  return rows.map((r) => ({ id: String(r.id), url: r.media_url, kind: String(r.kind || 'MEDIA').toLowerCase(),
+    caption: headlineFromText(r.text), created_at: r.created_at }));
+}
+
+async function personnelOpinions(env, userId) {
+  const rows = (await env.DB.prepare(`SELECT * FROM posts WHERE author_id=? AND hidden=0 AND kind='OPINION'
+    ORDER BY created_at DESC LIMIT 50`).bind(userId).all()).results || [];
+  return rows.map((r) => ({ id: String(r.id), headline: headlineFromText(r.text), text: r.text, created_at: r.created_at }));
+}
+
+async function personnelEvidence(env, userId) {
+  const rows = (await env.DB.prepare('SELECT * FROM evidence WHERE owner_id=? ORDER BY created_at DESC LIMIT 50').bind(userId).all()).results || [];
+  return rows.map(evidenceJson);
+}
+
+async function listPersonnel(env, viewer, url) {
+  const orgId = num(url.searchParams.get('org_id'));
+  const q = clean(url.searchParams.get('q') || '', 80);
+  const limit = clamp(Number(url.searchParams.get('limit')) || 30, 1, 50);
+  const bind = [];
+  let sql = 'SELECT DISTINCT u.* FROM users u';
+  if (orgId) { sql += ' JOIN organization_members om ON om.user_id=u.id AND om.organization_id=?'; bind.push(orgId); }
+  sql += ' LEFT JOIN user_profiles p ON p.user_id=u.id WHERE u.role IS NOT NULL';
+  if (q) { sql += ' AND (u.name LIKE ? OR p.headline LIKE ? OR p.summary LIKE ?)'; bind.push(`%${q}%`, `%${q}%`, `%${q}%`); }
+  sql += ' ORDER BY u.name LIMIT ?';
+  bind.push(limit);
+  const rows = (await env.DB.prepare(sql).bind(...bind).all()).results || [];
+  const out = [];
+  for (const row of rows) {
+    const full = await personnelJson(env, row, viewer);
+    out.push({
+      user_id: full.user_id, name: full.name, email: full.email, role: full.role, role_type: full.role_type,
+      avatar_url: full.avatar_url, cover_url: full.cover_url, country: full.country, city: full.city,
+      headline: full.headline, summary: full.summary, skills: full.skills, email_verified: full.email_verified,
+      impact_score: full.impact_score, trust_score: full.trust_score, impact_tier: full.impact_tier,
+      professional_rank: full.professional_rank, is_following: full.is_following, is_me: full.is_me,
+    });
+  }
+  return out;
+}
+
+async function updatePersonnelProfile(req, env, targetId, viewer) {
+  if (!viewer) throw new HttpError(401, 'not_signed_in', 'Please sign in.');
+  if (Number(viewer.id) !== Number(targetId) && !isAdminUser(env, viewer))
+    throw new HttpError(403, 'forbidden', 'You can only edit your own professional profile.');
+  const body = await req.json().catch(() => ({}));
+  const currentUser = await env.DB.prepare('SELECT * FROM users WHERE id=?').bind(targetId).first();
+  const current = await env.DB.prepare('SELECT * FROM user_profiles WHERE user_id=?').bind(targetId).first();
+  const text = (key, max, fallback = '') => body[key] === undefined ? (current && current[key]) || fallback : clean(body[key], max);
+  const list = (key) => {
+    if (body[key] === undefined) return current && current[key] ? current[key] : '[]';
+    const value = profileArray(body[key]);
+    return JSON.stringify(value === null ? safeArray(current && current[key]) : value);
+  };
+  const name = body.full_name !== undefined || body.name !== undefined
+    ? clean(body.full_name || body.name, 90) : currentUser.name || '';
+  const bio = body.bio === undefined ? currentUser.bio || '' : clean(body.bio, 400);
+  const country = body.country === undefined ? currentUser.country || '' : clean(body.country, 60);
+  const city = body.city === undefined ? currentUser.city || '' : clean(body.city, 80);
+  const social = body.social_links === undefined
+    ? JSON.stringify(safeObject(current && current.social_links)) : JSON.stringify(safeObject(body.social_links));
+  const coverageHours = body.coverage_hours === undefined ? Number((current && current.coverage_hours) || 0) : Number(body.coverage_hours) || 0;
+  const visibility = ['PUBLIC', 'CONNECTIONS', 'PRIVATE'].includes(String(body.visibility || '').toUpperCase())
+    ? String(body.visibility).toUpperCase() : (current && current.visibility) || 'PUBLIC';
+  const merged = {
+    headline: text('headline', 120), summary: text('summary', 1200), mission: text('mission', 600), beat: text('beat', 120),
+    expertise: list('expertise'), specializations: list('specializations'), skills: list('skills'), languages: list('languages'),
+    education: list('education'), experience: list('experience'), certificates: list('certificates'), awards: list('awards'),
+    publications: list('publications'), memberships: list('memberships'),
+    employment_status: text('employment_status', 80), availability: text('availability', 80), website: text('website', 200),
+    social_links: social, coverage_regions: list('coverage_regions'), coverage_hours: coverageHours,
+    visibility, updated_at: nowIso(),
+  };
+  const completeness = profileCompleteness({ ...merged, expertise: safeArray(merged.expertise), skills: safeArray(merged.skills),
+    languages: safeArray(merged.languages), education: safeArray(merged.education), experience: safeArray(merged.experience),
+    coverage_regions: safeArray(merged.coverage_regions), social_links: safeObject(merged.social_links) }, { country, city });
+  await env.DB.prepare(`UPDATE users SET name=?, bio=?, country=?, city=? WHERE id=?`)
+    .bind(name || currentUser.name, bio, country, city, targetId).run();
+  await env.DB.prepare(`INSERT INTO user_profiles (user_id, headline, summary, mission, beat, expertise, specializations,
+    skills, languages, education, experience, certificates, awards, publications, memberships, employment_status,
+    availability, website, social_links, coverage_regions, coverage_hours, visibility, completeness, updated_at)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+    ON CONFLICT(user_id) DO UPDATE SET headline=excluded.headline, summary=excluded.summary, mission=excluded.mission,
+    beat=excluded.beat, expertise=excluded.expertise, specializations=excluded.specializations, skills=excluded.skills,
+    languages=excluded.languages, education=excluded.education, experience=excluded.experience,
+    certificates=excluded.certificates, awards=excluded.awards, publications=excluded.publications,
+    memberships=excluded.memberships, employment_status=excluded.employment_status, availability=excluded.availability,
+    website=excluded.website, social_links=excluded.social_links, coverage_regions=excluded.coverage_regions,
+    coverage_hours=excluded.coverage_hours, visibility=excluded.visibility, completeness=excluded.completeness,
+    updated_at=excluded.updated_at`)
+    .bind(targetId, merged.headline, merged.summary, merged.mission, merged.beat, merged.expertise, merged.specializations,
+      merged.skills, merged.languages, merged.education, merged.experience, merged.certificates, merged.awards,
+      merged.publications, merged.memberships, merged.employment_status, merged.availability, merged.website,
+      merged.social_links, merged.coverage_regions, merged.coverage_hours, merged.visibility, completeness, merged.updated_at).run();
+  const updated = await env.DB.prepare('SELECT * FROM users WHERE id=?').bind(targetId).first();
+  return personnelJson(env, updated, viewer);
+}
+
+async function personnelRoutes(req, env, url, viewer) {
+  const path = url.pathname;
+  if ((path === '/api/v1/personnel' || path === '/api/v1/personnel/') && req.method === 'GET')
+    return json(await listPersonnel(env, viewer, url));
+  const match = /^\/api\/v1\/personnel\/(me|\d+)(?:\/([a-z-]+))?$/.exec(path);
+  if (!match) return null;
+  const targetId = match[1] === 'me' ? (viewer && viewer.id) : Number(match[1]);
+  if (!targetId) throw new HttpError(401, 'not_signed_in', 'Please sign in.');
+  const user = await env.DB.prepare('SELECT * FROM users WHERE id=?').bind(targetId).first();
+  if (!user) throw new HttpError(404, 'user_not_found', 'Profile not found.');
+  const sub = match[2] || '';
+  if (!sub && req.method === 'GET') return json(await personnelJson(env, user, viewer));
+  if (!sub && req.method === 'PATCH') return json(await updatePersonnelProfile(req, env, targetId, viewer));
+  if (sub === 'follow' && req.method === 'POST') {
+    if (!viewer) throw new HttpError(401, 'not_signed_in', 'Please sign in.');
+    if (Number(viewer.id) === Number(targetId)) throw new HttpError(400, 'self_follow', 'You cannot follow yourself.');
+    const has = await env.DB.prepare('SELECT 1 x FROM follows WHERE follower_id=? AND followee_id=?').bind(viewer.id, targetId).first();
+    if (has) await env.DB.prepare('DELETE FROM follows WHERE follower_id=? AND followee_id=?').bind(viewer.id, targetId).run();
+    else {
+      await env.DB.prepare('INSERT INTO follows (follower_id,followee_id,created_at) VALUES (?,?,?)').bind(viewer.id, targetId, nowIso()).run();
+      await notify(env, targetId, 'follow', `${viewer.name || 'Someone'} started following you`, 'Open their profile to follow back.', viewer.id, null);
+    }
+    return json({ ok: true, following: !has, followers_count: await followCount(env, targetId, 'followee_id') });
+  }
+  if (sub === 'endorse' && req.method === 'POST') {
+    if (!viewer) throw new HttpError(401, 'not_signed_in', 'Please sign in.');
+    const body = await req.json().catch(() => ({}));
+    const skill = clean(body.skill, 80);
+    if (!skill) throw new HttpError(400, 'skill_required', 'Choose a skill to endorse.');
+    if (Number(viewer.id) === Number(targetId)) throw new HttpError(400, 'self_endorse', 'You cannot endorse yourself.');
+    await env.DB.prepare('INSERT OR IGNORE INTO profile_endorsements (user_id,endorser_id,skill,created_at) VALUES (?,?,?,?)')
+      .bind(targetId, viewer.id, skill, nowIso()).run();
+    const row = await env.DB.prepare('SELECT COUNT(*) c FROM profile_endorsements WHERE user_id=? AND skill=?').bind(targetId, skill).first();
+    return json({ ok: true, skill, endorsements: Number(row.c || 0) });
+  }
+  if (sub === 'reports' && req.method === 'GET') return json(await personnelReports(env, targetId, url.searchParams.get('limit')));
+  if (sub === 'analytics' && req.method === 'GET') return json({ series: await personnelAnalytics(env, targetId) });
+  if (sub === 'timeline' && req.method === 'GET') return json(await personnelTimeline(env, targetId));
+  if (sub === 'achievements' && req.method === 'GET') return json(await personnelAchievements(env, targetId));
+  if (sub === 'organizations' && req.method === 'GET') return json(await personnelOrganizations(env, targetId));
+  if (sub === 'recommendations' && req.method === 'GET') return json(await personnelRecommendations(env, targetId));
+  if (sub === 'coverage' && req.method === 'GET') return json(await personnelCoverage(env, targetId));
+  if (sub === 'media' && req.method === 'GET') return json(await personnelMedia(env, targetId));
+  if (sub === 'opinions' && req.method === 'GET') return json(await personnelOpinions(env, targetId));
+  if (sub === 'evidence' && req.method === 'GET') return json(await personnelEvidence(env, targetId));
+  if (sub === 'overview' && req.method === 'GET') {
+    const full = await personnelJson(env, user, viewer);
+    return json({ profile: full, organizations: await personnelOrganizations(env, targetId),
+      achievements: await personnelAchievements(env, targetId), recommendations: await personnelRecommendations(env, targetId) });
+  }
+  throw new HttpError(404, 'not_found', 'Unknown profile route.');
+}
+
 async function listStoryPacks(env) {
   const rows = (await env.DB.prepare(`SELECT sp.*, u.name author_name, e.url evidence_url, e.kind evidence_kind
     FROM story_packs sp LEFT JOIN users u ON u.id=sp.author_id
@@ -1475,6 +1987,8 @@ export async function socialRoutes(req, env, ctx) {
     const pipelineMatch = /^\/api\/v1\/verification\/pipelines\/(\d+)$/.exec(path);
     if (pipelineMatch && req.method === 'GET') return await getPipeline(req, env, Number(pipelineMatch[1]));
     if (path === '/api/v1/story-packs' && req.method === 'GET') return await listStoryPacks(env);
+    const personnelHandled = await personnelRoutes(req, env, url, await currentUser(req, env));
+    if (personnelHandled) return personnelHandled;
     if (path.startsWith('/api/v1/notifications') || path === '/api/v1/users/me/notifications') {
       if (path === '/api/v1/users/me/notifications' && req.method === 'GET') {
         const viewer = await requireUser(req, env);

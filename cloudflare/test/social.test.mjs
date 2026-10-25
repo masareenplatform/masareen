@@ -364,3 +364,76 @@ test('evidence, submissions and verification pipeline produce a working passport
   assert.equal(passport.verified_claims, 0);
 });
 
+test('professional profile domain: edit, aggregate, endorse, follow and discover', async () => {
+  const env = mkEnv();
+  const token = await signup(env, 'layla@example.com', 'Layla Profile');
+  const me = await (await call(env, 'GET', '/api/v1/users/me', null, token)).json();
+
+  const patched = await call(env, 'PATCH', `/api/v1/personnel/${me.id}`, {
+    headline: 'Environmental Journalist',
+    summary: 'Independent climate and water reporting across the region.',
+    mission: 'Make evidence visible.',
+    beat: 'Climate & water',
+    expertise: ['Climate policy', 'Investigative reporting'],
+    skills: ['Data journalism', 'Interviewing'],
+    languages: ['Arabic', 'English'],
+    coverage_regions: ['Lebanon', 'Jordan'],
+    employment_status: 'Journalist',
+    availability: 'Open to collaborations',
+    website: 'https://example.org/layla',
+    social_links: { linkedin: 'https://linkedin.com/in/layla' },
+    coverage_hours: 120,
+  }, token);
+  assert.equal(patched.status, 200);
+  const profile = await patched.json();
+  assert.equal(profile.headline, 'Environmental Journalist');
+  assert.equal(profile.skills[0].name, 'Data journalism');
+  assert.equal(profile.pms.total > 0, true);
+  assert.ok(profile.completeness > 50);
+  assert.equal(profile.coverage_regions.length, 2);
+
+  const post = await (await call(env, 'POST', '/api/v1/posts', {
+    text: 'A verified field investigation into coastal water use and the communities adapting to it.',
+    kind: 'IMPACT', sdg: 6,
+  }, token)).json();
+  const reports = await (await call(env, 'GET', `/api/v1/personnel/${me.id}/reports`, null, token)).json();
+  assert.equal(reports.length, 1);
+  assert.equal(reports[0].sdg, 6);
+  assert.equal(reports[0].verification_status, 'REVIEW');
+
+  const analytics = await (await call(env, 'GET', `/api/v1/personnel/${me.id}/analytics`, null, token)).json();
+  assert.equal(analytics.series.length, 6);
+  assert.ok(analytics.series.some((p) => p.reach > 0));
+
+  const timeline = await (await call(env, 'GET', `/api/v1/personnel/${me.id}/timeline`, null, token)).json();
+  assert.ok(timeline.some((t) => t.kind === 'report'));
+
+  const coverage = await (await call(env, 'GET', `/api/v1/personnel/${me.id}/coverage`, null, token)).json();
+  assert.equal(coverage.coverage_hours, 120);
+  assert.equal(coverage.countries_covered, 2);
+
+  const other = await signup(env, 'reader-profile@example.com', 'Profile Reader');
+  const otherMe = await (await call(env, 'GET', '/api/v1/users/me', null, other)).json();
+  const followed = await (await call(env, 'POST', `/api/v1/personnel/${me.id}/follow`, null, other)).json();
+  assert.equal(followed.following, true);
+  assert.equal(followed.followers_count, 1);
+
+  const endorsed = await (await call(env, 'POST', `/api/v1/personnel/${me.id}/endorse`, { skill: 'Data journalism' }, other)).json();
+  assert.equal(endorsed.endorsements, 1);
+  const refreshed = await (await call(env, 'GET', `/api/v1/personnel/${me.id}`, null, other)).json();
+  assert.equal(refreshed.skills.find((s) => s.name === 'Data journalism').endorsements, 1);
+  assert.equal(refreshed.is_following, true);
+  assert.equal(refreshed.email, '');
+
+  const list = await (await call(env, 'GET', '/api/v1/personnel?q=Layla', null, other)).json();
+  assert.equal(list.length, 1);
+  assert.equal(list[0].headline, 'Environmental Journalist');
+
+  const forbidden = await call(env, 'PATCH', `/api/v1/personnel/${me.id}`, { headline: 'Hijacked' }, other);
+  assert.equal(forbidden.status, 403);
+  const selfEndorse = await call(env, 'POST', `/api/v1/personnel/${me.id}/endorse`, { skill: 'Data journalism' }, token);
+  assert.equal(selfEndorse.status, 400);
+  assert.ok(otherMe.id !== me.id);
+  assert.ok(post.id);
+});
+
