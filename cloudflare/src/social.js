@@ -142,9 +142,17 @@ async function userJson(env, u, viewer) {
     env.DB.prepare('SELECT COUNT(*) c FROM post_impact_votes WHERE user_id=?').bind(u.id).first(),
   ]);
   let isFollowing = false;
+  let blockedByMe = false;
+  let blocksMe = false;
   if (viewer && viewer.id !== u.id) {
-    const f = await env.DB.prepare('SELECT 1 x FROM follows WHERE follower_id=? AND followee_id=?').bind(viewer.id, u.id).first();
+    const [f, b1, b2] = await Promise.all([
+      env.DB.prepare('SELECT 1 x FROM follows WHERE follower_id=? AND followee_id=?').bind(viewer.id, u.id).first(),
+      env.DB.prepare('SELECT 1 x FROM user_blocks WHERE blocker_id=? AND blocked_id=?').bind(viewer.id, u.id).first(),
+      env.DB.prepare('SELECT 1 x FROM user_blocks WHERE blocker_id=? AND blocked_id=?').bind(u.id, viewer.id).first(),
+    ]);
     isFollowing = !!f;
+    blockedByMe = !!b1;
+    blocksMe = !!b2;
   }
   const name = u.name || (u.email ? u.email.split('@')[0] : 'Member');
   return {
@@ -182,6 +190,9 @@ async function userJson(env, u, viewer) {
     following_count: following,
     posts_count: posts.c || 0,
     is_following: isFollowing,
+    blocked_by_me: blockedByMe,
+    blocks_me: blocksMe,
+    can_message: !!viewer && viewer.id !== u.id && !blockedByMe && !blocksMe,
     is_me: !!(viewer && viewer.id === u.id),
   };
 }
@@ -262,7 +273,7 @@ function postMedia(r) {
   return out;
 }
 
-function postJson(r, likedByMe, ranking) {
+function postJson(r, likedByMe, ranking, bookmarkedByMe = false) {
   let factors = null;
   if (r.confidence_factors) { try { factors = JSON.parse(r.confidence_factors); } catch { factors = null; } }
   const media = postMedia(r);
@@ -292,6 +303,8 @@ function postJson(r, likedByMe, ranking) {
     comments: Number(r.comment_count || 0),
     shares: Number(r.share_count || 0),
     likedByMe: !!likedByMe,
+    bookmarkedByMe: !!bookmarkedByMe,
+    edited_at: r.edited_at || null,
     createdAt: r.created_at,
     confidence_score: r.confidence_score == null ? null : Number(r.confidence_score),
     confidence_label: r.confidence_label || null,
@@ -543,20 +556,28 @@ async function listPosts(req, env, url) {
   if (authorId) { where.push('p.author_id=?'); args.push(authorId); }
   if (kind) { where.push('p.kind=?'); args.push(kind); }
   if (sdg) { where.push('p.sdg=?'); args.push(sdg); }
+  if (viewer) {
+    where.push(`NOT EXISTS (SELECT 1 FROM user_blocks b WHERE
+      (b.blocker_id=? AND b.blocked_id=p.author_id) OR (b.blocker_id=p.author_id AND b.blocked_id=?))`);
+    args.push(viewer.id, viewer.id);
+  }
   const rows = (await env.DB.prepare(`${POST_SELECT} WHERE ${where.join(' AND ')} ORDER BY p.created_at DESC LIMIT 400`)
     .bind(...args).all()).results || [];
 
   const liked = new Set();
+  const bookmarked = new Set();
   const following = new Set();
   const seen = new Set();
   if (viewer) {
-    const [likes, follows, views] = await Promise.all([
+    const [likes, marks, follows, views] = await Promise.all([
       env.DB.prepare('SELECT post_id FROM post_likes WHERE user_id=?').bind(viewer.id).all(),
+      env.DB.prepare('SELECT post_id FROM post_bookmarks WHERE user_id=?').bind(viewer.id).all(),
       env.DB.prepare('SELECT followee_id FROM follows WHERE follower_id=?').bind(viewer.id).all(),
       env.DB.prepare('SELECT post_id FROM post_views WHERE user_id=? AND seen_at>?')
         .bind(viewer.id, new Date(Date.now() - 2 * 86400000).toISOString()).all(),
     ]);
     for (const x of likes.results || []) liked.add(Number(x.post_id));
+    for (const x of marks.results || []) bookmarked.add(Number(x.post_id));
     for (const x of follows.results || []) following.add(Number(x.followee_id));
     for (const x of views.results || []) seen.add(Number(x.post_id));
     viewer.__interests = new Set((viewer.interest || '').split(/[,\s]+/).map((s) => parseInt(s, 10)).filter((n) => n >= 1 && n <= 17));
@@ -571,7 +592,8 @@ async function listPosts(req, env, url) {
   }
 
   const ranked = rankCandidates(list, { viewer, liked, following, seen, mode, offset, limit });
-  const out = ranked.map((item) => postJson(item.row, liked.has(Number(item.row.id)), { score: item.score, reason: item.reason, reasons: item.reasons }));
+  const out = ranked.map((item) => postJson(item.row, liked.has(Number(item.row.id)),
+    { score: item.score, reason: item.reason, reasons: item.reasons }, bookmarked.has(Number(item.row.id))));
 
   if (viewer && out.length) {
     const at = nowIso();
@@ -657,22 +679,211 @@ async function addComment(req, env, id) {
   if (!text) throw new HttpError(400, 'empty_comment', 'Write a comment first.');
   const post = await env.DB.prepare('SELECT id, author_id FROM posts WHERE id=? AND hidden=0').bind(id).first();
   if (!post) throw new HttpError(404, 'post_not_found', 'This post no longer exists.');
+  let parentId = num(b.parent_id || b.parentId);
+  let parent = null;
+  if (parentId) {
+    parent = await env.DB.prepare('SELECT id,user_id,post_id FROM post_comments WHERE id=? AND post_id=? AND hidden=0')
+      .bind(parentId, id).first();
+    if (!parent) throw new HttpError(404, 'comment_not_found', 'That comment no longer exists.');
+    parentId = Number(parent.id);
+  } else {
+    parentId = null;
+  }
   const at = nowIso();
-  const r = await env.DB.prepare('INSERT INTO post_comments (post_id,user_id,text,created_at) VALUES (?,?,?,?)')
-    .bind(id, u.id, text, at).run();
+  const r = await env.DB.prepare('INSERT INTO post_comments (post_id,user_id,parent_id,text,created_at) VALUES (?,?,?,?,?)')
+    .bind(id, u.id, parentId, text, at).run();
   await env.DB.prepare('UPDATE posts SET comment_count=comment_count+1 WHERE id=?').bind(id).run();
   await notify(env, post.author_id, 'comment', `${u.name || 'Someone'} commented on your update`, text, u.id, id);
+  if (parent && Number(parent.user_id) !== Number(post.author_id))
+    await notify(env, parent.user_id, 'reply', `${u.name || 'Someone'} replied to your comment`, text, u.id, id);
   await recomputeImpact(env, id);
-  return json({ id: String(r.meta.last_row_id), text, author_id: String(u.id), author_name: u.name,
-    author_handle: u.handle || handleFor(u.name, u.id), created_at: at }, 201);
+  return json({ id: String(r.meta.last_row_id), text, parent_id: parentId == null ? null : String(parentId),
+    author_id: String(u.id), author_name: u.name, author_handle: u.handle || handleFor(u.name, u.id),
+    like_count: 0, liked_by_me: false, created_at: at }, 201);
 }
 
 async function listComments(req, env, id) {
-  const rows = (await env.DB.prepare(`SELECT c.*, u.name author_name, u.handle author_handle
-    FROM post_comments c JOIN users u ON u.id=c.user_id WHERE c.post_id=? AND c.hidden=0 ORDER BY c.created_at ASC LIMIT 200`)
-    .bind(id).all()).results || [];
-  return json(rows.map((c) => ({ id: String(c.id), text: c.text, author_id: String(c.user_id),
-    author_name: c.author_name, author_handle: c.author_handle, created_at: c.created_at })));
+  const viewer = await currentUser(req, env);
+  const rows = (await env.DB.prepare(`SELECT c.*, u.name author_name, u.handle author_handle, u.picture author_picture,
+      u.email_verified author_verified
+    FROM post_comments c JOIN users u ON u.id=c.user_id WHERE c.post_id=? AND c.hidden=0
+    ORDER BY c.created_at ASC LIMIT 300`).bind(id).all()).results || [];
+  const liked = new Set();
+  if (viewer && rows.length) {
+    const marks = (await env.DB.prepare(`SELECT comment_id FROM post_comment_likes WHERE user_id=? AND comment_id IN (${rows.map(() => '?').join(',')})`)
+      .bind(viewer.id, ...rows.map((c) => c.id)).all()).results || [];
+    for (const m of marks) liked.add(Number(m.comment_id));
+  }
+  return json(rows.map((c) => ({ id: String(c.id), text: c.text, parent_id: c.parent_id == null ? null : String(c.parent_id),
+    author_id: String(c.user_id), author_name: c.author_name, author_handle: c.author_handle,
+    author_picture: c.author_picture || null, author_verified: !!c.author_verified,
+    like_count: Number(c.like_count || 0), liked_by_me: liked.has(Number(c.id)), created_at: c.created_at })));
+}
+
+async function toggleCommentLike(req, env, id) {
+  const u = await requireUser(req, env);
+  const comment = await env.DB.prepare('SELECT * FROM post_comments WHERE id=? AND hidden=0').bind(id).first();
+  if (!comment) throw new HttpError(404, 'comment_not_found', 'That comment no longer exists.');
+  const has = await env.DB.prepare('SELECT 1 x FROM post_comment_likes WHERE comment_id=? AND user_id=?').bind(id, u.id).first();
+  if (has) {
+    await env.DB.prepare('DELETE FROM post_comment_likes WHERE comment_id=? AND user_id=?').bind(id, u.id).run();
+    await env.DB.prepare('UPDATE post_comments SET like_count=MAX(0,like_count-1) WHERE id=?').bind(id).run();
+  } else {
+    await env.DB.prepare('INSERT INTO post_comment_likes (comment_id,user_id,created_at) VALUES (?,?,?)')
+      .bind(id, u.id, nowIso()).run();
+    await env.DB.prepare('UPDATE post_comments SET like_count=like_count+1 WHERE id=?').bind(id).run();
+    await notify(env, comment.user_id, 'comment_like', `${u.name || 'Someone'} liked your comment`, comment.text, u.id, comment.post_id);
+  }
+  const row = await env.DB.prepare('SELECT like_count FROM post_comments WHERE id=?').bind(id).first();
+  return json({ ok: true, liked: !has, likes: Number(row.like_count || 0) });
+}
+
+async function deleteComment(req, env, id) {
+  const u = await requireUser(req, env);
+  const comment = await env.DB.prepare('SELECT * FROM post_comments WHERE id=? AND hidden=0').bind(id).first();
+  if (!comment) throw new HttpError(404, 'comment_not_found', 'That comment no longer exists.');
+  if (Number(comment.user_id) !== Number(u.id) && !isAdminUser(env, u))
+    throw new HttpError(403, 'forbidden', 'You can only delete your own comment.');
+  await env.DB.prepare('UPDATE post_comments SET hidden=1 WHERE id=?').bind(id).run();
+  await env.DB.prepare('UPDATE post_comments SET hidden=1 WHERE parent_id=?').bind(id).run();
+  await env.DB.prepare(`UPDATE posts SET comment_count=(SELECT COUNT(*) FROM post_comments
+    WHERE post_id=? AND hidden=0) WHERE id=?`).bind(comment.post_id, comment.post_id).run();
+  return json({ ok: true, deleted: true });
+}
+
+async function toggleBookmark(req, env, id) {
+  const u = await requireUser(req, env);
+  const post = await env.DB.prepare('SELECT id FROM posts WHERE id=? AND hidden=0').bind(id).first();
+  if (!post) throw new HttpError(404, 'post_not_found', 'This post no longer exists.');
+  const has = await env.DB.prepare('SELECT 1 x FROM post_bookmarks WHERE user_id=? AND post_id=?').bind(u.id, id).first();
+  if (has) await env.DB.prepare('DELETE FROM post_bookmarks WHERE user_id=? AND post_id=?').bind(u.id, id).run();
+  else await env.DB.prepare('INSERT INTO post_bookmarks (user_id,post_id,created_at) VALUES (?,?,?)')
+    .bind(u.id, id, nowIso()).run();
+  return json({ ok: true, bookmarked: !has });
+}
+
+async function listBookmarks(req, env, url) {
+  const u = await requireUser(req, env);
+  const limit = clamp(parseInt(url.searchParams.get('limit') || '40', 10) || 40, 1, 60);
+  const offset = Math.max(0, parseInt(url.searchParams.get('offset') || '0', 10) || 0);
+  const rows = (await env.DB.prepare(`SELECT p.*, u.name author_name, u.handle author_handle, u.picture author_picture,
+      u.role author_role, u.email_verified author_verified, b.created_at bookmarked_at
+    FROM post_bookmarks b JOIN posts p ON p.id=b.post_id JOIN users u ON u.id=p.author_id
+    WHERE b.user_id=? AND p.hidden=0
+      AND NOT EXISTS (SELECT 1 FROM user_blocks bl WHERE
+        (bl.blocker_id=? AND bl.blocked_id=p.author_id) OR (bl.blocker_id=p.author_id AND bl.blocked_id=?))
+    ORDER BY b.created_at DESC LIMIT ? OFFSET ?`)
+    .bind(u.id, u.id, u.id, limit, offset).all()).results || [];
+  const liked = new Set((await env.DB.prepare('SELECT post_id FROM post_likes WHERE user_id=?').bind(u.id).all()).results
+    .map((x) => Number(x.post_id)));
+  return json(rows.map((r) => postJson(r, liked.has(Number(r.id)), null, true)));
+}
+
+async function editPost(req, env, id) {
+  const u = await requireUser(req, env);
+  const post = await env.DB.prepare('SELECT * FROM posts WHERE id=? AND hidden=0').bind(id).first();
+  if (!post) throw new HttpError(404, 'post_not_found', 'This post no longer exists.');
+  if (Number(post.author_id) !== Number(u.id) && !isAdminUser(env, u))
+    throw new HttpError(403, 'forbidden', 'You can only edit your own post.');
+  const b = await req.json().catch(() => ({}));
+  const text = clean(b.text, 2000);
+  if (text.length < 2) throw new HttpError(400, 'empty_post', 'Write something before saving.');
+  const kind = clean(b.kind || b.type, 30).toUpperCase() || post.kind;
+  const sdg = b.sdg === undefined ? post.sdg : num(b.sdg);
+  await env.DB.prepare('UPDATE posts SET text=?, kind=?, sdg=?, edited_at=?, updated_at=? WHERE id=?')
+    .bind(text, kind, sdg && sdg >= 1 && sdg <= 17 ? sdg : null, nowIso(), nowIso(), id).run();
+  const row = await getPostRow(env, id);
+  const liked = await env.DB.prepare('SELECT 1 x FROM post_likes WHERE post_id=? AND user_id=?').bind(id, u.id).first();
+  const marked = await env.DB.prepare('SELECT 1 x FROM post_bookmarks WHERE post_id=? AND user_id=?').bind(id, u.id).first();
+  return json(postJson(row, !!liked, null, !!marked));
+}
+
+async function deletePost(req, env, id) {
+  const u = await requireUser(req, env);
+  const post = await env.DB.prepare('SELECT * FROM posts WHERE id=? AND hidden=0').bind(id).first();
+  if (!post) throw new HttpError(404, 'post_not_found', 'This post no longer exists.');
+  if (Number(post.author_id) !== Number(u.id) && !isAdminUser(env, u))
+    throw new HttpError(403, 'forbidden', 'You can only delete your own post.');
+  await env.DB.prepare('UPDATE posts SET hidden=1, updated_at=? WHERE id=?').bind(nowIso(), id).run();
+  return json({ ok: true, deleted: true });
+}
+
+const REPORT_REASONS = new Set(['spam', 'harassment', 'misinformation', 'violence', 'self_harm', 'other']);
+
+async function reportTarget(req, env, targetType, targetId) {
+  const u = await requireUser(req, env);
+  const b = await req.json().catch(() => ({}));
+  const reason = clean(b.reason, 40).toLowerCase();
+  if (!REPORT_REASONS.has(reason)) throw new HttpError(400, 'invalid_reason', 'Choose a valid report reason.');
+  const table = targetType === 'post' ? 'posts' : targetType === 'comment' ? 'post_comments' : 'users';
+  const target = await env.DB.prepare(`SELECT id FROM ${table} WHERE id=?`).bind(targetId).first();
+  if (!target) throw new HttpError(404, 'target_not_found', 'The reported content no longer exists.');
+  const details = clean(b.details, 500) || null;
+  await env.DB.prepare('INSERT INTO reports (reporter_id,target_type,target_id,reason,details,status,created_at) VALUES (?,?,?,?,?,?,?)')
+    .bind(u.id, targetType, targetId, reason, details, 'OPEN', nowIso()).run();
+  return json({ ok: true, reported: true }, 201);
+}
+
+async function searchSocial(req, env, url) {
+  const q = clean(url.searchParams.get('q'), 80);
+  if (q.length < 2) throw new HttpError(400, 'missing_query', 'Type at least two characters to search.');
+  const viewer = await currentUser(req, env);
+  const like = `%${q.replace(/[%_]/g, '')}%`;
+  const users = (await env.DB.prepare(`SELECT id,name,handle,picture,role,bio,country,city,email_verified
+    FROM users WHERE (name LIKE ? OR handle LIKE ? OR bio LIKE ? OR country LIKE ? OR city LIKE ?)
+      AND NOT EXISTS (SELECT 1 FROM user_blocks b WHERE
+        (b.blocker_id=? AND b.blocked_id=users.id) OR (b.blocker_id=users.id AND b.blocked_id=?))
+    ORDER BY email_verified DESC, name ASC LIMIT 20`)
+    .bind(like, like, like, like, like, viewer ? viewer.id : -1, viewer ? viewer.id : -1).all()).results || [];
+  const postWhere = ['p.hidden=0', 'p.text LIKE ?'];
+  const postArgs = [like];
+  if (viewer) {
+    postWhere.push(`NOT EXISTS (SELECT 1 FROM user_blocks b WHERE
+      (b.blocker_id=? AND b.blocked_id=p.author_id) OR (b.blocker_id=p.author_id AND b.blocked_id=?))`);
+    postArgs.push(viewer.id, viewer.id);
+  }
+  const posts = (await env.DB.prepare(`${POST_SELECT} WHERE ${postWhere.join(' AND ')}
+    ORDER BY p.created_at DESC LIMIT 30`).bind(...postArgs).all()).results || [];
+  const liked = new Set();
+  const marked = new Set();
+  if (viewer && posts.length) {
+    const ids = posts.map((p) => p.id);
+    const ph = ids.map(() => '?').join(',');
+    const [l, m] = await Promise.all([
+      env.DB.prepare(`SELECT post_id FROM post_likes WHERE user_id=? AND post_id IN (${ph})`).bind(viewer.id, ...ids).all(),
+      env.DB.prepare(`SELECT post_id FROM post_bookmarks WHERE user_id=? AND post_id IN (${ph})`).bind(viewer.id, ...ids).all(),
+    ]);
+    for (const x of l.results || []) liked.add(Number(x.post_id));
+    for (const x of m.results || []) marked.add(Number(x.post_id));
+  }
+  const recent = (await env.DB.prepare("SELECT text FROM posts WHERE hidden=0 AND text LIKE '%#%' ORDER BY created_at DESC LIMIT 300").all()).results || [];
+  const counts = new Map();
+  for (const r of recent) for (const m of String(r.text || '').matchAll(/#([\p{L}\p{N}_]{2,40})/gu)) {
+    const tag = m[1].toLowerCase();
+    counts.set(tag, (counts.get(tag) || 0) + 1);
+  }
+  return json({
+    query: q,
+    users: users.map((u) => ({ id: String(u.id), name: u.name, full_name: u.name, handle: u.handle || handleFor(u.name, u.id),
+      avatar_url: u.picture || null, role: u.role, bio: u.bio || '', country: u.country || null, city: u.city || null,
+      verified: !!u.email_verified })),
+    posts: posts.map((p) => postJson(p, liked.has(Number(p.id)), null, marked.has(Number(p.id)))),
+    hashtags: [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 12)
+      .map(([tag, count]) => ({ tag, count })),
+  });
+}
+
+async function trendingHashtags(env) {
+  const rows = (await env.DB.prepare("SELECT text, created_at FROM posts WHERE hidden=0 AND text LIKE '%#%' ORDER BY created_at DESC LIMIT 500").all()).results || [];
+  const counts = new Map();
+  for (const r of rows) for (const m of String(r.text || '').matchAll(/#([\p{L}\p{N}_]{2,40})/gu)) {
+    const tag = m[1].toLowerCase();
+    const cur = counts.get(tag) || { tag, count: 0, latest: r.created_at };
+    cur.count += 1;
+    if (String(r.created_at) > String(cur.latest)) cur.latest = r.created_at;
+    counts.set(tag, cur);
+  }
+  return json([...counts.values()].sort((a, b) => b.count - a.count).slice(0, 20));
 }
 
 async function castImpactVote(req, env, id) {
@@ -703,6 +914,119 @@ async function sharePost(req, env, id) {
   await recomputeImpact(env, id);
   const row = await getPostRow(env, id);
   return json({ ok: true, shares: row.share_count });
+}
+
+async function blockedBetween(env, a, b) {
+  return !!(await env.DB.prepare(`SELECT 1 x FROM user_blocks WHERE
+    (blocker_id=? AND blocked_id=?) OR (blocker_id=? AND blocked_id=?)`).bind(a, b, b, a).first());
+}
+
+function messageJson(m, viewerId) {
+  return {
+    id: String(m.id), conversation_id: String(m.conversation_id),
+    sender_id: String(m.sender_id), body: m.body,
+    read: !!m.read_at, read_at: m.read_at || null,
+    mine: Number(m.sender_id) === Number(viewerId),
+    created_at: m.created_at,
+  };
+}
+
+async function conversationSummary(env, c, viewerId) {
+  const peerId = Number(c.user_a) === Number(viewerId) ? Number(c.user_b) : Number(c.user_a);
+  const [peer, last, unread] = await Promise.all([
+    env.DB.prepare('SELECT id,name,handle,picture,role,email_verified FROM users WHERE id=?').bind(peerId).first(),
+    env.DB.prepare('SELECT * FROM messages WHERE conversation_id=? ORDER BY created_at DESC LIMIT 1').bind(c.id).first(),
+    env.DB.prepare('SELECT COUNT(*) c FROM messages WHERE conversation_id=? AND sender_id<>? AND read_at IS NULL')
+      .bind(c.id, viewerId).first(),
+  ]);
+  if (!peer) return null;
+  return {
+    id: String(c.id),
+    peer: { id: String(peer.id), name: peer.name, full_name: peer.name,
+      handle: peer.handle || handleFor(peer.name, peer.id), avatar_url: peer.picture || null,
+      role: peer.role, verified: !!peer.email_verified },
+    last_message: last ? last.body : null,
+    last_message_at: last ? last.created_at : (c.last_message_at || c.created_at),
+    last_sender_id: last ? String(last.sender_id) : null,
+    unread_count: Number(unread.c || 0),
+    created_at: c.created_at,
+  };
+}
+
+async function messagesRoutes(req, env, url, viewer) {
+  const path = url.pathname;
+  if (!viewer) throw new HttpError(401, 'not_signed_in', 'Please sign in to use messages.');
+  if (path === '/api/v1/messages/unread' && req.method === 'GET') {
+    const row = await env.DB.prepare(`SELECT COUNT(*) c FROM messages m JOIN conversations c ON c.id=m.conversation_id
+      WHERE (c.user_a=? OR c.user_b=?) AND m.sender_id<>? AND m.read_at IS NULL`).bind(viewer.id, viewer.id, viewer.id).first();
+    return json({ count: Number(row.c || 0) });
+  }
+  if (path === '/api/v1/messages/conversations' && req.method === 'GET') {
+    const rows = (await env.DB.prepare(`SELECT * FROM conversations WHERE user_a=? OR user_b=?
+      ORDER BY COALESCE(last_message_at,created_at) DESC LIMIT 100`).bind(viewer.id, viewer.id).all()).results || [];
+    const out = [];
+    for (const c of rows) {
+      const peerId = Number(c.user_a) === Number(viewer.id) ? Number(c.user_b) : Number(c.user_a);
+      if (await blockedBetween(env, viewer.id, peerId)) continue;
+      const summary = await conversationSummary(env, c, viewer.id);
+      if (summary) out.push(summary);
+    }
+    return json(out);
+  }
+  if (path === '/api/v1/messages/conversations' && req.method === 'POST') {
+    const b = await req.json().catch(() => ({}));
+    const target = num(b.user_id || b.userId);
+    if (!target) throw new HttpError(400, 'missing_user', 'Choose someone to message.');
+    if (target === viewer.id) throw new HttpError(400, 'self_message', 'You cannot message yourself.');
+    const peer = await env.DB.prepare('SELECT id FROM users WHERE id=?').bind(target).first();
+    if (!peer) throw new HttpError(404, 'user_not_found', 'Profile not found.');
+    if (await blockedBetween(env, viewer.id, target))
+      throw new HttpError(403, 'blocked', 'Messaging is unavailable with this account.');
+    const [a, bId] = [Math.min(viewer.id, target), Math.max(viewer.id, target)];
+    let c = await env.DB.prepare('SELECT * FROM conversations WHERE user_a=? AND user_b=?').bind(a, bId).first();
+    if (!c) {
+      await env.DB.prepare('INSERT INTO conversations (user_a,user_b,last_message_at,created_at) VALUES (?,?,?,?)')
+        .bind(a, bId, null, nowIso()).run();
+      c = await env.DB.prepare('SELECT * FROM conversations WHERE user_a=? AND user_b=?').bind(a, bId).first();
+    }
+    return json(await conversationSummary(env, c, viewer.id), 201);
+  }
+  const match = /^\/api\/v1\/messages\/conversations\/(\d+)(\/read)?$/.exec(path);
+  if (!match) return null;
+  const conversationId = Number(match[1]);
+  const c = await env.DB.prepare('SELECT * FROM conversations WHERE id=?').bind(conversationId).first();
+  if (!c) throw new HttpError(404, 'conversation_not_found', 'Conversation not found.');
+  if (Number(c.user_a) !== Number(viewer.id) && Number(c.user_b) !== Number(viewer.id))
+    throw new HttpError(403, 'forbidden', 'This conversation is private.');
+  const peerId = Number(c.user_a) === Number(viewer.id) ? Number(c.user_b) : Number(c.user_a);
+  if (match[2] === '/read' && req.method === 'POST') {
+    await env.DB.prepare('UPDATE messages SET read_at=? WHERE conversation_id=? AND sender_id<>? AND read_at IS NULL')
+      .bind(nowIso(), conversationId, viewer.id).run();
+    return json({ ok: true });
+  }
+  if (req.method === 'GET') {
+    await env.DB.prepare('UPDATE messages SET read_at=? WHERE conversation_id=? AND sender_id<>? AND read_at IS NULL')
+      .bind(nowIso(), conversationId, viewer.id).run();
+    const rows = (await env.DB.prepare('SELECT * FROM messages WHERE conversation_id=? ORDER BY created_at ASC LIMIT 300')
+      .bind(conversationId).all()).results || [];
+    const summary = await conversationSummary(env, c, viewer.id);
+    return json({ conversation: summary, messages: rows.map((m) => messageJson(m, viewer.id)) });
+  }
+  if (req.method === 'POST') {
+    if (await blockedBetween(env, viewer.id, peerId))
+      throw new HttpError(403, 'blocked', 'Messaging is unavailable with this account.');
+    const b = await req.json().catch(() => ({}));
+    const body = clean(b.text || b.body, 2000);
+    if (!body) throw new HttpError(400, 'empty_message', 'Write a message first.');
+    const at = nowIso();
+    const r = await env.DB.prepare('INSERT INTO messages (conversation_id,sender_id,body,created_at) VALUES (?,?,?,?)')
+      .bind(conversationId, viewer.id, body, at).run();
+    await env.DB.prepare('UPDATE conversations SET last_message_at=? WHERE id=?').bind(at, conversationId).run();
+    await notify(env, peerId, 'message', `${viewer.name || 'Someone'} sent you a message`, body, viewer.id, null);
+    return json({ id: String(r.meta.last_row_id), conversation_id: String(conversationId),
+      sender_id: String(viewer.id), body, read: false, read_at: null, mine: true, created_at: at }, 201);
+  }
+  return null;
 }
 
 /* ---------------- admin ---------------- */
@@ -777,6 +1101,23 @@ async function adminRoutes(req, env, url) {
     const b = await req.json().catch(() => ({}));
     await env.DB.prepare('UPDATE posts SET hidden=? WHERE id=?').bind(b.hidden === false ? 0 : 1, Number(hideMatch[1])).run();
     return json({ ok: true });
+  }
+  if (path === '/api/v1/admin/reports' && req.method === 'GET') {
+    const status = clean(url.searchParams.get('status'), 20).toUpperCase() || 'OPEN';
+    const rows = (await env.DB.prepare(`SELECT r.*, u.name reporter_name, u.email reporter_email
+      FROM reports r LEFT JOIN users u ON u.id=r.reporter_id
+      WHERE r.status=? ORDER BY r.created_at DESC LIMIT 200`).bind(status).all()).results || [];
+    return json(rows.map((r) => ({ ...r, id: String(r.id), reporter_id: String(r.reporter_id),
+      target_id: String(r.target_id) })));
+  }
+  const reportMatch = /^\/api\/v1\/admin\/reports\/(\d+)\/resolve$/.exec(path);
+  if (reportMatch && req.method === 'POST') {
+    const b = await req.json().catch(() => ({}));
+    const status = ['RESOLVED', 'DISMISSED'].includes(String(b.status || '').toUpperCase())
+      ? String(b.status).toUpperCase() : 'RESOLVED';
+    await env.DB.prepare('UPDATE reports SET status=?, resolved_at=? WHERE id=?')
+      .bind(status, nowIso(), Number(reportMatch[1])).run();
+    return json({ ok: true, status });
   }
   if (path === '/api/v1/admin/review-queue' || path === '/api/v1/admin/submissions') return json([]);
   throw new HttpError(404, 'not_found', 'Unknown admin route.');
@@ -1989,9 +2330,38 @@ async function userRoutes(req, env, url, viewer) {
     const u = await env.DB.prepare('SELECT * FROM users WHERE id=?').bind(viewer.id).first();
     return json(await userJson(env, u, u));
   }
-  const followMatch = /^\/api\/v1\/users\/(\d+)\/follow$/.exec(path);
-  if (followMatch && req.method === 'POST') {
+  if (path === '/api/v1/users/me/bookmarks' && req.method === 'GET') return await listBookmarks(req, env, url);
+  if (path === '/api/v1/users/me/blocked' && req.method === 'GET') {
     if (!viewer) throw new HttpError(401, 'not_signed_in', 'Please sign in.');
+    const rows = (await env.DB.prepare(`SELECT u.id,u.name,u.handle,u.picture,u.role,b.created_at blocked_at
+      FROM user_blocks b JOIN users u ON u.id=b.blocked_id WHERE b.blocker_id=? ORDER BY b.created_at DESC`)
+      .bind(viewer.id).all()).results || [];
+    return json(rows.map((u) => ({ id: String(u.id), name: u.name, full_name: u.name,
+      handle: u.handle || handleFor(u.name, u.id), avatar_url: u.picture || null, role: u.role,
+      blocked_at: u.blocked_at })));
+  }
+  const blockMatch = /^\/api\/v1\/users\/(\d+)\/block$/.exec(path);
+  if (blockMatch && req.method === 'POST') {
+    if (!viewer) throw new HttpError(401, 'not_signed_in', 'Please sign in.');
+    const target = Number(blockMatch[1]);
+    if (target === viewer.id) throw new HttpError(400, 'self_block', 'You cannot block yourself.');
+    const exists = await env.DB.prepare('SELECT 1 x FROM users WHERE id=?').bind(target).first();
+    if (!exists) throw new HttpError(404, 'user_not_found', 'Profile not found.');
+    const has = await env.DB.prepare('SELECT 1 x FROM user_blocks WHERE blocker_id=? AND blocked_id=?').bind(viewer.id, target).first();
+    if (has) {
+      await env.DB.prepare('DELETE FROM user_blocks WHERE blocker_id=? AND blocked_id=?').bind(viewer.id, target).run();
+    } else {
+      await env.DB.prepare('INSERT INTO user_blocks (blocker_id,blocked_id,created_at) VALUES (?,?,?)')
+        .bind(viewer.id, target, nowIso()).run();
+      await env.DB.prepare('DELETE FROM follows WHERE (follower_id=? AND followee_id=?) OR (follower_id=? AND followee_id=?)')
+        .bind(viewer.id, target, target, viewer.id).run();
+    }
+    return json({ ok: true, blocked: !has });
+  }
+  const userReportMatch = /^\/api\/v1\/users\/(\d+)\/report$/.exec(path);
+  if (userReportMatch && req.method === 'POST') return await reportTarget(req, env, 'user', Number(userReportMatch[1]));
+  const followMatch = /^\/api\/v1\/users\/(\d+)\/follow$/.exec(path);
+  if (followMatch && req.method === 'POST') {    if (!viewer) throw new HttpError(401, 'not_signed_in', 'Please sign in.');
     const target = Number(followMatch[1]);
     if (target === viewer.id) throw new HttpError(400, 'self_follow', 'You cannot follow yourself.');
     const exists = await env.DB.prepare('SELECT 1 x FROM users WHERE id=?').bind(target).first();
@@ -2650,13 +3020,31 @@ export async function socialRoutes(req, env, ctx) {
         const row = await getPostRow(env, id);
         if (!row) throw new HttpError(404, 'post_not_found', 'This post no longer exists.');
         const liked = viewer ? await env.DB.prepare('SELECT 1 x FROM post_likes WHERE post_id=? AND user_id=?').bind(id, viewer.id).first() : null;
-        return json(postJson(row, !!liked, null));
+        const marked = viewer ? await env.DB.prepare('SELECT 1 x FROM post_bookmarks WHERE post_id=? AND user_id=?').bind(id, viewer.id).first() : null;
+        return json(postJson(row, !!liked, null, !!marked));
       }
+      if (!sub && req.method === 'PATCH') return await editPost(req, env, id);
+      if (!sub && req.method === 'DELETE') return await deletePost(req, env, id);
       if (sub === '/like' && req.method === 'POST') return await toggleLike(req, env, id);
+      if (sub === '/bookmark' && req.method === 'POST') return await toggleBookmark(req, env, id);
       if (sub === '/comment' && req.method === 'POST') return await addComment(req, env, id);
       if (sub === '/comments' && req.method === 'GET') return await listComments(req, env, id);
       if (sub === '/impact' && req.method === 'POST') return await castImpactVote(req, env, id);
       if (sub === '/share' && req.method === 'POST') return await sharePost(req, env, id);
+      if (sub === '/report' && req.method === 'POST') return await reportTarget(req, env, 'post', id);
+    }
+    const commentMatch = /^\/api\/v1\/comments\/(\d+)(?:\/(like|report))?$/.exec(path);
+    if (commentMatch) {
+      const commentId = Number(commentMatch[1]);
+      if (commentMatch[2] === 'like' && req.method === 'POST') return await toggleCommentLike(req, env, commentId);
+      if (commentMatch[2] === 'report' && req.method === 'POST') return await reportTarget(req, env, 'comment', commentId);
+      if (!commentMatch[2] && req.method === 'DELETE') return await deleteComment(req, env, commentId);
+    }
+    if (path === '/api/v1/search' && req.method === 'GET') return await searchSocial(req, env, url);
+    if (path === '/api/v1/trends' && req.method === 'GET') return await trendingHashtags(env);
+    if (path.startsWith('/api/v1/messages/')) {
+      const handled = await messagesRoutes(req, env, url, await currentUser(req, env));
+      if (handled) return handled;
     }
     const passportMatch = /^\/api\/v1\/users\/(\d+)\/passport$/.exec(path);
     if (passportMatch && req.method === 'GET') return await passportFor(env, Number(passportMatch[1]));

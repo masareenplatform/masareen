@@ -68,6 +68,41 @@ class MasarenLocalizations {
       'post.comment': 'Comment',
       'post.share': 'Share',
       'post.writeComment': 'Write a comment...',
+      'nav.messages': 'Messages',
+      'nav.saved': 'Saved',
+      'nav.search': 'Search',
+      'messages.title': 'Messages',
+      'messages.empty': 'No conversations yet.',
+      'messages.placeholder': 'Write a message...',
+      'messages.newMessage': 'New message',
+      'search.title': 'Search',
+      'search.hint': 'Search people, posts or hashtags',
+      'search.people': 'People',
+      'search.posts': 'Posts',
+      'search.tags': 'Hashtags',
+      'search.empty': 'No results yet.',
+      'search.trending': 'Trending now',
+      'saved.title': 'Saved posts',
+      'saved.empty': 'Save posts to find them here.',
+      'post.save': 'Save',
+      'post.saved': 'Saved',
+      'post.edit': 'Edit post',
+      'post.delete': 'Delete post',
+      'post.report': 'Report',
+      'post.block': 'Block author',
+      'post.unblock': 'Unblock author',
+      'post.edited': 'Edited',
+      'post.reply': 'Reply',
+      'post.replyTo': 'Replying to',
+      'post.deleteComment': 'Delete comment',
+      'post.message': 'Message',
+      'action.delete': 'Delete',
+      'action.edit': 'Edit',
+      'action.report': 'Report',
+      'action.block': 'Block',
+      'action.unblock': 'Unblock',
+      'action.send': 'Send',
+      'action.done': 'Done',
       'profile.title': 'Profile',
       'profile.edit': 'Edit Profile',
       'profile.stats': 'Stats',
@@ -309,6 +344,41 @@ class MasarenLocalizations {
       'post.comment': 'تعليق',
       'post.share': 'مشاركة',
       'post.writeComment': 'اكتب تعليقًا...',
+      'nav.messages': 'الرسائل',
+      'nav.saved': 'المحفوظات',
+      'nav.search': 'البحث',
+      'messages.title': 'الرسائل',
+      'messages.empty': 'لا توجد محادثات بعد.',
+      'messages.placeholder': 'اكتب رسالة...',
+      'messages.newMessage': 'رسالة جديدة',
+      'search.title': 'البحث',
+      'search.hint': 'ابحث عن أشخاص أو منشورات أو وسوم',
+      'search.people': 'الأشخاص',
+      'search.posts': 'المنشورات',
+      'search.tags': 'الوسوم',
+      'search.empty': 'لا توجد نتائج بعد.',
+      'search.trending': 'الرائج الآن',
+      'saved.title': 'المنشورات المحفوظة',
+      'saved.empty': 'احفظ المنشورات لتجدها هنا.',
+      'post.save': 'حفظ',
+      'post.saved': 'محفوظ',
+      'post.edit': 'تعديل المنشور',
+      'post.delete': 'حذف المنشور',
+      'post.report': 'إبلاغ',
+      'post.block': 'حظر الكاتب',
+      'post.unblock': 'إلغاء حظر الكاتب',
+      'post.edited': 'تم التعديل',
+      'post.reply': 'رد',
+      'post.replyTo': 'ردًا على',
+      'post.deleteComment': 'حذف التعليق',
+      'post.message': 'رسالة',
+      'action.delete': 'حذف',
+      'action.edit': 'تعديل',
+      'action.report': 'إبلاغ',
+      'action.block': 'حظر',
+      'action.unblock': 'إلغاء الحظر',
+      'action.send': 'إرسال',
+      'action.done': 'تم',
       'profile.title': 'الملف الشخصي',
       'profile.edit': 'تعديل الملف',
       'profile.stats': 'الإحصائيات',
@@ -501,13 +571,15 @@ class MasarenLocalizations {
   }
 
   static String of(BuildContext context, String key) {
-    final loc = Localizations.of<MasarenLocalizations>(context, MasarenLocalizations);
+    final loc =
+        Localizations.of<MasarenLocalizations>(context, MasarenLocalizations);
     if (loc == null) return _localized[AppLocale.en]![key] ?? key;
     return tr(loc.locale, key);
   }
 }
 
-class MasarenLocalizationsDelegate extends LocalizationsDelegate<MasarenLocalizations> {
+class MasarenLocalizationsDelegate
+    extends LocalizationsDelegate<MasarenLocalizations> {
   const MasarenLocalizationsDelegate();
 
   @override
@@ -520,5 +592,7 @@ class MasarenLocalizationsDelegate extends LocalizationsDelegate<MasarenLocaliza
   }
 
   @override
-  bool shouldReload(covariant LocalizationsDelegate<MasarenLocalizations> oldDelegate) => false;
+  bool shouldReload(
+          covariant LocalizationsDelegate<MasarenLocalizations> oldDelegate) =>
+      false;
 }

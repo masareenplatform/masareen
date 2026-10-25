@@ -15,6 +15,7 @@ import 'package:masaren/screens/profile_screen.dart';
 import 'package:masaren/screens/personnel_profile_screen.dart';
 import 'package:masaren/screens/post_detail_screen.dart';
 import 'package:masaren/screens/create_post_screen.dart';
+import 'package:masaren/screens/search_screen.dart';
 
 class FeedScreen extends StatefulWidget {
   final User user;
@@ -60,12 +61,24 @@ class FeedScreenState extends State<FeedScreen> {
   ];
 
   final _recognized = const [
-    {'id': 'inst-1', 'name': 'Al-Baraka Foundation', 'note': 'Recognized for education', 'badge': 'PLATINUM'},
-    {'id': 'inst-2', 'name': 'Green Hope Initiative', 'note': 'Environmental stewardship', 'badge': 'GOLD'},
+    {
+      'id': 'inst-1',
+      'name': 'Al-Baraka Foundation',
+      'note': 'Recognized for education',
+      'badge': 'PLATINUM'
+    },
+    {
+      'id': 'inst-2',
+      'name': 'Green Hope Initiative',
+      'note': 'Environmental stewardship',
+      'badge': 'GOLD'
+    },
   ];
 
   List<Post> get _visiblePosts {
-    return _filter == 'all' ? _posts : _posts.where((p) => p.kind == _filter).toList();
+    return _filter == 'all'
+        ? _posts
+        : _posts.where((p) => p.kind == _filter).toList();
   }
 
   @override
@@ -81,7 +94,8 @@ class FeedScreenState extends State<FeedScreen> {
     }
     setState(() => _loading = reset || _posts.isEmpty);
     try {
-      final data = await AuthApi.feed(limit: _limit, offset: _offset, mode: _mode);
+      final data =
+          await AuthApi.feed(limit: _limit, offset: _offset, mode: _mode);
       if (reset) {
         _posts = data;
       } else {
@@ -141,13 +155,15 @@ class FeedScreenState extends State<FeedScreen> {
     if (mounted) {
       setState(() {});
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Rating saved. Impact score is now ${_posts[i].impactValue?.toStringAsFixed(1) ?? '—'}/10.')),
+        SnackBar(
+            content: Text(
+                'Rating saved. Impact score is now ${_posts[i].impactValue?.toStringAsFixed(1) ?? '—'}/10.')),
       );
     }
   }
 
-  void _openPost(Post p) {
-    Navigator.of(context).push(MaterialPageRoute(
+  Future<void> _openPost(Post p) async {
+    final result = await Navigator.of(context).push(MaterialPageRoute(
         builder: (_) => PostDetailScreen(
               post: p,
               currentUser: widget.user,
@@ -159,6 +175,9 @@ class FeedScreenState extends State<FeedScreen> {
                 }
               },
             )));
+    if (result == 'deleted' && mounted) {
+      setState(() => _posts.removeWhere((e) => e.id == p.id));
+    }
   }
 
   void _openAuthor(Author a) {
@@ -171,27 +190,35 @@ class FeedScreenState extends State<FeedScreen> {
     if (a.id == widget.user.id) {
       Navigator.of(context).push(MaterialPageRoute(
           builder: (_) => ProfileScreen(
-              user: widget.user,
-              onLogout: () {},
-              onToggleTheme: null)));
+              user: widget.user, onLogout: () {}, onToggleTheme: null)));
       return;
     }
     final r = a.role?.toUpperCase() ?? '';
     if (r.contains('MEDIA') || r.contains('PRESS') || r.contains('NEWS')) {
       Navigator.of(context).push(MaterialPageRoute(
-          builder: (_) => NewsMediaProfileScreen(userId: a.id, currentUser: widget.user)));
-    } else if (r.contains('SPORT') || r.contains('CLUB') || r.contains('FEDERATION')) {
+          builder: (_) =>
+              NewsMediaProfileScreen(userId: a.id, currentUser: widget.user)));
+    } else if (r.contains('SPORT') ||
+        r.contains('CLUB') ||
+        r.contains('FEDERATION')) {
       Navigator.of(context).push(MaterialPageRoute(
-          builder: (_) => SportsProfileScreen(orgId: a.id, currentUser: widget.user)));
+          builder: (_) =>
+              SportsProfileScreen(orgId: a.id, currentUser: widget.user)));
     } else if (r.contains('GOV') || r.contains('GOVERNMENT')) {
       Navigator.of(context).push(MaterialPageRoute(
-          builder: (_) => GovernmentProfileScreen(orgId: a.id, currentUser: widget.user)));
+          builder: (_) =>
+              GovernmentProfileScreen(orgId: a.id, currentUser: widget.user)));
     } else if (r.contains('ATHLETE')) {
       Navigator.of(context).push(MaterialPageRoute(
-          builder: (_) => PlayerShowcaseScreen(playerId: a.id, currentUser: widget.user)));
-    } else if (r.contains('NGO') || r.contains('ORGANIZATION') || r.contains('COMPANY') || r.contains('CORPORATE')) {
+          builder: (_) =>
+              PlayerShowcaseScreen(playerId: a.id, currentUser: widget.user)));
+    } else if (r.contains('NGO') ||
+        r.contains('ORGANIZATION') ||
+        r.contains('COMPANY') ||
+        r.contains('CORPORATE')) {
       Navigator.of(context).push(MaterialPageRoute(
-          builder: (_) => OrganizationProfileScreen(orgId: a.id, currentUser: widget.user)));
+          builder: (_) => OrganizationProfileScreen(
+              orgId: a.id, currentUser: widget.user)));
     } else {
       Navigator.of(context).push(MaterialPageRoute(
           builder: (_) =>
@@ -206,6 +233,10 @@ class FeedScreenState extends State<FeedScreen> {
       appBar: AppBar(
         title: const BrandLogo(height: 56),
         actions: [
+          IconButton(
+            icon: Icon(Icons.search, color: cs.onSurface),
+            onPressed: _openSearch,
+          ),
           IconButton(
             icon: Icon(Icons.notifications_outlined, color: cs.onSurface),
             onPressed: widget.onNotifications,
@@ -228,13 +259,16 @@ class FeedScreenState extends State<FeedScreen> {
                       _Composer(
                         user: widget.user,
                         onTap: () async {
-                          final created = await Navigator.of(context).push<bool>(
-                              MaterialPageRoute(builder: (_) => CreatePostScreen(user: widget.user)));
+                          final created = await Navigator.of(context)
+                              .push<bool>(MaterialPageRoute(
+                                  builder: (_) =>
+                                      CreatePostScreen(user: widget.user)));
                           if (created == true) _load(reset: true);
                         },
                       ),
                       _FeaturedCarousel(posts: _visiblePosts.take(5).toList()),
-                      _FeedModeBar(modes: _modes, active: _mode, onSelect: _setMode),
+                      _FeedModeBar(
+                          modes: _modes, active: _mode, onSelect: _setMode),
                       _FilterChips(
                         filters: _filters,
                         active: _filter,
@@ -242,10 +276,14 @@ class FeedScreenState extends State<FeedScreen> {
                       ),
                       _RecognitionBanner(
                         items: _recognized,
-                        onTap: (id) => Navigator.of(context).push(MaterialPageRoute(
-                            builder: (_) => InstitutionProfileScreen(institutionId: id))),
+                        onTap: (id) => Navigator.of(context).push(
+                            MaterialPageRoute(
+                                builder: (_) => InstitutionProfileScreen(
+                                    institutionId: id))),
                       ),
-                      SectionTitle(title: MasarenLocalizations.of(context, 'feed.title')),
+                      SectionTitle(
+                          title:
+                              MasarenLocalizations.of(context, 'feed.title')),
                       if (_visiblePosts.isEmpty)
                         Padding(
                           padding: const EdgeInsets.all(24),
@@ -267,11 +305,13 @@ class FeedScreenState extends State<FeedScreen> {
                                     post: p,
                                     currentUser: widget.user,
                                     onLike: () => _onLike(p),
+                                    onBookmark: () => _onBookmark(p),
                                     onComment: () => _openPost(p),
                                     onImpact: () => _onImpact(p),
                                     onShare: () => _onShare(p),
                                     onImageTap: p.media.any((m) => !m.isVideo)
-                                        ? (url) => showEnlargedImage(context, url)
+                                        ? (url) =>
+                                            showEnlargedImage(context, url)
                                         : null,
                                     onAuthor: () => _openAuthor(p.author),
                                     onOpen: () => _openPost(p),
@@ -289,7 +329,9 @@ class FeedScreenState extends State<FeedScreen> {
                         Padding(
                           padding: const EdgeInsets.all(16),
                           child: Center(
-                            child: Text(MasarenLocalizations.of(context, 'feed.caughtUp'),
+                            child: Text(
+                                MasarenLocalizations.of(
+                                    context, 'feed.caughtUp'),
                                 style: TextStyle(color: cs.onSurfaceVariant)),
                           ),
                         ),
@@ -298,6 +340,31 @@ class FeedScreenState extends State<FeedScreen> {
                   ),
                 ),
     );
+  }
+
+  Future<void> _onBookmark(Post p) async {
+    final i = _posts.indexWhere((e) => e.id == p.id);
+    if (i == -1) return;
+    final was = p.bookmarkedByMe;
+    _posts[i] = p.copyWith(bookmarkedByMe: !was);
+    if (mounted) setState(() {});
+    try {
+      final res = await AuthApi.toggleBookmark(p.id);
+      final j = _posts.indexWhere((e) => e.id == p.id);
+      if (j != -1) {
+        _posts[j] =
+            _posts[j].copyWith(bookmarkedByMe: res['bookmarked'] ?? !was);
+      }
+    } catch (_) {
+      final j = _posts.indexWhere((e) => e.id == p.id);
+      if (j != -1) _posts[j] = _posts[j].copyWith(bookmarkedByMe: was);
+    }
+    if (mounted) setState(() {});
+  }
+
+  void _openSearch() {
+    Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => SearchScreen(user: widget.user)));
   }
 
   Future<void> _onLike(Post p) async {
@@ -314,7 +381,9 @@ class FeedScreenState extends State<FeedScreen> {
       final res = await AuthApi.toggleLike(p.id);
       _posts[i] = updated.copyWith(
         likedByMe: res['likedByMe'] ?? !wasLiked,
-        likes: (res['likes'] is num) ? (res['likes'] as num).toInt() : updated.likes,
+        likes: (res['likes'] is num)
+            ? (res['likes'] as num).toInt()
+            : updated.likes,
       );
     } catch (_) {
       _posts[i] = p;
@@ -389,7 +458,10 @@ class _FeaturedCarouselState extends State<_FeaturedCarousel> {
                           errorBuilder: (_, __, ___) => Container(
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
-                                colors: [cs.primary, cs.primary.withValues(alpha: 0.6)],
+                                colors: [
+                                  cs.primary,
+                                  cs.primary.withValues(alpha: 0.6)
+                                ],
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                               ),
@@ -400,7 +472,10 @@ class _FeaturedCarouselState extends State<_FeaturedCarousel> {
                         Container(
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
-                              colors: [cs.primary, cs.primary.withValues(alpha: 0.6)],
+                              colors: [
+                                cs.primary,
+                                cs.primary.withValues(alpha: 0.6)
+                              ],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
@@ -424,14 +499,18 @@ class _FeaturedCarouselState extends State<_FeaturedCarousel> {
                             children: [
                               if (p.kind != null)
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 3),
                                   decoration: BoxDecoration(
                                     color: Colors.white.withOpacity(0.2),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Text(
                                     p.kind!.toUpperCase(),
-                                    style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600),
+                                    style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w600),
                                   ),
                                 ),
                               const SizedBox(height: 4),
@@ -439,14 +518,20 @@ class _FeaturedCarouselState extends State<_FeaturedCarousel> {
                                 p.text,
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(color: Colors.white, fontSize: 13, height: 1.3),
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 13,
+                                    height: 1.3),
                               ),
                               const SizedBox(height: 4),
                               Row(
                                 children: [
-                                  Icon(Icons.favorite, size: 14, color: Colors.redAccent),
+                                  Icon(Icons.favorite,
+                                      size: 14, color: Colors.redAccent),
                                   const SizedBox(width: 4),
-                                  Text('${p.likes}', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                                  Text('${p.likes}',
+                                      style: TextStyle(
+                                          color: Colors.white70, fontSize: 12)),
                                 ],
                               ),
                             ],
@@ -471,7 +556,9 @@ class _FeaturedCarouselState extends State<_FeaturedCarousel> {
               width: i == _currentPage ? 20 : 6,
               height: 6,
               decoration: BoxDecoration(
-                color: i == _currentPage ? cs.primary : cs.onSurfaceVariant.withOpacity(0.3),
+                color: i == _currentPage
+                    ? cs.primary
+                    : cs.onSurfaceVariant.withOpacity(0.3),
                 borderRadius: BorderRadius.circular(3),
               ),
             ),
@@ -535,7 +622,8 @@ class _FeedModeBar extends StatelessWidget {
   final List<(String, String, IconData)> modes;
   final String active;
   final ValueChanged<String> onSelect;
-  const _FeedModeBar({required this.modes, required this.active, required this.onSelect});
+  const _FeedModeBar(
+      {required this.modes, required this.active, required this.onSelect});
 
   static String _label(BuildContext context, String key, String fallback) {
     const map = {
@@ -545,7 +633,9 @@ class _FeedModeBar extends StatelessWidget {
       'impact': 'feed.impact',
     };
     final l10nKey = map[key];
-    return l10nKey == null ? fallback : MasarenLocalizations.of(context, l10nKey);
+    return l10nKey == null
+        ? fallback
+        : MasarenLocalizations.of(context, l10nKey);
   }
 
   @override
@@ -553,7 +643,9 @@ class _FeedModeBar extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     return Container(
       decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.4))),
+        border: Border(
+            bottom:
+                BorderSide(color: cs.outlineVariant.withValues(alpha: 0.4))),
       ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
@@ -567,20 +659,25 @@ class _FeedModeBar extends StatelessWidget {
                 borderRadius: BorderRadius.circular(999),
                 onTap: () => onSelect(m.$1),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   decoration: BoxDecoration(
                     color: isActive ? cs.primary : cs.surface,
                     borderRadius: BorderRadius.circular(999),
-                    border: Border.all(color: isActive ? cs.primary : cs.outlineVariant),
+                    border: Border.all(
+                        color: isActive ? cs.primary : cs.outlineVariant),
                   ),
                   child: Row(
                     children: [
-                      Icon(m.$3, size: 15, color: isActive ? cs.onPrimary : cs.onSurfaceVariant),
+                      Icon(m.$3,
+                          size: 15,
+                          color: isActive ? cs.onPrimary : cs.onSurfaceVariant),
                       const SizedBox(width: 6),
                       Text(_label(context, m.$1, m.$2),
                           style: TextStyle(
                               fontSize: 13,
-                              fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                              fontWeight:
+                                  isActive ? FontWeight.w700 : FontWeight.w500,
                               color: isActive ? cs.onPrimary : cs.onSurface)),
                     ],
                   ),
@@ -788,6 +885,7 @@ class _PostCard extends StatelessWidget {
   final Post post;
   final User currentUser;
   final VoidCallback onLike;
+  final VoidCallback onBookmark;
   final VoidCallback onComment;
   final VoidCallback onImpact;
   final VoidCallback onShare;
@@ -798,6 +896,7 @@ class _PostCard extends StatelessWidget {
     required this.post,
     required this.currentUser,
     required this.onLike,
+    required this.onBookmark,
     required this.onComment,
     required this.onImpact,
     required this.onShare,
@@ -809,37 +908,56 @@ class _PostCard extends StatelessWidget {
   Color get _typeColor {
     final kind = post.kind ?? '';
     switch (kind) {
-      case 'recognition': return const Color(0xFFF59E0B);
-      case 'opportunity': return const Color(0xFF3B82F6);
-      case 'announcement': return const Color(0xFF8B5CF6);
-      case 'interview': return const Color(0xFF10B981);
-      case 'program': return const Color(0xFF06B6D4);
-      default: return const Color(0xFF6366F1);
+      case 'recognition':
+        return const Color(0xFFF59E0B);
+      case 'opportunity':
+        return const Color(0xFF3B82F6);
+      case 'announcement':
+        return const Color(0xFF8B5CF6);
+      case 'interview':
+        return const Color(0xFF10B981);
+      case 'program':
+        return const Color(0xFF06B6D4);
+      default:
+        return const Color(0xFF6366F1);
     }
   }
 
   IconData get _typeIcon {
     final kind = post.kind ?? '';
     switch (kind) {
-      case 'recognition': return Icons.emoji_events;
-      case 'opportunity': return Icons.work_outline;
-      case 'announcement': return Icons.campaign_outlined;
-      case 'interview': return Icons.mic;
-      case 'program': return Icons.school_outlined;
-      default: return Icons.auto_awesome;
+      case 'recognition':
+        return Icons.emoji_events;
+      case 'opportunity':
+        return Icons.work_outline;
+      case 'announcement':
+        return Icons.campaign_outlined;
+      case 'interview':
+        return Icons.mic;
+      case 'program':
+        return Icons.school_outlined;
+      default:
+        return Icons.auto_awesome;
     }
   }
 
   String get _typeLabel {
     final kind = post.kind ?? '';
     switch (kind) {
-      case 'recognition': return 'Recognition';
-      case 'opportunity': return 'Opportunity';
-      case 'announcement': return 'Announcement';
-      case 'interview': return 'Interview';
-      case 'program': return 'Program';
-      case 'evidence': return 'Evidence';
-      default: return '';
+      case 'recognition':
+        return 'Recognition';
+      case 'opportunity':
+        return 'Opportunity';
+      case 'announcement':
+        return 'Announcement';
+      case 'interview':
+        return 'Interview';
+      case 'program':
+        return 'Program';
+      case 'evidence':
+        return 'Evidence';
+      default:
+        return '';
     }
   }
 
@@ -847,7 +965,8 @@ class _PostCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final color = _typeColor;
-    final isPlatform = post.kind == 'announcement' || post.kind == 'opportunity';
+    final isPlatform =
+        post.kind == 'announcement' || post.kind == 'opportunity';
 
     return Container(
       decoration: BoxDecoration(
@@ -879,13 +998,18 @@ class _PostCard extends StatelessWidget {
                   if (isPlatform) ...[
                     const Spacer(),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
                         color: color.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text('MASAREEN',
-                          style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+                          style: TextStyle(
+                              color: color,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.5)),
                     ),
                   ],
                 ],
@@ -895,7 +1019,11 @@ class _PostCard extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
             child: Row(
               children: [
-                AppAvatar(name: post.author.name, url: null, size: 40, onTap: onAuthor),
+                AppAvatar(
+                    name: post.author.name,
+                    url: post.author.avatarUrl,
+                    size: 40,
+                    onTap: onAuthor),
                 const SizedBox(width: 10),
                 Expanded(
                   child: GestureDetector(
@@ -926,12 +1054,14 @@ class _PostCard extends StatelessWidget {
                           Text(post.programTag!,
                               style: TextStyle(
                                   color: cs.onSurfaceVariant, fontSize: 12)),
-                        if (post.rankingReason != null && post.rankingReason!.isNotEmpty)
+                        if (post.rankingReason != null &&
+                            post.rankingReason!.isNotEmpty)
                           Padding(
                             padding: const EdgeInsets.only(top: 3),
                             child: Row(
                               children: [
-                                Icon(Icons.auto_awesome, size: 12, color: cs.primary),
+                                Icon(Icons.auto_awesome,
+                                    size: 12, color: cs.primary),
                                 const SizedBox(width: 4),
                                 Flexible(
                                   child: Text(post.rankingReason!,
@@ -950,7 +1080,8 @@ class _PostCard extends StatelessWidget {
                   ),
                 ),
                 if (post.kind == 'recognition')
-                  Icon(Icons.emoji_events, color: Colors.amber.shade700, size: 20)
+                  Icon(Icons.emoji_events,
+                      color: Colors.amber.shade700, size: 20)
                 else if (post.kind == 'opportunity')
                   Icon(Icons.work_outline, color: Colors.blue, size: 20)
                 else if (post.kind == 'interview')
@@ -966,7 +1097,8 @@ class _PostCard extends StatelessWidget {
               children: [
                 if (post.type == 'ARTICLE')
                   _PostBadge(
-                    label: MasarenLocalizations.of(context, 'post.verifiedNews'),
+                    label:
+                        MasarenLocalizations.of(context, 'post.verifiedNews'),
                     icon: Icons.verified,
                     color: Colors.blue,
                   ),
@@ -1011,7 +1143,8 @@ class _PostCard extends StatelessWidget {
             ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-            child: Text(post.text, style: TextStyle(color: cs.onSurface, height: 1.4)),
+            child: Text(post.text,
+                style: TextStyle(color: cs.onSurface, height: 1.4)),
           ),
           if (post.media.isNotEmpty)
             Padding(
@@ -1027,7 +1160,8 @@ class _PostCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: cs.primaryContainer,
                   borderRadius: BorderRadius.circular(8),
@@ -1053,7 +1187,10 @@ class _PostCard extends StatelessWidget {
             ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
-            child: Row(
+            child: Wrap(
+              spacing: 18,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 _Action(
                   icon: Icons.favorite,
@@ -1062,23 +1199,31 @@ class _PostCard extends StatelessWidget {
                   label: '${post.likes}',
                   onTap: onLike,
                 ),
-                const SizedBox(width: 18),
                 _Action(
                   icon: Icons.mode_comment_outlined,
                   label: '${post.comments}',
                   onTap: onComment,
                 ),
-                const SizedBox(width: 18),
                 _Action(
                   icon: Icons.fact_check_outlined,
                   label: MasarenLocalizations.of(context, 'post.rateImpact'),
                   onTap: onImpact,
                 ),
-                const SizedBox(width: 18),
                 _Action(
                   icon: Icons.share_outlined,
                   label: '${post.shares}',
                   onTap: onShare,
+                ),
+                _Action(
+                  icon: post.bookmarkedByMe
+                      ? Icons.bookmark
+                      : Icons.bookmark_border,
+                  active: post.bookmarkedByMe,
+                  activeColor: cs.primary,
+                  label: post.bookmarkedByMe
+                      ? MasarenLocalizations.of(context, 'post.saved')
+                      : MasarenLocalizations.of(context, 'post.save'),
+                  onTap: onBookmark,
                 ),
               ],
             ),
@@ -1145,7 +1290,8 @@ class _ImpactSheetState extends State<_ImpactSheet> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding:
+          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
@@ -1159,12 +1305,16 @@ class _ImpactSheetState extends State<_ImpactSheet> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text('Rate this impact',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: cs.onSurface)),
+                        style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: cs.onSurface)),
                   ),
                 ],
               ),
               const SizedBox(height: 4),
-              Text('Your rating updates the verified impact score for everyone.',
+              Text(
+                  'Your rating updates the verified impact score for everyone.',
                   style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
               const SizedBox(height: 16),
               Row(
@@ -1172,11 +1322,15 @@ class _ImpactSheetState extends State<_ImpactSheet> {
                 children: List.generate(5, (i) {
                   final value = i + 1;
                   return IconButton(
-                    onPressed: _saving ? null : () => setState(() => _stars = value),
+                    onPressed:
+                        _saving ? null : () => setState(() => _stars = value),
                     icon: Icon(
-                      value <= _stars ? Icons.star_rounded : Icons.star_outline_rounded,
+                      value <= _stars
+                          ? Icons.star_rounded
+                          : Icons.star_outline_rounded,
                       size: 38,
-                      color: value <= _stars ? Colors.amber.shade600 : cs.outline,
+                      color:
+                          value <= _stars ? Colors.amber.shade600 : cs.outline,
                     ),
                     tooltip: '$value of 5',
                   );
@@ -1184,12 +1338,24 @@ class _ImpactSheetState extends State<_ImpactSheet> {
               ),
               Center(
                 child: Text(
-                  const ['', 'Weak signal', 'Some evidence', 'Solid evidence', 'Strong evidence', 'Verified, high impact'][_stars],
-                  style: TextStyle(color: cs.primary, fontWeight: FontWeight.w600, fontSize: 13),
+                  const [
+                    '',
+                    'Weak signal',
+                    'Some evidence',
+                    'Solid evidence',
+                    'Strong evidence',
+                    'Verified, high impact'
+                  ][_stars],
+                  style: TextStyle(
+                      color: cs.primary,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13),
                 ),
               ),
               const SizedBox(height: 16),
-              Text('What makes it credible?', style: TextStyle(fontWeight: FontWeight.w600, color: cs.onSurface)),
+              Text('What makes it credible?',
+                  style: TextStyle(
+                      fontWeight: FontWeight.w600, color: cs.onSurface)),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
@@ -1201,7 +1367,8 @@ class _ImpactSheetState extends State<_ImpactSheet> {
                     selected: on,
                     onSelected: _saving
                         ? null
-                        : (_) => setState(() => on ? _cats.remove(e.key) : _cats.add(e.key)),
+                        : (_) => setState(
+                            () => on ? _cats.remove(e.key) : _cats.add(e.key)),
                     selectedColor: cs.primaryContainer,
                   );
                 }).toList(),
@@ -1215,20 +1382,25 @@ class _ImpactSheetState extends State<_ImpactSheet> {
                 minLines: 2,
                 decoration: InputDecoration(
                   hintText: 'Optional: what did you see or verify?',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
               ),
               if (_error != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8),
-                  child: Text(_error!, style: TextStyle(color: cs.error, fontSize: 12)),
+                  child: Text(_error!,
+                      style: TextStyle(color: cs.error, fontSize: 12)),
                 ),
               SizedBox(
                 width: double.infinity,
                 child: FilledButton.icon(
                   onPressed: _saving ? null : _submit,
                   icon: _saving
-                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2))
                       : const Icon(Icons.verified_outlined),
                   label: Text(_saving ? 'Saving…' : 'Submit impact rating'),
                 ),
@@ -1273,9 +1445,8 @@ class _Action extends StatelessWidget {
           children: [
             Icon(icon,
                 size: active ? 20 : 18,
-                color: active
-                    ? (activeColor ?? cs.primary)
-                    : cs.onSurfaceVariant),
+                color:
+                    active ? (activeColor ?? cs.primary) : cs.onSurfaceVariant),
             const SizedBox(width: 4),
             Text(label,
                 style: TextStyle(

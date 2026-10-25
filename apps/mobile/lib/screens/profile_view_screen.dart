@@ -3,6 +3,7 @@ import 'package:masaren/api_client.dart';
 import 'package:masaren/widgets.dart';
 import 'package:masaren/models.dart';
 import 'package:masaren/screens/post_detail_screen.dart';
+import 'package:masaren/screens/messages_screen.dart';
 import 'package:masaren/widgets/animations.dart';
 
 class ProfileViewScreen extends StatefulWidget {
@@ -98,6 +99,36 @@ class _ProfileViewScreenState extends State<ProfileViewScreen> {
     }
   }
 
+  Future<void> _message() async {
+    try {
+      final c = await AuthApi.openConversation(widget.userId);
+      if (!mounted) return;
+      Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) =>
+              ChatScreen(conversation: c, user: widget.currentUser)));
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.toString())));
+      }
+    }
+  }
+
+  Future<void> _openPost(Post p) async {
+    final result = await Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => PostDetailScreen(
+            post: p,
+            currentUser: widget.currentUser,
+            onChanged: (updated) {
+              final i = _posts.indexWhere((e) => e.id == updated.id);
+              if (i == -1) return;
+              setState(() => _posts[i] = updated);
+            })));
+    if (result == 'deleted' && mounted) {
+      setState(() => _posts.removeWhere((e) => e.id == p.id));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loading) {
@@ -138,168 +169,166 @@ class _ProfileViewScreenState extends State<ProfileViewScreen> {
       appBar: AppBar(
         title: Text(_displayName),
         actions: [
-          if (!isMe)
+          if (!isMe) ...[
+            IconButton(
+              icon: const Icon(Icons.chat_bubble_outline),
+              tooltip: 'Message',
+              onPressed: _message,
+            ),
             TextButton(
               onPressed: _busy ? null : _follow,
               child: Text(_following ? 'Following' : 'Follow',
                   style: TextStyle(color: cs.primary)),
             ),
+          ],
         ],
       ),
       body: Stack(
         children: [
           Positioned.fill(child: FloatingShapes(shapeCount: 5)),
           RefreshIndicator(
-          onRefresh: _load,
-          child: ListView(
-          children: [
-            // ── Header ──
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [cs.primary, cs.primary.withValues(alpha: 0.7)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: Column(
-                children: [
-                  ScaleInWidget(
-                    child: AppAvatar(name: _displayName, url: p?.avatarUrl, size: 90),
+            onRefresh: _load,
+            child: ListView(
+              children: [
+                // ── Header ──
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [cs.primary, cs.primary.withValues(alpha: 0.7)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
                   ),
-                  const SizedBox(height: 12),
-                  Text(_displayName,
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800)),
-                  if (_role.isNotEmpty) ...[
-                    const SizedBox(height: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.white24,
-                        borderRadius: BorderRadius.circular(999),
+                  child: Column(
+                    children: [
+                      ScaleInWidget(
+                        child: AppAvatar(
+                            name: _displayName, url: p?.avatarUrl, size: 90),
                       ),
-                      child: Text(_role,
+                      const SizedBox(height: 12),
+                      Text(_displayName,
                           style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600)),
-                    ),
-                  ],
-                  if (p != null) ...[
-                    const SizedBox(height: 14),
-                    SlideInWidget(
-                      delay: const Duration(milliseconds: 200),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _StatValue(
-                              value: p.impactScore.toInt().toString(),
-                              label: 'Impact',
-                              numericValue: p.impactScore.toDouble()),
-                          Container(
-                              width: 1,
-                              height: 28,
-                              color: Colors.white30),
-                          _StatValue(
-                              value: p.trustScore.toInt().toString(),
-                              label: 'Trust',
-                              numericValue: p.trustScore.toDouble()),
-                          Container(
-                              width: 1,
-                              height: 28,
-                              color: Colors.white30),
-                          _StatValue(
-                              value: p.professionalRank,
-                              label: 'Rank'),
-                        ],
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-
-            // ── Bio ──
-            if (_bio != null && _bio!.isNotEmpty) ...[
-              const SectionTitle(title: 'About'),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Text(_bio!,
-                        style: TextStyle(
-                            color: cs.onSurfaceVariant, height: 1.5)),
-                  ),
-                ),
-              ),
-            ],
-
-            // ── Posts ──
-            const SectionTitle(title: 'Posts'),
-            if (_posts.isEmpty)
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: Center(
-                  child: Text('No posts yet.',
-                      style: TextStyle(color: cs.onSurfaceVariant)),
-                ),
-              ),
-            ..._posts.map((p) => Card(
-                  margin:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  child: InkWell(
-                    onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                        builder: (_) => PostDetailScreen(
-                            post: p,
-                            currentUser: widget.currentUser,
-                            onChanged: (_) {}))),
-                    borderRadius: BorderRadius.circular(16),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(p.text,
-                              style: TextStyle(
-                                  color: cs.onSurface, height: 1.4)),
-                          const SizedBox(height: 8),
-                          Row(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w800)),
+                      if (_role.isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white24,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(_role,
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600)),
+                        ),
+                      ],
+                      if (p != null) ...[
+                        const SizedBox(height: 14),
+                        SlideInWidget(
+                          delay: const Duration(milliseconds: 200),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.favorite,
-                                  size: 16,
-                                  color: p.likedByMe
-                                      ? Colors.redAccent
-                                      : cs.onSurfaceVariant),
-                              const SizedBox(width: 4),
-                              Text('${p.likes}',
-                                  style: TextStyle(
-                                      color: cs.onSurfaceVariant)),
-                              const SizedBox(width: 16),
-                              Icon(Icons.mode_comment_outlined,
-                                  size: 16, color: cs.onSurfaceVariant),
-                              const SizedBox(width: 4),
-                              Text('${p.comments}',
-                                  style: TextStyle(
-                                      color: cs.onSurfaceVariant)),
+                              _StatValue(
+                                  value: p.impactScore.toInt().toString(),
+                                  label: 'Impact',
+                                  numericValue: p.impactScore.toDouble()),
+                              Container(
+                                  width: 1, height: 28, color: Colors.white30),
+                              _StatValue(
+                                  value: p.trustScore.toInt().toString(),
+                                  label: 'Trust',
+                                  numericValue: p.trustScore.toDouble()),
+                              Container(
+                                  width: 1, height: 28, color: Colors.white30),
+                              _StatValue(
+                                  value: p.professionalRank, label: 'Rank'),
                             ],
                           ),
-                        ],
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+
+                // ── Bio ──
+                if (_bio != null && _bio!.isNotEmpty) ...[
+                  const SectionTitle(title: 'About'),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Text(_bio!,
+                            style: TextStyle(
+                                color: cs.onSurfaceVariant, height: 1.5)),
                       ),
                     ),
                   ),
-                )),
-            const SizedBox(height: 24),
-          ],
-        ),
+                ],
+
+                // ── Posts ──
+                const SectionTitle(title: 'Posts'),
+                if (_posts.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Center(
+                      child: Text('No posts yet.',
+                          style: TextStyle(color: cs.onSurfaceVariant)),
+                    ),
+                  ),
+                ..._posts.map((p) => Card(
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 8),
+                      child: InkWell(
+                        onTap: () => _openPost(p),
+                        borderRadius: BorderRadius.circular(16),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(p.text,
+                                  style: TextStyle(
+                                      color: cs.onSurface, height: 1.4)),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Icon(Icons.favorite,
+                                      size: 16,
+                                      color: p.likedByMe
+                                          ? Colors.redAccent
+                                          : cs.onSurfaceVariant),
+                                  const SizedBox(width: 4),
+                                  Text('${p.likes}',
+                                      style: TextStyle(
+                                          color: cs.onSurfaceVariant)),
+                                  const SizedBox(width: 16),
+                                  Icon(Icons.mode_comment_outlined,
+                                      size: 16, color: cs.onSurfaceVariant),
+                                  const SizedBox(width: 4),
+                                  Text('${p.comments}',
+                                      style: TextStyle(
+                                          color: cs.onSurfaceVariant)),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    )),
+                const SizedBox(height: 24),
+              ],
+            ),
+          ),
+        ],
       ),
-    ],
-  ),
     );
   }
 }
@@ -308,7 +337,8 @@ class _StatValue extends StatelessWidget {
   final String value;
   final String label;
   final double? numericValue;
-  const _StatValue({required this.value, required this.label, this.numericValue});
+  const _StatValue(
+      {required this.value, required this.label, this.numericValue});
 
   @override
   Widget build(BuildContext context) {

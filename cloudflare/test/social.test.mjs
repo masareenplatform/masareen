@@ -541,4 +541,97 @@ test('sports organisations, squads, results and player careers are served', asyn
   assert.equal(career[0].season, '2024/25');
 });
 
+test('social graph: bookmarks, search, threads, messages, blocks and reports', async () => {
+  const env = mkEnv();
+  const author = await signup(env, 'graph-author@example.com', 'Graph Author');
+  const authorMe = await (await call(env, 'GET', '/api/v1/users/me', null, author)).json();
+  const reader = await signup(env, 'graph-reader@example.com', 'Graph Reader');
+
+  const created = await (await call(env, 'POST', '/api/v1/posts', {
+    text: 'Community cleanup #environment #amman starts this Friday.',
+    kind: 'IMPACT', sdg: 11,
+  }, author)).json();
+  assert.equal(created.bookmarkedByMe, false);
+
+  const marked = await (await call(env, 'POST', `/api/v1/posts/${created.id}/bookmark`, null, reader)).json();
+  assert.equal(marked.bookmarked, true);
+  const saved = await (await call(env, 'GET', '/api/v1/users/me/bookmarks', null, reader)).json();
+  assert.equal(saved.length, 1);
+  assert.equal(saved[0].bookmarkedByMe, true);
+  const unmarked = await (await call(env, 'POST', `/api/v1/posts/${created.id}/bookmark`, null, reader)).json();
+  assert.equal(unmarked.bookmarked, false);
+
+  const edited = await (await call(env, 'PATCH', `/api/v1/posts/${created.id}`, {
+    text: 'Community cleanup #environment #amman moved to Saturday.',
+  }, author)).json();
+  assert.match(edited.text, /Saturday/);
+  assert.ok(edited.edited_at);
+
+  const top = await (await call(env, 'POST', `/api/v1/posts/${created.id}/comment`, { text: 'I can volunteer.' }, reader)).json();
+  const reply = await (await call(env, 'POST', `/api/v1/posts/${created.id}/comment`, {
+    text: 'Great, see you there.', parent_id: top.id,
+  }, author)).json();
+  assert.equal(reply.parent_id, top.id);
+  const comments = await (await call(env, 'GET', `/api/v1/posts/${created.id}/comments`, null, reader)).json();
+  assert.equal(comments.length, 2);
+  assert.equal(comments.find((c) => c.id === reply.id).parent_id, top.id);
+  const likedComment = await (await call(env, 'POST', `/api/v1/comments/${top.id}/like`, null, author)).json();
+  assert.equal(likedComment.liked, true);
+  assert.equal(likedComment.likes, 1);
+  const deletedComment = await call(env, 'DELETE', `/api/v1/comments/${reply.id}`, null, author);
+  assert.equal(deletedComment.status, 200);
+
+  const search = await (await call(env, 'GET', '/api/v1/search?q=environment', null, reader)).json();
+  assert.equal(search.posts.length, 1);
+  assert.equal(search.hashtags.some((h) => h.tag === 'environment'), true);
+  const people = await (await call(env, 'GET', '/api/v1/search?q=Graph%20Author', null, reader)).json();
+  assert.equal(people.users[0].name, 'Graph Author');
+  const trends = await (await call(env, 'GET', '/api/v1/trends', null, reader)).json();
+  assert.equal(trends.some((h) => h.tag === 'environment'), true);
+
+  const conversation = await (await call(env, 'POST', '/api/v1/messages/conversations', { user_id: authorMe.id }, reader)).json();
+  assert.equal(conversation.peer.id, authorMe.id);
+  const sent = await call(env, 'POST', `/api/v1/messages/conversations/${conversation.id}`, { text: 'Hello from the app' }, reader);
+  assert.equal(sent.status, 201);
+  const unread = await (await call(env, 'GET', '/api/v1/messages/unread', null, author)).json();
+  assert.equal(unread.count, 1);
+  const inbox = await (await call(env, 'GET', '/api/v1/messages/conversations', null, author)).json();
+  assert.equal(inbox[0].unread_count, 1);
+  assert.equal(inbox[0].last_message, 'Hello from the app');
+  const thread = await (await call(env, 'GET', `/api/v1/messages/conversations/${conversation.id}`, null, author)).json();
+  assert.equal(thread.messages.length, 1);
+  assert.equal(thread.messages[0].mine, false);
+  const afterRead = await (await call(env, 'GET', '/api/v1/messages/unread', null, author)).json();
+  assert.equal(afterRead.count, 0);
+
+  const report = await call(env, 'POST', `/api/v1/posts/${created.id}/report`, {
+    reason: 'misinformation', details: 'Needs a source',
+  }, reader);
+  assert.equal(report.status, 201);
+  const reportRow = await env.DB.prepare('SELECT id FROM reports LIMIT 1').first();
+  const admin = await signup(env, 'ceo@example.com', 'Admin User');
+  const queue = await (await call(env, 'GET', '/api/v1/admin/reports', null, admin)).json();
+  assert.equal(queue.length, 1);
+  const resolved = await (await call(env, 'POST', `/api/v1/admin/reports/${reportRow.id}/resolve`, {
+    status: 'RESOLVED',
+  }, admin)).json();
+  assert.equal(resolved.status, 'RESOLVED');
+  const remark = await (await call(env, 'POST', `/api/v1/posts/${created.id}/bookmark`, null, reader)).json();
+  assert.equal(remark.bookmarked, true);
+  const block = await (await call(env, 'POST', `/api/v1/users/${authorMe.id}/block`, null, reader)).json();
+  assert.equal(block.blocked, true);
+  const feed = await (await call(env, 'GET', '/api/v1/posts', null, reader)).json();
+  assert.equal(feed.length, 0);
+  const savedAfterBlock = await (await call(env, 'GET', '/api/v1/users/me/bookmarks', null, reader)).json();
+  assert.equal(savedAfterBlock.length, 0);
+  const searchAfterBlock = await (await call(env, 'GET', '/api/v1/search?q=Graph%20Author', null, reader)).json();
+  assert.equal(searchAfterBlock.users.length, 0);
+  const blockedMsg = await call(env, 'POST', `/api/v1/messages/conversations/${conversation.id}`, { text: 'blocked?' }, reader);
+  assert.equal(blockedMsg.status, 403);
+  const unblock = await (await call(env, 'POST', `/api/v1/users/${authorMe.id}/block`, null, reader)).json();
+  assert.equal(unblock.blocked, false);
+  const savedAfterUnblock = await (await call(env, 'GET', '/api/v1/users/me/bookmarks', null, reader)).json();
+  assert.equal(savedAfterUnblock.length, 1);
+});
+
 

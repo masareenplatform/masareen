@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
@@ -30,6 +30,9 @@ import 'package:masaren/screens/ads_screen.dart';
 import 'package:masaren/screens/wallet_screen.dart';
 import 'package:masaren/screens/notifications_screen.dart';
 import 'package:masaren/screens/create_post_screen.dart';
+import 'package:masaren/screens/messages_screen.dart';
+import 'package:masaren/screens/search_screen.dart';
+import 'package:masaren/screens/saved_posts_screen.dart';
 import 'package:masaren/widgets.dart';
 import 'package:masaren/l10n.dart';
 
@@ -65,13 +68,17 @@ Future<void> _deleteToken() async {
 }
 
 void main() {
-  FlutterError.onError = (details) => debugPrint('FlutterError: ${details.exception}');
+  FlutterError.onError =
+      (details) => debugPrint('FlutterError: ${details.exception}');
   ErrorWidget.builder = (details) => Material(
-    color: Colors.transparent,
-    child: Center(child: Text(details.exception.toString(),
-        style: const TextStyle(color: Colors.redAccent, fontSize: 12), textAlign: TextAlign.center)),
-  );
-  runZonedGuarded(() => runApp(const MasarenApp()), (error, stack) => debugPrint('Uncaught: $error'));
+        color: Colors.transparent,
+        child: Center(
+            child: Text(details.exception.toString(),
+                style: const TextStyle(color: Colors.redAccent, fontSize: 12),
+                textAlign: TextAlign.center)),
+      );
+  runZonedGuarded(() => runApp(const MasarenApp()),
+      (error, stack) => debugPrint('Uncaught: $error'));
 }
 
 class MasarenApp extends StatefulWidget {
@@ -233,10 +240,12 @@ class _MasarenAppState extends State<MasarenApp> {
           home: _buildPhase(themeProv),
           onGenerateRoute: (settings) {
             if (settings.name == '/login') {
-              return MaterialPageRoute(builder: (_) => LoginScreen(onAuthenticated: setSession));
+              return MaterialPageRoute(
+                  builder: (_) => LoginScreen(onAuthenticated: setSession));
             }
             if (settings.name == '/register') {
-              return MaterialPageRoute(builder: (_) => RegisterScreen(onRegistered: setSession));
+              return MaterialPageRoute(
+                  builder: (_) => RegisterScreen(onRegistered: setSession));
             }
             return null;
           },
@@ -271,7 +280,8 @@ PageRouteBuilder<T> _route<T>(Widget page) => PageRouteBuilder<T>(
         const begin = Offset(1, 0);
         const end = Offset.zero;
         const curve = Curves.easeOut;
-        final tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+        final tween =
+            Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
         return SlideTransition(position: animation.drive(tween), child: child);
       },
       transitionDuration: const Duration(milliseconds: 250),
@@ -281,7 +291,11 @@ class HomeShell extends StatefulWidget {
   final VoidCallback onLogout;
   final VoidCallback? onToggleTheme;
   final VoidCallback? onToggleLocale;
-  const HomeShell({super.key, required this.onLogout, this.onToggleTheme, this.onToggleLocale});
+  const HomeShell(
+      {super.key,
+      required this.onLogout,
+      this.onToggleTheme,
+      this.onToggleLocale});
 
   @override
   State<HomeShell> createState() => _HomeShellState();
@@ -292,6 +306,7 @@ class _HomeShellState extends State<HomeShell> {
   User? _user;
   bool _loadingUser = true;
   int _unreadNotifications = 0;
+  int _unreadMessages = 0;
   final _feedKey = GlobalKey<FeedScreenState>();
 
   @override
@@ -313,8 +328,16 @@ class _HomeShellState extends State<HomeShell> {
   Future<void> _loadUser() async {
     try {
       _user = await AuthApi.me();
+      _unreadMessages = await AuthApi.unreadMessages();
     } catch (_) {}
     if (mounted) setState(() => _loadingUser = false);
+  }
+
+  Future<void> _refreshMessageBadge() async {
+    try {
+      final count = await AuthApi.unreadMessages();
+      if (mounted) setState(() => _unreadMessages = count);
+    } catch (_) {}
   }
 
   void _showCreateSheet() {
@@ -327,37 +350,76 @@ class _HomeShellState extends State<HomeShell> {
     );
   }
 
-  void _showMoreSheet() {
+  Future<void> _showMoreSheet() async {
+    await _refreshMessageBadge();
+    if (!mounted) return;
     final cs = Theme.of(context).colorScheme;
     final u = _user;
     final loc = MasarenLocalizations.of;
     final items = [
-      _MoreItem(Icons.notifications_outlined, loc(context, 'nav.notifications'), () {
-        if (_user != null) Navigator.of(context).push(_route(NotificationsScreen(userId: _user!.id)));
-      }, badge: _unreadNotifications),
-      _MoreItem(Icons.school_outlined, loc(context, 'nav.courses'), () => Navigator.of(context).push(_route(CoursesScreen(user: u!)))),
-      _MoreItem(Icons.event_outlined, 'Events', () => Navigator.of(context).push(_route(EventsScreen(user: u!)))),
-      _MoreItem(Icons.hub_outlined, 'Programs', () => Navigator.of(context).push(_route(ProgramsScreen(user: u!)))),
-      _MoreItem(Icons.handshake_outlined, loc(context, 'nav.projects'), () => Navigator.of(context).push(_route(ProjectsScreen(user: u!)))),
-      _MoreItem(Icons.verified_user_outlined, loc(context, 'nav.verification'), () => Navigator.of(context).push(_route(VerificationScreen(user: u!)))),
-      _MoreItem(Icons.badge_outlined, 'Impact passport', () => Navigator.of(context).push(_route(PassportScreen(user: u!)))),
-      _MoreItem(Icons.account_balance_wallet_outlined, loc(context, 'nav.wallet'), () => Navigator.of(context).push(_route(WalletScreen(user: u!)))),
-      _MoreItem(Icons.campaign_outlined, loc(context, 'nav.ads'), () => Navigator.of(context).push(_route(AdsScreen(user: u!)))),
-      _MoreItem(Icons.admin_panel_settings_outlined, loc(context, 'nav.admin'), () => Navigator.of(context).push(_route(AdminScreen(user: u!)))),
-       _MoreItem(
-          Theme.of(context).brightness == Brightness.dark
-              ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
-          loc(context, 'nav.theme'), widget.onToggleTheme ?? () {},
-        ),
-        _MoreItem(
-          Icons.language_outlined,
-          Localizations.localeOf(context).languageCode == 'en' ? 'Ø§Ù„Ø¹Ø±Ø¨ÙŠØ©' : 'English',
+      _MoreItem(Icons.forum_outlined, loc(context, 'nav.messages'), () {
+        if (_user != null) {
+          Navigator.of(context)
+              .push(_route(MessagesScreen(user: _user!)))
+              .then((_) => _refreshMessageBadge());
+        }
+      }, badge: _unreadMessages),
+      _MoreItem(Icons.bookmark_border, loc(context, 'nav.saved'), () {
+        if (_user != null)
+          Navigator.of(context).push(_route(SavedPostsScreen(user: _user!)));
+      }),
+      _MoreItem(Icons.search, loc(context, 'nav.search'), () {
+        if (_user != null)
+          Navigator.of(context).push(_route(SearchScreen(user: _user!)));
+      }),
+      _MoreItem(Icons.notifications_outlined, loc(context, 'nav.notifications'),
           () {
-            Navigator.pop(context);
-            widget.onToggleLocale?.call();
-          },
-        ),
-        _MoreItem(Icons.logout_outlined, loc(context, 'nav.signout'), widget.onLogout),
+        if (_user != null)
+          Navigator.of(context)
+              .push(_route(NotificationsScreen(userId: _user!.id)));
+      }, badge: _unreadNotifications),
+      _MoreItem(Icons.school_outlined, loc(context, 'nav.courses'),
+          () => Navigator.of(context).push(_route(CoursesScreen(user: u!)))),
+      _MoreItem(Icons.event_outlined, 'Events',
+          () => Navigator.of(context).push(_route(EventsScreen(user: u!)))),
+      _MoreItem(Icons.hub_outlined, 'Programs',
+          () => Navigator.of(context).push(_route(ProgramsScreen(user: u!)))),
+      _MoreItem(Icons.handshake_outlined, loc(context, 'nav.projects'),
+          () => Navigator.of(context).push(_route(ProjectsScreen(user: u!)))),
+      _MoreItem(
+          Icons.verified_user_outlined,
+          loc(context, 'nav.verification'),
+          () =>
+              Navigator.of(context).push(_route(VerificationScreen(user: u!)))),
+      _MoreItem(Icons.badge_outlined, 'Impact passport',
+          () => Navigator.of(context).push(_route(PassportScreen(user: u!)))),
+      _MoreItem(
+          Icons.account_balance_wallet_outlined,
+          loc(context, 'nav.wallet'),
+          () => Navigator.of(context).push(_route(WalletScreen(user: u!)))),
+      _MoreItem(Icons.campaign_outlined, loc(context, 'nav.ads'),
+          () => Navigator.of(context).push(_route(AdsScreen(user: u!)))),
+      _MoreItem(Icons.admin_panel_settings_outlined, loc(context, 'nav.admin'),
+          () => Navigator.of(context).push(_route(AdminScreen(user: u!)))),
+      _MoreItem(
+        Theme.of(context).brightness == Brightness.dark
+            ? Icons.light_mode_outlined
+            : Icons.dark_mode_outlined,
+        loc(context, 'nav.theme'),
+        widget.onToggleTheme ?? () {},
+      ),
+      _MoreItem(
+        Icons.language_outlined,
+        Localizations.localeOf(context).languageCode == 'en'
+            ? 'Ø§Ù„Ø¹Ø±Ø¨ÙŠØ©'
+            : 'English',
+        () {
+          Navigator.pop(context);
+          widget.onToggleLocale?.call();
+        },
+      ),
+      _MoreItem(
+          Icons.logout_outlined, loc(context, 'nav.signout'), widget.onLogout),
     ];
 
     showModalBottomSheet(
@@ -375,12 +437,16 @@ class _HomeShellState extends State<HomeShell> {
               children: [
                 Container(
                   margin: const EdgeInsets.only(top: 12, bottom: 8),
-                  width: 36, height: 4,
-                  decoration: BoxDecoration(color: cs.outlineVariant, borderRadius: BorderRadius.circular(2)),
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                      color: cs.outlineVariant,
+                      borderRadius: BorderRadius.circular(2)),
                 ),
                 if (u != null)
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
                     child: Row(
                       children: [
                         AppAvatar(name: u.fullName, url: u.avatarUrl, size: 40),
@@ -389,8 +455,15 @@ class _HomeShellState extends State<HomeShell> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(u.fullName, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: cs.onSurface)),
-                              Text(u.email, style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+                              Text(u.fullName,
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 15,
+                                      color: cs.onSurface)),
+                              Text(u.email,
+                                  style: TextStyle(
+                                      fontSize: 13,
+                                      color: cs.onSurfaceVariant)),
                             ],
                           ),
                         ),
@@ -401,20 +474,39 @@ class _HomeShellState extends State<HomeShell> {
                 Divider(height: 1, color: cs.outlineVariant),
                 ...items.map((item) => ListTile(
                       leading: Icon(item.icon,
-                          color: item.icon == Icons.logout_outlined ? AppColors.warm : cs.onSurfaceVariant, size: 22),
+                          color: item.icon == Icons.logout_outlined
+                              ? AppColors.warm
+                              : cs.onSurfaceVariant,
+                          size: 22),
                       title: Row(children: [
-                        Expanded(child: Text(item.label, style: TextStyle(
-                          fontSize: 14, color: item.icon == Icons.logout_outlined ? AppColors.warm : cs.onSurface,
-                        ))),
+                        Expanded(
+                            child: Text(item.label,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: item.icon == Icons.logout_outlined
+                                      ? AppColors.warm
+                                      : cs.onSurface,
+                                ))),
                         if (item.badge > 0)
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                            decoration: BoxDecoration(color: AppColors.warm, borderRadius: BorderRadius.circular(10)),
-                            child: Text('${item.badge}', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 7, vertical: 2),
+                            decoration: BoxDecoration(
+                                color: AppColors.warm,
+                                borderRadius: BorderRadius.circular(10)),
+                            child: Text('${item.badge}',
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600)),
                           ),
                       ]),
-                      onTap: () { Navigator.pop(ctx); item.onTap(); },
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        item.onTap();
+                      },
+                      contentPadding:
+                          const EdgeInsets.symmetric(horizontal: 20),
                       visualDensity: const VisualDensity(vertical: -1),
                     )),
               ],
@@ -432,7 +524,8 @@ class _HomeShellState extends State<HomeShell> {
         return FeedScreen(
           key: _feedKey,
           user: _user!,
-          onNotifications: () => Navigator.of(context).push(_route(NotificationsScreen(userId: _user!.id))),
+          onNotifications: () => Navigator.of(context)
+              .push(_route(NotificationsScreen(userId: _user!.id))),
           onMore: _showMoreSheet,
         );
       case 1:
@@ -449,7 +542,8 @@ class _HomeShellState extends State<HomeShell> {
         return FeedScreen(
           key: _feedKey,
           user: _user!,
-          onNotifications: () => Navigator.of(context).push(_route(NotificationsScreen(userId: _user!.id))),
+          onNotifications: () => Navigator.of(context)
+              .push(_route(NotificationsScreen(userId: _user!.id))),
           onMore: _showMoreSheet,
         );
     }
@@ -458,18 +552,23 @@ class _HomeShellState extends State<HomeShell> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    if (_loadingUser) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (_loadingUser)
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     return Scaffold(
       body: _buildBody(),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          border: Border(top: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.5), width: 0.5)),
+          border: Border(
+              top: BorderSide(
+                  color: cs.outlineVariant.withValues(alpha: 0.5), width: 0.5)),
         ),
         child: NavigationBar(
           selectedIndex: _tab,
           onDestinationSelected: (i) {
-            if (i == 4) _showMoreSheet();
-            else if (i == 2) _showCreateSheet();
+            if (i == 4)
+              _showMoreSheet();
+            else if (i == 2)
+              _showCreateSheet();
             else if (i != _tab) setState(() => _tab = i);
           },
           height: 64,
@@ -478,23 +577,39 @@ class _HomeShellState extends State<HomeShell> {
           backgroundColor: cs.surface,
           surfaceTintColor: Colors.transparent,
           destinations: [
-            NavigationDestination(icon: Icon(Icons.home_outlined, color: cs.onSurfaceVariant), selectedIcon: Icon(Icons.home, color: cs.primary), label: ''),
-            NavigationDestination(icon: Icon(Icons.explore_outlined, color: cs.onSurfaceVariant), selectedIcon: Icon(Icons.explore, color: cs.primary), label: ''),
+            NavigationDestination(
+                icon: Icon(Icons.home_outlined, color: cs.onSurfaceVariant),
+                selectedIcon: Icon(Icons.home, color: cs.primary),
+                label: ''),
+            NavigationDestination(
+                icon: Icon(Icons.explore_outlined, color: cs.onSurfaceVariant),
+                selectedIcon: Icon(Icons.explore, color: cs.primary),
+                label: ''),
             NavigationDestination(
               icon: Container(
-                width: 42, height: 42,
-                decoration: BoxDecoration(color: cs.primary, shape: BoxShape.circle),
+                width: 42,
+                height: 42,
+                decoration:
+                    BoxDecoration(color: cs.primary, shape: BoxShape.circle),
                 child: const Icon(Icons.add, color: Colors.white, size: 24),
               ),
               selectedIcon: Container(
-                width: 42, height: 42,
-                decoration: BoxDecoration(color: cs.primary, shape: BoxShape.circle),
+                width: 42,
+                height: 42,
+                decoration:
+                    BoxDecoration(color: cs.primary, shape: BoxShape.circle),
                 child: const Icon(Icons.add, color: Colors.white, size: 24),
               ),
               label: '',
             ),
-            NavigationDestination(icon: Icon(Icons.school_outlined, color: cs.onSurfaceVariant), selectedIcon: Icon(Icons.school, color: cs.primary), label: ''),
-            NavigationDestination(icon: Icon(Icons.menu_outlined, color: cs.onSurfaceVariant), selectedIcon: Icon(Icons.menu, color: cs.primary), label: ''),
+            NavigationDestination(
+                icon: Icon(Icons.school_outlined, color: cs.onSurfaceVariant),
+                selectedIcon: Icon(Icons.school, color: cs.primary),
+                label: ''),
+            NavigationDestination(
+                icon: Icon(Icons.menu_outlined, color: cs.onSurfaceVariant),
+                selectedIcon: Icon(Icons.menu, color: cs.primary),
+                label: ''),
           ],
         ),
       ),
@@ -511,13 +626,20 @@ class _CreatePostSheet extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final loc = MasarenLocalizations.of;
     final types = [
-      _PostType('story', loc(context, 'post.story'), '', Icons.auto_stories, cs.primary),
-      _PostType('recognition', loc(context, 'post.recognition'), '', Icons.emoji_events, cs.secondary),
-      _PostType('news', loc(context, 'post.news'), '', Icons.newspaper, const Color(0xFFE67C00)),
-      _PostType('video', loc(context, 'post.video'), '', Icons.videocam, cs.tertiary),
-      _PostType('evidence', loc(context, 'post.evidence'), '', Icons.eco, const Color(0xFF0F9D58)),
-      _PostType('announcement', loc(context, 'post.announcement'), '', Icons.campaign, const Color(0xFFF4B400)),
-      _PostType('synergy', loc(context, 'post.synergy'), '', Icons.handshake, const Color(0xFF8E24AA)),
+      _PostType('story', loc(context, 'post.story'), '', Icons.auto_stories,
+          cs.primary),
+      _PostType('recognition', loc(context, 'post.recognition'), '',
+          Icons.emoji_events, cs.secondary),
+      _PostType('news', loc(context, 'post.news'), '', Icons.newspaper,
+          const Color(0xFFE67C00)),
+      _PostType(
+          'video', loc(context, 'post.video'), '', Icons.videocam, cs.tertiary),
+      _PostType('evidence', loc(context, 'post.evidence'), '', Icons.eco,
+          const Color(0xFF0F9D58)),
+      _PostType('announcement', loc(context, 'post.announcement'), '',
+          Icons.campaign, const Color(0xFFF4B400)),
+      _PostType('synergy', loc(context, 'post.synergy'), '', Icons.handshake,
+          const Color(0xFF8E24AA)),
     ];
 
     return Container(
@@ -528,8 +650,13 @@ class _CreatePostSheet extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Container(margin: const EdgeInsets.only(top: 12), width: 36, height: 4,
-              decoration: BoxDecoration(color: cs.outlineVariant, borderRadius: BorderRadius.circular(2))),
+          Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                  color: cs.outlineVariant,
+                  borderRadius: BorderRadius.circular(2))),
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 16, 12, 0),
             child: Row(
@@ -540,8 +667,14 @@ class _CreatePostSheet extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(user.fullName, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: cs.onSurface)),
-                      Text(loc(context, 'action.createPost'), style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
+                      Text(user.fullName,
+                          style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
+                              color: cs.onSurface)),
+                      Text(loc(context, 'action.createPost'),
+                          style: TextStyle(
+                              color: cs.onSurfaceVariant, fontSize: 12)),
                     ],
                   ),
                 ),
@@ -569,11 +702,15 @@ class _CreatePostSheet extends StatelessWidget {
                   onTap: () {
                     Navigator.pop(context);
                     final capturedContext = context;
-                    Navigator.of(context).push<bool>(MaterialPageRoute(
-                        builder: (_) => CreatePostScreen(user: user, initialKind: t.kind))).then((result) {
+                    Navigator.of(context)
+                        .push<bool>(MaterialPageRoute(
+                            builder: (_) => CreatePostScreen(
+                                user: user, initialKind: t.kind)))
+                        .then((result) {
                       if (result == true) {
                         // Refresh feed
-                        final appState = capturedContext.findAncestorStateOfType<_HomeShellState>();
+                        final appState = capturedContext
+                            .findAncestorStateOfType<_HomeShellState>();
                         appState?._feedKey.currentState?.refresh();
                       }
                     });
@@ -582,7 +719,8 @@ class _CreatePostSheet extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: t.color.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: t.color.withValues(alpha: 0.15)),
+                      border:
+                          Border.all(color: t.color.withValues(alpha: 0.15)),
                     ),
                     child: Padding(
                       padding: const EdgeInsets.all(14),
@@ -599,9 +737,17 @@ class _CreatePostSheet extends StatelessWidget {
                             child: Icon(t.icon, color: t.color, size: 22),
                           ),
                           const Spacer(),
-                          Text(t.label, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: cs.onSurface)),
+                          Text(t.label,
+                              style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                  color: cs.onSurface)),
                           const SizedBox(height: 2),
-                          Text(t.desc, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11), maxLines: 2, overflow: TextOverflow.ellipsis),
+                          Text(t.desc,
+                              style: TextStyle(
+                                  color: cs.onSurfaceVariant, fontSize: 11),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis),
                         ],
                       ),
                     ),
@@ -632,4 +778,3 @@ class _MoreItem {
   final int badge;
   const _MoreItem(this.icon, this.label, this.onTap, {this.badge = 0});
 }
-

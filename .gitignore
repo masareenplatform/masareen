@@ -59,6 +59,10 @@ kubeconfig
 # Generated Flutter Android project (regenerated via `flutter create`)
 apps/mobile/android/
 
+# Generated Flutter iOS project (regenerated via `flutter create`)
+apps/mobile/ios/
+*.ipa
+
 # Logs
 *.log
 logs/

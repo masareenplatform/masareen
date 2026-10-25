@@ -67,7 +67,8 @@ class User {
         fullName: j['full_name'] ?? j['email']?.split('@').first ?? 'User',
         phone: j['phone'],
         role: j['role'] ?? 'INDIVIDUAL',
-        pmsScore: (j['pms_score'] is num) ? (j['pms_score'] as num).toDouble() : 0,
+        pmsScore:
+            (j['pms_score'] is num) ? (j['pms_score'] as num).toDouble() : 0,
         emailVerified: j['email_verified'] ?? false,
         skills: (j['skills'] is List)
             ? List<String>.from(j['skills'].map((s) =>
@@ -91,13 +92,17 @@ class User {
     if (r.contains('MEDIA') || r.contains('PRESS') || r.contains('NEWS')) {
       return 'MEDIA';
     }
-    if (r.contains('GOV') || r.contains('GOVERNMENT') || r.contains('MINISTRY')) {
+    if (r.contains('GOV') ||
+        r.contains('GOVERNMENT') ||
+        r.contains('MINISTRY')) {
       return 'GOVERNMENT';
     }
     if (r.contains('SPORT') || r.contains('CLUB') || r.contains('ATHLETE')) {
       return 'SPORTS';
     }
-    if (r.contains('ORG') || r.contains('NGO') || r.contains('COMPANY') ||
+    if (r.contains('ORG') ||
+        r.contains('NGO') ||
+        r.contains('COMPANY') ||
         r.contains('INSTITUTION')) {
       return 'ORGANIZATION';
     }
@@ -158,8 +163,10 @@ class Post {
   final int comments;
   final int shares;
   final bool likedByMe;
+  final bool bookmarkedByMe;
   final List<Comment> commentList;
   final String? createdAt;
+  final String? editedAt;
   final double? confidenceScore;
   final String? confidenceLabel;
   final Map<String, dynamic>? confidenceFactors;
@@ -188,8 +195,10 @@ class Post {
     this.comments = 0,
     this.shares = 0,
     this.likedByMe = false,
+    this.bookmarkedByMe = false,
     this.commentList = const [],
     this.createdAt,
+    this.editedAt,
     this.confidenceScore,
     this.confidenceLabel,
     this.confidenceFactors,
@@ -220,8 +229,10 @@ class Post {
         mediaType: j['media_type'],
         videoHlsUrl: j['video_hls_url'],
         videoPosterUrl: j['video_poster_url'],
-        latitude: j['latitude'] is num ? (j['latitude'] as num).toDouble() : null,
-        longitude: j['longitude'] is num ? (j['longitude'] as num).toDouble() : null,
+        latitude:
+            j['latitude'] is num ? (j['latitude'] as num).toDouble() : null,
+        longitude:
+            j['longitude'] is num ? (j['longitude'] as num).toDouble() : null,
         verifiedContent: j['verified_content'] ?? false,
         likes: j['likes'] is num ? (j['likes'] as num).toInt() : 0,
         comments: (j['comments'] is List)
@@ -229,12 +240,14 @@ class Post {
             : (j['comments'] is num ? (j['comments'] as num).toInt() : 0),
         shares: j['shares'] is num ? (j['shares'] as num).toInt() : 0,
         likedByMe: j['likedByMe'] ?? false,
+        bookmarkedByMe: j['bookmarkedByMe'] ?? false,
         commentList: (j['comments'] is List)
             ? (j['comments'] as List)
                 .map((c) => Comment.fromJson(c as Map<String, dynamic>))
                 .toList()
             : const [],
         createdAt: j['createdAt'] ?? j['created_at'],
+        editedAt: j['edited_at'] ?? j['editedAt'],
         confidenceScore: j['confidence_score'] is num
             ? (j['confidence_score'] as num).toDouble()
             : null,
@@ -249,11 +262,14 @@ class Post {
       );
 
   Post copyWith({
+    String? text,
     int? likes,
     bool? likedByMe,
+    bool? bookmarkedByMe,
     int? comments,
     List<Comment>? commentList,
     int? shares,
+    String? editedAt,
     double? confidenceScore,
     String? confidenceLabel,
     Map<String, dynamic>? confidenceFactors,
@@ -265,7 +281,7 @@ class Post {
       Post(
         id: id,
         author: author,
-        text: text,
+        text: text ?? this.text,
         kind: kind,
         programTag: programTag,
         sdg: sdg,
@@ -284,8 +300,10 @@ class Post {
         comments: comments ?? this.comments,
         shares: shares ?? this.shares,
         likedByMe: likedByMe ?? this.likedByMe,
+        bookmarkedByMe: bookmarkedByMe ?? this.bookmarkedByMe,
         commentList: commentList ?? this.commentList,
         createdAt: createdAt,
+        editedAt: editedAt ?? this.editedAt,
         confidenceScore: confidenceScore ?? this.confidenceScore,
         confidenceLabel: confidenceLabel ?? this.confidenceLabel,
         confidenceFactors: confidenceFactors ?? this.confidenceFactors,
@@ -300,13 +318,21 @@ class Author {
   final String? handle;
   final bool verified;
   final String? role;
-  Author({required this.id, required this.name, this.handle, this.verified = false, this.role});
+  final String? avatarUrl;
+  Author(
+      {required this.id,
+      required this.name,
+      this.handle,
+      this.verified = false,
+      this.role,
+      this.avatarUrl});
   factory Author.fromJson(Map<String, dynamic> j) => Author(
         id: j['id'] ?? '',
         name: j['name'] ?? 'Unknown',
         handle: j['handle'],
         verified: j['verified'] ?? false,
         role: j['role'],
+        avatarUrl: j['avatar_url'] ?? j['picture'],
       );
 }
 
@@ -316,6 +342,11 @@ class Comment {
   final String? authorId;
   final String? authorName;
   final String? authorHandle;
+  final String? authorPicture;
+  final bool authorVerified;
+  final String? parentId;
+  final int likeCount;
+  final bool likedByMe;
   final String? createdAt;
   Comment({
     this.id,
@@ -323,6 +354,11 @@ class Comment {
     this.authorId,
     this.authorName,
     this.authorHandle,
+    this.authorPicture,
+    this.authorVerified = false,
+    this.parentId,
+    this.likeCount = 0,
+    this.likedByMe = false,
     this.createdAt,
   });
   factory Comment.fromJson(Map<String, dynamic> j) => Comment(
@@ -331,7 +367,142 @@ class Comment {
         authorId: j['author_id']?.toString() ?? j['userId']?.toString(),
         authorName: j['author_name'] ?? j['authorName'] ?? 'User',
         authorHandle: j['author_handle'],
+        authorPicture: j['author_picture'] ?? j['avatar_url'],
+        authorVerified: j['author_verified'] ?? false,
+        parentId: j['parent_id']?.toString(),
+        likeCount:
+            j['like_count'] is num ? (j['like_count'] as num).toInt() : 0,
+        likedByMe: j['liked_by_me'] ?? false,
         createdAt: j['created_at'] ?? j['createdAt'],
+      );
+
+  Comment copyWith({int? likeCount, bool? likedByMe}) => Comment(
+        id: id,
+        text: text,
+        authorId: authorId,
+        authorName: authorName,
+        authorHandle: authorHandle,
+        authorPicture: authorPicture,
+        authorVerified: authorVerified,
+        parentId: parentId,
+        likeCount: likeCount ?? this.likeCount,
+        likedByMe: likedByMe ?? this.likedByMe,
+        createdAt: createdAt,
+      );
+}
+
+class Conversation {
+  final String id;
+  final Author peer;
+  final String? lastMessage;
+  final String? lastMessageAt;
+  final String? lastSenderId;
+  final int unreadCount;
+  Conversation({
+    required this.id,
+    required this.peer,
+    this.lastMessage,
+    this.lastMessageAt,
+    this.lastSenderId,
+    this.unreadCount = 0,
+  });
+  factory Conversation.fromJson(Map<String, dynamic> j) {
+    final p = Map<String, dynamic>.from(j['peer'] as Map? ?? {});
+    return Conversation(
+      id: j['id']?.toString() ?? '',
+      peer: Author.fromJson(p),
+      lastMessage: j['last_message'],
+      lastMessageAt: j['last_message_at'],
+      lastSenderId: j['last_sender_id']?.toString(),
+      unreadCount:
+          j['unread_count'] is num ? (j['unread_count'] as num).toInt() : 0,
+    );
+  }
+}
+
+class ChatMessage {
+  final String id;
+  final String body;
+  final String senderId;
+  final bool mine;
+  final bool read;
+  final String? createdAt;
+  ChatMessage({
+    required this.id,
+    required this.body,
+    required this.senderId,
+    this.mine = false,
+    this.read = false,
+    this.createdAt,
+  });
+  factory ChatMessage.fromJson(Map<String, dynamic> j) => ChatMessage(
+        id: j['id']?.toString() ?? '',
+        body: j['body'] ?? j['text'] ?? '',
+        senderId: j['sender_id']?.toString() ?? '',
+        mine: j['mine'] ?? false,
+        read: j['read'] ?? false,
+        createdAt: j['created_at'],
+      );
+}
+
+class ChatThread {
+  final Conversation conversation;
+  final List<ChatMessage> messages;
+  ChatThread({required this.conversation, required this.messages});
+  factory ChatThread.fromJson(Map<String, dynamic> j) => ChatThread(
+        conversation: Conversation.fromJson(
+            Map<String, dynamic>.from(j['conversation'] as Map? ?? {})),
+        messages: (j['messages'] is List)
+            ? (j['messages'] as List)
+                .whereType<Map>()
+                .map((m) => ChatMessage.fromJson(Map<String, dynamic>.from(m)))
+                .toList()
+            : const [],
+      );
+}
+
+class HashtagTrend {
+  final String tag;
+  final int count;
+  HashtagTrend({required this.tag, this.count = 0});
+  factory HashtagTrend.fromJson(Map<String, dynamic> j) => HashtagTrend(
+        tag: j['tag']?.toString() ?? '',
+        count: j['count'] is num ? (j['count'] as num).toInt() : 0,
+      );
+}
+
+class SocialSearchResult {
+  final String query;
+  final List<Author> users;
+  final List<Post> posts;
+  final List<HashtagTrend> hashtags;
+  SocialSearchResult({
+    required this.query,
+    this.users = const [],
+    this.posts = const [],
+    this.hashtags = const [],
+  });
+  factory SocialSearchResult.fromJson(Map<String, dynamic> j) =>
+      SocialSearchResult(
+        query: j['query']?.toString() ?? '',
+        users: (j['users'] is List)
+            ? (j['users'] as List)
+                .whereType<Map>()
+                .map((u) => Author.fromJson(Map<String, dynamic>.from(u)))
+                .toList()
+            : const [],
+        posts: (j['posts'] is List)
+            ? (j['posts'] as List)
+                .whereType<Map>()
+                .map((p) => Post.fromJson(Map<String, dynamic>.from(p)))
+                .toList()
+            : const [],
+        hashtags: (j['hashtags'] is List)
+            ? (j['hashtags'] as List)
+                .whereType<Map>()
+                .map((h) => HashtagTrend.fromJson(Map<String, dynamic>.from(h)))
+                .toList()
+            : const [],
       );
 }
 
@@ -478,7 +649,8 @@ class Opportunity {
         id: j['id']?.toString() ?? '',
         title: j['title'] ?? 'Opportunity',
         description: j['description'],
-        skills: (j['skills'] is List) ? List<dynamic>.from(j['skills']) : const [],
+        skills:
+            (j['skills'] is List) ? List<dynamic>.from(j['skills']) : const [],
         sdg: j['sdg'] is num ? (j['sdg'] as num).toInt() : null,
         minPms: j['min_pms'] is num ? (j['min_pms'] as num).toDouble() : null,
         location: j['location'] is Map
@@ -536,9 +708,11 @@ class Program {
         category: j['category']?.toString(),
         organization: j['organization']?.toString(),
         budget: (j['budget'] is num) ? (j['budget'] as num).toDouble() : 0,
-        projectsCount:
-            j['projects_count'] is num ? (j['projects_count'] as num).toInt() : 0,
-        tasksCount: j['tasks_count'] is num ? (j['tasks_count'] as num).toInt() : 0,
+        projectsCount: j['projects_count'] is num
+            ? (j['projects_count'] as num).toInt()
+            : 0,
+        tasksCount:
+            j['tasks_count'] is num ? (j['tasks_count'] as num).toInt() : 0,
         enrolledByMe: j['enrolled_by_me'] == true,
       );
 }
@@ -607,7 +781,9 @@ class Course {
             j['duration_min'] is num ? (j['duration_min'] as num).toInt() : 0,
         thumbnail: j['thumbnail'],
         status: j['status'] ?? 'PUBLISHED',
-        enrolledCount: j['enrolled_count'] is num ? (j['enrolled_count'] as num).toInt() : 0,
+        enrolledCount: j['enrolled_count'] is num
+            ? (j['enrolled_count'] as num).toInt()
+            : 0,
         enrolledByMe: j['enrolled_by_me'] == true,
       );
 }
@@ -654,7 +830,9 @@ class Event {
         linkUrl: j['link_url'],
         sdg: j['sdg'] is num ? (j['sdg'] as num).toInt() : null,
         capacity: j['capacity'] is num ? (j['capacity'] as num).toInt() : null,
-        attendeesCount: j['attendees_count'] is num ? (j['attendees_count'] as num).toInt() : 0,
+        attendeesCount: j['attendees_count'] is num
+            ? (j['attendees_count'] as num).toInt()
+            : 0,
         attending: j['attending'] == true,
         authorName: j['author']?['name'],
         createdAt: j['created_at'],
@@ -867,60 +1045,94 @@ class Personnel {
         summary: j['summary'] ?? '',
         mission: j['mission'] ?? '',
         beat: j['beat'] ?? '',
-        expertise: j['expertise'] is List ? List<dynamic>.from(j['expertise']) : const [],
-        specializations:
-            j['specializations'] is List ? List<dynamic>.from(j['specializations']) : const [],
-        skills: j['skills'] is List ? List<dynamic>.from(j['skills']) : const [],
-        languages: j['languages'] is List ? List<dynamic>.from(j['languages']) : const [],
-        education: j['education'] is List ? List<dynamic>.from(j['education']) : const [],
-        experience: j['experience'] is List ? List<dynamic>.from(j['experience']) : const [],
-        certificates:
-            j['certificates'] is List ? List<dynamic>.from(j['certificates']) : const [],
-        awards: j['awards'] is List ? List<dynamic>.from(j['awards']) : const [],
-        publications:
-            j['publications'] is List ? List<dynamic>.from(j['publications']) : const [],
-        memberships:
-            j['memberships'] is List ? List<dynamic>.from(j['memberships']) : const [],
+        expertise: j['expertise'] is List
+            ? List<dynamic>.from(j['expertise'])
+            : const [],
+        specializations: j['specializations'] is List
+            ? List<dynamic>.from(j['specializations'])
+            : const [],
+        skills:
+            j['skills'] is List ? List<dynamic>.from(j['skills']) : const [],
+        languages: j['languages'] is List
+            ? List<dynamic>.from(j['languages'])
+            : const [],
+        education: j['education'] is List
+            ? List<dynamic>.from(j['education'])
+            : const [],
+        experience: j['experience'] is List
+            ? List<dynamic>.from(j['experience'])
+            : const [],
+        certificates: j['certificates'] is List
+            ? List<dynamic>.from(j['certificates'])
+            : const [],
+        awards:
+            j['awards'] is List ? List<dynamic>.from(j['awards']) : const [],
+        publications: j['publications'] is List
+            ? List<dynamic>.from(j['publications'])
+            : const [],
+        memberships: j['memberships'] is List
+            ? List<dynamic>.from(j['memberships'])
+            : const [],
         employmentStatus: j['employment_status'] ?? 'Independent',
         availability: j['availability'] ?? 'Open to opportunities',
         verificationLevel: j['verification_level'] ?? 'VERIFIED',
         impactTier: j['impact_tier'] ?? 'Contributor',
         professionalRank: j['professional_rank'] ?? 'Field Reporter',
-        impactScore: (j['impact_score'] is num) ? (j['impact_score'] as num).toDouble() : 0,
-        trustScore: (j['trust_score'] is num) ? (j['trust_score'] as num).toDouble() : 0,
+        impactScore: (j['impact_score'] is num)
+            ? (j['impact_score'] as num).toDouble()
+            : 0,
+        trustScore: (j['trust_score'] is num)
+            ? (j['trust_score'] as num).toDouble()
+            : 0,
         verificationConfidence: (j['verification_confidence'] is num)
             ? (j['verification_confidence'] as num).toDouble()
             : 0,
         communityRating: (j['community_rating'] is num)
             ? (j['community_rating'] as num).toDouble()
             : 0,
-        currentReach: (j['current_reach'] is num) ? (j['current_reach'] as num).toDouble() : 0,
-        lifetimeReach:
-            (j['lifetime_reach'] is num) ? (j['lifetime_reach'] as num).toDouble() : 0,
-        averageReach: (j['average_reach'] is num) ? (j['average_reach'] as num).toDouble() : 0,
-        audienceGrowth:
-            (j['audience_growth'] is num) ? (j['audience_growth'] as num).toDouble() : 0,
+        currentReach: (j['current_reach'] is num)
+            ? (j['current_reach'] as num).toDouble()
+            : 0,
+        lifetimeReach: (j['lifetime_reach'] is num)
+            ? (j['lifetime_reach'] as num).toDouble()
+            : 0,
+        averageReach: (j['average_reach'] is num)
+            ? (j['average_reach'] as num).toDouble()
+            : 0,
+        audienceGrowth: (j['audience_growth'] is num)
+            ? (j['audience_growth'] as num).toDouble()
+            : 0,
         averageEngagement: (j['average_engagement'] is num)
             ? (j['average_engagement'] as num).toDouble()
             : 0,
-        mediaValue: (j['media_value'] is num) ? (j['media_value'] as num).toDouble() : 0,
+        mediaValue: (j['media_value'] is num)
+            ? (j['media_value'] as num).toDouble()
+            : 0,
         contributionScore: (j['contribution_score'] is num)
             ? (j['contribution_score'] as num).toDouble()
             : 0,
-        knowledgeScore:
-            (j['knowledge_score'] is num) ? (j['knowledge_score'] as num).toDouble() : 0,
+        knowledgeScore: (j['knowledge_score'] is num)
+            ? (j['knowledge_score'] as num).toDouble()
+            : 0,
         fieldActivityScore: (j['field_activity_score'] is num)
             ? (j['field_activity_score'] as num).toDouble()
             : 0,
         professionalConsistency: (j['professional_consistency'] is num)
             ? (j['professional_consistency'] as num).toDouble()
             : 0,
-        kpi: j['kpi'] is Map ? Map<String, dynamic>.from(j['kpi'] as Map) : const {},
-        completeness: j['completeness'] is num ? (j['completeness'] as num).toInt() : 0,
-        pmsScore: (j['pms_score'] is num) ? (j['pms_score'] as num).toDouble() : 0,
+        kpi: j['kpi'] is Map
+            ? Map<String, dynamic>.from(j['kpi'] as Map)
+            : const {},
+        completeness:
+            j['completeness'] is num ? (j['completeness'] as num).toInt() : 0,
+        pmsScore:
+            (j['pms_score'] is num) ? (j['pms_score'] as num).toDouble() : 0,
         pmsTier: j['pms_tier'] ?? 'BRONZE',
-        pms: j['pms'] is Map ? Map<String, dynamic>.from(j['pms'] as Map) : const {},
-        badges: j['badges'] is List ? List<dynamic>.from(j['badges']) : const [],
+        pms: j['pms'] is Map
+            ? Map<String, dynamic>.from(j['pms'] as Map)
+            : const {},
+        badges:
+            j['badges'] is List ? List<dynamic>.from(j['badges']) : const [],
         coverageRegions: j['coverage_regions'] is List
             ? List<dynamic>.from(j['coverage_regions'])
             : const [],
@@ -975,10 +1187,17 @@ class PersonnelReport {
         verificationStatus: j['verification_status'] ?? 'REVIEW',
         publishedAt: j['published_at'],
         reach: j['reach'] is num ? (j['reach'] as num).toInt() : 0,
-        engagement: j['engagement'] is num ? (j['engagement'] as num).toInt() : 0,
-        evidenceCount: j['evidence_count'] is num ? (j['evidence_count'] as num).toInt() : 0,
-        qualityScore: (j['quality_score'] is num) ? (j['quality_score'] as num).toDouble() : 0,
-        impactScore: (j['impact_score'] is num) ? (j['impact_score'] as num).toDouble() : 0,
+        engagement:
+            j['engagement'] is num ? (j['engagement'] as num).toInt() : 0,
+        evidenceCount: j['evidence_count'] is num
+            ? (j['evidence_count'] as num).toInt()
+            : 0,
+        qualityScore: (j['quality_score'] is num)
+            ? (j['quality_score'] as num).toDouble()
+            : 0,
+        impactScore: (j['impact_score'] is num)
+            ? (j['impact_score'] as num).toDouble()
+            : 0,
         coverImage: j['cover_image'],
         comments: j['comments'] is num ? (j['comments'] as num).toInt() : 0,
         likes: j['likes'] is num ? (j['likes'] as num).toInt() : 0,
@@ -1008,14 +1227,22 @@ class AnalyticsPoint {
   });
   factory AnalyticsPoint.fromJson(Map<String, dynamic> j) => AnalyticsPoint(
         bucket: j['bucket'] ?? '',
-        impactScore: (j['impact_score'] is num) ? (j['impact_score'] as num).toDouble() : 0,
+        impactScore: (j['impact_score'] is num)
+            ? (j['impact_score'] as num).toDouble()
+            : 0,
         reach: (j['reach'] is num) ? (j['reach'] as num).toDouble() : 0,
-        engagement: (j['engagement'] is num) ? (j['engagement'] as num).toDouble() : 0,
-        verifiedReports:
-            j['verified_reports'] is num ? (j['verified_reports'] as num).toInt() : 0,
+        engagement:
+            (j['engagement'] is num) ? (j['engagement'] as num).toDouble() : 0,
+        verifiedReports: j['verified_reports'] is num
+            ? (j['verified_reports'] as num).toInt()
+            : 0,
         evidence: j['evidence'] is num ? (j['evidence'] as num).toInt() : 0,
-        trustScore: (j['trust_score'] is num) ? (j['trust_score'] as num).toDouble() : 0,
-        knowledge: (j['knowledge'] is num) ? (j['knowledge'] as num).toDouble() : 0,
-        influence: (j['influence'] is num) ? (j['influence'] as num).toDouble() : 0,
+        trustScore: (j['trust_score'] is num)
+            ? (j['trust_score'] as num).toDouble()
+            : 0,
+        knowledge:
+            (j['knowledge'] is num) ? (j['knowledge'] as num).toDouble() : 0,
+        influence:
+            (j['influence'] is num) ? (j['influence'] as num).toDouble() : 0,
       );
 }
