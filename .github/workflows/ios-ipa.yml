@@ -31,7 +31,7 @@ jobs:
         with: { flutter-version: '3.44.5', channel: stable, cache: true }
       - name: Generate iOS project (git-ignored in repo)
         run: |
-          python3 -m pip install --user pillow
+          python3 -m pip install --user --break-system-packages pillow
           flutter create --platforms=ios --org com.masaren --project-name masaren .
           python3 tool/patch_ios.py
       - run: flutter pub get
