@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:masaren/api_client.dart';
 import 'package:masaren/models.dart';
 import 'package:masaren/theme.dart';
+import 'package:masaren/l10n.dart';
 import 'package:masaren/widgets.dart';
 import 'package:masaren/widgets/animations.dart';
 
@@ -31,7 +32,6 @@ class _LoginScreenState extends State<LoginScreen> {
     });
     final url = Uri.parse('${api.baseUrl}/mobile-auth.html');
     try {
-      if (!await canLaunchUrl(url)) throw Exception('Could not open the browser');
       await launchUrl(url, mode: LaunchMode.externalApplication);
     } catch (_) {
       if (mounted) setState(() => _error = 'Could not open Google sign in. Check your connection and try again.');
@@ -78,15 +78,22 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       body: Stack(
         children: [
           AnimatedGradientBackground(
-            colors: const [
-              Color(0xFF0D1B3E),
-              Color(0xFF2E1A47),
-              Color(0xFF0E3B43),
-            ],
+            colors: dark
+                ? const [
+                    Color(0xFF0D1B3E),
+                    Color(0xFF2E1A47),
+                    Color(0xFF0E3B43),
+                  ]
+                : const [
+                    Color(0xFFF6FAFF),
+                    Color(0xFFEAF3FF),
+                    Color(0xFFF3FBF5),
+                  ],
             child: const SizedBox.expand(),
           ),
           const Positioned.fill(child: FloatingShapes(shapeCount: 8)),
@@ -100,20 +107,22 @@ class _LoginScreenState extends State<LoginScreen> {
                     SlideInWidget(
                       delay: const Duration(milliseconds: 200),
                       slideOffset: const Offset(0, 0.15),
-                      child: const BrandLogo(height: 140, forceWhite: true),
+                      child: BrandLogo(height: 140, forceWhite: dark),
                     ),
                     const SizedBox(height: 8),
                     SlideInWidget(
                       delay: const Duration(milliseconds: 350),
                       slideOffset: const Offset(0, 0.1),
                       child: Text('Prove impact. Scale change.',
-                          style: TextStyle(color: AppColors.azure, fontSize: 15)),
+                          style: TextStyle(
+                              color: dark ? AppColors.azure : AppColors.muted,
+                              fontSize: 15)),
                     ),
                     const SizedBox(height: 28),
                     SlideInWidget(
                       delay: const Duration(milliseconds: 500),
                       slideOffset: const Offset(0, 0.1),
-                      child: _buildForm(),
+                      child: _buildForm(dark),
                     ),
                   ],
                 ),
@@ -125,81 +134,84 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildForm() {
+  Widget _buildForm(bool dark) {
+    final cs = Theme.of(context).colorScheme;
+    final fill = dark ? Colors.white.withOpacity(0.08) : Colors.white;
+    final border = dark ? AppColors.darkLine : cs.outlineVariant;
     return Column(
       children: [
         TextField(
           controller: _email,
           decoration: InputDecoration(
-            labelText: 'Email',
-            prefixIcon: Icon(Icons.email_outlined, color: AppColors.azure.withOpacity(0.7)),
+            labelText: MasarenLocalizations.of(context, 'login.email'),
+            prefixIcon: Icon(Icons.email_outlined, color: cs.primary.withOpacity(0.8)),
             filled: true,
-            fillColor: Colors.white.withOpacity(0.08),
+            fillColor: fill,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(20),
-              borderSide: BorderSide(color: AppColors.darkLine),
+              borderSide: BorderSide(color: border),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(20),
-              borderSide: BorderSide(color: AppColors.darkLine),
+              borderSide: BorderSide(color: border),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(20),
-              borderSide: BorderSide(color: AppColors.azure),
+              borderSide: BorderSide(color: cs.primary),
             ),
-            labelStyle: TextStyle(color: AppColors.azure.withOpacity(0.7)),
-            hintStyle: TextStyle(color: AppColors.azure.withOpacity(0.5)),
+            labelStyle: TextStyle(color: cs.onSurfaceVariant),
+            hintStyle: TextStyle(color: cs.onSurfaceVariant),
           ),
           keyboardType: TextInputType.emailAddress,
-          style: TextStyle(color: Colors.white70),
+          style: TextStyle(color: cs.onSurface),
         ),
         const SizedBox(height: 12),
         TextField(
           controller: _password,
           decoration: InputDecoration(
-            labelText: 'Password',
-            prefixIcon: Icon(Icons.lock_outline, color: AppColors.azure.withOpacity(0.7)),
+            labelText: MasarenLocalizations.of(context, 'login.password'),
+            prefixIcon: Icon(Icons.lock_outline, color: cs.primary.withOpacity(0.8)),
             filled: true,
-            fillColor: Colors.white.withOpacity(0.08),
+            fillColor: fill,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(20),
-              borderSide: BorderSide(color: AppColors.darkLine),
+              borderSide: BorderSide(color: border),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(20),
-              borderSide: BorderSide(color: AppColors.darkLine),
+              borderSide: BorderSide(color: border),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(20),
-              borderSide: BorderSide(color: AppColors.azure),
+              borderSide: BorderSide(color: cs.primary),
             ),
-            labelStyle: TextStyle(color: AppColors.azure.withOpacity(0.7)),
-            hintStyle: TextStyle(color: AppColors.azure.withOpacity(0.5)),
+            labelStyle: TextStyle(color: cs.onSurfaceVariant),
+            hintStyle: TextStyle(color: cs.onSurfaceVariant),
             suffixIcon: IconButton(
               icon: Icon(
                 _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                color: AppColors.azure.withOpacity(0.7),
+                color: cs.onSurfaceVariant,
                 size: 20,
               ),
               onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
             ),
           ),
           obscureText: _obscurePassword,
-          style: TextStyle(color: Colors.white70),
+          style: TextStyle(color: cs.onSurface),
         ),
         const SizedBox(height: 10),
         if (_error != null)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Text(_error!,
-                style: const TextStyle(color: Colors.redAccent, fontSize: 13)),
+                style: TextStyle(color: cs.error, fontSize: 13)),
           ),
         if (_notice != null)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Text(_notice!,
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: AppColors.azure, fontSize: 12)),
+                style: TextStyle(color: cs.primary, fontSize: 12)),
           ),
         const SizedBox(height: 4),
         _busy
@@ -207,7 +219,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 width: 48, height: 48,
                 child: Center(child: CircularProgressIndicator(color: AppColors.azure)),
               )
-            : gradientButton(label: 'Sign in', onPressed: _login),
+            : gradientButton(
+                label: MasarenLocalizations.of(context, 'login.signIn'),
+                onPressed: _login),
         const SizedBox(height: 14),
         OutlinedButton.icon(
           onPressed: _googleBusy ? null : _google,
@@ -217,17 +231,18 @@ class _LoginScreenState extends State<LoginScreen> {
           label: const Text('Continue with Google'),
           style: OutlinedButton.styleFrom(
             minimumSize: const Size.fromHeight(50),
-            foregroundColor: Colors.white,
-            backgroundColor: Colors.white.withOpacity(0.08),
-            side: const BorderSide(color: AppColors.darkLine),
+            foregroundColor: cs.onSurface,
+            backgroundColor: dark ? Colors.white.withOpacity(0.08) : Colors.white,
+            side: BorderSide(color: border),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           ),
         ),
         const SizedBox(height: 14),
         TextButton(
           onPressed: () => Navigator.pushNamed(context, '/register'),
-          child: Text('Create an account',
-              style: TextStyle(color: AppColors.azure.withOpacity(0.8))),
+          child: Text(
+              "${MasarenLocalizations.of(context, 'login.noAccount')} ${MasarenLocalizations.of(context, 'login.register')}",
+              style: TextStyle(color: cs.primary)),
         ),
       ],
     );

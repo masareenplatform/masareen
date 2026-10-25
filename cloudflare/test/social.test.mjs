@@ -437,3 +437,108 @@ test('professional profile domain: edit, aggregate, endorse, follow and discover
   assert.ok(post.id);
 });
 
+test('media posts keep galleries, HLS metadata, location and verified ranking', async () => {
+  const env = mkEnv();
+  const token = await signup(env, 'media@example.com', 'Maya Media');
+  const created = await call(env, 'POST', '/api/v1/posts', {
+    text: 'A photo story from the field with two captioned moments.',
+    kind: 'IMPACT',
+    impact_value: 9.2,
+    latitude: 33.5138,
+    longitude: 36.2765,
+    media: [
+      { url: 'https://cdn.example.org/one.jpg', caption: 'Before the works' },
+      { url: 'https://cdn.example.org/two.jpg', caption: 'After the works' },
+    ],
+  }, token);
+  assert.equal(created.status, 201);
+  const gallery = await created.json();
+  assert.equal(gallery.media_type, 'GALLERY');
+  assert.equal(gallery.media.length, 2);
+  assert.equal(gallery.media[1].caption, 'After the works');
+  assert.equal(gallery.latitude, 33.5138);
+  assert.equal(gallery.impactValue, 9.2);
+
+  const video = await (await call(env, 'POST', '/api/v1/posts', {
+    text: 'A short field clip waiting for HLS transcoding.',
+    kind: 'EVIDENCE',
+    media: [{
+      type: 'VIDEO',
+      url: 'https://cdn.example.org/clip.mp4',
+      hls_url: 'https://cdn.example.org/clip.m3u8',
+      poster_url: 'https://cdn.example.org/clip.jpg',
+    }],
+  }, token)).json();
+  assert.equal(video.media_type, 'VIDEO');
+  assert.equal(video.video_hls_url, 'https://cdn.example.org/clip.m3u8');
+  assert.equal(video.video_poster_url, 'https://cdn.example.org/clip.jpg');
+
+  const me = await (await call(env, 'GET', '/api/v1/users/me', null, token)).json();
+  await env.DB.prepare('UPDATE users SET email_verified=1 WHERE id=?').bind(me.id).run();
+  await env.DB.prepare('UPDATE posts SET confidence_score=92 WHERE id=?').bind(gallery.id).run();
+  const feed = await (await call(env, 'GET', '/api/v1/posts?mode=for_you', null, token)).json();
+  const ranked = feed.find((p) => p.id === gallery.id);
+  assert.equal(ranked.verified_content, true);
+  assert.ok(ranked.ranking_reasons.includes('Verified source'));
+});
+
+test('sports organisations, squads, results and player careers are served', async () => {
+  const env = mkEnv();
+  const owner = await signup(env, 'club@example.com', 'Club Owner');
+  const me = await (await call(env, 'GET', '/api/v1/users/me', null, owner)).json();
+  const at = new Date().toISOString();
+  const org = await env.DB.prepare(`INSERT INTO organizations
+    (owner_id,name,slug,type,description,country,city,verified,verification_level,pms_score,oii_score,metadata_json,created_at)
+    VALUES (?,?,?,?,?,?,?,1,'VERIFIED',88,72,?,?)`)
+    .bind(me.id, 'Al Noor FC', 'al-noor-fc', 'CLUB', 'Community football club', 'Jordan', 'Amman',
+      JSON.stringify({ league: 'Jordan League', stadium: 'Al Noor Park', capacity: 4200, founded: '1998' }), at).run();
+  const orgId = org.meta.last_row_id;
+
+  const athlete = await signup(env, 'player@example.com', 'Nour Player');
+  const player = await (await call(env, 'GET', '/api/v1/users/me', null, athlete)).json();
+  await env.DB.prepare(`INSERT INTO sports_profiles
+    (user_id,sport,position,club,team_id,nationality,height_cm,weight_kg,preferred_foot,jersey_number,metrics_json,verified,created_at,updated_at)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,1,?,?)`)
+    .bind(player.id, 'FOOTBALL', 'Forward', 'Al Noor FC', orgId, 'Jordan', 181, 76, 'Right', 9,
+      JSON.stringify({ trophies: [{ name: 'Cup', year: '2024' }] }), at, at).run();
+  await env.DB.prepare(`INSERT INTO sports_metrics
+    (user_id,sport,season,competition,team,appearances,starts,minutes,goals,assists,rating,yellow_cards,red_cards,clean_sheets,saves,source,created_at,updated_at)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+    .bind(player.id, 'FOOTBALL', '2024/25', 'Jordan League', 'Al Noor FC', 18, 16, 1440, 7, 4, 7.8, 2, 0, 0, 0, 'MANUAL', at, at).run();
+  await env.DB.prepare(`INSERT INTO sports_roster (org_id,athlete_id,position,jersey_number,season,status,created_at)
+    VALUES (?,?,?,?,?,?,?)`).bind(orgId, player.id, 'Forward', 9, '2024/25', 'ACTIVE', at).run();
+  await env.DB.prepare(`INSERT INTO sports_events
+    (org_id,opponent_name,competition,starts_at,venue,home_away,status,home_score,away_score,created_at)
+    VALUES (?,?,?,?,?,?,?,?,?,?)`)
+    .bind(orgId, 'Amman United', 'Jordan League', '2026-09-12T17:00:00Z', 'Al Noor Park', 'HOME', 'FINISHED', 2, 1, at).run();
+  await env.DB.prepare(`INSERT INTO sports_events
+    (org_id,opponent_name,competition,starts_at,venue,home_away,status,created_at)
+    VALUES (?,?,?,?,?,?,?,?)`)
+    .bind(orgId, 'Zarqa Stars', 'Jordan League', '2026-10-01T17:00:00Z', 'Zarqa Arena', 'AWAY', 'SCHEDULED', at).run();
+
+  const team = await (await call(env, 'GET', `/api/v1/orgs/${orgId}`, null, owner)).json();
+  assert.equal(team.name, 'Al Noor FC');
+  assert.equal(team.league, 'Jordan League');
+  assert.equal(team.wins, 1);
+  assert.equal(team.points, 3);
+
+  const squad = await (await call(env, 'GET', `/api/v1/orgs/${orgId}/squad`, null, owner)).json();
+  assert.equal(squad.length, 1);
+  assert.equal(squad[0].goals, 7);
+  const results = await (await call(env, 'GET', `/api/v1/orgs/${orgId}/results`, null, owner)).json();
+  assert.equal(results.length, 1);
+  assert.equal(results[0].opponent, 'Amman United');
+  const fixtures = await (await call(env, 'GET', `/api/v1/orgs/${orgId}/fixtures`, null, owner)).json();
+  assert.equal(fixtures.length, 1);
+
+  const record = await (await call(env, 'GET', `/api/v1/players/${player.id}`, null, owner)).json();
+  assert.equal(record.position, 'Forward');
+  assert.equal(record.goals, 7);
+  assert.equal(record.assists, 4);
+  assert.equal(record.email, '');
+  assert.equal(record.achievements.some((a) => a.kind === 'TROPHY'), true);
+  const career = await (await call(env, 'GET', `/api/v1/players/${player.id}/career`, null, owner)).json();
+  assert.equal(career[0].season, '2024/25');
+});
+
+

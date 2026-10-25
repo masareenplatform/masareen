@@ -10,6 +10,9 @@ const List<String> _audiences = [
   'PROFESSIONAL',
   'VOLUNTEER',
   'ORGANIZATION',
+  'ATHLETE',
+  'SPORTS',
+  'GOVERNMENT',
 ];
 
 class RegisterScreen extends StatefulWidget {
@@ -28,6 +31,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _confirm = TextEditingController();
   final _phone = TextEditingController();
   final _nationalId = TextEditingController();
+  final _university = TextEditingController();
   final _universityId = TextEditingController();
   String _role = 'INDIVIDUAL';
   String _audience = 'STUDENT';
@@ -46,6 +50,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _confirm.dispose();
     _phone.dispose();
     _nationalId.dispose();
+    _university.dispose();
     _universityId.dispose();
     super.dispose();
   }
@@ -57,7 +62,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
     final url = Uri.parse('${api.baseUrl}/mobile-auth.html${_isTester ? "?tester=1" : ""}');
     try {
-      if (!await canLaunchUrl(url)) throw Exception('Could not open the browser');
       await launchUrl(url, mode: LaunchMode.externalApplication);
     } catch (_) {
       if (mounted) {
@@ -116,13 +120,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
         'audience': _audience,
         'is_tester': _isTester,
         'consent': _consent,
-        if (_audience == 'STUDENT')
-          'university_id': _universityId.text.trim(),
+        'university': _university.text.trim(),
+        'university_id': _universityId.text.trim(),
       };
-      await AuthApi.register(body);
+      final registered = await AuthApi.register(body);
       try {
-        final login = await AuthApi.login(_email.text.trim(), _password.text);
-        final token = login['access_token'] as String? ?? '';
+        var token = registered['access_token'] as String? ?? '';
+        if (token.isEmpty) {
+          final login = await AuthApi.login(_email.text.trim(), _password.text);
+          token = login['access_token'] as String? ?? '';
+        }
         if (token.isEmpty) throw Exception('Login failed after registration');
         api.setToken(token);
         final user = await AuthApi.me();
@@ -148,12 +155,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(title: const Text('Create account')),
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [AppColors.darkBg, Color(0xFF06121F)],
+            colors: dark
+                ? const [AppColors.darkBg, Color(0xFF06121F)]
+                : const [Colors.white, Color(0xFFF4F9FF)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -166,10 +177,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 key: _formKey,
                 child: Column(
                   children: [
-                    const BrandLogo(height: 130, forceWhite: true),
+                    BrandLogo(height: 130, forceWhite: dark),
                     const SizedBox(height: 8),
                     Text('Join the alpha stage',
-                        style: TextStyle(color: AppColors.muted, fontSize: 14)),
+                        style: TextStyle(color: cs.onSurfaceVariant, fontSize: 14)),
                     const SizedBox(height: 20),
                     TextFormField(
                       controller: _fullName,
@@ -225,6 +236,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       items: const [
                         DropdownMenuItem(value: 'INDIVIDUAL', child: Text('Individual')),
                         DropdownMenuItem(value: 'ORGANIZATION', child: Text('Organization')),
+                        DropdownMenuItem(value: 'CLUB', child: Text('Sports club')),
+                        DropdownMenuItem(value: 'FEDERATION', child: Text('Federation')),
+                        DropdownMenuItem(value: 'INSTITUTION', child: Text('Institution')),
                       ],
                       onChanged: (v) => setState(() => _role = v!),
                     ),
@@ -240,32 +254,38 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       onChanged: (v) => setState(() => _audience = v!),
                     ),
                     const SizedBox(height: 12),
-                    if (_audience == 'STUDENT')
+                    if (_audience == 'STUDENT') ...[
+                      TextFormField(
+                        controller: _university,
+                        decoration: const InputDecoration(labelText: 'University (optional)'),
+                      ),
+                      const SizedBox(height: 12),
                       TextFormField(
                         controller: _universityId,
                         decoration: const InputDecoration(labelText: 'University ID (optional)'),
                       ),
+                    ],
                     const SizedBox(height: 8),
                     CheckboxListTile(
                       value: _consent,
                       onChanged: (v) => setState(() => _consent = v ?? false),
                       contentPadding: EdgeInsets.zero,
-                      title: const Text(
+                      title: Text(
                           'I agree to the terms and verify my impact.',
-                          style: TextStyle(color: AppColors.muted, fontSize: 13)),
-                      activeColor: AppColors.azure,
+                          style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
+                      activeColor: cs.primary,
                     ),
                     CheckboxListTile(
                       value: _isTester,
                       onChanged: (v) => setState(() => _isTester = v ?? false),
                       contentPadding: EdgeInsets.zero,
-                      title: const Text(
+                      title: Text(
                           'I want to join the MASAREEN beta tester program.',
-                          style: TextStyle(color: AppColors.muted, fontSize: 13)),
-                      subtitle: const Text(
+                          style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
+                      subtitle: Text(
                           'Testers help shape the app before the public launch.',
-                          style: TextStyle(color: AppColors.muted, fontSize: 11)),
-                      activeColor: AppColors.azure,
+                          style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11)),
+                      activeColor: cs.primary,
                     ),
                     if (_error != null)
                       Padding(
@@ -301,8 +321,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       label: const Text('Sign up with Google'),
                       style: OutlinedButton.styleFrom(
                         minimumSize: const Size.fromHeight(50),
-                        foregroundColor: Colors.white,
-                        side: BorderSide(color: AppColors.muted.withValues(alpha: 0.4)),
+                        foregroundColor: cs.onSurface,
+                        backgroundColor: dark ? Colors.white.withValues(alpha: 0.06) : Colors.white,
+                        side: BorderSide(color: cs.outlineVariant),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),
                     ),

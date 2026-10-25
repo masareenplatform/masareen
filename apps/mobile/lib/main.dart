@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
@@ -83,7 +83,7 @@ class MasarenApp extends StatefulWidget {
 class _MasarenAppState extends State<MasarenApp> {
   final ThemeProvider _theme = ThemeProvider();
   _AppPhase _phase = _AppPhase.splash;
-  Locale _locale = const Locale('en');
+  Locale _locale = const Locale('ar');
   final AppLinks _appLinks = AppLinks();
   StreamSubscription<Uri>? _linkSub;
 
@@ -126,7 +126,7 @@ class _MasarenAppState extends State<MasarenApp> {
 
   Future<void> _loadLocale() async {
     final prefs = await SharedPreferences.getInstance();
-    final code = prefs.getString(_localeKey) ?? 'en';
+    final code = prefs.getString(_localeKey) ?? 'ar';
     if (mounted) setState(() => _locale = Locale(code));
   }
 
@@ -351,7 +351,7 @@ class _HomeShellState extends State<HomeShell> {
         ),
         _MoreItem(
           Icons.language_outlined,
-          Localizations.localeOf(context).languageCode == 'en' ? 'العربية' : 'English',
+          Localizations.localeOf(context).languageCode == 'en' ? 'Ø§Ù„Ø¹Ø±Ø¨ÙŠØ©' : 'English',
           () {
             Navigator.pop(context);
             widget.onToggleLocale?.call();
@@ -632,3 +632,4 @@ class _MoreItem {
   final int badge;
   const _MoreItem(this.icon, this.label, this.onTap, {this.badge = 0});
 }
+

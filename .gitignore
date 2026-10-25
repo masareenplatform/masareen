@@ -63,6 +63,10 @@ apps/mobile/android/
 *.log
 logs/
 
+# Wrangler local state and ingest work dirs
+.wrangler/
+**/.work/
+
 # --- Cleanup audit additions (2026-07-12) ---
 backend/_run/            # generated native-run symlink workspace (run_native.ps1)
 *.apk                   # mobile build artifacts

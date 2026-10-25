@@ -1,9 +1,80 @@
 import 'package:flutter/material.dart';
+import 'package:masaren/api_client.dart';
 import 'package:masaren/theme.dart';
 
-class InstitutionProfileScreen extends StatelessWidget {
+class InstitutionProfileScreen extends StatefulWidget {
   final String institutionId;
   const InstitutionProfileScreen({super.key, required this.institutionId});
+
+  @override
+  State<InstitutionProfileScreen> createState() =>
+      _InstitutionProfileScreenState();
+}
+
+class _InstitutionProfileScreenState extends State<InstitutionProfileScreen> {
+  Map<String, dynamic>? _remote;
+  bool _loading = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    if (int.tryParse(widget.institutionId) != null) _load();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final data = await api
+          .get('/api/v1/users/${widget.institutionId}/institution') as Map<String, dynamic>;
+      if (!mounted) return;
+      final type = (data['institution_type'] ?? data['role'] ?? '')
+          .toString()
+          .toUpperCase();
+      final kind = type.contains('SPORT')
+          ? 'sports'
+          : type.contains('MEDIA')
+              ? 'media'
+              : type.contains('PLATFORM')
+                  ? 'platform'
+                  : type.contains('GOV')
+                      ? 'government'
+                      : 'organization';
+      final metrics = data['metrics'];
+      final services = data['services'];
+      final departments = data['departments'];
+      setState(() {
+        _remote = {
+          ...data,
+          'kind': kind,
+          'handle': data['handle'] ?? 'institution',
+          'badge': data['verified'] == true ? 'Verified Institution' : 'Institution',
+          'note': data['bio'] ?? '',
+          'mandate': data['bio'] ?? '',
+          'hq': data['city'] ?? data['country'] ?? '',
+          'established': data['jurisdiction'] ?? '',
+          'sectors': services is List
+              ? services
+                  .map((s) => s is Map ? (s['name'] ?? s['title'] ?? '') : s)
+                  .where((s) => s.toString().isNotEmpty)
+                  .toList()
+              : <dynamic>[],
+          'services': services is List ? services : <dynamic>[],
+          'departments': departments is List ? departments : <dynamic>[],
+          'metrics': metrics is Map ? metrics : <String, dynamic>{},
+          'remote': true,
+        };
+      });
+    } catch (e) {
+      if (mounted) setState(() => _error = e.toString());
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
 
   static const Map<String, Map<String, dynamic>> _registry = {
     'inst-1': {
@@ -108,18 +179,34 @@ class InstitutionProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final inst = _registry[institutionId];
+    if (_loading) {
+      return Scaffold(
+        appBar: AppBar(),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+    final inst = _remote ?? _registry[widget.institutionId];
     if (inst == null) {
       return Scaffold(
         appBar: AppBar(),
-        body: const Center(child: Text('Institution not found')),
+        body: Center(
+          child: _error == null
+              ? const Text('Institution not found')
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(_error!),
+                    const SizedBox(height: 12),
+                    FilledButton(onPressed: _load, child: const Text('Retry')),
+                  ],
+                ),
+        ),
       );
     }
     final kind = inst['kind'] as String? ?? 'individual';
     final gradient = _gradients[kind] ?? _gradients['individual']!;
     final icon = _icons[kind] ?? Icons.business;
     final typeLabel = _typeLabels[kind] ?? kind;
-    final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(title: Text(inst['name'])),
@@ -210,7 +297,9 @@ class InstitutionProfileScreen extends StatelessWidget {
                 ],
               ),
             ),
-            if (kind == 'government')
+            if (inst['remote'] == true)
+              _RemoteBody(inst: inst)
+            else if (kind == 'government')
               _GovBody(inst: inst)
             else if (kind == 'sports')
               _SportsBody(inst: inst)
@@ -223,6 +312,126 @@ class InstitutionProfileScreen extends StatelessWidget {
             const SizedBox(height: 24),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _RemoteBody extends StatelessWidget {
+  final Map<String, dynamic> inst;
+  const _RemoteBody({required this.inst});
+
+  String _label(String key) => key
+      .replaceAll('_', ' ')
+      .split(' ')
+      .where((w) => w.isNotEmpty)
+      .map((w) => w[0].toUpperCase() + w.substring(1))
+      .join(' ');
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final metrics = inst['metrics'] is Map ? inst['metrics'] as Map : const {};
+    final services = inst['services'] is List ? inst['services'] as List : const [];
+    final departments =
+        inst['departments'] is List ? inst['departments'] as List : const [];
+    final note = (inst['note'] ?? '').toString();
+    final transparency = (inst['transparency_score'] as num?) ?? 0;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (note.isNotEmpty)
+            _SectionCard(
+              title: 'About',
+              child: Text(note,
+                  style: TextStyle(
+                      fontSize: 15, height: 1.6, color: cs.onSurface)),
+            ),
+          if (metrics.isNotEmpty)
+            _SectionCard(
+              title: 'Key metrics',
+              child: Wrap(
+                spacing: 12,
+                runSpacing: 0,
+                children: metrics.entries
+                    .map((e) => SizedBox(
+                          width: 150,
+                          child: _Stat(
+                            e.value is num
+                                ? (e.value as num) % 1 == 0
+                                    ? (e.value as num).toInt().toString()
+                                    : (e.value as num).toStringAsFixed(1)
+                                : e.value.toString(),
+                            _label(e.key.toString()),
+                          ),
+                        ))
+                    .toList(),
+              ),
+            ),
+          if (services.isNotEmpty)
+            _SectionCard(
+              title: 'Services',
+              child: Column(
+                children: services.map((s) {
+                  final map = s is Map ? s : const {};
+                  final name = (map['name'] ?? map['title'] ?? s).toString();
+                  final description =
+                      (map['description'] ?? map['detail'] ?? '').toString();
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _FeatureRow(Icons.check_circle_outline, name),
+                        if (description.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(left: 30, bottom: 4),
+                            child: Text(description,
+                                style: TextStyle(
+                                    color: cs.onSurfaceVariant, height: 1.4)),
+                          ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          if (departments.isNotEmpty)
+            _SectionCard(
+              title: 'Departments',
+              child: Column(
+                children: departments.map((d) {
+                  final map = d is Map ? d : const {};
+                  final name = (map['name'] ?? map['title'] ?? d).toString();
+                  final contact = (map['contact'] ?? '').toString();
+                  return _FeatureRow(
+                    Icons.account_balance_outlined,
+                    contact.isEmpty ? name : '$name · $contact',
+                  );
+                }).toList(),
+              ),
+            ),
+          if (transparency > 0)
+            _SectionCard(
+              title: 'Transparency',
+              child: Row(
+                children: [
+                  Expanded(
+                      child: _Stat(
+                          '${transparency % 1 == 0 ? transparency.toInt() : transparency}%',
+                          'Transparency score')),
+                  const SizedBox(width: 12),
+                  Expanded(
+                      child: _Stat(
+                          (inst['verified'] == true) ? 'Verified' : 'Listed',
+                          'Status')),
+                ],
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -397,7 +606,10 @@ class _FeatureRow extends StatelessWidget {
         children: [
           Icon(icon, size: 18, color: cs.primary),
           const SizedBox(width: 10),
-          Text(label, style: TextStyle(fontSize: 14, color: cs.onSurface)),
+          Expanded(
+            child: Text(label,
+                style: TextStyle(fontSize: 14, color: cs.onSurface)),
+          ),
         ],
       ),
     );

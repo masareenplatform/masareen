@@ -99,6 +99,139 @@ class _PlayerShowcaseScreenState extends State<PlayerShowcaseScreen> {
     ));
   }
 
+  Future<void> _openSportsSync() async {
+    final search = TextEditingController();
+    List<dynamic> results = [];
+    bool searching = false;
+    bool syncing = false;
+    String? message;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setSheet) {
+          Future<void> runSearch() async {
+            final q = search.text.trim();
+            if (q.isEmpty) return;
+            setSheet(() {
+              searching = true;
+              message = null;
+            });
+            try {
+              final data =
+                  await api.get('/api/v1/sports/search', {'q': q});
+              final players =
+                  data is Map && data['players'] is List ? data['players'] as List : <dynamic>[];
+              setSheet(() => results = players);
+              if (players.isEmpty) setSheet(() => message = 'No players found.');
+            } catch (e) {
+              setSheet(() => message = 'Search failed: $e');
+            } finally {
+              setSheet(() => searching = false);
+            }
+          }
+
+          Future<void> sync(dynamic player) async {
+            final externalId = player is Map ? player['external_id'] : null;
+            if (externalId == null) return;
+            setSheet(() {
+              syncing = true;
+              message = null;
+            });
+            try {
+              await api.post('/api/v1/players/${widget.playerId}/sync',
+                  {'external_id': externalId.toString()});
+              if (sheetContext.mounted) Navigator.pop(sheetContext);
+              await _load();
+            } catch (e) {
+              setSheet(() {
+                message = 'Sync failed: $e';
+                syncing = false;
+              });
+            }
+          }
+
+          return Padding(
+            padding: EdgeInsets.only(
+                left: 20,
+                right: 20,
+                bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Link a sports profile',
+                    style:
+                        TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+                const SizedBox(height: 6),
+                const Text(
+                    'Search TheSportsDB to fill position, club, height, weight, photo and biography automatically.'),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: search,
+                  autofocus: true,
+                  textInputAction: TextInputAction.search,
+                  onSubmitted: (_) => runSearch(),
+                  decoration: InputDecoration(
+                    hintText: 'Player name',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: IconButton(
+                        onPressed: searching ? null : runSearch,
+                        icon: const Icon(Icons.arrow_forward)),
+                  ),
+                ),
+                if (searching)
+                  const Padding(
+                    padding: EdgeInsets.all(20),
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                if (message != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Text(message!),
+                  ),
+                if (results.isNotEmpty)
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 320),
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: results.length,
+                      separatorBuilder: (_, __) => const Divider(height: 1),
+                      itemBuilder: (_, i) {
+                        final p = results[i] as Map;
+                        return ListTile(
+                          enabled: !syncing,
+                          leading: CircleAvatar(
+                            backgroundImage: p['photo_url'] != null
+                                ? NetworkImage(p['photo_url'].toString())
+                                : null,
+                            child: p['photo_url'] == null
+                                ? const Icon(Icons.person)
+                                : null,
+                          ),
+                          title: Text(p['name']?.toString() ?? 'Player'),
+                          subtitle: Text([
+                            p['club'],
+                            p['position'],
+                            p['nationality']
+                          ].where((v) => v != null && v.toString().isNotEmpty).join(' · ')),
+                          trailing: const Icon(Icons.link),
+                          onTap: () => sync(p),
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+    search.dispose();
+  }
+
   // ── helpers ───────────────────────────────────────────────────────────
   String _str(dynamic v, [String fallback = '']) =>
       v?.toString() ?? fallback;
@@ -275,6 +408,11 @@ class _PlayerShowcaseScreenState extends State<PlayerShowcaseScreen> {
         ),
       ),
       actions: [
+        if (widget.playerId == widget.currentUser.id)
+          _HeaderAction(
+            icon: Icons.sync,
+            onTap: _openSportsSync,
+          ),
         _HeaderAction(
           icon: Icons.share_outlined,
           onTap: () => ScaffoldMessenger.of(context).showSnackBar(

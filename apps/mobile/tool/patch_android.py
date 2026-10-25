@@ -125,6 +125,33 @@ def manifest_fix(s):
             </intent-filter>
 '''
         s = s.replace('        </activity>', deep_link + '        </activity>', 1)
+    if 'android:launchMode="singleTask"' not in s:
+        if 'android:launchMode=' in s:
+            s = re.sub(r'android:launchMode="[^"]*"', 'android:launchMode="singleTask"', s, count=1)
+        else:
+            s = s.replace('android:name=".MainActivity"',
+                          'android:name=".MainActivity"\n            android:launchMode="singleTask"', 1)
+    if 'android:scheme="https"' not in s:
+        view_queries = '''        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <category android:name="android.intent.category.BROWSABLE"/>
+            <data android:scheme="https"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <category android:name="android.intent.category.BROWSABLE"/>
+            <data android:scheme="http"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <category android:name="android.intent.category.BROWSABLE"/>
+            <data android:scheme="masaren"/>
+        </intent>
+'''
+        if '</queries>' in s:
+            s = s.replace('</queries>', view_queries + '    </queries>', 1)
+        else:
+            s = s.replace('</manifest>', '    <queries>\n' + view_queries + '    </queries>\n</manifest>', 1)
     return s
 rw(manifest, manifest_fix)
 

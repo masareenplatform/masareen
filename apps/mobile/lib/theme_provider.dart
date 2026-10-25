@@ -1,10 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:masaren/theme.dart';
 
 class ThemeProvider extends ChangeNotifier {
   static const _key = 'masaren_theme';
-  bool _dark = true;
+  bool _dark = false;
   bool get dark => _dark;
 
   ThemeProvider() {
@@ -14,7 +14,7 @@ class ThemeProvider extends ChangeNotifier {
   Future<void> _load() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      _dark = prefs.getBool(_key) ?? true;
+      _dark = prefs.getBool(_key) ?? false;
       notifyListeners();
     } catch (_) {}
   }
@@ -39,3 +39,4 @@ class ThemeProvider extends ChangeNotifier {
 
   ThemeData get theme => buildTheme(dark: _dark);
 }
+

@@ -27,8 +27,8 @@
   #status.error { color: #ff9b9b; }
   #open {
     display: none; width: 100%; margin-top: 12px; padding: 14px 18px; border: 0; cursor: pointer;
-    border-radius: 999px; font-weight: 700; font-size: 14px; color: #06231f;
-    background: linear-gradient(90deg, #7fe3d4 0%, #bda36a 100%);
+    border-radius: 999px; font-weight: 700; font-size: 14px; color: #06231f; text-align: center;
+    text-decoration: none; background: linear-gradient(90deg, #7fe3d4 0%, #bda36a 100%);
   }
   .foot { margin-top: 26px; font-size: 11px; color: #6f8a8a; letter-spacing: .08em; }
 </style>
@@ -42,7 +42,7 @@
     <div id="google" class="g_id_signin"
          data-type="standard" data-shape="pill" data-theme="filled_black"
          data-text="continue_with" data-size="large" data-logo_alignment="left"></div>
-    <button id="open" type="button">Open MASAREEN</button>
+    <a id="open" href="#" role="button">Open MASAREEN</a>
     <div id="status" role="status" aria-live="polite"></div>
     <div class="foot">SECURE SIGN-IN · MASAREEN.COM</div>
   </main>
@@ -73,8 +73,8 @@
 
     function showOpen(link) {
       tokenLink = link;
+      openEl.href = link;
       openEl.style.display = 'block';
-      openEl.onclick = () => { location.href = link; };
     }
 
     async function onCredential(response) {

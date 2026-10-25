@@ -105,6 +105,37 @@ class User {
   }
 }
 
+class PostMedia {
+  final String url;
+  final String type;
+  final String? caption;
+  final String? hlsUrl;
+  final String? posterUrl;
+  final double? durationSeconds;
+
+  PostMedia({
+    required this.url,
+    this.type = 'IMAGE',
+    this.caption,
+    this.hlsUrl,
+    this.posterUrl,
+    this.durationSeconds,
+  });
+
+  bool get isVideo => type.toUpperCase() == 'VIDEO';
+
+  factory PostMedia.fromJson(Map<String, dynamic> j) => PostMedia(
+        url: (j['url'] ?? j['content_url'] ?? '').toString(),
+        type: (j['type'] ?? 'IMAGE').toString().toUpperCase(),
+        caption: j['caption']?.toString(),
+        hlsUrl: j['hls_url']?.toString(),
+        posterUrl: j['poster_url']?.toString(),
+        durationSeconds: j['duration_seconds'] is num
+            ? (j['duration_seconds'] as num).toDouble()
+            : null,
+      );
+}
+
 class Post {
   final String id;
   final Author author;
@@ -116,6 +147,13 @@ class Post {
   final String? impactLabel;
   final String? type;
   final String? contentUrl;
+  final List<PostMedia> media;
+  final String? mediaType;
+  final String? videoHlsUrl;
+  final String? videoPosterUrl;
+  final double? latitude;
+  final double? longitude;
+  final bool verifiedContent;
   final int likes;
   final int comments;
   final int shares;
@@ -139,6 +177,13 @@ class Post {
     this.impactLabel,
     this.type,
     this.contentUrl,
+    this.media = const [],
+    this.mediaType,
+    this.videoHlsUrl,
+    this.videoPosterUrl,
+    this.latitude,
+    this.longitude,
+    this.verifiedContent = false,
     this.likes = 0,
     this.comments = 0,
     this.shares = 0,
@@ -165,6 +210,19 @@ class Post {
         impactLabel: j['impactLabel'],
         type: j['type'],
         contentUrl: j['content_url'] ?? j['url'],
+        media: (j['media'] is List)
+            ? (j['media'] as List)
+                .whereType<Map>()
+                .map((m) => PostMedia.fromJson(Map<String, dynamic>.from(m)))
+                .where((m) => m.url.isNotEmpty)
+                .toList()
+            : const [],
+        mediaType: j['media_type'],
+        videoHlsUrl: j['video_hls_url'],
+        videoPosterUrl: j['video_poster_url'],
+        latitude: j['latitude'] is num ? (j['latitude'] as num).toDouble() : null,
+        longitude: j['longitude'] is num ? (j['longitude'] as num).toDouble() : null,
+        verifiedContent: j['verified_content'] ?? false,
         likes: j['likes'] is num ? (j['likes'] as num).toInt() : 0,
         comments: (j['comments'] is List)
             ? (j['comments'] as List).length
@@ -215,6 +273,13 @@ class Post {
         impactLabel: impactLabel ?? this.impactLabel,
         type: type,
         contentUrl: contentUrl,
+        media: media,
+        mediaType: mediaType,
+        videoHlsUrl: videoHlsUrl,
+        videoPosterUrl: videoPosterUrl,
+        latitude: latitude,
+        longitude: longitude,
+        verifiedContent: verifiedContent,
         likes: likes ?? this.likes,
         comments: comments ?? this.comments,
         shares: shares ?? this.shares,

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 class AppColors {
   static const brand = Color(0xFF1A73E8);
@@ -17,7 +17,7 @@ class AppColors {
   static const darkLine = Color(0xFF3C4043);
 }
 
-ThemeData buildTheme({bool dark = true}) {
+ThemeData buildTheme({bool dark = false}) {
   final Color bg = dark ? AppColors.darkBg : AppColors.canvas;
   final Color surface = dark ? const Color(0xFF202124) : Colors.white;
   final Color onBg = dark ? const Color(0xFFE8EAED) : AppColors.ink;
@@ -42,7 +42,7 @@ ThemeData buildTheme({bool dark = true}) {
   return ThemeData(
     useMaterial3: true,
     colorScheme: scheme,
-    fontFamily: 'Google Sans',
+    fontFamily: 'Cairo',
     scaffoldBackgroundColor: bg,
     appBarTheme: AppBarTheme(
       backgroundColor: dark ? AppColors.darkBg : Colors.white,
@@ -51,7 +51,7 @@ ThemeData buildTheme({bool dark = true}) {
       scrolledUnderElevation: 0.5,
       centerTitle: false,
       titleTextStyle: TextStyle(
-        fontFamily: 'Google Sans',
+        fontFamily: 'Cairo',
         fontSize: 22,
         fontWeight: FontWeight.w400,
         color: onBg,
@@ -149,3 +149,4 @@ BoxDecoration glassDecoration(bool dark) => BoxDecoration(
             : AppColors.line,
       ),
     );
+

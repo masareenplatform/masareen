@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:video_player/video_player.dart';
 import 'package:masaren/api_client.dart';
-import 'package:masaren/theme.dart';
 import 'package:masaren/widgets.dart';
 import 'package:masaren/widgets/animations.dart';
 import 'package:masaren/models.dart';
 import 'package:masaren/l10n.dart';
+import 'package:masaren/widgets/post_media_gallery.dart';
 import 'package:masaren/screens/institution_profile_screen.dart';
 import 'package:masaren/screens/news_media_profile_screen.dart';
 import 'package:masaren/screens/sports_profile_screen.dart';
@@ -66,81 +65,7 @@ class FeedScreenState extends State<FeedScreen> {
   ];
 
   List<Post> get _visiblePosts {
-    final all = _injectPlatformPosts(_posts);
-    return _filter == 'all' ? all : all.where((p) => p.kind == _filter).toList();
-  }
-
-  List<Post> _injectPlatformPosts(List<Post> posts) {
-    final platformPosts = <Post>[
-      Post(
-        id: '__ann-1',
-        author: Author(id: 'platform', name: 'MASAREEN', role: 'PLATFORM', verified: true),
-        text: 'New feature alert! You can now track verified impact in real-time across all your programs. Check out the updated analytics dashboard.',
-        kind: 'announcement',
-        likes: 42,
-        comments: 8,
-        shares: 15,
-        likedByMe: false,
-        commentList: [],
-        createdAt: DateTime.now().subtract(const Duration(hours: 3)).toIso8601String(),
-        type: 'TEXT',
-      ),
-      Post(
-        id: '__opp-1',
-        author: Author(id: 'platform', name: 'MASAREEN', role: 'PLATFORM', verified: true),
-        text: 'Applications are now open for the 2026 Impact Accelerator Program. Selected organizations receive up to 50K USD in funding plus mentorship from global impact leaders.',
-        kind: 'opportunity',
-        likes: 128,
-        comments: 34,
-        shares: 67,
-        likedByMe: false,
-        commentList: [],
-        createdAt: DateTime.now().subtract(const Duration(hours: 6)).toIso8601String(),
-        type: 'TEXT',
-      ),
-      Post(
-        id: '__rec-1',
-        author: Author(id: 'platform', name: 'MASAREEN', role: 'PLATFORM', verified: true),
-        text: 'Congratulations to Al-Baraka Foundation for achieving Platinum Verification! They have demonstrated exceptional impact in education across 12 communities in Egypt.',
-        kind: 'recognition',
-        likes: 256,
-        comments: 45,
-        shares: 89,
-        likedByMe: false,
-        commentList: [],
-        createdAt: DateTime.now().subtract(const Duration(hours: 12)).toIso8601String(),
-        type: 'TEXT',
-      ),
-      Post(
-        id: '__int-1',
-        author: Author(id: 'platform', name: 'MASAREEN', role: 'PLATFORM', verified: true),
-        text: 'Interview with Dr. Amira Hassan, founder of Green Hope Initiative: "Sustainability is not just about the environment, it is about creating lasting change for communities."',
-        kind: 'interview',
-        likes: 89,
-        comments: 12,
-        shares: 23,
-        likedByMe: false,
-        commentList: [],
-        createdAt: DateTime.now().subtract(const Duration(days: 1)).toIso8601String(),
-        type: 'TEXT',
-      ),
-    ];
-    
-    final result = <Post>[];
-    int pIdx = 0;
-    for (int i = 0; i < posts.length; i++) {
-      result.add(posts[i]);
-      if (i == 1 && pIdx < platformPosts.length) {
-        result.insert(result.length - 1, platformPosts[pIdx++]);
-      }
-      if (i == 3 && pIdx < platformPosts.length) {
-        result.insert(result.length - 1, platformPosts[pIdx++]);
-      }
-    }
-    while (pIdx < platformPosts.length) {
-      result.add(platformPosts[pIdx++]);
-    }
-    return result;
+    return _filter == 'all' ? _posts : _posts.where((p) => p.kind == _filter).toList();
   }
 
   @override
@@ -320,13 +245,13 @@ class FeedScreenState extends State<FeedScreen> {
                         onTap: (id) => Navigator.of(context).push(MaterialPageRoute(
                             builder: (_) => InstitutionProfileScreen(institutionId: id))),
                       ),
-                      const SectionTitle(title: 'Verified impact feed'),
+                      SectionTitle(title: MasarenLocalizations.of(context, 'feed.title')),
                       if (_visiblePosts.isEmpty)
                         Padding(
                           padding: const EdgeInsets.all(24),
                           child: Center(
                             child: Text(
-                              'No posts yet, be the first to share impact.',
+                              MasarenLocalizations.of(context, 'feed.empty'),
                               style: TextStyle(color: cs.onSurfaceVariant),
                             ),
                           ),
@@ -345,8 +270,8 @@ class FeedScreenState extends State<FeedScreen> {
                                     onComment: () => _openPost(p),
                                     onImpact: () => _onImpact(p),
                                     onShare: () => _onShare(p),
-                                    onImageTap: p.contentUrl != null
-                                        ? () => showEnlargedImage(context, p.contentUrl!)
+                                    onImageTap: p.media.any((m) => !m.isVideo)
+                                        ? (url) => showEnlargedImage(context, url)
                                         : null,
                                     onAuthor: () => _openAuthor(p.author),
                                     onOpen: () => _openPost(p),
@@ -364,7 +289,7 @@ class FeedScreenState extends State<FeedScreen> {
                         Padding(
                           padding: const EdgeInsets.all(16),
                           child: Center(
-                            child: Text('You\'re all caught up',
+                            child: Text(MasarenLocalizations.of(context, 'feed.caughtUp'),
                                 style: TextStyle(color: cs.onSurfaceVariant)),
                           ),
                         ),
@@ -443,6 +368,8 @@ class _FeaturedCarouselState extends State<_FeaturedCarousel> {
             itemBuilder: (_, i) {
               final p = widget.posts[i];
               final isCenter = i == _currentPage;
+              final images = p.media.where((m) => !m.isVideo).toList();
+              final cover = images.isNotEmpty ? images.first.url : p.contentUrl;
               return AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
                 margin: EdgeInsets.symmetric(
@@ -453,9 +380,9 @@ class _FeaturedCarouselState extends State<_FeaturedCarousel> {
                   borderRadius: BorderRadius.circular(18),
                   child: Stack(
                     children: [
-                      if (p.contentUrl != null && (p.type == 'IMAGE' || p.type == 'ARTICLE'))
+                      if (cover != null)
                         Image.network(
-                          p.contentUrl!,
+                          cover,
                           width: double.infinity,
                           height: double.infinity,
                           fit: BoxFit.cover,
@@ -610,6 +537,17 @@ class _FeedModeBar extends StatelessWidget {
   final ValueChanged<String> onSelect;
   const _FeedModeBar({required this.modes, required this.active, required this.onSelect});
 
+  static String _label(BuildContext context, String key, String fallback) {
+    const map = {
+      'for_you': 'feed.forYou',
+      'following': 'feed.following',
+      'latest': 'feed.latest',
+      'impact': 'feed.impact',
+    };
+    final l10nKey = map[key];
+    return l10nKey == null ? fallback : MasarenLocalizations.of(context, l10nKey);
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -639,7 +577,7 @@ class _FeedModeBar extends StatelessWidget {
                     children: [
                       Icon(m.$3, size: 15, color: isActive ? cs.onPrimary : cs.onSurfaceVariant),
                       const SizedBox(width: 6),
-                      Text(m.$2,
+                      Text(_label(context, m.$1, m.$2),
                           style: TextStyle(
                               fontSize: 13,
                               fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
@@ -768,7 +706,7 @@ class _Composer extends StatelessWidget {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                'Share verified impact…',
+                MasarenLocalizations.of(context, 'feed.composer'),
                 style: TextStyle(color: cs.onSurfaceVariant, fontSize: 15),
               ),
             ),
@@ -853,7 +791,7 @@ class _PostCard extends StatelessWidget {
   final VoidCallback onComment;
   final VoidCallback onImpact;
   final VoidCallback onShare;
-  final VoidCallback? onImageTap;
+  final ValueChanged<String>? onImageTap;
   final VoidCallback onAuthor;
   final VoidCallback onOpen;
   const _PostCard({
@@ -1028,7 +966,7 @@ class _PostCard extends StatelessWidget {
               children: [
                 if (post.type == 'ARTICLE')
                   _PostBadge(
-                    label: 'Verified News',
+                    label: MasarenLocalizations.of(context, 'post.verifiedNews'),
                     icon: Icons.verified,
                     color: Colors.blue,
                   ),
@@ -1058,7 +996,8 @@ class _PostCard extends StatelessWidget {
                   ),
                 if (post.impactValue != null && post.impactValue! > 0)
                   _PostBadge(
-                    label: 'Impact ${post.impactValue!.toStringAsFixed(1)}',
+                    label:
+                        '${MasarenLocalizations.of(context, 'feed.impact')} ${post.impactValue!.toStringAsFixed(1)}',
                     icon: Icons.verified,
                     color: cs.primary,
                   ),
@@ -1074,21 +1013,15 @@ class _PostCard extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
             child: Text(post.text, style: TextStyle(color: cs.onSurface, height: 1.4)),
           ),
-          if (post.contentUrl != null &&
-              (post.type == 'IMAGE' || post.type == 'ARTICLE'))
+          if (post.media.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 10),
-              child: GestureDetector(
-                onTap: onImageTap,
-                child: Image.network(post.contentUrl!,
-                    height: 220, width: double.infinity, fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => const SizedBox()),
+              child: PostMediaGallery(
+                media: post.media,
+                videoHlsUrl: post.videoHlsUrl,
+                videoPosterUrl: post.videoPosterUrl,
+                onImageTap: onImageTap,
               ),
-            ),
-          if (post.contentUrl != null && post.type == 'VIDEO')
-            Padding(
-              padding: const EdgeInsets.only(top: 10),
-              child: _VideoThumbnail(url: post.contentUrl!),
             ),
           if (post.impactValue != null && post.impactValue! > 0)
             Padding(
@@ -1105,7 +1038,7 @@ class _PostCard extends StatelessWidget {
                     const SizedBox(width: 6),
                     Flexible(
                       child: Text(
-                        'Impact Score: ${post.impactValue!.toStringAsFixed(1)} ${post.impactLabel ?? ""}',
+                        '${MasarenLocalizations.of(context, 'post.impactScore')}: ${post.impactValue!.toStringAsFixed(1)} ${post.impactLabel ?? ""}',
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
                         style: TextStyle(
@@ -1138,7 +1071,7 @@ class _PostCard extends StatelessWidget {
                 const SizedBox(width: 18),
                 _Action(
                   icon: Icons.fact_check_outlined,
-                  label: 'Rate impact',
+                  label: MasarenLocalizations.of(context, 'post.rateImpact'),
                   onTap: onImpact,
                 ),
                 const SizedBox(width: 18),
@@ -1354,132 +1287,6 @@ class _Action extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _VideoThumbnail extends StatefulWidget {
-  final String url;
-  const _VideoThumbnail({required this.url});
-  @override
-  State<_VideoThumbnail> createState() => _VideoThumbnailState();
-}
-
-class _VideoThumbnailState extends State<_VideoThumbnail> {
-  late VideoPlayerController _vc;
-  bool _ready = false;
-  bool _playing = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _vc = VideoPlayerController.networkUrl(Uri.parse(widget.url))
-      ..initialize().then((_) {
-        if (mounted) setState(() => _ready = true);
-      }).catchError((_) {});
-  }
-
-  @override
-  void dispose() {
-    _vc.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AspectRatio(
-      aspectRatio: _vc.value.isInitialized ? _vc.value.aspectRatio : 16 / 9,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-            if (_ready)
-              GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _playing = !_playing;
-                    _playing ? _vc.play() : _vc.pause();
-                  });
-                },
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    VideoPlayer(_vc),
-                    if (!_playing)
-                      Container(
-                        decoration: const BoxDecoration(
-                          color: Colors.black45,
-                          shape: BoxShape.circle,
-                        ),
-                        padding: const EdgeInsets.all(12),
-                        child: const Icon(Icons.play_arrow, color: Colors.white, size: 36),
-                      ),
-                  ],
-                ),
-              )
-            else
-              Container(
-                color: Colors.black,
-                child: const Center(
-                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                ),
-              ),
-            Positioned(
-              top: 8, right: 8,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(6)),
-                child: const Row(children: [
-                  Icon(Icons.videocam, color: Colors.white, size: 12),
-                  SizedBox(width: 4),
-                  Text('Video', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
-                ]),
-              ),
-            ),
-          ],
-        ),
-    );
-  }
-}
-
-class _KindBadge extends StatelessWidget {
-  final String kind;
-  const _KindBadge({required this.kind});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final styles = <String, Color>{
-      'story': cs.primary,
-      'impact': cs.primary,
-      'program': cs.secondary,
-      'evidence': cs.secondary,
-      'task': cs.primary,
-      'opportunity': AppColors.amber,
-      'synergy': cs.secondary,
-      'announcement': AppColors.amber,
-      'recognition': cs.secondary,
-    };
-    final labels = <String, String>{
-      'story': 'Story',
-      'impact': 'Impact',
-      'program': 'Program',
-      'evidence': 'Evidence',
-      'task': 'Task',
-      'opportunity': 'Opportunity',
-      'synergy': 'Synergy',
-      'announcement': 'Platform',
-      'recognition': 'Recognition',
-    };
-    final color = styles[kind] ?? cs.primary;
-    final label = labels[kind] ?? kind;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(label,
-          style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600)),
     );
   }
 }

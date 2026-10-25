@@ -6,7 +6,8 @@ const enc = new TextEncoder();
 const TOKEN_DAYS = 30;
 const PBKDF2_ITERATIONS = 100000;
 const ROLES = new Set(['INDIVIDUAL', 'STUDENT', 'ACADEMIC', 'ORGANIZATION', 'PROFESSIONAL',
-  'VOLUNTEER', 'JOURNALIST', 'DONOR', 'GOVERNMENT', 'MEDIA', 'SPORTS', 'ATHLETE', 'PLATFORM', 'ADMIN']);
+  'VOLUNTEER', 'JOURNALIST', 'DONOR', 'GOVERNMENT', 'MEDIA', 'SPORTS', 'ATHLETE', 'CLUB',
+  'FEDERATION', 'INSTITUTION', 'PLATFORM', 'ADMIN']);
 const IMPACT_CATEGORIES = new Set(['verified_evidence', 'community_voice', 'policy_change',
   'innovation', 'scale', 'transparency']);
 const SDG_NAMES = {
@@ -196,9 +197,76 @@ function authorJson(r) {
   };
 }
 
+function safeMediaUrl(v) {
+  const s = clean(v, 700);
+  if (!s) return null;
+  if (/^https?:\/\//i.test(s) || s.startsWith('/media/')) return s;
+  return null;
+}
+
+function mediaKind(url, type) {
+  const t = String(type || '').toUpperCase();
+  if (t === 'VIDEO' || t === 'IMAGE') return t;
+  return /\.(mp4|webm|mov|m3u8)(\?|#|$)/i.test(url || '') ? 'VIDEO' : 'IMAGE';
+}
+
+function normalizeMediaInput(b) {
+  const raw = Array.isArray(b.media) ? b.media : (b.media ? [b.media] : []);
+  const out = [];
+  for (const item of raw.slice(0, 12)) {
+    const src = typeof item === 'string' ? { url: item } : (item || {});
+    const url = safeMediaUrl(src.url || src.media_url || src.content_url);
+    if (!url) continue;
+    const type = mediaKind(url, src.type || src.media_type);
+    if (type === 'VIDEO' && out.some((m) => m.type === 'VIDEO')) continue;
+    if (type === 'IMAGE' && out.filter((m) => m.type === 'IMAGE').length >= 10) continue;
+    out.push({
+      url,
+      type,
+      caption: clean(src.caption, 240) || null,
+      poster_url: safeMediaUrl(src.poster_url) || null,
+      hls_url: safeMediaUrl(src.hls_url) || null,
+      duration_seconds: Number.isFinite(Number(src.duration_seconds)) ? Number(src.duration_seconds) : null,
+    });
+  }
+  return out;
+}
+
+function postMedia(r) {
+  const out = [];
+  if (r.media_json) {
+    try {
+      const parsed = JSON.parse(r.media_json);
+      if (Array.isArray(parsed)) {
+        for (const item of parsed) {
+          if (!item || !safeMediaUrl(item.url)) continue;
+          out.push({
+            url: safeMediaUrl(item.url),
+            type: mediaKind(item.url, item.type),
+            caption: item.caption || null,
+            poster_url: safeMediaUrl(item.poster_url) || null,
+            hls_url: safeMediaUrl(item.hls_url) || null,
+            duration_seconds: item.duration_seconds == null ? null : Number(item.duration_seconds),
+          });
+        }
+      }
+    } catch { /* ignore malformed legacy media */ }
+  }
+  const legacy = safeMediaUrl(r.media_url);
+  if (!out.length && legacy) out.push({ url: legacy, type: mediaKind(legacy, r.media_type), caption: null });
+  const hls = safeMediaUrl(r.video_hls_url);
+  if (hls && !out.some((m) => m.type === 'VIDEO')) {
+    out.push({ url: legacy || hls, type: 'VIDEO', caption: null, hls_url: hls,
+      poster_url: safeMediaUrl(r.video_poster_url), duration_seconds: r.video_duration_seconds == null ? null : Number(r.video_duration_seconds) });
+  }
+  return out;
+}
+
 function postJson(r, likedByMe, ranking) {
   let factors = null;
   if (r.confidence_factors) { try { factors = JSON.parse(r.confidence_factors); } catch { factors = null; } }
+  const media = postMedia(r);
+  const video = media.find((m) => m.type === 'VIDEO');
   return {
     id: String(r.id),
     author: authorJson(r),
@@ -211,6 +279,15 @@ function postJson(r, likedByMe, ranking) {
     impactLabel: r.impact_label || null,
     content_url: r.media_url || null,
     url: r.link_url || null,
+    media,
+    media_count: media.length,
+    media_type: r.media_type || (video ? 'VIDEO' : media.length ? 'GALLERY' : 'TEXT'),
+    video_hls_url: safeMediaUrl(r.video_hls_url) || video?.hls_url || null,
+    video_poster_url: safeMediaUrl(r.video_poster_url) || video?.poster_url || null,
+    video_duration_seconds: r.video_duration_seconds == null ? null : Number(r.video_duration_seconds),
+    latitude: r.latitude == null ? null : Number(r.latitude),
+    longitude: r.longitude == null ? null : Number(r.longitude),
+    verified_content: !!(r.author_verified && Number(r.confidence_score || 0) >= 60),
     likes: Number(r.like_count || 0),
     comments: Number(r.comment_count || 0),
     shares: Number(r.share_count || 0),
@@ -294,17 +371,21 @@ function rankCandidates(rows, opts) {
     const isFollow = viewer && following.has(r.author_id);
     const isSelf = viewer && viewer.id === r.author_id;
     const interest = viewer && (r.sdg && viewer.__interests && viewer.__interests.has(r.sdg)) ? 1 : 0;
-    const verified = r.author_verified ? 1 : 0;
-    const explore = hash01((viewer ? viewer.id : 'guest') + ':' + r.id) * 0.14;
+    const verifiedContent = r.author_verified && Number(r.confidence_score || 0) >= 60 ? 1 : 0;
+    const hasMedia = (r.media_json || r.media_url || r.video_hls_url) ? 1 : 0;
+    const explore = hash01((viewer ? viewer.id : 'guest') + ':' + r.id) * 0.10;
     const seenPenalty = viewer && seen.has(r.id) ? 0.22 : 0;
-    const score = 0.30 * Math.min(1.4, velocity) + 0.27 * impact + 0.22 * recency +
-      0.10 * (isFollow ? 1 : 0) + 0.06 * interest + 0.04 * verified + explore - seenPenalty + (isSelf ? 0.03 : 0);
+    const score = 0.34 * impact + 0.18 * verifiedContent + 0.18 * recency +
+      0.14 * Math.min(1.4, velocity) + 0.08 * (isFollow ? 1 : 0) + 0.05 * interest +
+      0.03 * hasMedia + explore - seenPenalty + (isSelf ? 0.02 : 0);
     const reasons = [];
-    if (impact >= 0.7) reasons.push({ key: 'impact', label: 'High verified impact', weight: 0.27 * impact });
-    if (isFollow) reasons.push({ key: 'following', label: 'From a profile you follow', weight: 0.1 });
-    if (velocity >= 0.5) reasons.push({ key: 'trending', label: 'Trending in the community', weight: 0.3 * velocity });
-    if (interest) reasons.push({ key: 'interest', label: 'Matches your interests', weight: 0.06 });
-    if (ageH < 6) reasons.push({ key: 'fresh', label: 'Fresh update', weight: 0.22 * recency });
+    if (impact >= 0.6) reasons.push({ key: 'impact', label: 'High verified impact', weight: 0.34 * impact });
+    if (verifiedContent) reasons.push({ key: 'verified', label: 'Verified source', weight: 0.18 });
+    if (isFollow) reasons.push({ key: 'following', label: 'From a profile you follow', weight: 0.08 });
+    if (velocity >= 0.5) reasons.push({ key: 'trending', label: 'Trending in the community', weight: 0.14 * velocity });
+    if (hasMedia) reasons.push({ key: 'media', label: 'Visual evidence attached', weight: 0.03 });
+    if (interest) reasons.push({ key: 'interest', label: 'Matches your interests', weight: 0.05 });
+    if (ageH < 6) reasons.push({ key: 'fresh', label: 'Fresh update', weight: 0.18 * recency });
     reasons.sort((a, b) => b.weight - a.weight);
     if (!reasons.length) reasons.push({ key: 'explore', label: 'Worth discovering', weight: 0.05 });
     return { row: r, score, reason: reasons[0].label, reasons: reasons.slice(0, 3).map((x) => x.label) };
@@ -384,6 +465,13 @@ async function register(req, env) {
   const password = typeof b.password === 'string' ? b.password : '';
   const isTester = b.is_tester === true || b.is_tester === 'true' || b.tester === true;
   const audience = clean(b.audience, 40).toUpperCase() || null;
+  const phone = clean(b.phone, 40) || null;
+  const nationalId = clean(b.national_id, 60) || null;
+  const university = clean(b.university, 160) || null;
+  const universityId = clean(b.university_id, 60) || null;
+  const consent = b.consent === true || b.consent === 'true' || b.consent === 1 || b.consent === '1';
+  const requestedRole = clean(b.role, 30).toUpperCase();
+  const role = ROLES.has(requestedRole) ? requestedRole : 'INDIVIDUAL';
   if (!isEmail(email)) throw new HttpError(400, 'invalid_email', 'Please enter a valid email address.');
   if (name.length < 2) throw new HttpError(400, 'invalid_name', 'Please enter your full name.');
   if (name.length > 90) throw new HttpError(400, 'invalid_name', 'Name is too long.');
@@ -395,20 +483,30 @@ async function register(req, env) {
   if (existing) {
     if (existing.password_hash) throw new HttpError(409, 'email_taken', 'An account with this email already exists. Please sign in.');
     const { salt, hash } = await hashPassword(password);
-    await env.DB.prepare('UPDATE users SET password_hash=?, password_salt=?, name=COALESCE(NULLIF(?,\'\'),name), signup_method=?, is_tester=CASE WHEN ? THEN 1 ELSE is_tester END, audience=COALESCE(?,audience), consent_at=COALESCE(consent_at,?) WHERE id=?')
-      .bind(hash, salt, name, 'password', isTester ? 1 : 0, audience, nowIso(), existing.id).run();
+    await env.DB.prepare(`UPDATE users SET password_hash=?, password_salt=?,
+      name=COALESCE(NULLIF(?,''),name),
+      role=CASE WHEN COALESCE(role,'') IN ('','INDIVIDUAL') THEN ? ELSE role END,
+      signup_method=?, is_tester=CASE WHEN ? THEN 1 ELSE is_tester END,
+      audience=COALESCE(?,audience), phone=COALESCE(?,phone),
+      university=COALESCE(NULLIF(?,''),university),
+      university_id=COALESCE(NULLIF(?,''),university_id),
+      national_id=COALESCE(NULLIF(?,''),national_id),
+      consent_at=COALESCE(consent_at,?)
+      WHERE id=?`)
+      .bind(hash, salt, name, role, 'password', isTester ? 1 : 0, audience, phone,
+        university, universityId, nationalId, consent ? nowIso() : null, existing.id).run();
     const u = await env.DB.prepare('SELECT * FROM users WHERE id=?').bind(existing.id).first();
     return json({ ok: true, access_token: await signToken({ uid: u.id, exp: Date.now() + TOKEN_DAYS * 86400000 }, env.SESSION_SECRET), token_type: 'bearer', user: await userJson(env, u, u) });
   }
-  const role = ROLES.has(String(b.role || '').toUpperCase()) ? String(b.role).toUpperCase() : 'INDIVIDUAL';
   const { salt, hash } = await hashPassword(password);
   const at = nowIso();
   const r = await env.DB.prepare(`INSERT INTO users (email, email_verified, name, role, country, city, interest, phone,
+      national_id, university, university_id,
       password_hash, password_salt, handle, bio, audience, is_tester, consent_at, profile_complete, signup_method, created_at, last_login_at, login_count)
-      VALUES (?,0,?,?,?,?,?,?,?,?,?,?,?,?,?,1,'password',?,?,1)`)
+      VALUES (?,0,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,'password',?,?,1)`)
     .bind(email, name, role, clean(b.country, 60) || null, clean(b.city, 80) || null, clean(b.interest, 120) || null,
-      clean(b.phone, 40) || null, hash, salt, handleFor(name, '0'), clean(b.bio, 400) || null, audience, isTester ? 1 : 0,
-      at, at, at).run();
+      phone, nationalId, university, universityId, hash, salt, handleFor(name, '0'), clean(b.bio, 400) || null, audience,
+      isTester ? 1 : 0, consent ? at : null, at, at).run();
   const id = r.meta.last_row_id;
   await env.DB.prepare('UPDATE users SET handle=? WHERE id=?').bind(handleFor(name, id), id).run();
   const u = await env.DB.prepare('SELECT * FROM users WHERE id=?').bind(id).first();
@@ -492,14 +590,41 @@ async function createPost(req, env) {
   if (text.length < 2) throw new HttpError(400, 'empty_post', 'Write something before posting.');
   const kind = clean(b.kind || b.type, 30).toUpperCase() || 'UPDATE';
   const sdg = num(b.sdg);
-  const media = clean(b.media_url || b.url, 500) || null;
+  const media = normalizeMediaInput(b);
+  const legacyMedia = safeMediaUrl(b.media_url || b.url) || media[0]?.url || null;
   const link = clean(b.link_url || b.link, 500) || null;
+  const rawImpact = b.impact_value == null ? null : Number(b.impact_value);
+  const impactValue = Number.isFinite(rawImpact) ? clamp(rawImpact, 0, 10) : null;
+  const latitude = Number.isFinite(Number(b.latitude)) ? clamp(Number(b.latitude), -90, 90) : null;
+  const longitude = Number.isFinite(Number(b.longitude)) ? clamp(Number(b.longitude), -180, 180) : null;
+
+  let job = null;
+  const jobId = clean(b.video_job_id, 80);
+  if (jobId) {
+    job = await env.DB.prepare('SELECT * FROM video_jobs WHERE id=? AND user_id=?').bind(jobId, u.id).first();
+    if (!job) throw new HttpError(404, 'video_job_not_found', 'That video upload could not be found.');
+  }
+  const video = media.find((m) => m.type === 'VIDEO');
+  const videoHls = safeMediaUrl(b.video_hls_url) || safeMediaUrl(video?.hls_url) || safeMediaUrl(job?.hls_url);
+  const videoPoster = safeMediaUrl(b.video_poster_url) || safeMediaUrl(video?.poster_url) || safeMediaUrl(job?.poster_url);
+  const videoDuration = Number.isFinite(Number(b.video_duration_seconds))
+    ? Number(b.video_duration_seconds) : (video?.duration_seconds ?? (job?.duration_seconds == null ? null : Number(job.duration_seconds)));
+  if (video && videoHls && !video.hls_url) video.hls_url = videoHls;
+  const mediaType = video ? 'VIDEO' : media.length > 1 ? 'GALLERY' : media.length ? 'IMAGE' : 'TEXT';
   const at = nowIso();
-  const r = await env.DB.prepare(`INSERT INTO posts (author_id,text,kind,sdg,impact_value,impact_label,confidence_score,confidence_label,confidence_factors,media_url,link_url,created_at)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`)
-    .bind(u.id, text, kind, sdg && sdg >= 1 && sdg <= 17 ? sdg : null, null, 'Awaiting ratings', 0, 'Low confidence',
-      JSON.stringify({ ratings: 0, method: 'weighted ratings + engagement + author trust' }), media, link, at).run();
-  const row = await getPostRow(env, r.meta.last_row_id);
+  const r = await env.DB.prepare(`INSERT INTO posts (author_id,text,kind,sdg,impact_value,impact_label,confidence_score,confidence_label,confidence_factors,
+      media_url,link_url,media_json,media_type,video_hls_url,video_poster_url,video_duration_seconds,latitude,longitude,source,created_at,updated_at)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'USER',?,?)`)
+    .bind(u.id, text, kind, sdg && sdg >= 1 && sdg <= 17 ? sdg : null,
+      impactValue, impactValue == null ? 'Awaiting ratings' : impactLabelFor(impactValue, 0),
+      0, 'Low confidence', JSON.stringify({ ratings: 0, method: 'weighted ratings + engagement + author trust' }),
+      legacyMedia, link, media.length ? JSON.stringify(media) : null, mediaType,
+      videoHls, videoPoster, videoDuration, latitude, longitude, at, at).run();
+  const postId = r.meta.last_row_id;
+  if (job) {
+    await env.DB.prepare('UPDATE video_jobs SET post_id=?, updated_at=? WHERE id=?').bind(postId, at, job.id).run();
+  }
+  const row = await getPostRow(env, postId);
   return json(postJson(row, false, null), 201);
 }
 
@@ -1807,7 +1932,9 @@ async function uploadMedia(req, env, kind) {
   try { form = await req.formData(); } catch { throw new HttpError(400, 'bad_upload', 'Choose a file to upload.'); }
   const file = form.get('file');
   if (!file || typeof file === 'string') throw new HttpError(400, 'bad_upload', 'Choose a file to upload.');
-  if (file.size > 12 * 1024 * 1024) throw new HttpError(413, 'too_large', 'Files must be 12 MB or smaller.');
+  const maxBytes = kind === 'video' ? 80 * 1024 * 1024 : 12 * 1024 * 1024;
+  if (file.size > maxBytes) throw new HttpError(413, 'too_large', kind === 'video'
+    ? 'Videos must be 80 MB or smaller.' : 'Images must be 12 MB or smaller.');
   const ct = String(file.type || '').toLowerCase();
   const isImage = IMAGE_TYPES.has(ct);
   const isVideo = VIDEO_TYPES.has(ct);
@@ -1823,8 +1950,16 @@ async function uploadMedia(req, env, kind) {
   const url = `${base}/${key}`;
   if (kind === 'avatar') await env.DB.prepare('UPDATE users SET picture=? WHERE id=?').bind(url, u.id).run();
   if (kind === 'cover') await env.DB.prepare('UPDATE users SET cover_url=? WHERE id=?').bind(url, u.id).run();
+  let jobId = null;
+  if (kind === 'video') {
+    jobId = crypto.randomUUID();
+    const at = nowIso();
+    await env.DB.prepare(`INSERT INTO video_jobs (id,user_id,status,original_url,created_at,updated_at)
+      VALUES (?,?,'queued',?,?,?)`).bind(jobId, u.id, url, at, at).run();
+  }
   return json({ ok: true, url, avatar_url: kind === 'avatar' ? url : null,
-    cover_url: kind === 'cover' ? url : null, content_type: ct, size: file.size });
+    cover_url: kind === 'cover' ? url : null, content_type: ct, size: file.size,
+    job_id: jobId, video_job_id: jobId, status: jobId ? 'queued' : null });
 }
 
 /* ---------------- misc app endpoints (graceful stubs) ---------------- */
@@ -1885,12 +2020,515 @@ async function userRoutes(req, env, url, viewer) {
   return null;
 }
 
+/* ---------------- sports organisations, athletes and institution profiles ---------------- */
+function parseJsonObject(raw) {
+  if (!raw) return {};
+  try { const v = JSON.parse(raw); return v && typeof v === 'object' && !Array.isArray(v) ? v : {}; } catch { return {}; }
+}
+
+function parseJsonValue(raw, fallback) {
+  if (!raw) return fallback;
+  try { const v = JSON.parse(raw); return v == null ? fallback : v; } catch { return fallback; }
+}
+
+function metricRowJson(m) {
+  return {
+    id: String(m.id),
+    season: m.season || null,
+    competition: m.competition || null,
+    team: m.team || null,
+    appearances: Number(m.appearances || 0),
+    starts: Number(m.starts || 0),
+    minutes: Number(m.minutes || 0),
+    goals: Number(m.goals || 0),
+    assists: Number(m.assists || 0),
+    rating: m.rating == null ? null : Number(m.rating),
+    yellow_cards: Number(m.yellow_cards || 0),
+    red_cards: Number(m.red_cards || 0),
+    clean_sheets: Number(m.clean_sheets || 0),
+    saves: Number(m.saves || 0),
+    passes_accuracy: m.passes_accuracy == null ? null : Number(m.passes_accuracy),
+    distance_km: m.distance_km == null ? null : Number(m.distance_km),
+    sprint_count: m.sprint_count == null ? null : Number(m.sprint_count),
+    payload: parseJsonObject(m.payload_json),
+    source: m.source || 'MANUAL',
+  };
+}
+
+async function metricsFor(env, userId) {
+  const rows = (await env.DB.prepare('SELECT * FROM sports_metrics WHERE user_id=? ORDER BY season DESC, competition ASC')
+    .bind(userId).all()).results || [];
+  const totals = { appearances: 0, starts: 0, minutes: 0, goals: 0, assists: 0, yellow_cards: 0, red_cards: 0,
+    clean_sheets: 0, saves: 0, rating: 0, rated: 0 };
+  for (const r of rows) {
+    totals.appearances += Number(r.appearances || 0);
+    totals.starts += Number(r.starts || 0);
+    totals.minutes += Number(r.minutes || 0);
+    totals.goals += Number(r.goals || 0);
+    totals.assists += Number(r.assists || 0);
+    totals.yellow_cards += Number(r.yellow_cards || 0);
+    totals.red_cards += Number(r.red_cards || 0);
+    totals.clean_sheets += Number(r.clean_sheets || 0);
+    totals.saves += Number(r.saves || 0);
+    if (r.rating != null) { totals.rating += Number(r.rating); totals.rated += 1; }
+  }
+  totals.rating = totals.rated ? Number((totals.rating / totals.rated).toFixed(2)) : null;
+  delete totals.rated;
+  return { rows: rows.map(metricRowJson), totals };
+}
+
+async function resolveOrg(env, id) {
+  let org = await env.DB.prepare('SELECT * FROM organizations WHERE id=?').bind(id).first();
+  if (!org) org = await env.DB.prepare('SELECT * FROM organizations WHERE owner_id=? ORDER BY id LIMIT 1').bind(id).first();
+  const owner = org?.owner_id ? await env.DB.prepare('SELECT * FROM users WHERE id=?').bind(org.owner_id).first() : null;
+  const fallbackUser = !org ? await env.DB.prepare('SELECT * FROM users WHERE id=?').bind(id).first() : null;
+  return { org, owner, fallbackUser };
+}
+
+async function orgRecord(env, org, owner, viewer) {
+  const stats = { wins: 0, draws: 0, losses: 0, points: 0 };
+  if (org) {
+    const rows = (await env.DB.prepare("SELECT home_away,home_score,away_score FROM sports_events WHERE org_id=? AND status='FINISHED'")
+      .bind(org.id).all()).results || [];
+    for (const e of rows) {
+      const home = e.home_away !== 'AWAY';
+      const us = Number(home ? e.home_score : e.away_score) || 0;
+      const them = Number(home ? e.away_score : e.home_score) || 0;
+      if (us > them) stats.wins += 1; else if (us === them) stats.draws += 1; else stats.losses += 1;
+    }
+    stats.points = stats.wins * 3 + stats.draws;
+  }
+  const meta = parseJsonObject(org?.metadata_json);
+  const ownerId = org?.owner_id || owner?.id || null;
+  const isFollowing = viewer && ownerId ? !!(await env.DB.prepare('SELECT 1 x FROM follows WHERE follower_id=? AND followee_id=?')
+    .bind(viewer.id, ownerId).first()) : false;
+  const followers = ownerId ? Number((await env.DB.prepare('SELECT COUNT(*) c FROM follows WHERE followee_id=?').bind(ownerId).first()).c || 0) : 0;
+  const base = org ? {
+    id: String(org.id), owner_id: org.owner_id == null ? null : String(org.owner_id), name: org.name, slug: org.slug,
+    type: org.type, description: org.description, logo_url: org.logo_url, cover_url: org.cover_url, website: org.website,
+    country: org.country, city: org.city, verified: !!org.verified, verification_level: org.verification_level,
+    pms_score: Number(org.pms_score || 0), oii_score: Number(org.oii_score || 0), created_at: org.created_at,
+  } : {
+    id: String(owner?.id || ''), owner_id: owner ? String(owner.id) : null, name: owner?.name || 'Sports profile',
+    slug: null, type: owner?.role || 'SPORTS', description: owner?.bio || '', logo_url: owner?.picture || null,
+    cover_url: owner?.cover_url || null, website: null, country: owner?.country || null, city: owner?.city || null,
+    verified: !!owner?.email_verified, verification_level: 'UNVERIFIED', pms_score: 0, oii_score: 0,
+    created_at: owner?.created_at || null,
+  };
+  return {
+    ...meta, ...base,
+    league: meta.league || null, division: meta.division || null, stadium: meta.stadium || null,
+    capacity: meta.capacity || null, founded: meta.founded || null, trophies: Array.isArray(meta.trophies) ? meta.trophies : [],
+    bio: meta.bio || base.description || '', wins: stats.wins, draws: stats.draws, losses: stats.losses, points: stats.points,
+    followers_count: followers, is_following: isFollowing,
+  };
+}
+
+async function orgSquad(env, orgId, orgName) {
+  let rows = (await env.DB.prepare(`SELECT u.id, u.name, u.picture avatar_url, u.role, u.country,
+      COALESCE(sp.photo_url,u.picture) photo_url, COALESCE(sp.position,r.position) position,
+      COALESCE(r.jersey_number,sp.jersey_number) jersey_number, sp.sport, sp.nationality, sp.club,
+      COALESCE(SUM(m.appearances),0) appearances, COALESCE(SUM(m.goals),0) goals, COALESCE(SUM(m.assists),0) assists,
+      COALESCE(SUM(m.minutes),0) minutes, AVG(m.rating) rating
+    FROM sports_roster r JOIN users u ON u.id=r.athlete_id
+    LEFT JOIN sports_profiles sp ON sp.user_id=u.id
+    LEFT JOIN sports_metrics m ON m.user_id=u.id
+    WHERE r.org_id=? AND r.status='ACTIVE'
+    GROUP BY u.id ORDER BY r.jersey_number IS NULL, r.jersey_number, u.name`).bind(orgId).all()).results || [];
+  if (!rows.length && orgName) {
+    rows = (await env.DB.prepare(`SELECT u.id, u.name, u.picture avatar_url, u.role, u.country,
+        COALESCE(sp.photo_url,u.picture) photo_url, sp.position, sp.jersey_number, sp.sport, sp.nationality, sp.club,
+        COALESCE(SUM(m.appearances),0) appearances, COALESCE(SUM(m.goals),0) goals, COALESCE(SUM(m.assists),0) assists,
+        COALESCE(SUM(m.minutes),0) minutes, AVG(m.rating) rating
+      FROM sports_profiles sp JOIN users u ON u.id=sp.user_id
+      LEFT JOIN sports_metrics m ON m.user_id=u.id
+      WHERE sp.club=? OR sp.team_id=?
+      GROUP BY u.id ORDER BY sp.jersey_number IS NULL, sp.jersey_number, u.name`).bind(orgName, orgId).all()).results || [];
+  }
+  return rows.map((r) => ({ ...r, id: String(r.id), appearances: Number(r.appearances || 0),
+    goals: Number(r.goals || 0), assists: Number(r.assists || 0), minutes: Number(r.minutes || 0),
+    rating: r.rating == null ? null : Number(Number(r.rating).toFixed(2)) }));
+}
+
+async function orgEvents(env, orgId, status) {
+  const rows = (await env.DB.prepare('SELECT * FROM sports_events WHERE org_id=? AND status=? ORDER BY starts_at ASC LIMIT 100')
+    .bind(orgId, status).all()).results || [];
+  return rows.map((e) => {
+    const isHome = e.home_away !== 'AWAY';
+    const date = e.starts_at || '';
+    const scoreFor = Number(isHome ? e.home_score : e.away_score) || 0;
+    const scoreAgainst = Number(isHome ? e.away_score : e.home_score) || 0;
+    const result = scoreFor > scoreAgainst ? 'W' : scoreFor === scoreAgainst ? 'D' : 'L';
+    return {
+      id: String(e.id), opponent: e.opponent_name, opponent_logo: e.opponent_logo || null,
+      competition: e.competition || null, date, match_date: date, time: date.length >= 16 ? date.slice(11, 16) : '',
+      kick_off: date.length >= 16 ? date.slice(11, 16) : '', venue: e.venue || null, is_home: isHome,
+      status: e.status, home_score: e.home_score, away_score: e.away_score, score_for: scoreFor,
+      score_against: scoreAgainst, result,
+    };
+  });
+}
+
+async function orgNews(env, ownerId) {
+  if (!ownerId) return [];
+  const rows = (await env.DB.prepare(`${POST_SELECT} WHERE p.author_id=? AND p.hidden=0 ORDER BY p.created_at DESC LIMIT 30`)
+    .bind(ownerId).all()).results || [];
+  return rows.map((r) => postJson(r, false, null));
+}
+
+async function playerRecord(env, user, viewer) {
+  const profile = await env.DB.prepare('SELECT * FROM sports_profiles WHERE user_id=?').bind(user.id).first();
+  const { rows: career, totals } = await metricsFor(env, user.id);
+  const achievements = (await env.DB.prepare('SELECT * FROM profile_achievements WHERE user_id=? ORDER BY earned_at DESC LIMIT 30')
+    .bind(user.id).all()).results || [];
+  const profileMeta = parseJsonObject(profile?.metrics_json);
+  const trophies = Array.isArray(profileMeta.trophies) ? profileMeta.trophies : [];
+  const followers = Number((await env.DB.prepare('SELECT COUNT(*) c FROM follows WHERE followee_id=?').bind(user.id).first()).c || 0);
+  const isFollowing = viewer ? !!(await env.DB.prepare('SELECT 1 x FROM follows WHERE follower_id=? AND followee_id=?')
+    .bind(viewer.id, user.id).first()) : false;
+  const achievementList = achievements.map((a) => ({ id: String(a.id), title: a.title, name: a.title,
+    detail: a.detail || null, kind: a.kind, year: String(a.earned_at || '').slice(0, 4), earned_at: a.earned_at, date: a.earned_at }));
+  for (const t of trophies) {
+    achievementList.push({ id: null, title: t.name || t.title || 'Trophy', name: t.name || t.title || 'Trophy',
+      detail: t.detail || null, kind: 'TROPHY', year: String(t.year || ''), earned_at: t.year ? `${t.year}-01-01` : null, date: t.year || null });
+  }
+  const timeline = [
+    ...achievementList.map((a) => ({ kind: a.kind || 'milestone', title: a.title, detail: a.detail, date: a.earned_at || a.year })),
+    ...career.filter((c) => c.season).map((c) => ({ kind: 'season', title: `${c.season} · ${c.team || c.competition || 'Season'}`,
+      detail: `${c.appearances} apps · ${c.goals} goals · ${c.assists} assists`, date: c.season })),
+  ];
+  return {
+    id: String(user.id), user_id: String(user.id), name: user.name, full_name: user.name,
+    email: viewer && Number(viewer.id) === Number(user.id) ? user.email : '', role: user.role, avatar_url: user.picture || null, photo_url: profile?.photo_url || user.picture || null,
+    cover_url: user.cover_url || null, country: user.country || null, city: user.city || null,
+    bio: profile?.bio || user.bio || '', verified: !!user.email_verified, sport: profile?.sport || null,
+    discipline: profile?.discipline || null, position: profile?.position || null, secondary_position: profile?.secondary_position || null,
+    club: profile?.club || null, nationality: profile?.nationality || null, birth_date: profile?.birth_date || null,
+    height_cm: profile?.height_cm == null ? null : Number(profile.height_cm),
+    weight_kg: profile?.weight_kg == null ? null : Number(profile.weight_kg),
+    preferred_foot: profile?.preferred_foot || null, jersey_number: profile?.jersey_number == null ? null : Number(profile.jersey_number),
+    market_value: profile?.market_value || null, external_source: profile?.external_source || null,
+    external_id: profile?.external_id || null, metrics_json: profileMeta,
+    followers_count: followers, is_following: isFollowing,
+    appearances: totals.appearances, goals: totals.goals, assists: totals.assists,
+    minutes: totals.minutes, minutes_played: totals.minutes, starts: totals.starts,
+    yellow_cards: totals.yellow_cards, red_cards: totals.red_cards, clean_sheets: totals.clean_sheets,
+    saves: totals.saves, rating: totals.rating, totals, career, achievements: achievementList, timeline,
+  };
+}
+
+async function relatedPlayers(env, user, profile) {
+  if (!profile) return [];
+  const rows = (await env.DB.prepare(`SELECT u.id, u.name, COALESCE(sp.photo_url,u.picture) photo_url, u.picture avatar_url,
+      sp.position, sp.jersey_number, sp.club, sp.sport
+    FROM sports_profiles sp JOIN users u ON u.id=sp.user_id
+    WHERE u.id<>? AND (sp.sport=? OR (? IS NOT NULL AND sp.club=?))
+    ORDER BY (sp.club=?) DESC, u.name LIMIT 12`)
+    .bind(user.id, profile.sport || 'FOOTBALL', profile.club || null, profile.club || null, profile.club || '')
+    .all()).results || [];
+  return rows.map((r) => ({ ...r, id: String(r.id) }));
+}
+
+async function toggleFollow(env, viewer, targetId) {
+  if (!viewer) throw new HttpError(401, 'not_signed_in', 'Please sign in.');
+  if (Number(viewer.id) === Number(targetId)) throw new HttpError(400, 'self_follow', 'You cannot follow yourself.');
+  const exists = await env.DB.prepare('SELECT 1 x FROM users WHERE id=?').bind(targetId).first();
+  if (!exists) throw new HttpError(404, 'user_not_found', 'Profile not found.');
+  const has = await env.DB.prepare('SELECT 1 x FROM follows WHERE follower_id=? AND followee_id=?').bind(viewer.id, targetId).first();
+  if (has) await env.DB.prepare('DELETE FROM follows WHERE follower_id=? AND followee_id=?').bind(viewer.id, targetId).run();
+  else {
+    await env.DB.prepare('INSERT INTO follows (follower_id,followee_id,created_at) VALUES (?,?,?)').bind(viewer.id, targetId, nowIso()).run();
+    await notify(env, targetId, 'follow', `${viewer.name || 'Someone'} started following you`, 'Open their profile to follow back.', viewer.id, null);
+  }
+  const followers = Number((await env.DB.prepare('SELECT COUNT(*) c FROM follows WHERE followee_id=?').bind(targetId).first()).c || 0);
+  return { ok: true, following: !has, followers_count: followers };
+}
+
+async function saveSportsProfile(req, env, targetId) {
+  const viewer = await requireUser(req, env);
+  if (Number(viewer.id) !== Number(targetId) && !isAdminUser(env, viewer))
+    throw new HttpError(403, 'forbidden', 'You can only edit your own sports profile.');
+  const b = await req.json().catch(() => ({}));
+  const at = nowIso();
+  const sport = clean(b.sport, 60).toUpperCase() || 'FOOTBALL';
+  const profile = {
+    discipline: clean(b.discipline, 80) || null,
+    position: clean(b.position, 40) || null,
+    secondary_position: clean(b.secondary_position, 40) || null,
+    club: clean(b.club, 120) || null,
+    team_id: num(b.team_id),
+    nationality: clean(b.nationality, 80) || null,
+    birth_date: clean(b.birth_date, 40) || null,
+    height_cm: num(b.height_cm),
+    weight_kg: num(b.weight_kg),
+    preferred_foot: clean(b.preferred_foot, 20) || null,
+    jersey_number: num(b.jersey_number),
+    market_value: clean(b.market_value, 40) || null,
+    photo_url: safeMediaUrl(b.photo_url),
+    external_source: clean(b.external_source, 40) || null,
+    external_id: clean(b.external_id, 80) || null,
+    bio: clean(b.bio, 1200) || null,
+    metrics_json: b.metrics_json && typeof b.metrics_json === 'object' ? JSON.stringify(b.metrics_json) : null,
+  };
+  await env.DB.prepare(`INSERT INTO sports_profiles (user_id,sport,discipline,position,secondary_position,club,team_id,
+      nationality,birth_date,height_cm,weight_kg,preferred_foot,jersey_number,market_value,photo_url,external_source,
+      external_id,bio,metrics_json,verified,created_at,updated_at)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?,?)
+    ON CONFLICT(user_id) DO UPDATE SET sport=excluded.sport, discipline=excluded.discipline, position=excluded.position,
+      secondary_position=excluded.secondary_position, club=excluded.club, team_id=excluded.team_id,
+      nationality=excluded.nationality, birth_date=excluded.birth_date, height_cm=excluded.height_cm,
+      weight_kg=excluded.weight_kg, preferred_foot=excluded.preferred_foot, jersey_number=excluded.jersey_number,
+      market_value=excluded.market_value, photo_url=COALESCE(excluded.photo_url,sports_profiles.photo_url),
+      external_source=excluded.external_source, external_id=excluded.external_id,
+      bio=COALESCE(excluded.bio,sports_profiles.bio), metrics_json=COALESCE(excluded.metrics_json,sports_profiles.metrics_json),
+      updated_at=excluded.updated_at`)
+    .bind(targetId, sport, profile.discipline, profile.position, profile.secondary_position, profile.club, profile.team_id,
+      profile.nationality, profile.birth_date, profile.height_cm, profile.weight_kg, profile.preferred_foot,
+      profile.jersey_number, profile.market_value, profile.photo_url, profile.external_source, profile.external_id,
+      profile.bio, profile.metrics_json, at, at).run();
+  const metrics = Array.isArray(b.metrics) ? b.metrics.slice(0, 30) : [];
+  for (const m of metrics) {
+    const season = clean(m.season, 30) || '';
+    const competition = clean(m.competition, 80) || '';
+    const team = clean(m.team, 120) || '';
+    await env.DB.prepare(`INSERT INTO sports_metrics (user_id,sport,season,competition,team,appearances,starts,minutes,
+        goals,assists,rating,yellow_cards,red_cards,clean_sheets,saves,passes_accuracy,distance_km,sprint_count,
+        payload_json,source,created_at,updated_at)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+      ON CONFLICT(user_id,season,competition,team) DO UPDATE SET appearances=excluded.appearances, starts=excluded.starts,
+        minutes=excluded.minutes, goals=excluded.goals, assists=excluded.assists, rating=excluded.rating,
+        yellow_cards=excluded.yellow_cards, red_cards=excluded.red_cards, clean_sheets=excluded.clean_sheets,
+        saves=excluded.saves, passes_accuracy=excluded.passes_accuracy, distance_km=excluded.distance_km,
+        sprint_count=excluded.sprint_count, payload_json=excluded.payload_json, source=excluded.source, updated_at=excluded.updated_at`)
+      .bind(targetId, sport, season, competition, team, num(m.appearances) || 0, num(m.starts) || 0, num(m.minutes) || 0,
+        num(m.goals) || 0, num(m.assists) || 0, num(m.rating), num(m.yellow_cards) || 0, num(m.red_cards) || 0,
+        num(m.clean_sheets) || 0, num(m.saves) || 0, num(m.passes_accuracy), num(m.distance_km), num(m.sprint_count),
+        m.payload && typeof m.payload === 'object' ? JSON.stringify(m.payload) : null,
+        clean(m.source, 40) || 'MANUAL', at, at).run();
+  }
+  const user = await env.DB.prepare('SELECT * FROM users WHERE id=?').bind(targetId).first();
+  if (!user) throw new HttpError(404, 'player_not_found', 'Player not found.');
+  return playerRecord(env, user, viewer);
+}
+
+function sportsDbHeight(v) {
+  const n = parseFloat(String(v || '').replace(',', '.'));
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return n < 3 ? Number((n * 100).toFixed(0)) : n;
+}
+function sportsDbWeight(v) {
+  const n = parseFloat(String(v || '').replace(',', '.'));
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+async function searchSports(req, env, url) {
+  const q = clean(url.searchParams.get('q'), 80);
+  if (!q) throw new HttpError(400, 'missing_query', 'Enter a team or player name.');
+  const key = env.SPORTS_API_KEY || '3';
+  const localTeams = (await env.DB.prepare(`SELECT id,name,sport,league,country,badge_url,stadium,founded,external_source,external_id
+    FROM sports_teams WHERE name LIKE ? ORDER BY name LIMIT 12`).bind(`%${q}%`).all()).results || [];
+  const localPlayers = (await env.DB.prepare(`SELECT sp.user_id id,u.name,sp.sport,sp.club,sp.nationality,sp.position,
+      sp.jersey_number,sp.photo_url,u.picture avatar_url FROM sports_profiles sp JOIN users u ON u.id=sp.user_id
+    WHERE u.name LIKE ? OR sp.club LIKE ? ORDER BY u.name LIMIT 12`).bind(`%${q}%`, `%${q}%`).all()).results || [];
+  const result = { teams: localTeams, players: localPlayers, source: 'local' };
+  try {
+    const [teamsRes, playersRes] = await Promise.all([
+      fetch(`https://www.thesportsdb.com/api/v1/json/${key}/searchteams.php?t=${encodeURIComponent(q)}`).then((r) => r.json()).catch(() => null),
+      fetch(`https://www.thesportsdb.com/api/v1/json/${key}/searchplayers.php?p=${encodeURIComponent(q)}`).then((r) => r.json()).catch(() => null),
+    ]);
+    if (Array.isArray(teamsRes?.teams)) {
+      result.teams = teamsRes.teams.slice(0, 20).map((t) => ({
+        external_source: 'THESPORTSDB', external_id: t.idTeam, name: t.strTeam, short_name: t.strTeamShort,
+        sport: t.strSport, league: t.strLeague, country: t.strCountry, badge_url: t.strTeamBadge,
+        banner_url: t.strTeamBanner, stadium: t.strStadium, founded: t.intFormedYear,
+        description: t.strDescriptionEN ? String(t.strDescriptionEN).slice(0, 800) : null,
+      }));
+      result.source = 'THESPORTSDB';
+    }
+    if (Array.isArray(playersRes?.players)) {
+      result.players = playersRes.players.slice(0, 20).map((p) => ({
+        external_source: 'THESPORTSDB', external_id: p.idPlayer, name: p.strPlayer, sport: p.strSport,
+        club: p.strTeam, nationality: p.strNationality, birth_date: p.dateBorn, position: p.strPosition,
+        height_cm: sportsDbHeight(p.strHeight), weight_kg: sportsDbWeight(p.strWeight),
+        photo_url: p.strThumb || p.strCutout || null, bio: p.strDescriptionEN ? String(p.strDescriptionEN).slice(0, 1200) : null,
+      }));
+      result.source = 'THESPORTSDB';
+    }
+  } catch { /* keep local results when the public API is unavailable */ }
+  return json(result);
+}
+
+async function syncSportsPlayer(req, env, targetId) {
+  const viewer = await requireUser(req, env);
+  if (Number(viewer.id) !== Number(targetId) && !isAdminUser(env, viewer))
+    throw new HttpError(403, 'forbidden', 'You can only sync your own sports profile.');
+  const b = await req.json().catch(() => ({}));
+  const externalId = clean(b.external_id, 80);
+  if (!externalId) throw new HttpError(400, 'missing_external_id', 'Choose a player from the sports search first.');
+  const key = env.SPORTS_API_KEY || '3';
+  const data = await fetch(`https://www.thesportsdb.com/api/v1/json/${key}/lookupplayer.php?id=${encodeURIComponent(externalId)}`)
+    .then((r) => r.json()).catch(() => null);
+  const p = Array.isArray(data?.players) ? data.players[0] : null;
+  if (!p) throw new HttpError(404, 'player_not_found', 'That player could not be found in the sports database.');
+  const at = nowIso();
+  await env.DB.prepare(`INSERT INTO sports_profiles (user_id,sport,position,club,nationality,birth_date,height_cm,weight_kg,
+      photo_url,external_source,external_id,bio,metrics_json,verified,created_at,updated_at)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,0,?,?)
+    ON CONFLICT(user_id) DO UPDATE SET sport=excluded.sport, position=COALESCE(excluded.position,sports_profiles.position),
+      club=COALESCE(excluded.club,sports_profiles.club), nationality=COALESCE(excluded.nationality,sports_profiles.nationality),
+      birth_date=COALESCE(excluded.birth_date,sports_profiles.birth_date), height_cm=COALESCE(excluded.height_cm,sports_profiles.height_cm),
+      weight_kg=COALESCE(excluded.weight_kg,sports_profiles.weight_kg), photo_url=COALESCE(excluded.photo_url,sports_profiles.photo_url),
+      external_source=excluded.external_source, external_id=excluded.external_id, bio=COALESCE(excluded.bio,sports_profiles.bio),
+      updated_at=excluded.updated_at`)
+    .bind(targetId, clean(p.strSport, 60).toUpperCase() || 'FOOTBALL', clean(p.strPosition, 40) || null,
+      clean(p.strTeam, 120) || null, clean(p.strNationality, 80) || null, clean(p.dateBorn, 40) || null,
+      sportsDbHeight(p.strHeight), sportsDbWeight(p.strWeight), safeMediaUrl(p.strThumb || p.strCutout),
+      'THESPORTSDB', externalId, clean(p.strDescriptionEN, 1200) || null, at, at).run();
+  const user = await env.DB.prepare('SELECT * FROM users WHERE id=?').bind(targetId).first();
+  return json(await playerRecord(env, user, viewer));
+}
+
+async function sportsRoutes(req, env, url, viewer) {
+  const path = url.pathname;
+  if (path === '/api/v1/sports/search' && req.method === 'GET') return await searchSports(req, env, url);
+  if (path === '/api/v1/sports/teams' && req.method === 'GET') {
+    const q = clean(url.searchParams.get('q'), 80);
+    const rows = (await env.DB.prepare(`SELECT * FROM sports_teams ${q ? 'WHERE name LIKE ? OR league LIKE ?' : ''} ORDER BY name LIMIT 100`)
+      .bind(...(q ? [`%${q}%`, `%${q}%`] : [])).all()).results || [];
+    return json(rows);
+  }
+
+  const orgMatch = /^\/api\/v1\/orgs\/(\d+)(?:\/(squad|fixtures|results|news|follow))?$/.exec(path);
+  if (orgMatch) {
+    const id = Number(orgMatch[1]);
+    const sub = orgMatch[2] || '';
+    const { org, owner, fallbackUser } = await resolveOrg(env, id);
+    if (!org && !fallbackUser) throw new HttpError(404, 'org_not_found', 'Team not found.');
+    if (!sub && req.method === 'GET') return json(await orgRecord(env, org, owner || fallbackUser, viewer));
+    if (sub === 'follow' && req.method === 'POST') {
+      const target = org?.owner_id || owner?.id || fallbackUser?.id;
+      if (!target) throw new HttpError(400, 'org_not_followable', 'This team has no owner account.');
+      return json(await toggleFollow(env, viewer, target));
+    }
+    if (!org) throw new HttpError(404, 'org_not_found', 'Team not found.');
+    if (sub === 'squad' && req.method === 'GET') return json(await orgSquad(env, org.id, org.name));
+    if (sub === 'fixtures' && req.method === 'GET') return json(await orgEvents(env, org.id, 'SCHEDULED'));
+    if (sub === 'results' && req.method === 'GET') return json(await orgEvents(env, org.id, 'FINISHED'));
+    if (sub === 'news' && req.method === 'GET') return json(await orgNews(env, org.owner_id));
+    throw new HttpError(404, 'not_found', 'Unknown team route.');
+  }
+
+  const playerMatch = /^\/api\/v1\/players\/(\d+)(?:\/(career|timeline|achievements|related|follow|sports-profile|sync))?$/.exec(path);
+  if (playerMatch) {
+    const id = Number(playerMatch[1]);
+    const sub = playerMatch[2] || '';
+    const user = await env.DB.prepare('SELECT * FROM users WHERE id=?').bind(id).first();
+    if (!user) throw new HttpError(404, 'player_not_found', 'Player not found.');
+    if (sub === 'follow' && req.method === 'POST') return json(await toggleFollow(env, viewer, id));
+    if (sub === 'sports-profile' && (req.method === 'POST' || req.method === 'PATCH'))
+      return json(await saveSportsProfile(req, env, id));
+    if (sub === 'sync' && req.method === 'POST') return await syncSportsPlayer(req, env, id);
+    const profile = await env.DB.prepare('SELECT * FROM sports_profiles WHERE user_id=?').bind(id).first();
+    if (!sub && req.method === 'GET') return json(await playerRecord(env, user, viewer));
+    if (sub === 'career' && req.method === 'GET') return json((await metricsFor(env, id)).rows);
+    if (sub === 'related' && req.method === 'GET') return json(await relatedPlayers(env, user, profile));
+    if (sub === 'achievements' && req.method === 'GET') {
+      const rows = (await env.DB.prepare('SELECT * FROM profile_achievements WHERE user_id=? ORDER BY earned_at DESC LIMIT 30')
+        .bind(id).all()).results || [];
+      return json(rows.map((a) => ({ id: String(a.id), title: a.title, name: a.title, detail: a.detail || null,
+        kind: a.kind, year: String(a.earned_at || '').slice(0, 4), earned_at: a.earned_at })));
+    }
+    if (sub === 'timeline' && req.method === 'GET') {
+      const record = await playerRecord(env, user, viewer);
+      return json(record.timeline);
+    }
+    throw new HttpError(404, 'not_found', 'Unknown player route.');
+  }
+
+  const institutionMatch = /^\/api\/v1\/(?:institutions|users)\/(\d+)\/institution$/.exec(path);
+  if (institutionMatch && req.method === 'GET') {
+    const id = Number(institutionMatch[1]);
+    const user = await env.DB.prepare('SELECT * FROM users WHERE id=?').bind(id).first();
+    if (!user) throw new HttpError(404, 'user_not_found', 'Institution not found.');
+    const row = await env.DB.prepare('SELECT * FROM institution_profiles WHERE user_id=?').bind(id).first();
+    return json({ user_id: String(user.id), name: user.name, handle: user.handle || null, role: user.role, bio: user.bio || '',
+      avatar_url: user.picture || null, cover_url: user.cover_url || null, country: user.country || null,
+      city: user.city || null, verified: !!user.email_verified,
+      institution_type: row?.institution_type || (user.role || 'GOVERNMENT'),
+      jurisdiction: row?.jurisdiction || null, services: parseJsonValue(row?.services_json, []),
+      departments: parseJsonValue(row?.departments_json, []), metrics: parseJsonValue(row?.metrics_json, {}),
+      transparency_score: row ? Number(row.transparency_score || 0) : 0 });
+  }
+  return null;
+}
+
+/* ---------------- internal HLS ingest (secret-protected) ---------------- */
+function requireIngest(req, env) {
+  if (!env.INGEST_SECRET) throw new HttpError(503, 'ingest_unavailable', 'Video ingest is not configured yet.');
+  const supplied = req.headers.get('x-ingest-secret') || '';
+  if (supplied !== env.INGEST_SECRET) throw new HttpError(401, 'unauthorized', 'Invalid ingest secret.');
+}
+
+async function videoJobRoutes(req, env, url) {
+  const path = url.pathname;
+  if (!path.startsWith('/api/v1/internal/')) return null;
+  requireIngest(req, env);
+  if (path === '/api/v1/internal/video-jobs' && req.method === 'GET') {
+    const status = clean(url.searchParams.get('status'), 20) || 'queued';
+    const limit = clamp(parseInt(url.searchParams.get('limit') || '10', 10) || 10, 1, 50);
+    const rows = (await env.DB.prepare('SELECT * FROM video_jobs WHERE status=? ORDER BY created_at ASC LIMIT ?')
+      .bind(status, limit).all()).results || [];
+    return json(rows.map((j) => ({ id: j.id, user_id: String(j.user_id), post_id: j.post_id == null ? null : String(j.post_id),
+      status: j.status, original_url: j.original_url, hls_url: j.hls_url || null, poster_url: j.poster_url || null,
+      duration_seconds: j.duration_seconds == null ? null : Number(j.duration_seconds), error: j.error || null,
+      attempts: Number(j.attempts || 0), created_at: j.created_at, updated_at: j.updated_at })));
+  }
+  const jobMatch = /^\/api\/v1\/internal\/video-jobs\/([\w-]+)$/.exec(path);
+  if (jobMatch && req.method === 'POST') {
+    const id = jobMatch[1];
+    const b = await req.json().catch(() => ({}));
+    const job = await env.DB.prepare('SELECT * FROM video_jobs WHERE id=?').bind(id).first();
+    if (!job) throw new HttpError(404, 'job_not_found', 'Video job not found.');
+    const status = clean(b.status, 20).toLowerCase();
+    if (!['queued', 'processing', 'ready', 'error'].includes(status)) throw new HttpError(400, 'bad_status', 'Unknown video job status.');
+    const hls = safeMediaUrl(b.hls_url) || job.hls_url;
+    const poster = safeMediaUrl(b.poster_url) || job.poster_url;
+    const duration = Number.isFinite(Number(b.duration_seconds)) ? Number(b.duration_seconds) : job.duration_seconds;
+    const at = nowIso();
+    await env.DB.prepare(`UPDATE video_jobs SET status=?, hls_url=?, poster_url=?, duration_seconds=?, error=?,
+      attempts=attempts+?, updated_at=? WHERE id=?`)
+      .bind(status, hls, poster, duration, clean(b.error, 400) || null,
+        status === 'processing' ? 1 : 0, at, id).run();
+    if (job.post_id) {
+      await env.DB.prepare(`UPDATE posts SET video_hls_url=COALESCE(?,video_hls_url),
+        video_poster_url=COALESCE(?,video_poster_url), video_duration_seconds=COALESCE(?,video_duration_seconds),
+        updated_at=? WHERE id=?`).bind(hls, poster, duration, at, job.post_id).run();
+    }
+    return json({ ok: true, id, status, hls_url: hls || null, poster_url: poster || null, post_id: job.post_id == null ? null : String(job.post_id) });
+  }
+  if (path === '/api/v1/internal/hls/upload' && req.method === 'POST') {
+    if (!env.MEDIA) throw new HttpError(503, 'media_unavailable', 'Media storage is not configured yet.');
+    const key = clean(url.searchParams.get('key'), 400);
+    if (!key || !key.startsWith('media/hls/') || key.includes('..')) throw new HttpError(400, 'bad_key', 'Invalid HLS object key.');
+    const ct = String(req.headers.get('content-type') || '').toLowerCase() ||
+      (key.endsWith('.m3u8') ? 'application/vnd.apple.mpegurl' : key.endsWith('.ts') ? 'video/mp2t' : key.endsWith('.jpg') ? 'image/jpeg' : 'application/octet-stream');
+    const body = await req.arrayBuffer();
+    if (body.byteLength > 40 * 1024 * 1024) throw new HttpError(413, 'too_large', 'HLS object is too large.');
+    await env.MEDIA.put(key, body, { httpMetadata: { contentType: ct,
+      cacheControl: key.endsWith('.m3u8') ? 'public, max-age=60' : 'public, max-age=31536000, immutable' } });
+    const base = (env.MEDIA_PUBLIC_BASE || 'https://masareen.com').replace(/\/+$/, '');
+    return json({ ok: true, key, url: `${base}/${key}` });
+  }
+  throw new HttpError(404, 'not_found', 'Unknown internal route.');
+}
+
 /* ---------------- router ---------------- */
 export async function socialRoutes(req, env, ctx) {
   const url = new URL(req.url);
   const path = url.pathname;
   try {
     if (path === '/api/testers' || path === '/api/testers/stats') return await testerRoutes(req, env, url, ctx);
+    if (path.startsWith('/api/v1/internal/')) return await videoJobRoutes(req, env, url);
     if (path === '/api/v1/users/register' && req.method === 'POST') return await register(req, env);
     if (path === '/api/v1/auth/login' && req.method === 'POST') return await login(req, env);
     if (path.startsWith('/api/v1/admin/')) return await adminRoutes(req, env, url);
@@ -2022,6 +2660,8 @@ export async function socialRoutes(req, env, ctx) {
     }
     const passportMatch = /^\/api\/v1\/users\/(\d+)\/passport$/.exec(path);
     if (passportMatch && req.method === 'GET') return await passportFor(env, Number(passportMatch[1]));
+    const sportsHandled = await sportsRoutes(req, env, url, await currentUser(req, env));
+    if (sportsHandled) return sportsHandled;
     const viewer = await currentUser(req, env);
     const u = await userRoutes(req, env, url, viewer);
     if (u) return u;

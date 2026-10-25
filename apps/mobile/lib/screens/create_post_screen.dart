@@ -24,7 +24,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   final _impactLabel = TextEditingController(text: 'impact');
   int _sdg = 0;
   String _kind = 'story';
-  File? _image;
+  final List<_PickedImage> _images = [];
   File? _video;
   bool _busy = false;
   bool _showAdvanced = false;
@@ -74,20 +74,63 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   }
 
   Future<void> _pickImage() async {
-    final x = await ImagePicker().pickImage(
-        source: ImageSource.gallery, maxWidth: 1280, imageQuality: 80);
-    if (x != null) setState(() { _image = File(x.path); _video = null; });
+    if (_images.length >= 10) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('You can add up to 10 photos')));
+      return;
+    }
+    final picked = await ImagePicker().pickMultiImage(
+        maxWidth: 1600, imageQuality: 82, limit: 10 - _images.length);
+    if (picked.isEmpty) return;
+    setState(() {
+      _video = null;
+      for (final x in picked.take(10 - _images.length)) {
+        _images.add(_PickedImage(File(x.path)));
+      }
+    });
   }
 
   Future<void> _takePhoto() async {
     final x = await ImagePicker().pickImage(
-        source: ImageSource.camera, maxWidth: 1280, imageQuality: 80);
-    if (x != null) setState(() { _image = File(x.path); _video = null; });
+        source: ImageSource.camera, maxWidth: 1600, imageQuality: 82);
+    if (x != null) {
+      setState(() {
+        _video = null;
+        if (_images.length < 10) _images.add(_PickedImage(File(x.path)));
+      });
+    }
   }
 
   Future<void> _pickVideo() async {
-    final x = await ImagePicker().pickVideo(source: ImageSource.gallery, maxDuration: const Duration(minutes: 5));
-    if (x != null) setState(() { _video = File(x.path); _image = null; });
+    final x = await ImagePicker().pickVideo(
+        source: ImageSource.gallery, maxDuration: const Duration(minutes: 10));
+    if (x != null) setState(() { _video = File(x.path); _images.clear(); });
+  }
+
+  Future<void> _editCaption(int index) async {
+    if (index < 0 || index >= _images.length) return;
+    final controller = TextEditingController(text: _images[index].caption);
+    final value = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Photo caption'),
+        content: TextField(
+          controller: controller,
+          maxLength: 240,
+          maxLines: 3,
+          decoration: const InputDecoration(hintText: 'Say something about this photo…'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (value != null) setState(() => _images[index].caption = value);
   }
 
   Future<void> _captureGps() async {
@@ -167,23 +210,49 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     setState(() => _busy = true);
     try {
       final media = <Map<String, dynamic>>[];
-      if (_image != null) {
-        final bytes = await _image!.readAsBytes();
-        final ext = _image!.path.split('.').last;
-        final url = await AuthApi.uploadAvatar(bytes, _image!.path.split('/').last,
-            'image/${ext == 'png' ? 'png' : 'jpeg'}');
-        media.add({'type': 'IMAGE', 'url': url, 'name': _image!.path.split('/').last});
+      for (final image in _images) {
+        final bytes = await image.file.readAsBytes();
+        final ext = image.file.path.split('.').last.toLowerCase();
+        final ct = ext == 'png' ? 'image/png' : ext == 'webp' ? 'image/webp' : 'image/jpeg';
+        final url = await AuthApi.uploadMedia(bytes, image.file.path.split('/').last, ct);
+        media.add({
+          'type': 'IMAGE',
+          'url': url,
+          if (image.caption.trim().isNotEmpty) 'caption': image.caption.trim(),
+        });
       }
+
+      String? videoUrl;
+      String? videoJobId;
+      String? videoHlsUrl;
+      String? videoPosterUrl;
       if (_video != null) {
         final bytes = await _video!.readAsBytes();
         final ext = _video!.path.split('.').last.toLowerCase();
-        final ct = ext == 'webm' ? 'video/webm' : ext == 'mkv' ? 'video/x-matroska' : 'video/mp4';
-        final result = await AuthApi.uploadVideo(bytes, _video!.path.split('/').last, ct);
-        final hlsUrl = result['hls_url'] as String?;
-        final jobId = result['job_id'] as String?;
-        if (hlsUrl != null) {
-          final fullHlsUrl = hlsUrl.startsWith('http') ? hlsUrl : '${api.baseUrl}$hlsUrl';
-          media.add({'type': 'VIDEO', 'url': fullHlsUrl, 'name': _video!.path.split('/').last, 'job_id': jobId});
+        final ct = ext == 'webm'
+            ? 'video/webm'
+            : ext == 'mov'
+                ? 'video/quicktime'
+                : 'video/mp4';
+        final result = await AuthApi.uploadVideo(
+            bytes, _video!.path.split('/').last, ct);
+        videoUrl = result['url'] as String?;
+        videoJobId = (result['job_id'] ?? result['video_job_id']) as String?;
+        final rawHls = result['hls_url'] as String?;
+        videoHlsUrl = rawHls == null
+            ? null
+            : (rawHls.startsWith('http') ? rawHls : '${api.baseUrl}$rawHls');
+        final rawPoster = result['poster_url'] as String?;
+        videoPosterUrl = rawPoster == null
+            ? null
+            : (rawPoster.startsWith('http') ? rawPoster : '${api.baseUrl}$rawPoster');
+        if (videoUrl != null && videoUrl.isNotEmpty) {
+          media.add({
+            'type': 'VIDEO',
+            'url': videoUrl,
+            if (videoHlsUrl != null) 'hls_url': videoHlsUrl,
+            if (videoPosterUrl != null) 'poster_url': videoPosterUrl,
+          });
         }
       }
 
@@ -202,6 +271,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         body['impact_label'] = _impactLabel.text.trim().isNotEmpty ? _impactLabel.text.trim() : 'impact';
       }
       if (media.isNotEmpty) body['media'] = media;
+      if (videoJobId != null) body['video_job_id'] = videoJobId;
+      if (videoHlsUrl != null) body['video_hls_url'] = videoHlsUrl;
+      if (videoPosterUrl != null) body['video_poster_url'] = videoPosterUrl;
       if (_lat != null && _lng != null) {
         body['latitude'] = _lat;
         body['longitude'] = _lng;
@@ -327,25 +399,81 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             ),
           ),
 
-          if (_image != null)
-            Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(14),
-                  child: Image.file(_image!, height: 200, width: double.infinity, fit: BoxFit.cover),
-                ),
-                Positioned(
-                  top: 8, right: 8,
-                  child: GestureDetector(
-                    onTap: () => setState(() => _image = null),
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
-                      child: const Icon(Icons.close, color: Colors.white, size: 18),
+          if (_images.isNotEmpty)
+            SizedBox(
+              height: 148,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: _images.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                itemBuilder: (_, i) {
+                  final image = _images[i];
+                  return GestureDetector(
+                    onTap: () => _editCaption(i),
+                    child: Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: Image.file(
+                            image.file,
+                            width: 148,
+                            height: 148,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        if (image.caption.isNotEmpty)
+                          Positioned(
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            child: Container(
+                              padding: const EdgeInsets.fromLTRB(8, 18, 8, 6),
+                              decoration: const BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [Colors.transparent, Colors.black87],
+                                ),
+                              ),
+                              child: Text(
+                                image.caption,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                    color: Colors.white, fontSize: 11),
+                              ),
+                            ),
+                          ),
+                        Positioned(
+                          top: 4,
+                          right: 4,
+                          child: GestureDetector(
+                            onTap: () => setState(() => _images.removeAt(i)),
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(
+                                  color: Colors.black54, shape: BoxShape.circle),
+                              child: const Icon(Icons.close,
+                                  color: Colors.white, size: 16),
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          top: 4,
+                          left: 4,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                                color: Colors.black54, shape: BoxShape.circle),
+                            child: const Icon(Icons.edit,
+                                color: Colors.white, size: 14),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ),
-              ],
+                  );
+                },
+              ),
             ),
 
           if (_video != null)
@@ -539,6 +667,12 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     ];
     return sdg >= 0 && sdg < colors.length ? colors[sdg] : Colors.blue;
   }
+}
+
+class _PickedImage {
+  final File file;
+  String caption = '';
+  _PickedImage(this.file);
 }
 
 class _KindOption {

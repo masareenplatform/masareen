@@ -611,3 +611,112 @@ INSERT OR IGNORE INTO pms_scores (user_id, reliability, execution_quality, leade
 SELECT u.id, 87, 84, 82, 86, 83, 71, 84, 79, 85, 88, 83, 'GOLD', strftime('%Y-%m-%dT%H:%M:%SZ','now') FROM users u WHERE u.email='greendelta@masareen.example';
 INSERT OR IGNORE INTO pms_scores (user_id, reliability, execution_quality, leadership, documentation_quality, verification_confidence, learning_velocity, technical_skills, innovation, consistency, community_impact, total, tier, updated_at)
 SELECT u.id, 62, 57, 64, 53, 50, 82, 71, 76, 59, 61, 60, 'SILVER', strftime('%Y-%m-%dT%H:%M:%SZ','now') FROM users u WHERE u.email='sara@masareen.example';
+
+-- ── Sports and public institutions ─────────────────────────────────────────
+INSERT OR IGNORE INTO users (email, email_verified, name, role, country, city, interest, profile_complete, signup_method, created_at, handle, bio, audience) VALUES
+('alnoor@masareen.example',  1, 'Al Noor FC',              'CLUB',        'Jordan',  'Amman',  '3,11,17', 1, 'seed', strftime('%Y-%m-%dT%H:%M:%SZ','now','-140 days'), 'alnoorfc',  'Community football club building youth pathways in Amman.', 'SPORTS'),
+('nour@masareen.example',    1, 'Nour Al-Hassan',          'ATHLETE',     'Jordan',  'Amman',  '3,11,17', 1, 'seed', strftime('%Y-%m-%dT%H:%M:%SZ','now','-100 days'), 'nour9',     'Forward at Al Noor FC and Jordan national team prospect.', 'ATHLETE'),
+('jff@masareen.example',     1, 'Jordan Football Federation','FEDERATION', 'Jordan',  'Amman',  '3,11,17', 1, 'seed', strftime('%Y-%m-%dT%H:%M:%SZ','now','-180 days'), 'jff',       'Official updates from the national football federation.', 'SPORTS'),
+('mys@masareen.example',     1, 'Ministry of Youth and Sports','INSTITUTION','Jordan','Amman', '3,11,17', 1, 'seed', strftime('%Y-%m-%dT%H:%M:%SZ','now','-200 days'), 'mys',       'Public sports programmes, facilities and youth participation data.', 'GOVERNMENT');
+
+INSERT INTO organizations (owner_id,name,slug,type,description,logo_url,cover_url,website,country,city,verified,verification_level,pms_score,oii_score,metadata_json,created_at)
+SELECT u.id, 'Al Noor FC', 'al-noor-fc', 'CLUB',
+  'Community football club with a first team, a youth academy and a girls programme.',
+  'https://api.dicebear.com/9.x/shields/svg?seed=AlNoorFC',
+  'https://picsum.photos/seed/alnoor-stadium/1600/700',
+  'https://masareen.com', 'Jordan', 'Amman', 1, 'VERIFIED', 88, 74,
+  '{"league":"Jordan League","division":"Premier","stadium":"Al Noor Park","capacity":4200,"founded":"1998","trophies":[{"name":"Jordan Cup","year":"2024"},{"name":"Community Shield","year":"2023"}]}',
+  strftime('%Y-%m-%dT%H:%M:%SZ','now','-140 days')
+FROM users u WHERE u.email='alnoor@masareen.example'
+AND NOT EXISTS (SELECT 1 FROM organizations WHERE name='Al Noor FC');
+
+INSERT INTO organizations (owner_id,name,slug,type,description,logo_url,country,city,verified,verification_level,pms_score,oii_score,metadata_json,created_at)
+SELECT u.id, 'Jordan Football Federation', 'jordan-football-federation', 'FEDERATION',
+  'National governing body for football in Jordan.', 'https://api.dicebear.com/9.x/shields/svg?seed=JFF',
+  'Jordan', 'Amman', 1, 'VERIFIED', 90, 81,
+  '{"league":"Jordan League","founded":"1949","trophies":[]}', strftime('%Y-%m-%dT%H:%M:%SZ','now','-180 days')
+FROM users u WHERE u.email='jff@masareen.example'
+AND NOT EXISTS (SELECT 1 FROM organizations WHERE name='Jordan Football Federation');
+
+INSERT OR IGNORE INTO institution_profiles (user_id,institution_type,jurisdiction,services_json,departments_json,metrics_json,transparency_score,updated_at)
+SELECT u.id, 'GOVERNMENT', 'Hashemite Kingdom of Jordan',
+  '[{"name":"Sports facility access","description":"Book public pitches and halls."},{"name":"Youth grants","description":"Apply for community sports funding."},{"name":"Coach licensing","description":"Verify accredited coaches."}]',
+  '[{"name":"Youth Affairs","contact":"youth@mys.example"},{"name":"Sports Development","contact":"sports@mys.example"}]',
+  '{"facilities":184,"registered_clubs":312,"licensed_coaches":1240,"youth_participants":86000,"annual_events":47}',
+  82, strftime('%Y-%m-%dT%H:%M:%SZ','now')
+FROM users u WHERE u.email='mys@masareen.example'
+AND NOT EXISTS (SELECT 1 FROM institution_profiles WHERE user_id=u.id);
+
+INSERT OR IGNORE INTO sports_profiles (user_id,sport,discipline,position,secondary_position,club,team_id,nationality,birth_date,height_cm,weight_kg,preferred_foot,jersey_number,market_value,photo_url,bio,metrics_json,verified,created_at,updated_at)
+SELECT u.id, 'FOOTBALL', 'Outfield', 'Forward', 'Right wing', 'Al Noor FC',
+  (SELECT id FROM organizations WHERE name='Al Noor FC' LIMIT 1),
+  'Jordan', '2002-04-18', 181, 76, 'Right', 9, '€250k',
+  'https://api.dicebear.com/9.x/avataaars/svg?seed=Nour',
+  'Academy graduate, top scorer in the 2024/25 Jordan League season.',
+  '{"trophies":[{"name":"Jordan Cup","year":"2024"},{"name":"League top scorer","year":"2025"}]}',
+  1, strftime('%Y-%m-%dT%H:%M:%SZ','now','-100 days'), strftime('%Y-%m-%dT%H:%M:%SZ','now')
+FROM users u WHERE u.email='nour@masareen.example'
+AND NOT EXISTS (SELECT 1 FROM sports_profiles WHERE user_id=u.id);
+
+INSERT OR IGNORE INTO sports_metrics (user_id,sport,season,competition,team,appearances,starts,minutes,goals,assists,rating,yellow_cards,red_cards,clean_sheets,saves,passes_accuracy,distance_km,sprint_count,source,created_at,updated_at)
+SELECT u.id, 'FOOTBALL', '2024/25', 'Jordan League', 'Al Noor FC', 22, 20, 1760, 14, 6, 7.9, 3, 0, 0, 0, 81.4, 198.6, 412, 'MANUAL', strftime('%Y-%m-%dT%H:%M:%SZ','now','-100 days'), strftime('%Y-%m-%dT%H:%M:%SZ','now')
+FROM users u WHERE u.email='nour@masareen.example';
+INSERT OR IGNORE INTO sports_metrics (user_id,sport,season,competition,team,appearances,starts,minutes,goals,assists,rating,yellow_cards,red_cards,clean_sheets,saves,passes_accuracy,distance_km,sprint_count,source,created_at,updated_at)
+SELECT u.id, 'FOOTBALL', '2023/24', 'Jordan League', 'Al Noor FC', 19, 14, 1280, 8, 5, 7.4, 4, 1, 0, 0, 77.2, 151.3, 298, 'MANUAL', strftime('%Y-%m-%dT%H:%M:%SZ','now','-400 days'), strftime('%Y-%m-%dT%H:%M:%SZ','now')
+FROM users u WHERE u.email='nour@masareen.example';
+
+INSERT OR IGNORE INTO sports_roster (org_id,athlete_id,position,jersey_number,season,status,created_at)
+SELECT o.id, u.id, 'Forward', 9, '2024/25', 'ACTIVE', strftime('%Y-%m-%dT%H:%M:%SZ','now')
+FROM organizations o, users u WHERE o.name='Al Noor FC' AND u.email='nour@masareen.example';
+
+INSERT OR IGNORE INTO profile_achievements (user_id,title,detail,kind,earned_at)
+SELECT u.id, 'Jordan Cup winner', 'Won the 2024 Jordan Cup with Al Noor FC.', 'TROPHY', '2024-11-22T00:00:00Z'
+FROM users u WHERE u.email='nour@masareen.example'
+AND NOT EXISTS (SELECT 1 FROM profile_achievements a WHERE a.user_id=u.id AND a.title='Jordan Cup winner');
+INSERT OR IGNORE INTO profile_achievements (user_id,title,detail,kind,earned_at)
+SELECT u.id, 'League top scorer', 'Finished the 2024/25 Jordan League as top scorer with 14 goals.', 'AWARD', '2025-05-30T00:00:00Z'
+FROM users u WHERE u.email='nour@masareen.example'
+AND NOT EXISTS (SELECT 1 FROM profile_achievements a WHERE a.user_id=u.id AND a.title='League top scorer');
+
+INSERT INTO sports_events (org_id,opponent_name,opponent_logo,competition,starts_at,venue,home_away,status,home_score,away_score,created_at)
+SELECT o.id, 'Amman United', 'https://api.dicebear.com/9.x/shields/svg?seed=AmmanUnited', 'Jordan League',
+  strftime('%Y-%m-%dT%H:%M:%SZ','now','-12 days'), 'Al Noor Park', 'HOME', 'FINISHED', 2, 1,
+  strftime('%Y-%m-%dT%H:%M:%SZ','now','-20 days')
+FROM organizations o WHERE o.name='Al Noor FC'
+AND NOT EXISTS (SELECT 1 FROM sports_events e WHERE e.org_id=o.id AND e.opponent_name='Amman United');
+INSERT INTO sports_events (org_id,opponent_name,opponent_logo,competition,starts_at,venue,home_away,status,home_score,away_score,created_at)
+SELECT o.id, 'Zarqa Stars', 'https://api.dicebear.com/9.x/shields/svg?seed=ZarqaStars', 'Jordan League',
+  strftime('%Y-%m-%dT%H:%M:%SZ','now','-5 days'), 'Zarqa Arena', 'AWAY', 'FINISHED', 1, 1,
+  strftime('%Y-%m-%dT%H:%M:%SZ','now','-14 days')
+FROM organizations o WHERE o.name='Al Noor FC'
+AND NOT EXISTS (SELECT 1 FROM sports_events e WHERE e.org_id=o.id AND e.opponent_name='Zarqa Stars');
+INSERT INTO sports_events (org_id,opponent_name,opponent_logo,competition,starts_at,venue,home_away,status,created_at)
+SELECT o.id, 'Irbid Youth', 'https://api.dicebear.com/9.x/shields/svg?seed=IrbidYouth', 'Jordan League',
+  strftime('%Y-%m-%dT%H:%M:%SZ','now','+6 days'), 'Al Noor Park', 'HOME', 'SCHEDULED',
+  strftime('%Y-%m-%dT%H:%M:%SZ','now')
+FROM organizations o WHERE o.name='Al Noor FC'
+AND NOT EXISTS (SELECT 1 FROM sports_events e WHERE e.org_id=o.id AND e.opponent_name='Irbid Youth');
+
+INSERT INTO posts (author_id,text,kind,sdg,impact_value,impact_label,confidence_score,confidence_label,confidence_factors,like_count,comment_count,share_count,media_url,media_json,media_type,latitude,longitude,created_at)
+SELECT u.id, 'Matchday gallery: the academy and first team shared the pitch for our community open day. More than 300 children joined drills, and every coach was a local volunteer.', 'IMPACT', 11, 7.6, 'Strong impact', 78, 'High confidence',
+  '{"ratings":5,"average_stars":4.5,"method":"seed"}', 44, 7, 9,
+  'https://picsum.photos/seed/alnoor-open-day-1/1200/800',
+  '[{"url":"https://picsum.photos/seed/alnoor-open-day-1/1200/800","type":"IMAGE","caption":"Academy warm-up on the main pitch"},{"url":"https://picsum.photos/seed/alnoor-open-day-2/1200/800","type":"IMAGE","caption":"Volunteer coaches with the under-12 group"}]',
+  'GALLERY', 31.9539, 35.9106, strftime('%Y-%m-%dT%H:%M:%SZ','now','-3 hours')
+FROM users u WHERE u.email='alnoor@masareen.example'
+AND NOT EXISTS (SELECT 1 FROM posts WHERE text LIKE 'Matchday gallery: the academy%');
+
+INSERT INTO posts (author_id,text,kind,sdg,impact_value,impact_label,confidence_score,confidence_label,confidence_factors,like_count,comment_count,share_count,created_at)
+SELECT u.id, 'National youth league registrations are now open for the 2026 season. Clubs can register squads through the federation portal until 30 November. Safeguarding certification is required for every coach.', 'ANNOUNCEMENT', 11, 6.8, 'Strong impact', 84, 'High confidence',
+  '{"ratings":4,"average_stars":4.4,"method":"seed"}', 61, 12, 28,
+  strftime('%Y-%m-%dT%H:%M:%SZ','now','-6 hours')
+FROM users u WHERE u.email='jff@masareen.example'
+AND NOT EXISTS (SELECT 1 FROM posts WHERE text LIKE 'National youth league registrations%');
+
+INSERT INTO posts (author_id,text,kind,sdg,impact_value,impact_label,confidence_score,confidence_label,confidence_factors,like_count,comment_count,share_count,created_at)
+SELECT u.id, 'Public sports facilities report: 184 facilities are now bookable online, and 62 community pitches have new lighting. The full dataset, including maintenance schedules, is open for review.', 'MILESTONE', 11, 8.1, 'Verified high impact', 89, 'High confidence',
+  '{"ratings":7,"average_stars":4.6,"method":"seed"}', 88, 16, 31,
+  strftime('%Y-%m-%dT%H:%M:%SZ','now','-1 day')
+FROM users u WHERE u.email='mys@masareen.example'
+AND NOT EXISTS (SELECT 1 FROM posts WHERE text LIKE 'Public sports facilities report%');
+
