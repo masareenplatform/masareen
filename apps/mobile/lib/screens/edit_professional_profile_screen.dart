@@ -183,7 +183,6 @@ class _EditProfessionalProfileScreenState
         controller: controller,
         maxLines: lines,
         keyboardType: keyboard,
-        style: const TextStyle(color: Colors.white),
         decoration: InputDecoration(
           labelText: label,
           alignLabelWithHint: lines > 1,
