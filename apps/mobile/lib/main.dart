@@ -18,7 +18,8 @@ import 'package:masaren/screens/login_screen.dart';
 import 'package:masaren/screens/register_screen.dart';
 import 'package:masaren/screens/feed_screen.dart';
 import 'package:masaren/screens/opportunities_screen.dart';
-// programs_screen imported where used (programs tab in HomeShell)
+import 'package:masaren/screens/programs_screen.dart';
+import 'package:masaren/screens/passport_screen.dart';
 import 'package:masaren/screens/profile_screen.dart';
 import 'package:masaren/screens/courses_screen.dart';
 import 'package:masaren/screens/events_screen.dart';
@@ -336,8 +337,10 @@ class _HomeShellState extends State<HomeShell> {
       }, badge: _unreadNotifications),
       _MoreItem(Icons.school_outlined, loc(context, 'nav.courses'), () => Navigator.of(context).push(_route(CoursesScreen(user: u!)))),
       _MoreItem(Icons.event_outlined, 'Events', () => Navigator.of(context).push(_route(EventsScreen(user: u!)))),
+      _MoreItem(Icons.hub_outlined, 'Programs', () => Navigator.of(context).push(_route(ProgramsScreen(user: u!)))),
       _MoreItem(Icons.handshake_outlined, loc(context, 'nav.projects'), () => Navigator.of(context).push(_route(ProjectsScreen(user: u!)))),
       _MoreItem(Icons.verified_user_outlined, loc(context, 'nav.verification'), () => Navigator.of(context).push(_route(VerificationScreen(user: u!)))),
+      _MoreItem(Icons.badge_outlined, 'Impact passport', () => Navigator.of(context).push(_route(PassportScreen(user: u!)))),
       _MoreItem(Icons.account_balance_wallet_outlined, loc(context, 'nav.wallet'), () => Navigator.of(context).push(_route(WalletScreen(user: u!)))),
       _MoreItem(Icons.campaign_outlined, loc(context, 'nav.ads'), () => Navigator.of(context).push(_route(AdsScreen(user: u!)))),
       _MoreItem(Icons.admin_panel_settings_outlined, loc(context, 'nav.admin'), () => Navigator.of(context).push(_route(AdminScreen(user: u!)))),

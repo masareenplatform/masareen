@@ -195,6 +195,27 @@ class AuthApi {
     return list.map((e) => Program.fromJson(e as Map<String, dynamic>)).toList();
   }
 
+  static Future<Map<String, dynamic>> programDetail(String id) async {
+    final data = await api.get('/api/v1/programs/$id');
+    return data as Map<String, dynamic>;
+  }
+
+  static Future<Opportunity> applyOpportunity(String id, {String? note}) async {
+    final data = await api.post('/api/v1/opportunities/$id/apply',
+        {if (note != null && note.trim().isNotEmpty) 'note': note.trim()});
+    return Opportunity.fromJson(data as Map<String, dynamic>);
+  }
+
+  static Future<Opportunity> createOpportunity(Map<String, dynamic> body) async {
+    final data = await api.post('/api/v1/opportunities/', body);
+    return Opportunity.fromJson(data as Map<String, dynamic>);
+  }
+
+  static Future<Map<String, dynamic>> passport(String userId) async {
+    final data = await api.get('/api/v1/users/$userId/passport');
+    return data as Map<String, dynamic>;
+  }
+
   // ── Profile ──────────────────────────────────────────────────────────────
   static Future<User> updateProfile(Map<String, dynamic> body) async {
     final data = await api.patch('/api/v1/users/me/profile', body);

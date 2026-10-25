@@ -257,3 +257,110 @@ test('registration accepts the tester flag and exposes it on the profile', async
   assert.equal(me.is_tester, true);
 });
 
+test('programs run end to end: create, discover, enroll, tasks and linked projects', async () => {
+  const env = mkEnv();
+  const owner = await signup(env, 'program-owner@example.com', 'Mona Program');
+  const member = await signup(env, 'program-member@example.com', 'Hassan Member');
+
+  const created = await call(env, 'POST', '/api/v1/programs', {
+    title: 'Delta Water Resilience Program', description: 'Restoring village water systems.',
+    category: 'Climate', sdg_goals: [6, 13], budget: 250000, target_beneficiaries: 1200,
+  }, owner);
+  assert.equal(created.status, 201);
+  const program = await created.json();
+  assert.equal(program.sdg, 6);
+  assert.equal(program.members_count, 1);
+  assert.equal(program.enrolled_by_me, true);
+
+  const list = await (await call(env, 'GET', '/api/v1/programs', null, member)).json();
+  assert.equal(list.length, 1);
+  assert.equal(list[0].enrolled_by_me, false);
+
+  const joined = await (await call(env, 'POST', `/api/v1/programs/${program.id}/enroll`, null, member)).json();
+  assert.equal(joined.members_count, 2);
+  assert.equal(joined.enrolled_by_me, true);
+
+  const task = await (await call(env, 'POST', `/api/v1/programs/${program.id}/tasks`, {
+    title: 'Collect baseline water quality readings', due_at: '2026-11-30T10:00:00Z', evidence_required: true,
+  }, owner)).json();
+  assert.equal(task.status, 'OPEN');
+
+  const project = await (await call(env, 'POST', '/api/v1/projects', {
+    program_id: program.id, title: 'Village filter rollout', category: 'Water', goal: 50000, sdg: 6,
+  }, owner)).json();
+  assert.equal(project.program_id, program.id);
+  assert.equal(project.members, 1);
+
+  const detail = await (await call(env, 'GET', `/api/v1/programs/${program.id}`, null, owner)).json();
+  assert.equal(detail.tasks.length, 1);
+  assert.equal(detail.projects.length, 1);
+
+  const passportId = (await (await call(env, 'GET', '/api/v1/users/me', null, member)).json()).id;
+  const passport = await (await call(env, 'GET', `/api/v1/users/${passportId}/passport`)).json();
+  assert.equal(passport.programs, 1);
+  assert.ok(passport.badges.includes('Program member'));
+});
+
+test('opportunity marketplace: publish, filter, apply once and notify the owner', async () => {
+  const env = mkEnv();
+  const owner = await signup(env, 'opportunity-owner@example.com', 'Nour Employer');
+  const applicant = await signup(env, 'opportunity-applicant@example.com', 'Dina Applicant');
+
+  const created = await call(env, 'POST', '/api/v1/opportunities', {
+    title: 'Monitoring & Evaluation Officer', description: 'Own the impact measurement cycle.',
+    type: 'JOB', skills: ['M&E', 'SQL', 'Reporting'], sdg: 8, location: 'Cairo', min_pms: 40,
+    deadline: '2026-12-15',
+  }, owner);
+  assert.equal(created.status, 201);
+  const opp = await created.json();
+  assert.equal(opp.type, 'JOB');
+  assert.deepEqual(opp.skills, ['M&E', 'SQL', 'Reporting']);
+
+  const list = await (await call(env, 'GET', '/api/v1/opportunities', null, applicant)).json();
+  assert.equal(list.length, 1);
+  assert.equal(list[0].applied, false);
+
+  const applied = await (await call(env, 'POST', `/api/v1/opportunities/${opp.id}/apply`, { note: 'Five years in the field.' }, applicant)).json();
+  assert.equal(applied.applied, true);
+  assert.equal(applied.applications_count, 1);
+
+  const dup = await call(env, 'POST', `/api/v1/opportunities/${opp.id}/apply`, {}, applicant);
+  assert.equal(dup.status, 409);
+
+  const ownerId = (await (await call(env, 'GET', '/api/v1/users/me', null, owner)).json()).id;
+  const notes = await (await call(env, 'GET', `/api/v1/notifications/${ownerId}`, null, owner)).json();
+  assert.ok(notes.some((n) => n.type === 'opportunity'));
+});
+
+test('evidence, submissions and verification pipeline produce a working passport', async () => {
+  const env = mkEnv();
+  const token = await signup(env, 'verifier@example.com', 'Rami Verifier');
+
+  const sub = await call(env, 'POST', '/api/v1/submissions', {
+    title: '20 solar pumps installed and running',
+    claim: 'Twenty pumps now serve 600 households in three villages.',
+    evidence_url: 'https://example.org/evidence/pumps.jpg',
+    evidence_kind: 'PHOTO',
+  }, token);
+  assert.equal(sub.status, 201);
+  const submission = await sub.json();
+  assert.equal(submission.status, 'SUBMITTED');
+  assert.ok(submission.evidence_id);
+
+  const pipeline = await (await call(env, 'POST', `/api/v1/submissions/${submission.id}/pipeline`, null, token)).json();
+  assert.equal(pipeline.status, 'AI_REVIEW');
+  assert.equal(pipeline.steps.length, 2);
+
+  const tracked = await (await call(env, 'GET', `/api/v1/verification/pipelines/evidence/${submission.evidence_id}`, null, token)).json();
+  assert.equal(tracked.pipeline.status, 'AI_REVIEW');
+
+  const me = await (await call(env, 'GET', '/api/v1/users/me', null, token)).json();
+  const mine = await (await call(env, 'GET', `/api/v1/submissions/users/${me.id}`, null, token)).json();
+  assert.equal(mine.length, 1);
+  assert.equal(mine[0].pipeline_id, pipeline.id);
+
+  const passport = await (await call(env, 'GET', `/api/v1/users/${me.id}/passport`)).json();
+  assert.equal(passport.submissions, 1);
+  assert.equal(passport.verified_claims, 0);
+});
+

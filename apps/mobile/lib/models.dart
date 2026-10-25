@@ -387,6 +387,11 @@ class Opportunity {
   final double? minPms;
   final String? location;
   final String? status;
+  final String? type;
+  final String? deadline;
+  final bool isRemote;
+  final int applicationsCount;
+  final bool applied;
 
   Opportunity({
     required this.id,
@@ -397,17 +402,31 @@ class Opportunity {
     this.minPms,
     this.location,
     this.status,
+    this.type,
+    this.deadline,
+    this.isRemote = false,
+    this.applicationsCount = 0,
+    this.applied = false,
   });
 
   factory Opportunity.fromJson(Map<String, dynamic> j) => Opportunity(
-        id: j['id'] ?? '',
+        id: j['id']?.toString() ?? '',
         title: j['title'] ?? 'Opportunity',
         description: j['description'],
         skills: (j['skills'] is List) ? List<dynamic>.from(j['skills']) : const [],
         sdg: j['sdg'] is num ? (j['sdg'] as num).toInt() : null,
         minPms: j['min_pms'] is num ? (j['min_pms'] as num).toDouble() : null,
-        location: j['location'] is Map ? j['location']['name']?.toString() : null,
+        location: j['location'] is Map
+            ? j['location']['name']?.toString()
+            : j['location']?.toString(),
         status: j['status'],
+        type: j['type']?.toString(),
+        deadline: j['deadline']?.toString(),
+        isRemote: j['is_remote'] == true || j['is_remote'] == 1,
+        applicationsCount: j['applications_count'] is num
+            ? (j['applications_count'] as num).toInt()
+            : 0,
+        applied: j['applied'] == true,
       );
 }
 
@@ -418,6 +437,12 @@ class Program {
   final String? status;
   final int? sdg;
   final int? members;
+  final String? category;
+  final String? organization;
+  final double budget;
+  final int projectsCount;
+  final int tasksCount;
+  final bool enrolledByMe;
 
   Program({
     required this.id,
@@ -426,10 +451,16 @@ class Program {
     this.status,
     this.sdg,
     this.members,
+    this.category,
+    this.organization,
+    this.budget = 0,
+    this.projectsCount = 0,
+    this.tasksCount = 0,
+    this.enrolledByMe = false,
   });
 
   factory Program.fromJson(Map<String, dynamic> j) => Program(
-        id: j['id'] ?? '',
+        id: j['id']?.toString() ?? '',
         title: j['title'] ?? 'Program',
         description: j['description'],
         status: j['status'],
@@ -437,6 +468,13 @@ class Program {
         members: j['members_count'] is num
             ? (j['members_count'] as num).toInt()
             : (j['members'] is num ? (j['members'] as num).toInt() : null),
+        category: j['category']?.toString(),
+        organization: j['organization']?.toString(),
+        budget: (j['budget'] is num) ? (j['budget'] as num).toDouble() : 0,
+        projectsCount:
+            j['projects_count'] is num ? (j['projects_count'] as num).toInt() : 0,
+        tasksCount: j['tasks_count'] is num ? (j['tasks_count'] as num).toInt() : 0,
+        enrolledByMe: j['enrolled_by_me'] == true,
       );
 }
 
@@ -570,6 +608,8 @@ class Project {
   final int members;
   final String status;
   final String? ownerName;
+  final String? programId;
+  final bool joined;
   Project({
     required this.id,
     required this.title,
@@ -582,9 +622,11 @@ class Project {
     this.members = 0,
     this.status = 'ACTIVE',
     this.ownerName,
+    this.programId,
+    this.joined = false,
   });
   factory Project.fromJson(Map<String, dynamic> j) => Project(
-        id: j['id'] ?? '',
+        id: j['id']?.toString() ?? '',
         title: j['title'] ?? 'Project',
         description: j['description'],
         category: j['category'] ?? 'Community',
@@ -595,6 +637,8 @@ class Project {
         members: j['members'] is num ? (j['members'] as num).toInt() : 0,
         status: j['status'] ?? 'ACTIVE',
         ownerName: j['owner_name'],
+        programId: j['program_id']?.toString(),
+        joined: j['joined'] == true,
       );
 }
 

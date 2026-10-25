@@ -39,18 +39,31 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
   Future<void> _newSubmission() async {
     final title = TextEditingController();
-    final evidenceId = TextEditingController();
+    final claim = TextEditingController();
+    final evidenceUrl = TextEditingController();
     final ok = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
-        title: const Text('Submit evidence'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(controller: title, decoration: const InputDecoration(labelText: 'Title')),
-            TextField(controller: evidenceId,
-                decoration: const InputDecoration(labelText: 'Evidence ID')),
-          ],
+        title: const Text('Submit a claim'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                  controller: title,
+                  decoration: const InputDecoration(labelText: 'Claim title')),
+              TextField(
+                  controller: claim,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                      labelText: 'What exactly did you achieve?')),
+              TextField(
+                  controller: evidenceUrl,
+                  decoration: const InputDecoration(
+                      labelText: 'Evidence link (photo, PDF, dataset)',
+                      hintText: 'https://...')),
+            ],
+          ),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(c), child: const Text('Cancel')),
@@ -68,18 +81,17 @@ class _VerificationScreenState extends State<VerificationScreen> {
     try {
       final sub = await AuthApi.createSubmission({
         'title': title.text.trim(),
-        'evidence_id': evidenceId.text.trim().isNotEmpty
-            ? evidenceId.text.trim()
+        'claim': claim.text.trim().isNotEmpty ? claim.text.trim() : null,
+        'evidence_url': evidenceUrl.text.trim().isNotEmpty
+            ? evidenceUrl.text.trim()
             : null,
-        'owner_id': widget.user.id,
       });
       // Kick off the verification pipeline automatically.
       await AuthApi.startPipeline(sub.id);
-      _items.insert(0, sub);
-      if (mounted) setState(() {});
+      await _load();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Submission sent to verification pipeline')));
+            const SnackBar(content: Text('Claim sent to the verification pipeline')));
       }
     } catch (e) {
       if (mounted) {

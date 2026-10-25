@@ -784,6 +784,477 @@ async function joinEvent(req, env, id) {
   return json({ ok: true, attending: !has, attendees_count: count });
 }
 
+/* ---------------- programs, projects and tasks ---------------- */
+const PROGRAM_STATUSES = new Set(['PLANNED', 'ACTIVE', 'COMPLETED', 'PAUSED']);
+const TASK_STATUSES = new Set(['OPEN', 'IN_PROGRESS', 'SUBMITTED', 'VERIFIED']);
+
+function skillsArray(v) {
+  if (Array.isArray(v)) return v.map((s) => clean(String(s), 40)).filter(Boolean).slice(0, 12);
+  if (typeof v === 'string') {
+    const raw = v.trim();
+    if (!raw) return [];
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return skillsArray(parsed);
+    } catch { /* comma separated below */ }
+    return raw.split(',').map((s) => clean(s, 40)).filter(Boolean).slice(0, 12);
+  }
+  return [];
+}
+
+function validSdg(v) {
+  const n = num(v);
+  return n != null && Number.isInteger(n) && n >= 1 && n <= 17 ? n : null;
+}
+
+function programJson(p, enrolledByMe) {
+  return {
+    id: String(p.id), title: p.title, description: p.description || null,
+    category: p.category || null, organization: p.organization || null,
+    sdg: p.sdg == null ? null : Number(p.sdg), status: p.status || 'ACTIVE',
+    budget: Number(p.budget || 0), currency: p.currency || 'EGP',
+    country: p.country || null, governorate: p.governorate || null,
+    start_date: p.start_date || null, end_date: p.end_date || null,
+    target_beneficiaries: Number(p.target_beneficiaries || 0),
+    members_count: Number(p.members_count || 0), projects_count: Number(p.projects_count || 0),
+    tasks_count: Number(p.tasks_count || 0), enrolled_by_me: !!enrolledByMe,
+    author: { id: String(p.author_id), name: p.author_name || 'MASAREEN' },
+    created_at: p.created_at,
+  };
+}
+
+async function listPrograms(env, viewer) {
+  const rows = (await env.DB.prepare(`SELECT p.*, u.name author_name,
+    (SELECT COUNT(*) FROM program_members m WHERE m.program_id=p.id) members_count,
+    (SELECT COUNT(*) FROM projects x WHERE x.program_id=p.id) projects_count,
+    (SELECT COUNT(*) FROM tasks t WHERE t.program_id=p.id) tasks_count
+    FROM programs p LEFT JOIN users u ON u.id=p.author_id
+    ORDER BY p.created_at DESC LIMIT 100`).all()).results || [];
+  const mine = new Set();
+  if (viewer) {
+    const joined = (await env.DB.prepare('SELECT program_id FROM program_members WHERE user_id=?').bind(viewer.id).all()).results || [];
+    for (const j of joined) mine.add(Number(j.program_id));
+  }
+  return rows.map((p) => programJson(p, mine.has(Number(p.id))));
+}
+
+function taskJson(t) {
+  return {
+    id: String(t.id), program_id: t.program_id == null ? null : String(t.program_id),
+    project_id: t.project_id == null ? null : String(t.project_id),
+    assignee_id: t.assignee_id == null ? null : String(t.assignee_id),
+    title: t.title, description: t.description || null, status: t.status || 'OPEN',
+    due_at: t.due_at || null, location: t.location || null,
+    evidence_required: !!t.evidence_required, assignee_name: t.assignee_name || null,
+    created_at: t.created_at,
+  };
+}
+
+async function getProgram(env, viewer, id) {
+  const p = await env.DB.prepare(`SELECT p.*, u.name author_name,
+    (SELECT COUNT(*) FROM program_members m WHERE m.program_id=p.id) members_count,
+    (SELECT COUNT(*) FROM projects x WHERE x.program_id=p.id) projects_count,
+    (SELECT COUNT(*) FROM tasks t WHERE t.program_id=p.id) tasks_count
+    FROM programs p LEFT JOIN users u ON u.id=p.author_id WHERE p.id=?`).bind(id).first();
+  if (!p) throw new HttpError(404, 'program_not_found', 'Program not found.');
+  const member = viewer ? await env.DB.prepare('SELECT 1 x FROM program_members WHERE program_id=? AND user_id=?')
+    .bind(id, viewer.id).first() : null;
+  const out = programJson(p, !!member);
+  const tasks = (await env.DB.prepare(`SELECT t.*, u.name assignee_name FROM tasks t
+    LEFT JOIN users u ON u.id=t.assignee_id WHERE t.program_id=? ORDER BY t.created_at ASC`).bind(id).all()).results || [];
+  const projects = (await env.DB.prepare(`SELECT x.*, u.name owner_name,
+    (SELECT COUNT(*) FROM project_members m WHERE m.project_id=x.id) members
+    FROM projects x LEFT JOIN users u ON u.id=x.author_id WHERE x.program_id=? ORDER BY x.created_at DESC`)
+    .bind(id).all()).results || [];
+  out.tasks = tasks.map(taskJson);
+  out.projects = projects.map((x) => projectJson(x));
+  return out;
+}
+
+async function createProgram(req, env) {
+  const u = await requireUser(req, env);
+  const b = await req.json().catch(() => ({}));
+  const title = clean(b.title, 140);
+  if (title.length < 3) throw new HttpError(400, 'invalid_title', 'Program title must be at least 3 characters.');
+  const goals = Array.isArray(b.sdg_goals) ? b.sdg_goals : [];
+  const sdg = validSdg(b.sdg != null ? b.sdg : goals[0]);
+  const status = PROGRAM_STATUSES.has(b.status) ? b.status : 'ACTIVE';
+  const at = nowIso();
+  const r = await env.DB.prepare(`INSERT INTO programs
+    (author_id,title,description,category,organization,sdg,status,budget,currency,country,governorate,start_date,end_date,target_beneficiaries,created_at)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+    .bind(u.id, title, clean(b.description, 3000) || null, clean(b.category, 80) || null,
+      clean(b.organization, 140) || u.org || null, sdg, status,
+      Math.max(0, num(b.budget) || 0), clean(b.currency, 8) || 'EGP',
+      clean(b.country, 60) || u.country || null, clean(b.governorate, 80) || null,
+      clean(b.start_date, 40) || null, clean(b.end_date, 40) || null,
+      Math.max(0, Math.trunc(num(b.target_beneficiaries) || 0)), at).run();
+  const id = r.meta.last_row_id;
+  await env.DB.prepare('INSERT OR IGNORE INTO program_members (program_id,user_id,role,created_at) VALUES (?,?,?,?)')
+    .bind(id, u.id, 'OWNER', at).run();
+  return json(await getProgram(env, u, id), 201);
+}
+
+async function enrollProgram(req, env, id) {
+  const u = await requireUser(req, env);
+  const p = await env.DB.prepare('SELECT * FROM programs WHERE id=?').bind(id).first();
+  if (!p) throw new HttpError(404, 'program_not_found', 'Program not found.');
+  const has = await env.DB.prepare('SELECT 1 x FROM program_members WHERE program_id=? AND user_id=?').bind(id, u.id).first();
+  if (!has) {
+    await env.DB.prepare('INSERT INTO program_members (program_id,user_id,role,created_at) VALUES (?,?,?,?)')
+      .bind(id, u.id, 'MEMBER', nowIso()).run();
+    await notify(env, p.author_id, 'program', `${u.name || 'Someone'} joined ${p.title}`, 'A new member joined your program.', u.id, null);
+  }
+  return json(await getProgram(env, u, id));
+}
+
+async function createTask(req, env, programId) {
+  const u = await requireUser(req, env);
+  const p = await env.DB.prepare('SELECT * FROM programs WHERE id=?').bind(programId).first();
+  if (!p) throw new HttpError(404, 'program_not_found', 'Program not found.');
+  const b = await req.json().catch(() => ({}));
+  const title = clean(b.title, 160);
+  if (title.length < 3) throw new HttpError(400, 'invalid_title', 'Task title must be at least 3 characters.');
+  const assignee = num(b.assignee_id);
+  const at = nowIso();
+  const r = await env.DB.prepare(`INSERT INTO tasks
+    (program_id,project_id,assignee_id,title,description,status,due_at,location,evidence_required,created_at)
+    VALUES (?,?,?,?,?,?,?,?,?,?)`)
+    .bind(programId, num(b.project_id), assignee, title, clean(b.description, 1500) || null,
+      TASK_STATUSES.has(b.status) ? b.status : 'OPEN', clean(b.due_at, 40) || null,
+      clean(b.location, 160) || null, b.evidence_required === true ? 1 : 0, at).run();
+  if (assignee && Number(assignee) !== Number(u.id))
+    await notify(env, assignee, 'task', `New task: ${title}`, `Assigned in ${p.title}.`, u.id, null);
+  const row = await env.DB.prepare('SELECT t.*, u.name assignee_name FROM tasks t LEFT JOIN users u ON u.id=t.assignee_id WHERE t.id=?')
+    .bind(r.meta.last_row_id).first();
+  return json(taskJson(row), 201);
+}
+
+function projectJson(x) {
+  return {
+    id: String(x.id), program_id: x.program_id == null ? null : String(x.program_id),
+    title: x.title, description: x.description || null, category: x.category || 'Community',
+    sdg: x.sdg == null ? null : Number(x.sdg), cover: x.cover || null,
+    goal: Number(x.goal || 0), raised: Number(x.raised || 0), members: Number(x.members || 0),
+    status: x.status || 'ACTIVE', owner_name: x.owner_name || 'MASAREEN',
+    created_at: x.created_at,
+  };
+}
+
+async function listProjects(env, viewer) {
+  const rows = (await env.DB.prepare(`SELECT x.*, u.name owner_name,
+    (SELECT COUNT(*) FROM project_members m WHERE m.project_id=x.id) members
+    FROM projects x LEFT JOIN users u ON u.id=x.author_id ORDER BY x.created_at DESC LIMIT 100`).all()).results || [];
+  const mine = new Set();
+  if (viewer) {
+    const joined = (await env.DB.prepare('SELECT project_id FROM project_members WHERE user_id=?').bind(viewer.id).all()).results || [];
+    for (const j of joined) mine.add(Number(j.project_id));
+  }
+  return rows.map((x) => ({ ...projectJson(x), joined: mine.has(Number(x.id)) }));
+}
+
+async function createProject(req, env) {
+  const u = await requireUser(req, env);
+  const b = await req.json().catch(() => ({}));
+  const title = clean(b.title, 140);
+  if (title.length < 3) throw new HttpError(400, 'invalid_title', 'Project title must be at least 3 characters.');
+  const at = nowIso();
+  const r = await env.DB.prepare(`INSERT INTO projects
+    (program_id,author_id,title,description,category,sdg,cover,goal,raised,status,created_at)
+    VALUES (?,?,?,?,?,?,?,?,?,'ACTIVE',?)`)
+    .bind(num(b.program_id), u.id, title, clean(b.description, 2000) || null,
+      clean(b.category, 80) || 'Community', validSdg(b.sdg), clean(b.cover, 500) || null,
+      Math.max(0, num(b.goal) || 0), Math.max(0, num(b.raised) || 0), at).run();
+  const id = r.meta.last_row_id;
+  await env.DB.prepare('INSERT OR IGNORE INTO project_members (project_id,user_id,role,created_at) VALUES (?,?,?,?)')
+    .bind(id, u.id, 'OWNER', at).run();
+  const row = await env.DB.prepare('SELECT x.*, u.name owner_name, (SELECT COUNT(*) FROM project_members m WHERE m.project_id=x.id) members FROM projects x LEFT JOIN users u ON u.id=x.author_id WHERE x.id=?')
+    .bind(id).first();
+  return json(projectJson(row), 201);
+}
+
+async function joinProject(req, env, id) {
+  const u = await requireUser(req, env);
+  const p = await env.DB.prepare('SELECT * FROM projects WHERE id=?').bind(id).first();
+  if (!p) throw new HttpError(404, 'project_not_found', 'Project not found.');
+  const has = await env.DB.prepare('SELECT 1 x FROM project_members WHERE project_id=? AND user_id=?').bind(id, u.id).first();
+  if (!has) {
+    await env.DB.prepare('INSERT INTO project_members (project_id,user_id,role,created_at) VALUES (?,?,?,?)')
+      .bind(id, u.id, 'MEMBER', nowIso()).run();
+    await notify(env, p.author_id, 'project', `${u.name || 'Someone'} joined ${p.title}`, 'A new member joined your project.', u.id, null);
+  }
+  const row = await env.DB.prepare('SELECT x.*, u.name owner_name, (SELECT COUNT(*) FROM project_members m WHERE m.project_id=x.id) members FROM projects x LEFT JOIN users u ON u.id=x.author_id WHERE x.id=?')
+    .bind(id).first();
+  return json({ ...projectJson(row), joined: true });
+}
+
+async function taskRoutes(req, env, url, viewer) {
+  const path = url.pathname;
+  if (path === '/api/v1/tasks' && req.method === 'GET') {
+    if (!viewer) throw new HttpError(401, 'not_signed_in', 'Please sign in.');
+    const mine = url.searchParams.get('mine') === '1';
+    const programId = num(url.searchParams.get('program_id'));
+    const rows = (await env.DB.prepare(`SELECT t.*, u.name assignee_name FROM tasks t
+      LEFT JOIN users u ON u.id=t.assignee_id
+      WHERE (?=0 OR t.assignee_id=?) AND (?=0 OR t.program_id=?)
+      ORDER BY t.created_at DESC LIMIT 100`)
+      .bind(mine ? 1 : 0, viewer.id, programId || 0, programId || 0).all()).results || [];
+    return json(rows.map(taskJson));
+  }
+  const statusMatch = /^\/api\/v1\/tasks\/(\d+)\/status$/.exec(path);
+  if (statusMatch && req.method === 'POST') {
+    const u = await requireUser(req, env);
+    const b = await req.json().catch(() => ({}));
+    const status = String(b.status || '').toUpperCase();
+    if (!TASK_STATUSES.has(status)) throw new HttpError(400, 'invalid_status', 'Unknown task status.');
+    const task = await env.DB.prepare('SELECT * FROM tasks WHERE id=?').bind(Number(statusMatch[1])).first();
+    if (!task) throw new HttpError(404, 'task_not_found', 'Task not found.');
+    if (Number(task.assignee_id) !== Number(u.id) && Number(task.author_id || 0) !== Number(u.id))
+      throw new HttpError(403, 'forbidden', 'Only the assignee can update this task.');
+    await env.DB.prepare('UPDATE tasks SET status=? WHERE id=?').bind(status, task.id).run();
+    const row = await env.DB.prepare('SELECT t.*, u.name assignee_name FROM tasks t LEFT JOIN users u ON u.id=t.assignee_id WHERE t.id=?')
+      .bind(task.id).first();
+    return json(taskJson(row));
+  }
+  return null;
+}
+
+/* ---------------- opportunity marketplace ---------------- */
+const OPPORTUNITY_TYPES = new Set(['JOB', 'INTERNSHIP', 'GRANT', 'VOLUNTEER', 'TRAINING', 'CSR']);
+
+function opportunityJson(o, applied) {
+  return {
+    id: String(o.id), title: o.title, description: o.description || null,
+    type: o.type || 'VOLUNTEER', skills: skillsArray(o.skills), sdg: o.sdg == null ? null : Number(o.sdg),
+    location: o.location || (o.is_remote ? 'Remote' : null), is_remote: !!o.is_remote,
+    deadline: o.deadline || null, min_pms: o.min_pms == null ? null : Number(o.min_pms),
+    status: o.status || 'OPEN', applications_count: Number(o.applications_count || 0),
+    applied: !!applied, author: { id: String(o.author_id), name: o.author_name || 'MASAREEN' },
+    created_at: o.created_at,
+  };
+}
+
+async function listOpportunities(env, viewer) {
+  const rows = (await env.DB.prepare(`SELECT o.*, u.name author_name,
+    (SELECT COUNT(*) FROM opportunity_applications a WHERE a.opportunity_id=o.id) applications_count
+    FROM opportunities o LEFT JOIN users u ON u.id=o.author_id
+    WHERE o.status='OPEN' ORDER BY o.created_at DESC LIMIT 100`).all()).results || [];
+  const mine = new Set();
+  if (viewer) {
+    const applied = (await env.DB.prepare('SELECT opportunity_id FROM opportunity_applications WHERE user_id=?').bind(viewer.id).all()).results || [];
+    for (const a of applied) mine.add(Number(a.opportunity_id));
+  }
+  return rows.map((o) => opportunityJson(o, mine.has(Number(o.id))));
+}
+
+async function createOpportunity(req, env) {
+  const u = await requireUser(req, env);
+  const b = await req.json().catch(() => ({}));
+  const title = clean(b.title, 140);
+  if (title.length < 3) throw new HttpError(400, 'invalid_title', 'Opportunity title must be at least 3 characters.');
+  const type = OPPORTUNITY_TYPES.has(String(b.type || '').toUpperCase()) ? String(b.type).toUpperCase() : 'VOLUNTEER';
+  const isRemote = b.is_remote === true || b.is_remote === 1 || b.is_remote === 'true';
+  const at = nowIso();
+  const r = await env.DB.prepare(`INSERT INTO opportunities
+    (author_id,title,description,type,skills,sdg,location,is_remote,deadline,min_pms,status,created_at)
+    VALUES (?,?,?,?,?,?,?,?,?,?,'OPEN',?)`)
+    .bind(u.id, title, clean(b.description, 2500) || null, type,
+      JSON.stringify(skillsArray(b.skills)), validSdg(b.sdg), clean(b.location, 160) || null,
+      isRemote ? 1 : 0, clean(b.deadline, 40) || null, num(b.min_pms), at).run();
+  const row = await env.DB.prepare('SELECT * FROM opportunities WHERE id=?').bind(r.meta.last_row_id).first();
+  return json(opportunityJson(row, false), 201);
+}
+
+async function applyOpportunity(req, env, id) {
+  const u = await requireUser(req, env);
+  const o = await env.DB.prepare('SELECT * FROM opportunities WHERE id=?').bind(id).first();
+  if (!o) throw new HttpError(404, 'opportunity_not_found', 'Opportunity not found.');
+  if (o.status !== 'OPEN') throw new HttpError(409, 'opportunity_closed', 'This opportunity is closed.');
+  const has = await env.DB.prepare('SELECT 1 x FROM opportunity_applications WHERE opportunity_id=? AND user_id=?').bind(id, u.id).first();
+  if (has) throw new HttpError(409, 'already_applied', 'You already applied to this opportunity.');
+  const b = await req.json().catch(() => ({}));
+  await env.DB.prepare('INSERT INTO opportunity_applications (opportunity_id,user_id,note,status,created_at) VALUES (?,?,?,?,?)')
+    .bind(id, u.id, clean(b.note, 800) || null, 'SUBMITTED', nowIso()).run();
+  await notify(env, o.author_id, 'opportunity', `${u.name || 'Someone'} applied to ${o.title}`, 'Review the new application.', u.id, null);
+  const row = await env.DB.prepare(`SELECT o.*, u.name author_name,
+    (SELECT COUNT(*) FROM opportunity_applications a WHERE a.opportunity_id=o.id) applications_count
+    FROM opportunities o LEFT JOIN users u ON u.id=o.author_id WHERE o.id=?`).bind(id).first();
+  return json(opportunityJson(row, true));
+}
+
+/* ---------------- evidence, verified claims and passports ---------------- */
+const EVIDENCE_KINDS = new Set(['PHOTO', 'VIDEO', 'DOCUMENT', 'GPS', 'SENSOR', 'TESTIMONY']);
+
+function evidenceJson(e) {
+  return {
+    id: String(e.id), submission_id: e.submission_id == null ? null : String(e.submission_id),
+    title: e.title, kind: e.kind || 'DOCUMENT', url: e.url || null, sha256: e.sha256 || null,
+    latitude: e.latitude == null ? null : Number(e.latitude), longitude: e.longitude == null ? null : Number(e.longitude),
+    captured_at: e.captured_at || null, status: e.status || 'PENDING', created_at: e.created_at,
+  };
+}
+
+async function createEvidence(req, env) {
+  const u = await requireUser(req, env);
+  const b = await req.json().catch(() => ({}));
+  const title = clean(b.title, 160);
+  if (title.length < 3) throw new HttpError(400, 'invalid_title', 'Evidence title must be at least 3 characters.');
+  const kind = EVIDENCE_KINDS.has(String(b.kind || '').toUpperCase()) ? String(b.kind).toUpperCase() : 'DOCUMENT';
+  const lat = num(b.latitude); const lng = num(b.longitude);
+  const r = await env.DB.prepare(`INSERT INTO evidence
+    (owner_id,submission_id,title,kind,url,sha256,latitude,longitude,captured_at,status,created_at)
+    VALUES (?,?,?,?,?,?,?,?,?,'PENDING',?)`)
+    .bind(u.id, num(b.submission_id), title, kind, clean(b.url, 800) || null, clean(b.sha256, 128) || null,
+      lat, lng, clean(b.captured_at, 40) || null, nowIso()).run();
+  const row = await env.DB.prepare('SELECT * FROM evidence WHERE id=?').bind(r.meta.last_row_id).first();
+  return json(evidenceJson(row), 201);
+}
+
+function pipelineJson(p) {
+  let steps = [];
+  try { steps = JSON.parse(p.steps || '[]'); } catch { steps = []; }
+  return {
+    id: String(p.id), submission_id: String(p.submission_id), status: p.status || 'AI_REVIEW',
+    stage: Number(p.stage || 0), confidence: Number(p.confidence || 0), steps,
+    updated_at: p.updated_at, created_at: p.created_at,
+  };
+}
+
+function submissionJson(s) {
+  return {
+    id: String(s.id), title: s.title, claim: s.claim || null,
+    program_id: s.program_id == null ? null : String(s.program_id),
+    task_id: s.task_id == null ? null : String(s.task_id),
+    evidence_id: s.evidence_id == null ? null : String(s.evidence_id),
+    status: s.status || 'SUBMITTED', confidence: Number(s.confidence || 0),
+    pipeline_id: s.pipeline_id == null ? null : String(s.pipeline_id),
+    created_at: s.created_at,
+  };
+}
+
+async function listSubmissions(env, viewer, userId) {
+  if (!viewer || Number(viewer.id) !== Number(userId))
+    throw new HttpError(403, 'forbidden', 'You can only read your own submissions.');
+  const rows = (await env.DB.prepare(`SELECT s.*,
+    (SELECT p.id FROM verification_pipelines p WHERE p.submission_id=s.id ORDER BY p.id DESC LIMIT 1) pipeline_id
+    FROM submissions s WHERE s.owner_id=? ORDER BY s.created_at DESC LIMIT 100`).bind(userId).all()).results || [];
+  return json(rows.map(submissionJson));
+}
+
+async function createSubmission(req, env) {
+  const u = await requireUser(req, env);
+  const b = await req.json().catch(() => ({}));
+  const title = clean(b.title, 160);
+  if (title.length < 3) throw new HttpError(400, 'invalid_title', 'Submission title must be at least 3 characters.');
+  const claim = clean(b.claim, 2000);
+  let evidenceId = num(b.evidence_id);
+  if (evidenceId != null) {
+    const ev = await env.DB.prepare('SELECT * FROM evidence WHERE id=? AND owner_id=?').bind(evidenceId, u.id).first();
+    if (!ev) throw new HttpError(404, 'evidence_not_found', 'Evidence not found.');
+  } else {
+    const evidenceUrl = clean(b.evidence_url, 800);
+    if (evidenceUrl) {
+      const ev = await env.DB.prepare(`INSERT INTO evidence (owner_id,title,kind,url,captured_at,status,created_at)
+        VALUES (?,?,?,?,?,'PENDING',?)`)
+        .bind(u.id, clean(b.evidence_title, 160) || title + ' evidence',
+          EVIDENCE_KINDS.has(String(b.evidence_kind || '').toUpperCase()) ? String(b.evidence_kind).toUpperCase() : 'LINK',
+          evidenceUrl, nowIso(), nowIso()).run();
+      evidenceId = ev.meta.last_row_id;
+    }
+  }
+  const r = await env.DB.prepare(`INSERT INTO submissions
+    (owner_id,title,claim,program_id,task_id,evidence_id,status,confidence,created_at)
+    VALUES (?,?,?,?,?,?,'SUBMITTED',0,?)`)
+    .bind(u.id, title, claim || null, num(b.program_id), num(b.task_id), evidenceId, nowIso()).run();
+  if (evidenceId != null)
+    await env.DB.prepare('UPDATE evidence SET submission_id=? WHERE id=?').bind(r.meta.last_row_id, evidenceId).run();
+  const row = await env.DB.prepare('SELECT * FROM submissions WHERE id=?').bind(r.meta.last_row_id).first();
+  return json(submissionJson(row), 201);
+}
+
+async function startPipeline(req, env, submissionId) {
+  const u = await requireUser(req, env);
+  const s = await env.DB.prepare('SELECT * FROM submissions WHERE id=? AND owner_id=?').bind(submissionId, u.id).first();
+  if (!s) throw new HttpError(404, 'submission_not_found', 'Submission not found.');
+  const existing = await env.DB.prepare('SELECT * FROM verification_pipelines WHERE submission_id=? ORDER BY id DESC LIMIT 1')
+    .bind(submissionId).first();
+  if (existing) return json({ ok: true, ...pipelineJson(existing) });
+  const at = nowIso();
+  const stages = ['SUBMITTED', 'AI_REVIEW', 'HUMAN_REVIEW', 'VERIFIED'];
+  const steps = [
+    { stage: stages[0], status: 'COMPLETE', at },
+    { stage: stages[1], status: 'IN_PROGRESS', at },
+  ];
+  const r = await env.DB.prepare(`INSERT INTO verification_pipelines
+    (submission_id,status,stage,confidence,steps,updated_at,created_at) VALUES (?,?,?,?,?,?,?)`)
+    .bind(submissionId, 'AI_REVIEW', 1, 35, JSON.stringify(steps), at, at).run();
+  await env.DB.prepare("UPDATE submissions SET status='AI_REVIEW', confidence=35 WHERE id=?").bind(submissionId).run();
+  if (s.evidence_id != null)
+    await env.DB.prepare("UPDATE evidence SET status='UNDER_REVIEW' WHERE id=?").bind(s.evidence_id).run();
+  const row = await env.DB.prepare('SELECT * FROM verification_pipelines WHERE id=?').bind(r.meta.last_row_id).first();
+  return json({ ok: true, ...pipelineJson(row) }, 201);
+}
+
+async function getPipeline(req, env, pipelineId) {
+  const u = await requireUser(req, env);
+  const row = await env.DB.prepare(`SELECT p.* FROM verification_pipelines p
+    JOIN submissions s ON s.id=p.submission_id WHERE p.id=?`).bind(pipelineId).first();
+  if (!row) throw new HttpError(404, 'pipeline_not_found', 'Verification pipeline not found.');
+  const sub = await env.DB.prepare('SELECT owner_id FROM submissions WHERE id=?').bind(row.submission_id).first();
+  if (Number(sub.owner_id) !== Number(u.id)) throw new HttpError(403, 'forbidden', 'This pipeline belongs to another member.');
+  return json(pipelineJson(row));
+}
+
+async function pipelineForEvidence(req, env, evidenceId) {
+  const u = await requireUser(req, env);
+  const ev = await env.DB.prepare('SELECT * FROM evidence WHERE id=?').bind(evidenceId).first();
+  if (!ev) throw new HttpError(404, 'evidence_not_found', 'Evidence not found.');
+  if (Number(ev.owner_id) !== Number(u.id)) throw new HttpError(403, 'forbidden', 'This evidence belongs to another member.');
+  const row = ev.submission_id == null ? null : await env.DB.prepare(
+    'SELECT * FROM verification_pipelines WHERE submission_id=? ORDER BY id DESC LIMIT 1').bind(ev.submission_id).first();
+  return json({ ok: true, evidence: evidenceJson(ev), pipeline: row ? pipelineJson(row) : null });
+}
+
+async function passportFor(env, userId) {
+  const user = await env.DB.prepare('SELECT * FROM users WHERE id=?').bind(userId).first();
+  if (!user) throw new HttpError(404, 'user_not_found', 'Member not found.');
+  const count = async (sql, id) => Number((await env.DB.prepare(sql).bind(id).first()).c || 0);
+  const verified = await count("SELECT COUNT(*) c FROM submissions WHERE owner_id=? AND status='VERIFIED'", userId);
+  const submissions = await count('SELECT COUNT(*) c FROM submissions WHERE owner_id=?', userId);
+  const programs = await count('SELECT COUNT(*) c FROM program_members WHERE user_id=?', userId);
+  const projects = await count('SELECT COUNT(*) c FROM project_members WHERE user_id=?', userId);
+  const tasks = await count("SELECT COUNT(*) c FROM tasks WHERE assignee_id=? AND status='VERIFIED'", userId);
+  const badges = [];
+  if (verified > 0) badges.push('Verified contributor');
+  if (verified >= 3) badges.push('Evidence champion');
+  if (programs > 0) badges.push('Program member');
+  if (projects > 0) badges.push('Project builder');
+  if (tasks > 0) badges.push('Task finisher');
+  const claims = (await env.DB.prepare(`SELECT s.*, (SELECT p.id FROM verification_pipelines p
+    WHERE p.submission_id=s.id ORDER BY p.id DESC LIMIT 1) pipeline_id
+    FROM submissions s WHERE s.owner_id=? ORDER BY s.created_at DESC LIMIT 20`).bind(userId).all()).results || [];
+  return json({
+    user_id: String(user.id), name: user.name || 'MASAREEN member', role: user.role || null,
+    country: user.country || null, city: user.city || null, avatar_url: user.picture || null,
+    verified_claims: verified, submissions, programs, projects, tasks_completed: tasks,
+    impact_score: Number((verified * 2 + tasks * 1.5 + projects + programs * 0.5).toFixed(1)),
+    badges, claims: claims.map(submissionJson), generated_at: nowIso(),
+  });
+}
+
+async function listStoryPacks(env) {
+  const rows = (await env.DB.prepare(`SELECT sp.*, u.name author_name, e.url evidence_url, e.kind evidence_kind
+    FROM story_packs sp LEFT JOIN users u ON u.id=sp.author_id
+    LEFT JOIN submissions s ON s.id=sp.submission_id LEFT JOIN evidence e ON e.id=s.evidence_id
+    WHERE sp.status='READY' ORDER BY sp.created_at DESC LIMIT 50`).all()).results || [];
+  return json(rows.map((sp) => ({
+    id: String(sp.id), submission_id: sp.submission_id == null ? null : String(sp.submission_id),
+    title: sp.title, summary: sp.summary || null, status: sp.status,
+    author_name: sp.author_name || 'MASAREEN', evidence_url: sp.evidence_url || null,
+    evidence_kind: sp.evidence_kind || null, created_at: sp.created_at,
+  })));
+}
+
 /* ---------------- notifications ---------------- */
 async function listNotifications(req, env, userId) {
   const viewer = await requireUser(req, env);
@@ -846,9 +1317,8 @@ async function uploadMedia(req, env, kind) {
 
 /* ---------------- misc app endpoints (graceful stubs) ---------------- */
 const emptyListRoutes = new Set([
-  '/api/v1/programs', '/api/v1/programs/', '/api/v1/opportunities', '/api/v1/opportunities/',
   '/api/v1/campaigns', '/api/v1/campaigns/', '/api/v1/coin/transactions',
-  '/api/v1/payments', '/api/v1/ads', '/api/v1/projects',
+  '/api/v1/payments', '/api/v1/ads',
 ]);
 
 async function userRoutes(req, env, url, viewer) {
@@ -948,6 +1418,63 @@ export async function socialRoutes(req, env, ctx) {
         return json(eventJson(row, !!mine));
       }
     }
+    if (path === '/api/v1/programs' || path === '/api/v1/programs/') {
+      if (req.method === 'GET') return json(await listPrograms(env, await currentUser(req, env)));
+      if (req.method === 'POST') return await createProgram(req, env);
+    }
+    const programMatch = /^\/api\/v1\/programs\/(\d+)(\/enroll|\/tasks)?$/.exec(path);
+    if (programMatch) {
+      const id = Number(programMatch[1]);
+      const sub = programMatch[2] || '';
+      if (!sub && req.method === 'GET') return json(await getProgram(env, await currentUser(req, env), id));
+      if (sub === '/enroll' && (req.method === 'POST' || req.method === 'GET')) return await enrollProgram(req, env, id);
+      if (sub === '/tasks' && req.method === 'POST') return await createTask(req, env, id);
+    }
+    if (path === '/api/v1/projects' || path === '/api/v1/projects/') {
+      if (req.method === 'GET') return json(await listProjects(env, await currentUser(req, env)));
+      if (req.method === 'POST') return await createProject(req, env);
+    }
+    const projectJoin = /^\/api\/v1\/projects\/(\d+)\/join$/.exec(path);
+    if (projectJoin && req.method === 'POST') return await joinProject(req, env, Number(projectJoin[1]));
+    if (path === '/api/v1/opportunities' || path === '/api/v1/opportunities/') {
+      if (req.method === 'GET') return json(await listOpportunities(env, await currentUser(req, env)));
+      if (req.method === 'POST') return await createOpportunity(req, env);
+    }
+    const opportunityMatch = /^\/api\/v1\/opportunities\/(\d+)(\/apply)?$/.exec(path);
+    if (opportunityMatch) {
+      const id = Number(opportunityMatch[1]);
+      if (opportunityMatch[2] === '/apply' && req.method === 'POST') return await applyOpportunity(req, env, id);
+      if (!opportunityMatch[2] && req.method === 'GET') {
+        const viewer = await currentUser(req, env);
+        const row = await env.DB.prepare(`SELECT o.*, u.name author_name,
+          (SELECT COUNT(*) FROM opportunity_applications a WHERE a.opportunity_id=o.id) applications_count
+          FROM opportunities o LEFT JOIN users u ON u.id=o.author_id WHERE o.id=?`).bind(id).first();
+        if (!row) throw new HttpError(404, 'opportunity_not_found', 'Opportunity not found.');
+        const applied = viewer ? await env.DB.prepare('SELECT 1 x FROM opportunity_applications WHERE opportunity_id=? AND user_id=?')
+          .bind(id, viewer.id).first() : null;
+        return json(opportunityJson(row, !!applied));
+      }
+    }
+    const taskHandled = await taskRoutes(req, env, url, await currentUser(req, env));
+    if (taskHandled) return taskHandled;
+    if (path === '/api/v1/evidence' && req.method === 'POST') return await createEvidence(req, env);
+    if (path === '/api/v1/evidence' && req.method === 'GET') {
+      const viewer = await requireUser(req, env);
+      const rows = (await env.DB.prepare('SELECT * FROM evidence WHERE owner_id=? ORDER BY created_at DESC LIMIT 100')
+        .bind(viewer.id).all()).results || [];
+      return json(rows.map(evidenceJson));
+    }
+    if (path === '/api/v1/submissions' && req.method === 'POST') return await createSubmission(req, env);
+    const submissionsUser = /^\/api\/v1\/submissions\/users\/(\d+)$/.exec(path);
+    if (submissionsUser && req.method === 'GET')
+      return await listSubmissions(env, await requireUser(req, env), Number(submissionsUser[1]));
+    const startPipelineMatch = /^\/api\/v1\/submissions\/(\d+)\/pipeline$/.exec(path);
+    if (startPipelineMatch && req.method === 'POST') return await startPipeline(req, env, Number(startPipelineMatch[1]));
+    const evidencePipeline = /^\/api\/v1\/verification\/pipelines\/evidence\/(\d+)$/.exec(path);
+    if (evidencePipeline && req.method === 'GET') return await pipelineForEvidence(req, env, Number(evidencePipeline[1]));
+    const pipelineMatch = /^\/api\/v1\/verification\/pipelines\/(\d+)$/.exec(path);
+    if (pipelineMatch && req.method === 'GET') return await getPipeline(req, env, Number(pipelineMatch[1]));
+    if (path === '/api/v1/story-packs' && req.method === 'GET') return await listStoryPacks(env);
     if (path.startsWith('/api/v1/notifications') || path === '/api/v1/users/me/notifications') {
       if (path === '/api/v1/users/me/notifications' && req.method === 'GET') {
         const viewer = await requireUser(req, env);
@@ -979,6 +1506,8 @@ export async function socialRoutes(req, env, ctx) {
       if (sub === '/impact' && req.method === 'POST') return await castImpactVote(req, env, id);
       if (sub === '/share' && req.method === 'POST') return await sharePost(req, env, id);
     }
+    const passportMatch = /^\/api\/v1\/users\/(\d+)\/passport$/.exec(path);
+    if (passportMatch && req.method === 'GET') return await passportFor(env, Number(passportMatch[1]));
     const viewer = await currentUser(req, env);
     const u = await userRoutes(req, env, url, viewer);
     if (u) return u;
