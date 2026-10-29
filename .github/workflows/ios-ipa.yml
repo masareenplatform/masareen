@@ -1,15 +1,15 @@
-name: Build iOS IPA (unsigned)
+name: Build iOS IPA (Codemagic + unsigned fallback)
 
 on:
   push:
     branches: [main]
-    paths: ['apps/mobile/**', '.github/workflows/ios-ipa.yml']
+    paths: ['apps/mobile/**', 'codemagic.yaml', '.github/workflows/ios-ipa.yml']
   workflow_dispatch:
     inputs:
       api_base_url:
-        description: 'Backend URL baked into the app (blank = code default)'
+        description: 'Backend URL baked into the app (blank = https://masareen.com)'
         required: false
-        default: ''
+        default: 'https://masareen.com'
       publish_release:
         description: 'Publish as GitHub Release "latest-ios-ipa"'
         type: boolean
@@ -19,43 +19,29 @@ permissions:
   contents: write
 
 jobs:
-  ipa:
-    runs-on: macos-latest
+  codemagic-ipa:
+    name: Build iOS IPA via Codemagic (Apple Silicon M2)
+    runs-on: ubuntu-latest
     timeout-minutes: 60
-    defaults:
-      run:
-        working-directory: apps/mobile
+    env:
+      CODEMAGIC_API_KEY: ${{ secrets.CODEMAGIC_API_KEY }}
+      API_BASE_URL: ${{ github.event.inputs.api_base_url || 'https://masareen.com' }}
     steps:
       - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
-        with: { flutter-version: '3.44.5', channel: stable, cache: true }
-      - name: Generate iOS project (git-ignored in repo)
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - name: Trigger and download iOS IPA from Codemagic
+        if: env.CODEMAGIC_API_KEY != ''
         run: |
-          python3 -m pip install --user --break-system-packages pillow
-          flutter create --platforms=ios --org com.masaren --project-name masaren .
-          python3 tool/patch_ios.py
-      - run: flutter pub get
-      - name: Analyze
-        run: flutter analyze --no-fatal-infos --no-fatal-warnings
-      - name: Build unsigned Runner.app
-        run: |
-          ARGS=""
-          if [ -n "${{ github.event.inputs.api_base_url }}" ]; then ARGS="--dart-define=API_BASE_URL=${{ github.event.inputs.api_base_url }}"; fi
-          flutter build ios --release --no-codesign $ARGS
-      - name: Package unsigned IPA
-        run: |
-          mkdir -p Payload
-          cp -R build/ios/iphoneos/Runner.app Payload/
-          zip -qry masareen-unsigned.ipa Payload
-          cp masareen-unsigned.ipa ../../masareen-unsigned.ipa
+          node tools/codemagic-ios-build.mjs --trigger --wait --download masareen-unsigned.ipa
       - uses: actions/upload-artifact@v4
+        if: env.CODEMAGIC_API_KEY != ''
         with: { name: masareen-ios-ipa, path: masareen-unsigned.ipa }
       - name: Publish release
-        if: github.event_name == 'push' || github.event.inputs.publish_release == 'true'
-        working-directory: .
+        if: env.CODEMAGIC_API_KEY != '' && (github.event_name == 'push' || github.event.inputs.publish_release == 'true')
         env: { GH_TOKEN: '${{ github.token }}' }
         run: |
           gh release delete latest-ios-ipa --yes --cleanup-tag 2>/dev/null || true
           gh release create latest-ios-ipa masareen-unsigned.ipa \
             --title "MASAREEN iOS IPA (unsigned)" \
-            --notes "This IPA is unsigned because no Apple signing certificate is available. Install it with a sideloading tool such as Sideloadly or AltStore on a Mac/PC. A free Apple ID signature expires after 7 days; a paid developer account lasts longer."
+            --notes "Compiled on Codemagic Apple Silicon with Firebase Cloud Messaging (FCM). Install with Sideloadly or AltStore."

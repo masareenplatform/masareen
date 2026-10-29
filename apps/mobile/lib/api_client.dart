@@ -56,8 +56,12 @@ class ApiClient {
     return _unwrap(res);
   }
 
-  Future<dynamic> delete(String path) async {
-    final res = await http.delete(Uri.parse('$_base$path'), headers: _headers);
+  Future<dynamic> delete(String path, [Map<String, dynamic>? body]) async {
+    final res = await http.delete(
+      Uri.parse('$_base$path'),
+      headers: _headers,
+      body: body == null ? null : jsonEncode(body),
+    );
     return _unwrap(res);
   }
 
@@ -131,6 +135,17 @@ class AuthApi {
     final user = User.fromJson(data as Map<String, dynamic>);
     api._userId = user.id;
     return user;
+  }
+
+  static Future<void> registerDeviceToken(String token, String platform) async {
+    await api.post('/api/v1/users/me/device-token', {
+      'token': token,
+      'platform': platform,
+    });
+  }
+
+  static Future<void> removeDeviceToken(String token) async {
+    await api.delete('/api/v1/users/me/device-token', {'token': token});
   }
 
   // ── Feed / Posts ────────────────────────────────────────────────────────

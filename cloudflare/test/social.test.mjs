@@ -1,4 +1,4 @@
-﻿import test from 'node:test';
+import test from 'node:test';
 import assert from 'node:assert/strict';
 import { handle } from '../src/index.js';
 import { makeDb } from './d1-shim.mjs';
@@ -635,3 +635,31 @@ test('social graph: bookmarks, search, threads, messages, blocks and reports', a
 });
 
 
+
+test('FCM device tokens register, delete and trigger push notifications', async () => {
+  const env = mkEnv();
+  const alice = await signup(env, 'alice-fcm@example.com', 'Alice FCM');
+  const bob = await signup(env, 'bob-fcm@example.com', 'Bob FCM');
+  const aliceMe = await (await call(env, 'GET', '/api/v1/users/me', null, alice)).json();
+
+  const reg = await call(env, 'POST', '/api/v1/users/me/device-token', {
+    token: 'fcm_test_token_ios_123',
+    platform: 'ios',
+  }, alice);
+  assert.equal(reg.status, 200);
+
+  const row = await env.DB.prepare('SELECT token, platform FROM device_tokens WHERE user_id=?').bind(Number(aliceMe.id)).first();
+  assert.equal(row.token, 'fcm_test_token_ios_123');
+  assert.equal(row.platform, 'ios');
+
+  const follow = await call(env, 'POST', `/api/v1/users/${aliceMe.id}/follow`, null, bob);
+  assert.equal(follow.status, 200);
+
+  const del = await call(env, 'DELETE', '/api/v1/users/me/device-token', {
+    token: 'fcm_test_token_ios_123',
+  }, alice);
+  assert.equal(del.status, 200);
+
+  const afterDel = await env.DB.prepare('SELECT token FROM device_tokens WHERE user_id=?').bind(Number(aliceMe.id)).first();
+  assert.equal(afterDel, null);
+});

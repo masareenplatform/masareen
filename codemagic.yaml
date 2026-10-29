@@ -1,0 +1,62 @@
+workflows:
+  ios-ipa:
+    name: MASAREEN iOS IPA (Unsigned)
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      vars:
+        API_BASE_URL: "https://masareen.com"
+        APP_ID: "com.masaren.app"
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+          source: true
+    scripts:
+      - name: Install Python Pillow for app icon generation
+        script: |
+          python3 -m pip install --user --break-system-packages pillow || pip3 install --user pillow
+      - name: Generate and patch iOS project (with Firebase GoogleService-Info.plist)
+        script: |
+          cd apps/mobile
+          flutter create --platforms=ios --org com.masaren --project-name masaren .
+          python3 tool/patch_ios.py
+      - name: Install Flutter packages and CocoaPods
+        script: |
+          cd apps/mobile
+          flutter pub get
+          cd ios && pod install --repo-update
+      - name: Run Flutter static analysis
+        script: |
+          cd apps/mobile
+          flutter analyze --no-fatal-infos --no-fatal-warnings
+      - name: Build unsigned release iOS Runner.app
+        script: |
+          cd apps/mobile
+          flutter build ios --release --no-codesign --dart-define=API_BASE_URL="$API_BASE_URL"
+      - name: Package unsigned IPA
+        script: |
+          cd apps/mobile
+          rm -rf Payload masareen-unsigned.ipa
+          mkdir -p Payload
+          cp -R build/ios/iphoneos/Runner.app Payload/
+          zip -qry masareen-unsigned.ipa Payload
+          cp masareen-unsigned.ipa "$CM_BUILD_DIR/masareen-unsigned.ipa"
+          ls -lh "$CM_BUILD_DIR/masareen-unsigned.ipa"
+      - name: Publish to GitHub Release (if GH_TOKEN configured)
+        script: |
+          if [ -n "$GH_TOKEN" ] && [ -f "$CM_BUILD_DIR/masareen-unsigned.ipa" ]; then
+            gh release delete latest-ios-ipa --yes --cleanup-tag 2>/dev/null || true
+            gh release create latest-ios-ipa "$CM_BUILD_DIR/masareen-unsigned.ipa" \
+              --title "MASAREEN iOS IPA (unsigned)" \
+              --notes "Built on Codemagic Apple Silicon (mac_mini_m2) with Firebase Cloud Messaging (FCM) enabled. Sideload using AltStore or Sideloadly." || true
+          fi
+    artifacts:
+      - masareen-unsigned.ipa
+      - apps/mobile/masareen-unsigned.ipa
+      - apps/mobile/build/ios/iphoneos/*.app

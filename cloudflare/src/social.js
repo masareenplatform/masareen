@@ -2,6 +2,8 @@
 // Auth here is email+password with PBKDF2 hashing and HMAC bearer tokens, so the
 // mobile app never depends on an external server. All data lives in D1.
 
+import { sendFcmPushForUser, sendFcmMessageToToken, ensureDeviceTokensTable } from './fcm.js';
+
 const enc = new TextEncoder();
 const TOKEN_DAYS = 30;
 const PBKDF2_ITERATIONS = 100000;
@@ -361,8 +363,11 @@ async function recomputeImpact(env, postId) {
 async function notify(env, userId, type, title, body, actorId, postId) {
   if (!userId || Number(userId) === Number(actorId)) return;
   try {
+    const cleanTitle = clean(title, 140);
+    const cleanBody = clean(body, 300) || null;
     await env.DB.prepare('INSERT INTO notifications (user_id,type,title,body,actor_id,post_id,read,created_at) VALUES (?,?,?,?,?,?,0,?)')
-      .bind(userId, type, clean(title, 140), clean(body, 300) || null, actorId || null, postId || null, nowIso()).run();
+      .bind(userId, type, cleanTitle, cleanBody, actorId || null, postId || null, nowIso()).run();
+    await sendFcmPushForUser(env, userId, { type, title: cleanTitle, body: cleanBody || '', actorId, postId });
   } catch { /* notifications must never break the action */ }
 }
 
@@ -2246,6 +2251,41 @@ async function listNotifications(req, env, userId) {
 }
 
 async function notificationRoutes(req, env, path) {
+  if ((path === '/api/v1/users/me/device-token' || path === '/api/v1/notifications/device-token') && req.method === 'POST') {
+    const viewer = await requireUser(req, env);
+    const b = await req.json().catch(() => ({}));
+    const token = clean(b.token, 4096);
+    const platform = clean(b.platform || 'android', 20).toLowerCase();
+    if (!token || !['android', 'ios', 'web'].includes(platform))
+      throw new HttpError(400, 'bad_input', 'A device token and platform are required.');
+    await ensureDeviceTokensTable(env);
+    await env.DB.prepare(`INSERT INTO device_tokens (user_id,token,platform,created_at,last_seen_at)
+      VALUES (?,?,?,?,?) ON CONFLICT(user_id,token) DO UPDATE SET platform=excluded.platform, last_seen_at=excluded.last_seen_at`)
+      .bind(viewer.id, token, platform, nowIso(), nowIso()).run();
+    return json({ ok: true });
+  }
+  if ((path === '/api/v1/users/me/device-token' || path === '/api/v1/notifications/device-token') && req.method === 'DELETE') {
+    const viewer = await requireUser(req, env);
+    const b = await req.json().catch(() => ({}));
+    const token = clean(b.token, 4096);
+    await ensureDeviceTokensTable(env);
+    if (token) await env.DB.prepare('DELETE FROM device_tokens WHERE user_id=? AND token=?').bind(viewer.id, token).run();
+    else await env.DB.prepare('DELETE FROM device_tokens WHERE user_id=?').bind(viewer.id).run();
+    return json({ ok: true });
+  }
+  if (path === '/api/v1/notifications/test-push' && req.method === 'POST') {
+    const viewer = await requireUser(req, env);
+    const b = await req.json().catch(() => ({}));
+    const title = clean(b.title || 'MASAREEN Notification', 140);
+    const body = clean(b.body || 'FCM push notifications are active on your device.', 300);
+    const explicitToken = clean(b.token, 4096);
+    if (explicitToken) {
+      const res = await sendFcmMessageToToken(env, explicitToken, { type: 'system', title, body });
+      return json({ ok: res.ok, result: res });
+    }
+    const res = await sendFcmPushForUser(env, viewer.id, { type: 'system', title, body });
+    return json({ ok: true, ...res });
+  }
   if (path === '/api/v1/notifications/read-all' && req.method === 'POST') {
     const viewer = await requireUser(req, env);
     await env.DB.prepare('UPDATE notifications SET read=1 WHERE user_id=?').bind(viewer.id).run();
@@ -2997,7 +3037,7 @@ export async function socialRoutes(req, env, ctx) {
     if (path === '/api/v1/story-packs' && req.method === 'GET') return await listStoryPacks(env);
     const personnelHandled = await personnelRoutes(req, env, url, await currentUser(req, env));
     if (personnelHandled) return personnelHandled;
-    if (path.startsWith('/api/v1/notifications') || path === '/api/v1/users/me/notifications') {
+    if (path.startsWith('/api/v1/notifications') || path === '/api/v1/users/me/notifications' || path === '/api/v1/users/me/device-token') {
       if (path === '/api/v1/users/me/notifications' && req.method === 'GET') {
         const viewer = await requireUser(req, env);
         return await listNotifications(req, env, viewer.id);

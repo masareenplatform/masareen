@@ -61,6 +61,12 @@ def kts_fix(s):
 
 rw(gradle, kts_fix if use_kts else gradle_fix)
 
+# ---- copy Firebase google-services.json if present -----------------------
+gs_src = os.path.join(ROOT, 'firebase', 'google-services.json')
+gs_dst = os.path.join(A, 'app', 'google-services.json')
+if os.path.exists(gs_src):
+    shutil.copyfile(gs_src, gs_dst)
+
 # Kotlin DSL: some plugins (flutter_webrtc) still declare compileSdk 31, which
 # AGP 9 rejects. Force every library module to compile against SDK 36.
 if use_kts:
@@ -116,6 +122,12 @@ def manifest_fix(s):
     if 'usesCleartextTraffic' not in s:
         # the default API endpoint is plain http://; Android 9+ blocks that otherwise
         s = s.replace('<application', '<application\n        android:usesCleartextTraffic="true"', 1)
+    if 'com.google.firebase.messaging.default_notification_channel_id' not in s:
+        fcm_meta = '''        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="masaren_notifications" />
+'''
+        s = s.replace('    </application>', fcm_meta + '    </application>', 1)
     if 'android:scheme="masaren"' not in s:
         deep_link = '''            <intent-filter android:autoVerify="false">
                 <action android:name="android.intent.action.VIEW" />

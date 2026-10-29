@@ -10,6 +10,7 @@ import json
 import os
 import plistlib
 import re
+import shutil
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -39,6 +40,12 @@ def write(path, value):
 if not os.path.exists(PLIST):
     die('ios/Runner/Info.plist not found. Run `flutter create --platforms=ios .` first.')
 
+# ---- copy Firebase GoogleService-Info.plist if present ----------------------
+gs_plist_src = os.path.join(ROOT, 'firebase', 'GoogleService-Info.plist')
+gs_plist_dst = os.path.join(IOS, 'Runner', 'GoogleService-Info.plist')
+if os.path.exists(gs_plist_src):
+    shutil.copyfile(gs_plist_src, gs_plist_dst)
+
 with open(PLIST, 'rb') as f:
     info = plistlib.load(f)
 
@@ -51,6 +58,8 @@ info.update({
         'CFBundleURLSchemes': ['masaren'],
     }],
     'LSApplicationQueriesSchemes': ['https', 'http', 'masaren', 'mailto', 'tel'],
+    'UIBackgroundModes': ['fetch', 'remote-notification'],
+    'FirebaseAppDelegateProxyEnabled': True,
     'NSCameraUsageDescription':
         'MASAREEN uses the camera to capture impact evidence and post media.',
     'NSPhotoLibraryUsageDescription':

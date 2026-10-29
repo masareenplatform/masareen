@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "818887213250",
+    "project_id": "masareen-82196",
+    "storage_bucket": "masareen-82196.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:818887213250:android:67c026bc807b213f99bb5b",
+        "android_client_info": {
+          "package_name": "com.masaren.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAUVZHB8528XBbNQjTiCx_tybWkDMK4a-s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
