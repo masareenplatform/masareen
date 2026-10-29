@@ -79,7 +79,7 @@ if os.path.exists(PROJECT):
     project = read(PROJECT)
     project = re.sub(
         r'IPHONEOS_DEPLOYMENT_TARGET = [\d.]+;',
-        'IPHONEOS_DEPLOYMENT_TARGET = 13.0;',
+        'IPHONEOS_DEPLOYMENT_TARGET = 15.0;',
         project,
     )
     project = project.replace('PRODUCT_BUNDLE_IDENTIFIER = com.example.masaren;',
@@ -98,11 +98,11 @@ if os.path.exists(PROJECT):
 
 if os.path.exists(PODFILE):
     podfile = read(PODFILE)
-    if re.search(r'^\s*#\s*platform :ios', podfile, re.M):
-        podfile = re.sub(r'^\s*#\s*platform :ios[^\n]*',
-                         "platform :ios, '13.0'", podfile, count=1, flags=re.M)
+    if re.search(r'^\s*#?\s*platform :ios', podfile, re.M):
+        podfile = re.sub(r'^\s*#?\s*platform :ios[^\n]*',
+                         "platform :ios, '15.0'", podfile, count=1, flags=re.M)
     elif 'platform :ios' not in podfile:
-        podfile = "platform :ios, '13.0'\n" + podfile
+        podfile = "platform :ios, '15.0'\n" + podfile
     write(PODFILE, podfile)
 
 # ---- app icon from the brand logo ------------------------------------------
