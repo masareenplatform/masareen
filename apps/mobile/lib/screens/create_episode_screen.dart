@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -8,8 +8,9 @@ import 'package:masaren/api_client.dart';
 class CreateEpisodeScreen extends StatefulWidget {
   final String showId;
   final String showTitle;
+  final String? eventId;
   const CreateEpisodeScreen(
-      {super.key, required this.showId, required this.showTitle});
+      {super.key, required this.showId, required this.showTitle, this.eventId});
 
   @override
   State<CreateEpisodeScreen> createState() => _CreateEpisodeScreenState();
@@ -130,6 +131,8 @@ class _CreateEpisodeScreenState extends State<CreateEpisodeScreen> {
         'duration_sec': minutes > 0 ? minutes * 60 : 0,
         'season_number': int.tryParse(_season.text.trim()) ?? 1,
         'episode_number': int.tryParse(_episode.text.trim()) ?? 1,
+        if (widget.eventId != null)
+          'event_id': int.tryParse(widget.eventId!),
         'guests': _guests.text
             .split(',')
             .map((g) => g.trim())

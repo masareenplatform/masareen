@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -23,7 +23,9 @@ class _CreateBoothScreenState extends State<CreateBoothScreen> {
   String _cta = 'QUOTE';
   String? _coverUrl;
   String? _coverPath;
+  final List<String> _tour = [];
   bool _uploading = false;
+  bool _tourUploading = false;
   bool _busy = false;
   String? _error;
 
@@ -64,6 +66,31 @@ class _CreateBoothScreenState extends State<CreateBoothScreen> {
     }
   }
 
+  Future<void> _pickTour() async {
+    final picked = await ImagePicker().pickMultiImage(
+        maxWidth: 2200, imageQuality: 88, limit: 12 - _tour.length);
+    if (picked.isEmpty) return;
+    setState(() => _tourUploading = true);
+    try {
+      for (final image in picked.take(12 - _tour.length)) {
+        final bytes = await image.readAsBytes();
+        final ext = image.name.split('.').last.toLowerCase();
+        final url = await AuthApi.uploadMedia(
+            bytes,
+            image.name,
+            ext == 'png'
+                ? 'image/png'
+                : ext == 'webp'
+                    ? 'image/webp'
+                    : 'image/jpeg');
+        if (mounted) setState(() => _tour.add(url));
+      }
+    } catch (e) {
+      if (mounted) setState(() => _error = e.toString());
+    } finally {
+      if (mounted) setState(() => _tourUploading = false);
+    }
+  }
   Future<void> _save() async {
     if (_title.text.trim().length < 3) {
       setState(() => _error = 'Add a booth title with at least 3 characters.');
@@ -89,6 +116,7 @@ class _CreateBoothScreenState extends State<CreateBoothScreen> {
         'cover_url': _coverUrl,
         'cta_type': _cta,
         'cta_label': _label.text.trim(),
+        if (_tour.isNotEmpty) 'tour': _tour,
         'trial_price_mrc': double.tryParse(_price.text.trim()) ?? 0,
       });
       if (mounted) Navigator.pop(context, true);
@@ -238,6 +266,67 @@ class _CreateBoothScreenState extends State<CreateBoothScreen> {
                     ),
             ),
           ),
+          const SizedBox(height: 14),
+          Text('360° booth tour',
+              style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w800,
+                  color: cs.onSurfaceVariant)),
+          const SizedBox(height: 4),
+          Text(
+              'Add 2-12 photos captured around the booth. Visitors can drag through them as an immersive tour.',
+              style: TextStyle(
+                  fontSize: 11.5,
+                  height: 1.35,
+                  color: cs.onSurfaceVariant)),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: _tourUploading ? null : _pickTour,
+            icon: _tourUploading
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2))
+                : const Icon(Icons.threesixty, size: 20),
+            label: Text(_tourUploading
+                ? 'Uploading tour...'
+                : _tour.isEmpty
+                    ? 'Capture / add 360° tour photos'
+                    : 'Add more tour photos ()'),
+          ),
+          if (_tour.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: SizedBox(
+                height: 64,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _tour.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 6),
+                  itemBuilder: (_, i) => Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(9),
+                        child: Image.network(_tour[i],
+                            width: 92, height: 64, fit: BoxFit.cover),
+                      ),
+                      Positioned(
+                        top: 2,
+                        right: 2,
+                        child: GestureDetector(
+                          onTap: () => setState(() => _tour.removeAt(i)),
+                          child: const CircleAvatar(
+                              radius: 9,
+                              backgroundColor: Colors.black54,
+                              child: Icon(Icons.close,
+                                  size: 12, color: Colors.white)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           if (_error != null)
             Padding(
               padding: const EdgeInsets.only(top: 12),

@@ -369,6 +369,8 @@ class Post {
   final String moderationStatus;
   final String deepfakeVerdict;
   final double deepfakeScore;
+  final String captureSource;
+  final double captureTrust;
 
   Post({
     required this.id,
@@ -415,6 +417,8 @@ class Post {
     this.moderationStatus = 'APPROVED',
     this.deepfakeVerdict = 'UNSCANNED',
     this.deepfakeScore = 0,
+    this.captureSource = 'UNKNOWN',
+    this.captureTrust = 0,
   });
 
   factory Post.fromJson(Map<String, dynamic> j) => Post(
@@ -502,6 +506,10 @@ class Post {
         deepfakeScore: j['deepfake_score'] is num
             ? (j['deepfake_score'] as num).toDouble()
             : 0,
+        captureSource: j['capture_source']?.toString() ?? 'UNKNOWN',
+        captureTrust: j['capture_trust'] is num
+            ? (j['capture_trust'] as num).toDouble()
+            : 0,
       );
 
   Post copyWith({
@@ -523,6 +531,8 @@ class Post {
     String? impactLabel,
     String? deepfakeVerdict,
     double? deepfakeScore,
+    String? captureSource,
+    double? captureTrust,
   }) =>
       Post(
         id: id,
@@ -559,6 +569,8 @@ class Post {
         rankingReason: rankingReason ?? this.rankingReason,
         deepfakeVerdict: deepfakeVerdict ?? this.deepfakeVerdict,
         deepfakeScore: deepfakeScore ?? this.deepfakeScore,
+        captureSource: captureSource ?? this.captureSource,
+        captureTrust: captureTrust ?? this.captureTrust,
       );
 }
 

@@ -61,6 +61,39 @@ def kts_fix(s):
 
 rw(gradle, kts_fix if use_kts else gradle_fix)
 
+# ---- Firebase Cloud Messaging requires the google-services Gradle plugin --
+settings_kts = os.path.join(A, 'settings.gradle.kts')
+settings_groovy = os.path.join(A, 'settings.gradle')
+if os.path.exists(settings_kts):
+    def settings_kts_fix(s):
+        if 'com.google.gms.google-services' in s:
+            return s
+        marker = 'plugins {'
+        if marker in s:
+            return s.replace(marker, marker + '\n    id("com.google.gms.google-services") version "4.4.4" apply false', 1)
+        return s
+    rw(settings_kts, settings_kts_fix)
+elif os.path.exists(settings_groovy):
+    def settings_groovy_fix(s):
+        if 'com.google.gms.google-services' in s:
+            return s
+        marker = 'plugins {'
+        if marker in s:
+            return s.replace(marker, marker + "\n    id 'com.google.gms.google-services' version '4.4.4' apply false", 1)
+        return s
+    rw(settings_groovy, settings_groovy_fix)
+
+def add_google_services_plugin(s):
+    if 'com.google.gms.google-services' in s:
+        return s
+    marker = 'plugins {'
+    if marker in s:
+        if 'build.gradle.kts' in gradle:
+            return s.replace(marker, marker + '\n    id("com.google.gms.google-services")', 1)
+        return s.replace(marker, marker + "\n    id 'com.google.gms.google-services'", 1)
+    return s
+rw(gradle, add_google_services_plugin)
+
 # ---- copy Firebase google-services.json if present -----------------------
 gs_src = os.path.join(ROOT, 'firebase', 'google-services.json')
 gs_dst = os.path.join(A, 'app', 'google-services.json')
@@ -111,7 +144,7 @@ for lang in ('kotlin', 'java'):
 PERMS = [
  'INTERNET', 'ACCESS_NETWORK_STATE', 'ACCESS_FINE_LOCATION', 'ACCESS_COARSE_LOCATION',
  'CAMERA', 'RECORD_AUDIO', 'MODIFY_AUDIO_SETTINGS', 'POST_NOTIFICATIONS', 'VIBRATE',
- 'WAKE_LOCK', 'READ_MEDIA_IMAGES', 'READ_MEDIA_VIDEO',
+ 'WAKE_LOCK', 'READ_MEDIA_IMAGES', 'READ_MEDIA_VIDEO', 'REQUEST_INSTALL_PACKAGES',
 ]
 def manifest_fix(s):
     add = ''.join('    <uses-permission android:name="android.permission.%s"/>\n' % p

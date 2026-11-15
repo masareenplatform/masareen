@@ -701,6 +701,8 @@ function postJson(r, likedByMe, ranking, bookmarkedByMe = false, followingAuthor
     impact_method: factors ? factors.method : null,
     geo_verified: !!r.geo_adjusted,
     geo_level: r.geo_adjusted == null ? 0 : Number(r.geo_adjusted),
+    capture_source: r.capture_source || 'UNKNOWN',
+    capture_trust: Number(r.capture_trust || 0),
     location_claim: r.location_claim || null,
     actor_factor: r.actor_factor == null ? null : Number(r.actor_factor),
     consistency_factor: r.consistency_factor == null ? null : Number(r.consistency_factor),
@@ -1926,6 +1928,16 @@ async function cloudAiScan(env, text, imageUrl) {
   return out;
 }
 
+function normalizeCaptureSource(value) {
+  const source = String(value || '').toUpperCase();
+  return ['CAMERA', 'GALLERY'].includes(source) ? source : 'UNKNOWN';
+}
+function captureTrustScore(source, latitude, longitude) {
+  const hasGps = Number.isFinite(Number(latitude)) && Number.isFinite(Number(longitude));
+  if (source === 'CAMERA') return hasGps ? 1 : 0.7;
+  if (source === 'GALLERY') return hasGps ? 0.55 : 0.3;
+  return hasGps ? 0.4 : 0.2;
+}
 async function deepfakeScan(env, { text = '', urls = [], title = '' } = {}) {
   const aiText = textAiSignals(`${title}\n${text}`);
   const nsfwText = textNsfwSignals(`${title}\n${text}`);
@@ -2001,6 +2013,8 @@ async function createPost(req, env) {
       'Add a proof link, image, file or video to publish evidence.');
   }
   const at = nowIso();
+  const captureSource = normalizeCaptureSource(b.capture_source);
+  const captureTrust = captureTrustScore(captureSource, latitude, longitude);
   const impactMetrics = normalizeImpactMetrics(b.impact_metrics);
   if (impactMetrics && (latitude == null || longitude == null)) {
     throw new HttpError(400, 'gps_required',
@@ -2039,17 +2053,17 @@ async function createPost(req, env) {
   const embedding = JSON.stringify(embeddingFor(text));
   const r = await env.DB.prepare(`INSERT INTO posts (author_id,text,kind,sdg,impact_value,impact_label,
       isa_score,impact_domains_json,impact_metrics_json,geo_adjusted,actor_factor,consistency_factor,
-      location_claim,deepfake_score,deepfake_verdict,deepfake_signals_json,confidence_score,confidence_label,confidence_factors,
+      location_claim,capture_source,capture_trust,deepfake_score,deepfake_verdict,deepfake_signals_json,confidence_score,confidence_label,confidence_factors,
       media_url,link_url,media_json,media_type,video_hls_url,video_poster_url,video_duration_seconds,
       latitude,longitude,files_json,source,
       embedding_json,embedding_status,moderation_status,created_at,updated_at)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'USER',?,'local-hash',?,?,?)`)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'USER',?,'local-hash',?,?,?)`)
     .bind(u.id, text, kind, sdg && sdg >= 1 && sdg <= 17 ? sdg : null,
       finalImpactValue, impactLabel, isa ? isa.isa_score : (finalImpactValue == null ? null : Math.round(finalImpactValue * 100)),
       isa ? JSON.stringify(isa.domains) : null,
       impactMetrics ? JSON.stringify(impactMetrics) : null,
       isa?.geo_adjusted || 0, isa?.actor_factor || null, isa?.consistency_factor || null,
-      locationClaim || null, deepfake.score, deepfake.verdict,
+      locationClaim || null, captureSource, captureTrust, deepfake.score, deepfake.verdict,
       JSON.stringify({ nsfw_score: deepfake.nsfw_score,
         nsfw_verdict: deepfake.nsfw_verdict, signals: deepfake.signals,
         provider: deepfake.provider, scanned_at: deepfake.scanned_at }),
@@ -4700,6 +4714,8 @@ function eventParticipantJson(p) {
     id: String(p.id), event_id: String(p.event_id),
     user_id: String(p.user_id), name: p.name || 'Member',
     handle: p.handle || null, avatar_url: p.picture || null,
+    city: p.city || null, country: p.country || null,
+    post_count: Number(p.post_count || 0),
     role: p.role, role_title: p.role_title || null, status: p.status,
     contribution: p.contribution || null,
     evidence: parseJsonValue(p.evidence_json, []),
@@ -4729,6 +4745,8 @@ function boothJson(b, viewerId) {
     cta_label: b.cta_label || null,
     trial_price_mrc: Number(b.trial_price_mrc || 0),
     products: parseJsonValue(b.products_json, []),
+    tour: parseJsonValue(b.tour_json, []),
+    ar_model_url: b.ar_model_url || null,
     active: !!b.active, views: Number(b.views || 0),
     interactions: Number(b.interactions || 0),
     leads_count: Number(b.leads_count || 0),
@@ -4823,7 +4841,9 @@ async function eventDetailData(req, env, id) {
       .bind(id, viewer.id).first()
     : null;
   const participants = (await env.DB.prepare(`SELECT ep.*, u.name, u.picture, u.handle,
-      u.role user_role, v.name verifier_name
+      u.role user_role, u.city, u.country,
+      (SELECT COUNT(*) FROM posts p WHERE p.author_id=u.id AND p.hidden=0) post_count,
+      v.name verifier_name
     FROM event_participants ep JOIN users u ON u.id=ep.user_id
     LEFT JOIN users v ON v.id=ep.verified_by
     WHERE ep.event_id=? ORDER BY ep.created_at ASC`).bind(id).all()).results || [];
@@ -5147,15 +5167,19 @@ async function createEventBooth(req, env, eventId) {
     price_note: clean(p?.price_note, 80) || null,
   })) : [];
   const at = nowIso();
+  const tour = Array.isArray(b.tour)
+    ? b.tour.map((url) => safeMediaUrl(url)).filter(Boolean).slice(0, 20) : [];
   const ins = await env.DB.prepare(`INSERT INTO event_booths
     (event_id,user_id,title,description,logo_url,cover_url,video_url,cta_type,cta_label,
-     trial_price_mrc,products_json,active,created_at,updated_at)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,0,?,?)`)
+     trial_price_mrc,products_json,tour_json,ar_model_url,active,created_at,updated_at)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,0,?,?)`)
     .bind(eventId, ownerId, title, clean(b.description, 3000) || null,
       safeMediaUrl(b.logo_url), safeMediaUrl(b.cover_url), safeMediaUrl(b.video_url),
       ctaType, clean(b.cta_label, 80) || null,
       Math.max(0, Math.min(100000, Number(b.trial_price_mrc) || 0)),
-      products.length ? JSON.stringify(products) : null, at, at).run();
+      products.length ? JSON.stringify(products) : null,
+      tour.length ? JSON.stringify(tour) : null,
+      safeMediaUrl(b.ar_model_url), at, at).run();
   if (Number(ownerId) !== Number(u.id)) {
     await notify(env, ownerId, 'event', `${u.name || 'An organizer'} created your booth`,
       `${event.title} · activate it with MRC to go live.`, u.id, null,
@@ -6194,6 +6218,8 @@ function evidenceJson(e) {
     kind: e.kind || 'DOCUMENT', url: e.url || null, sha256: e.sha256 || null,
     latitude: e.latitude == null ? null : Number(e.latitude), longitude: e.longitude == null ? null : Number(e.longitude),
     captured_at: e.captured_at || null,
+    capture_source: e.capture_source || 'UNKNOWN',
+    capture_trust: Number(e.capture_trust || 0),
     description: e.description || null,
     location_label: e.location_label || null,
     media: parseJsonValue(e.media_json, []),
@@ -6346,16 +6372,19 @@ async function createEvidence(req, env) {
   const status = scan.verdict === 'LIKELY_AI' || scan.nsfw_verdict === 'REVIEW'
     ? 'UNDER_REVIEW' : 'PENDING';
   const at = nowIso();
+  const captureSource = normalizeCaptureSource(b.capture_source);
+  const captureTrust = captureTrustScore(captureSource, lat, lng);
   const metadata = {
     target_title: target.title, target_type: target.type,
+    capture_source: captureSource, capture_trust: captureTrust,
     source: clean(b.source_name, 160) || 'MASAREEN evidence capture',
     created_via: 'structured_evidence_v2',
   };
   const r = await env.DB.prepare(`INSERT INTO evidence
     (owner_id,submission_id,task_id,target_type,target_id,title,description,claim,kind,url,sha256,
      location_label,media_json,files_json,source_name,witnesses_json,fields_json,metadata_json,
-     latitude,longitude,captured_at,deepfake_score,deepfake_verdict,deepfake_signals_json,status,created_at)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+     latitude,longitude,captured_at,capture_source,capture_trust,deepfake_score,deepfake_verdict,deepfake_signals_json,status,created_at)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
     .bind(u.id, submissionId, taskId, target.type, target.id, title,
       description || null, claim || null, kind, url, clean(b.sha256, 128) || null,
       clean(b.location_label, 200) || null,
@@ -6365,7 +6394,7 @@ async function createEvidence(req, env) {
       witnesses.length ? JSON.stringify(witnesses) : null,
       fields ? JSON.stringify(fields) : null,
       JSON.stringify(metadata), lat, lng, clean(b.captured_at, 40) || at,
-      scan.score, scan.verdict,
+      captureSource, captureTrust, scan.score, scan.verdict,
       JSON.stringify({ nsfw_score: scan.nsfw_score, nsfw_verdict: scan.nsfw_verdict,
         signals: scan.signals, provider: scan.provider, scanned_at: scan.scanned_at }),
       status, at).run();
@@ -7439,6 +7468,107 @@ function inquiryJson(r) {
 }
 
 /* ---------------- commerce: wallets, coins, payments and pro ---------------- */
+const MARKET_FEE_RATE = 0.015;
+const MARKET_OWNER_SHARE = 0.30;
+
+function marketSymbol(type, id) {
+  return `M-${String(type)[0]}${id}`;
+}
+function marketTradePrice(price, side, shares) {
+  const impact = Math.min(0.05, Math.max(0.002, shares / 10000));
+  return Math.max(1, Math.round(price * (side === 'BUY' ? 1 + impact : 1 - impact) * 100) / 100);
+}
+async function ensureMarket(env, type, id) {
+  const existing = await env.DB.prepare(`SELECT * FROM entity_markets
+    WHERE entity_type=? AND entity_id=?`).bind(type, String(id)).first();
+  if (existing) return existing;
+  const at = nowIso();
+  let name = null;
+  let ownerId = null;
+  let impact = 55;
+  if (type === 'USER') {
+    const row = await env.DB.prepare(`SELECT id,name,role,org,picture,
+      COALESCE((SELECT AVG(impact_value) FROM posts WHERE author_id=users.id AND hidden=0),0) impact,
+      COALESCE((SELECT COUNT(*) FROM submissions WHERE owner_id=users.id AND status='VERIFIED'),0) verified
+      FROM users WHERE id=?`).bind(Number(id)).first();
+    if (!row) return null;
+    name = row.org || row.name; ownerId = Number(row.id);
+    impact = 48 + Number(row.impact || 0) * 3 + Math.min(20, Number(row.verified || 0) * 2);
+  } else if (type === 'EVENT') {
+    const row = await env.DB.prepare('SELECT id,author_id,title,activity_verified_at FROM events WHERE id=?')
+      .bind(Number(id)).first();
+    if (!row) return null;
+    name = row.title; ownerId = Number(row.author_id);
+    impact = row.activity_verified_at ? 88 : 62;
+  } else if (type === 'PROGRAM' || type === 'PROJECT') {
+    const table = type === 'PROGRAM' ? 'programs' : 'projects';
+    const row = await env.DB.prepare(`SELECT id,author_id,title,verification_status FROM ${table} WHERE id=?`)
+      .bind(Number(id)).first();
+    if (!row) return null;
+    name = row.title; ownerId = Number(row.author_id);
+    impact = row.verification_status === 'APPROVED' ? (type === 'PROGRAM' ? 80 : 76) : 48;
+  } else if (type === 'OPPORTUNITY') {
+    const row = await env.DB.prepare('SELECT id,author_id,title FROM opportunities WHERE id=?')
+      .bind(Number(id)).first();
+    if (!row) return null;
+    name = row.title; ownerId = Number(row.author_id); impact = 58;
+  } else if (type === 'PODCAST') {
+    const row = await env.DB.prepare('SELECT id,owner_id,title FROM podcast_shows WHERE id=?')
+      .bind(Number(id)).first();
+    if (!row) return null;
+    name = row.title; ownerId = Number(row.owner_id); impact = 70;
+  } else if (type === 'VOD') {
+    const row = await env.DB.prepare('SELECT id,owner_id,title FROM vod_videos WHERE id=?')
+      .bind(Number(id)).first();
+    if (!row) return null;
+    name = row.title; ownerId = Number(row.owner_id); impact = 66;
+  }
+  if (!name) return null;
+  const price = Math.round((100 + impact * 2) * 100) / 100;
+  await env.DB.prepare(`INSERT OR IGNORE INTO entity_markets
+    (entity_type,entity_id,symbol,name,owner_id,price_mrc,previous_close,supply,impact_score,
+     volume_mrc,trade_count,status,created_at,updated_at)
+    VALUES (?,?,?,?,?,?,?,100000,?,0,0,'ACTIVE',?,?)`).bind(
+      type, String(id), marketSymbol(type, id), name, ownerId, price, price,
+      Math.round(impact), at, at).run();
+  const row = await env.DB.prepare(`SELECT * FROM entity_markets
+    WHERE entity_type=? AND entity_id=?`).bind(type, String(id)).first();
+  await env.DB.prepare(`INSERT INTO market_price_history (market_id,price_mrc,at)
+    VALUES (?,?,?)`).bind(row.id, row.price_mrc, at).run();
+  return row;
+}
+async function seedMarkets(env) {
+  await Promise.all([
+    env.DB.prepare(`SELECT id FROM users WHERE role IN
+      ('ORGANIZATION','INSTITUTION','UNIVERSITY','MEDIA','GOVERNMENT','CORPORATE')
+      ORDER BY id DESC LIMIT 40`).all(),
+    env.DB.prepare(`SELECT id FROM events WHERE status='PUBLISHED' ORDER BY activity_verified_at DESC LIMIT 40`).all(),
+    env.DB.prepare(`SELECT id FROM programs WHERE status='ACTIVE' LIMIT 30`).all(),
+    env.DB.prepare(`SELECT id FROM projects LIMIT 30`).all(),
+    env.DB.prepare(`SELECT id FROM opportunities WHERE status='OPEN' LIMIT 20`).all(),
+    env.DB.prepare(`SELECT id FROM podcast_shows WHERE status='ACTIVE' LIMIT 20`).all(),
+    env.DB.prepare(`SELECT id FROM vod_videos WHERE status='PUBLISHED' LIMIT 20`).all(),
+  ]).then(async (sets) => {
+    const types = ['USER', 'EVENT', 'PROGRAM', 'PROJECT', 'OPPORTUNITY', 'PODCAST', 'VOD'];
+    for (let i = 0; i < types.length; i++) {
+      for (const row of (sets[i].results || [])) await ensureMarket(env, types[i], row.id);
+    }
+  });
+}
+function marketJson(m, viewerId) {
+  const change = Number(m.previous_close || 0) > 0
+    ? (Number(m.price_mrc) - Number(m.previous_close)) / Number(m.previous_close) * 100 : 0;
+  return {
+    id: String(m.id), entity_type: m.entity_type, entity_id: String(m.entity_id),
+    symbol: m.symbol, name: m.name,
+    price_mrc: Number(m.price_mrc), previous_close: Number(m.previous_close),
+    change_percent: Math.round(change * 100) / 100,
+    supply: Number(m.supply), market_cap_mrc: Math.round(Number(m.price_mrc) * Number(m.supply)),
+    impact_score: Number(m.impact_score), volume_mrc: Number(m.volume_mrc),
+    trade_count: Number(m.trade_count), holders: Number(m.holders || 0),
+    is_owner: viewerId != null && Number(m.owner_id) === Number(viewerId),
+  };
+}
 const PRO_PLANS = {
   monthly: { id: 'monthly', price_mrc: 500, duration_days: 30 },
   yearly: { id: 'yearly', price_mrc: 4500, duration_days: 365 },
@@ -7819,7 +7949,7 @@ async function paymobIntent(req, env, viewer) {
   let amount = Number(b.amount_egp);
   if (purpose === 'pro') {
     const rate = await rateFor(env, 'EGP');
-    amount = egpFromMrc(plan.price_mrc, rate.rate_to_mrc);
+    amount = egpFromMrc(await discountedPlanPrice(env, viewer.id, plan), rate.rate_to_mrc);
   }
   const method = String(b.method || 'card').toLowerCase();
   if (!['card', 'vodafone_cash', 'instapay'].includes(method)) {
@@ -7901,6 +8031,345 @@ async function activatePro(env, userId, planId, paymentId = null) {
   return await env.DB.prepare('SELECT * FROM pro_subscriptions WHERE id=?').bind(ins.meta.last_row_id).first();
 }
 
+async function marketDiscount(env, userId) {
+  const row = await env.DB.prepare(`SELECT
+    COALESCE((SELECT AVG(isa_score) FROM posts WHERE author_id=? AND hidden=0 AND isa_score IS NOT NULL),0) avg_isa,
+    COALESCE((SELECT COUNT(*) FROM submissions WHERE owner_id=? AND status='VERIFIED'),0) verified,
+    COALESCE((SELECT SUM(h.shares*m.price_mrc) FROM market_holdings h
+      JOIN entity_markets m ON m.id=h.market_id WHERE h.user_id=?),0) holdings`).bind(userId, userId, userId).first();
+  const isa = Math.min(100, Number(row?.avg_isa || 0) / 10);
+  const verified = Math.min(20, Number(row?.verified || 0) * 2);
+  const holdings = Math.min(10, Math.log10(1 + Number(row?.holdings || 0)) * 3);
+  const impact = Math.min(100, isa + verified + holdings);
+  const discountPercent = Math.min(15, Math.round(impact * 0.14));
+  const yearly = Math.max(3000, Math.round(4500 * (1 - discountPercent / 100) / 50) * 50);
+  return {
+    impact_score: Math.round(impact), discount_percent: discountPercent,
+    pro_yearly_price_mrc: yearly, base_pro_yearly_price_mrc: 4500,
+    holdings_value_mrc: Math.round(Number(row?.holdings || 0) * 100) / 100,
+  };
+}
+async function discountedPlanPrice(env, userId, plan) {
+  if (!userId) return plan.price_mrc;
+  const advantage = await marketDiscount(env, userId);
+  const factor = 1 - Number(advantage.discount_percent || 0) / 100;
+  return Math.max(50, Math.round(plan.price_mrc * factor / 50) * 50);
+}
+async function marketRoutes(req, env, url, viewer) {
+  const path = url.pathname;
+  const method = req.method;
+  if (path === '/api/v1/market/me' && method === 'GET') {
+    if (!viewer) throw new HttpError(401, 'not_signed_in', 'Please sign in.');
+    const rows = (await env.DB.prepare(`SELECT h.*,m.* FROM market_holdings h
+      JOIN entity_markets m ON m.id=h.market_id WHERE h.user_id=? AND h.shares>0
+      ORDER BY h.updated_at DESC`).bind(viewer.id).all()).results || [];
+    const advantage = await marketDiscount(env, viewer.id);
+    return json({
+      holdings: rows.map((r) => ({
+        market_id: String(r.market_id), symbol: r.symbol, name: r.name,
+        shares: Number(r.shares), avg_cost: Number(r.avg_cost),
+        price_mrc: Number(r.price_mrc), value_mrc: Math.round(Number(r.shares) * Number(r.price_mrc) * 100) / 100,
+        change_percent: Number(r.previous_close) > 0
+          ? Math.round((Number(r.price_mrc) - Number(r.previous_close)) / Number(r.previous_close) * 10000) / 100 : 0,
+      })),
+      advantage,
+    });
+  }
+  if (path === '/api/v1/market/advantage' && method === 'GET') {
+    if (!viewer) throw new HttpError(401, 'not_signed_in', 'Please sign in.');
+    return json(await marketDiscount(env, viewer.id));
+  }
+  if (path === '/api/v1/market' || path === '/api/v1/market/') {
+    if (method !== 'GET') return null;
+    await seedMarkets(env);
+    const rows = (await env.DB.prepare(`SELECT m.*,
+      (SELECT COUNT(*) FROM market_holdings h WHERE h.market_id=m.id AND h.shares>0) holders
+      FROM entity_markets m WHERE m.status='ACTIVE'
+      ORDER BY COALESCE(m.impact_score,0) DESC, m.volume_mrc DESC LIMIT 120`).all()).results || [];
+    return json(rows.map((r) => marketJson(r, viewer?.id)));
+  }
+  const match = /^\/api\/v1\/market\/(\d+)(\/trade)?$/.exec(path);
+  if (!match) return null;
+  const marketId = Number(match[1]);
+  const row = await env.DB.prepare(`SELECT m.*,
+    (SELECT COUNT(*) FROM market_holdings h WHERE h.market_id=m.id AND h.shares>0) holders
+    FROM entity_markets m WHERE m.id=?`).bind(marketId).first();
+  if (!row) throw new HttpError(404, 'market_not_found', 'Market not found.');
+  if (!match[2] && method === 'GET') {
+    const history = (await env.DB.prepare(`SELECT price_mrc,at FROM market_price_history
+      WHERE market_id=? ORDER BY at ASC LIMIT 120`).bind(marketId).all()).results || [];
+    const holders = (await env.DB.prepare(`SELECT h.shares,h.avg_cost,u.name,u.picture
+      FROM market_holdings h JOIN users u ON u.id=h.user_id WHERE h.market_id=? AND h.shares>0
+      ORDER BY h.shares DESC LIMIT 10`).bind(marketId).all()).results || [];
+    let myShares = 0; let myAvg = 0;
+    if (viewer) {
+      const mine = await env.DB.prepare(`SELECT shares,avg_cost FROM market_holdings
+        WHERE market_id=? AND user_id=?`).bind(marketId, viewer.id).first();
+      myShares = Number(mine?.shares || 0); myAvg = Number(mine?.avg_cost || 0);
+    }
+    return json({ ...marketJson(row, viewer?.id),
+      history: history.map((h) => ({ price_mrc: Number(h.price_mrc), at: h.at })),
+      top_holders: holders.map((h) => ({ shares: Number(h.shares), avg_cost: Number(h.avg_cost), name: h.name, avatar_url: h.picture || null })),
+      my_shares: myShares, my_avg_cost: myAvg,
+    });
+  }
+  if (match[2] === '/trade' && method === 'POST') {
+    if (!viewer) throw new HttpError(401, 'not_signed_in', 'Please sign in.');
+    const b = await readJson(req);
+    const side = String(b.side || '').toUpperCase();
+    const shares = Math.trunc(Number(b.shares));
+    if (!['BUY', 'SELL'].includes(side)) throw new HttpError(400, 'invalid_side', 'Choose buy or sell.');
+    if (!Number.isInteger(shares) || shares < 1 || shares > 5000) {
+      throw new HttpError(400, 'invalid_shares', 'Choose between 1 and 5,000 shares.');
+    }
+    const price = Number(row.price_mrc);
+    const gross = Math.round(price * shares * 100) / 100;
+    const fee = Math.round(gross * MARKET_FEE_RATE * 100) / 100;
+    const at = nowIso();
+    if (side === 'BUY') {
+      await debitCoins(env, viewer.id, gross + fee, `Market BUY ${row.symbol} (${fee} MRC fee)`);
+      const holding = await env.DB.prepare(`SELECT * FROM market_holdings WHERE market_id=? AND user_id=?`)
+        .bind(marketId, viewer.id).first();
+      if (holding) {
+        const totalShares = Number(holding.shares) + shares;
+        const avg = (Number(holding.avg_cost) * Number(holding.shares) + gross) / totalShares;
+        await env.DB.prepare(`UPDATE market_holdings SET shares=?,avg_cost=?,updated_at=?
+          WHERE id=?`).bind(totalShares, Math.round(avg * 100) / 100, at, holding.id).run();
+      } else {
+        await env.DB.prepare(`INSERT INTO market_holdings (user_id,market_id,shares,avg_cost,updated_at)
+          VALUES (?,?,?,?,?)`).bind(viewer.id, marketId, shares, price, at).run();
+      }
+    } else {
+      const holding = await env.DB.prepare(`SELECT * FROM market_holdings WHERE market_id=? AND user_id=?`)
+        .bind(marketId, viewer.id).first();
+      if (!holding || Number(holding.shares) < shares) {
+        throw new HttpError(400, 'insufficient_shares', 'You do not hold enough shares.');
+      }
+      await creditCoins(env, viewer.id, gross - fee, `Market SELL ${row.symbol} (${fee} MRC fee)`);
+      const left = Number(holding.shares) - shares;
+      await env.DB.prepare(`UPDATE market_holdings SET shares=?,updated_at=? WHERE id=?`)
+        .bind(left, at, holding.id).run();
+    }
+    if (row.owner_id && Number(row.owner_id) !== Number(viewer.id) && fee > 0) {
+      await creditCoins(env, row.owner_id, Math.round(fee * MARKET_OWNER_SHARE * 100) / 100,
+        `Market maker reward ${row.symbol}`).catch(() => {});
+    }
+    const next = marketTradePrice(price, side, shares);
+    await env.DB.prepare(`UPDATE entity_markets SET price_mrc=?,previous_close=?,
+      volume_mrc=volume_mrc+?,trade_count=trade_count+1,updated_at=? WHERE id=?`)
+      .bind(next, price, gross, at, marketId).run();
+    await env.DB.prepare(`INSERT INTO market_trades
+      (market_id,user_id,side,shares,price_mrc,gross_mrc,fee_mrc,created_at)
+      VALUES (?,?,?,?,?,?,?,?)`).bind(marketId, viewer.id, side, shares, price, gross, fee, at).run();
+    await env.DB.prepare('INSERT INTO market_price_history (market_id,price_mrc,at) VALUES (?,?,?)')
+      .bind(marketId, next, at).run();
+    const fresh = await env.DB.prepare(`SELECT m.*,
+      (SELECT COUNT(*) FROM market_holdings h WHERE h.market_id=m.id AND h.shares>0) holders
+      FROM entity_markets m WHERE m.id=?`).bind(marketId).first();
+    return json({ ok: true, market: marketJson(fresh, viewer.id), shares, price,
+      gross_mrc: gross, fee_mrc: fee, side, wallet: await walletJson(env, viewer.id) });
+  }
+  return null;
+}
+async function newsSnapshot(env, type, id) {
+  const t = String(type || '').toUpperCase();
+  if (t === 'EVENT') {
+    const event = await env.DB.prepare(`SELECT id,title,starts_at,location,activity_verified_at FROM events WHERE id=?`)
+      .bind(Number(id)).first();
+    if (!event) throw new HttpError(404, 'entity_not_found', 'Event not found.');
+    const counts = await env.DB.prepare(`SELECT
+      (SELECT COUNT(*) FROM event_participants WHERE event_id=?) participants,
+      (SELECT COUNT(*) FROM event_participants WHERE event_id=? AND status='VERIFIED') verified,
+      (SELECT COUNT(*) FROM event_booths WHERE event_id=?) booths,
+      (SELECT COUNT(*) FROM event_ratings WHERE event_id=?) ratings,
+      (SELECT COALESCE(AVG(rating),0) FROM event_ratings WHERE event_id=?) rating_avg`)
+      .bind(event.id, event.id, event.id, event.id, event.id).first();
+    return { type: 'EVENT', id: String(event.id), title: event.title,
+      verified: !!event.activity_verified_at, metrics: {
+        participants: Number(counts?.participants || 0),
+        verified_participants: Number(counts?.verified || 0),
+        booths: Number(counts?.booths || 0),
+        ratings: Number(counts?.ratings || 0),
+        rating_avg: Math.round(Number(counts?.rating_avg || 0) * 100) / 100,
+        date: event.starts_at, location: event.location,
+      }};
+  }
+  if (t === 'USER' || t === 'INSTITUTION') {
+    const user = await env.DB.prepare('SELECT id,name,role,org,city,country FROM users WHERE id=?')
+      .bind(Number(id)).first();
+    if (!user) throw new HttpError(404, 'entity_not_found', 'Entity not found.');
+    const counts = await env.DB.prepare(`SELECT
+      (SELECT COUNT(*) FROM posts WHERE author_id=? AND hidden=0) posts,
+      (SELECT COALESCE(AVG(isa_score),0) FROM posts WHERE author_id=? AND hidden=0) avg_isa,
+      (SELECT COUNT(*) FROM submissions WHERE owner_id=? AND status='VERIFIED') verified,
+      (SELECT COUNT(*) FROM events WHERE author_id=?) events`).bind(user.id, user.id, user.id, user.id).first();
+    return { type: 'USER', id: String(user.id), title: user.org || user.name,
+      verified: true, metrics: {
+        posts: Number(counts?.posts || 0), events: Number(counts?.events || 0),
+        verified_submissions: Number(counts?.verified || 0),
+        average_isa: Math.round(Number(counts?.avg_isa || 0)),
+        city: user.city, country: user.country, role: user.role,
+      }};
+  }
+  const tables = { PROGRAM: 'programs', PROJECT: 'projects', OPPORTUNITY: 'opportunities', PODCAST: 'podcast_shows', VOD: 'vod_videos' };
+  const table = tables[t];
+  if (!table) throw new HttpError(400, 'invalid_entity', 'Choose a supported entity for the data snapshot.');
+  const row = await env.DB.prepare(`SELECT * FROM ${table} WHERE id=?`).bind(Number(id)).first();
+  if (!row) throw new HttpError(404, 'entity_not_found', 'Entity not found.');
+  return { type: t, id: String(row.id), title: row.title,
+    verified: row.verification_status === 'APPROVED',
+    metrics: { status: row.status || 'ACTIVE', category: row.category || null,
+      sdg: row.sdg || null, created_at: row.created_at } };
+}
+function newsJson(a, viewerId) {
+  return {
+    id: String(a.id), title: a.title, slug: a.slug || null,
+    summary: a.summary || null, body: a.body, cover_url: a.cover_url || null,
+    status: a.status, verification_status: a.verification_status,
+    author_id: String(a.author_id), author_name: a.author_name || 'Newsroom',
+    author_avatar: a.author_picture || null,
+    outlet_id: String(a.outlet_id), outlet_name: a.outlet_name || a.author_name || 'Newsroom',
+    data_snapshot: parseJsonValue(a.data_snapshot_json, null),
+    funding_goal_mrc: Number(a.funding_goal_mrc || 0),
+    funding_raised_mrc: Number(a.funding_raised_mrc || 0),
+    mrc_earned: Number(a.mrc_earned || 0), views: Number(a.views || 0),
+    rating_avg: Number(a.rating_avg || 0), rating_count: Number(a.rating_count || 0),
+    is_owner: viewerId != null && Number(a.author_id) === Number(viewerId),
+    created_at: a.created_at, updated_at: a.updated_at,
+  };
+}
+async function newsRoutes(req, env, url, viewer) {
+  const path = url.pathname;
+  const method = req.method;
+  if (path === '/api/v1/news/data' && method === 'GET') {
+    if (!viewer) throw new HttpError(401, 'not_signed_in', 'Please sign in.');
+    return json(await newsSnapshot(env, url.searchParams.get('entity_type'), url.searchParams.get('entity_id')));
+  }
+  if (path === '/api/v1/news' || path === '/api/v1/news/') {
+    if (method === 'GET') {
+      const mine = url.searchParams.get('mine') === '1' && viewer;
+      const rows = (await env.DB.prepare(`SELECT a.*,u.name author_name,u.picture author_picture,u.org outlet_name
+        FROM news_articles a JOIN users u ON u.id=a.author_id
+        WHERE ${mine ? 'a.author_id=?' : "a.status='PUBLISHED'"}
+        ORDER BY a.created_at DESC LIMIT 80`).bind(...(mine ? [viewer.id] : [])).all()).results || [];
+      return json(rows.map((a) => newsJson(a, viewer?.id)));
+    }
+    if (method === 'POST') {
+      if (!viewer) throw new HttpError(401, 'not_signed_in', 'Please sign in.');
+      const allowed = isAdminUser(env, viewer) ||
+        ['MEDIA', 'ORGANIZATION', 'UNIVERSITY', 'INSTITUTION', 'GOVERNMENT'].includes(viewer.role);
+      if (!allowed) throw new HttpError(403, 'not_allowed',
+        'Only verified news outlets and institutions can publish articles.');
+      const b = await readJson(req);
+      const title = clean(b.title, 180);
+      const body = clean(b.body, 30000);
+      if (title.length < 5 || body.length < 30) {
+        throw new HttpError(400, 'invalid_article', 'Add a headline and a substantive article body.');
+      }
+      const outletId = num(b.outlet_id) || viewer.id;
+      if (Number(outletId) !== Number(viewer.id) && !isAdminUser(env, viewer)) {
+        throw new HttpError(403, 'not_allowed', 'You cannot publish for another outlet.');
+      }
+      let snapshot = null;
+      if (b.data_snapshot && typeof b.data_snapshot === 'object') snapshot = b.data_snapshot;
+      else if (b.entity_type && b.entity_id) snapshot = await newsSnapshot(env, b.entity_type, b.entity_id);
+      const status = String(b.status || 'PUBLISHED').toUpperCase() === 'DRAFT' ? 'DRAFT' : 'PUBLISHED';
+      const at = nowIso();
+      const ins = await env.DB.prepare(`INSERT INTO news_articles
+        (author_id,outlet_id,title,slug,summary,body,cover_url,status,verification_status,
+         verified_by,verified_at,data_snapshot_json,funding_goal_mrc,created_at,updated_at)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+        .bind(viewer.id, outletId, title, clean(b.slug, 120) || null,
+          clean(b.summary, 500) || null, body, safeMediaUrl(b.cover_url), status,
+          snapshot ? 'VERIFIED' : 'PENDING', snapshot ? viewer.id : null,
+          snapshot ? at : null, snapshot ? JSON.stringify(snapshot) : null,
+          Math.max(0, num(b.funding_goal_mrc) || 0), at, at).run();
+      const row = await env.DB.prepare(`SELECT a.*,u.name author_name,u.picture author_picture,u.org outlet_name
+        FROM news_articles a JOIN users u ON u.id=a.author_id WHERE a.id=?`)
+        .bind(ins.meta.last_row_id).first();
+      return json(newsJson(row, viewer.id), 201);
+    }
+  }
+  const fundMatch = /^\/api\/v1\/news\/(\d+)\/(fund|rate)$/.exec(path);
+  if (fundMatch && method === 'POST') {
+    if (!viewer) throw new HttpError(401, 'not_signed_in', 'Please sign in.');
+    const article = await env.DB.prepare('SELECT * FROM news_articles WHERE id=?')
+      .bind(Number(fundMatch[1])).first();
+    if (!article) throw new HttpError(404, 'article_not_found', 'Article not found.');
+    const b = await readJson(req);
+    if (fundMatch[2] === 'rate') {
+      const stars = Math.round(Number(b.stars));
+      if (!Number.isInteger(stars) || stars < 1 || stars > 5) {
+        throw new HttpError(400, 'invalid_rating', 'Choose 1 to 5 stars.');
+      }
+      await env.DB.prepare(`INSERT INTO news_ratings (article_id,user_id,stars,created_at)
+        VALUES (?,?,?,?) ON CONFLICT(article_id,user_id) DO UPDATE SET stars=excluded.stars,created_at=excluded.created_at`)
+        .bind(article.id, viewer.id, stars, nowIso()).run();
+      const avg = await env.DB.prepare(`SELECT AVG(stars) avg,COUNT(*) c FROM news_ratings WHERE article_id=?`)
+        .bind(article.id).first();
+      await env.DB.prepare('UPDATE news_articles SET rating_avg=?,rating_count=? WHERE id=?')
+        .bind(Number(avg?.avg || 0), Number(avg?.c || 0), article.id).run();
+      return json({ ok: true, rating_avg: Number(avg?.avg || 0), rating_count: Number(avg?.c || 0) });
+    }
+    const amount = Math.round(Number(b.amount_mrc) * 100) / 100;
+    if (!Number.isFinite(amount) || amount < 1 || amount > 10000) {
+      throw new HttpError(400, 'invalid_amount', 'Fund between 1 and 10,000 MRC.');
+    }
+    if (article.status !== 'PUBLISHED' && Number(article.funding_goal_mrc) <= 0) {
+      throw new HttpError(409, 'article_not_fundable', 'Only published or crowdfunded articles can receive funding.');
+    }
+    const fee = Math.round(amount * 0.30 * 100) / 100;
+    const payout = Math.round((amount - fee) * 100) / 100;
+    await debitCoins(env, viewer.id, amount, `News funding #${article.id}`);
+    await creditCoins(env, article.outlet_id, payout, `News revenue #${article.id}`).catch(() => {});
+    const at = nowIso();
+    await env.DB.prepare(`INSERT INTO news_funding (article_id,user_id,amount_mrc,fee_mrc,created_at)
+      VALUES (?,?,?,?,?)`).bind(article.id, viewer.id, amount, fee, at).run();
+    const raised = Math.round((Number(article.funding_raised_mrc || 0) + amount) * 100) / 100;
+    const earned = Math.round((Number(article.mrc_earned || 0) + payout) * 100) / 100;
+    const publish = Number(article.funding_goal_mrc) > 0 && raised >= Number(article.funding_goal_mrc);
+    await env.DB.prepare(`UPDATE news_articles SET funding_raised_mrc=?,mrc_earned=?,
+      status=CASE WHEN ? THEN 'PUBLISHED' ELSE status END,updated_at=? WHERE id=?`)
+      .bind(raised, earned, publish ? 1 : 0, at, article.id).run();
+    return json({ ok: true, raised_mrc: raised, payout_mrc: payout,
+      platform_fee_mrc: fee, published: publish });
+  }
+  const match = /^\/api\/v1\/news\/(\d+)$/.exec(path);
+  if (!match) return null;
+  const article = await env.DB.prepare(`SELECT a.*,u.name author_name,u.picture author_picture,u.org outlet_name
+    FROM news_articles a JOIN users u ON u.id=a.author_id WHERE a.id=?`)
+    .bind(Number(match[1])).first();
+  if (!article) throw new HttpError(404, 'article_not_found', 'Article not found.');
+  if (method === 'GET') {
+    if (article.status !== 'PUBLISHED' &&
+        (!viewer || Number(article.author_id) !== Number(viewer.id))) {
+      throw new HttpError(404, 'article_not_found', 'Article not found.');
+    }
+    if (article.status === 'PUBLISHED') {
+      await env.DB.prepare('UPDATE news_articles SET views=views+1 WHERE id=?').bind(article.id).run();
+      article.views = Number(article.views || 0) + 1;
+    }
+    return json(newsJson(article, viewer?.id));
+  }
+  if (method === 'PATCH' || method === 'POST') {
+    if (!viewer) throw new HttpError(401, 'not_signed_in', 'Please sign in.');
+    if (Number(article.author_id) !== Number(viewer.id) && !isAdminUser(env, viewer)) {
+      throw new HttpError(403, 'not_allowed', 'Only the authoring outlet can edit this article.');
+    }
+    const b = await readJson(req);
+    const title = clean(b.title, 180) || article.title;
+    const body = clean(b.body, 30000) || article.body;
+    const status = b.status ? (String(b.status).toUpperCase() === 'DRAFT' ? 'DRAFT' : 'PUBLISHED') : article.status;
+    await env.DB.prepare(`UPDATE news_articles SET title=?,summary=?,body=?,cover_url=?,
+      status=?,updated_at=? WHERE id=?`).bind(title,
+      clean(b.summary, 500) || article.summary, body,
+      safeMediaUrl(b.cover_url) || article.cover_url, status, nowIso(), article.id).run();
+    const fresh = await env.DB.prepare(`SELECT a.*,u.name author_name,u.picture author_picture,u.org outlet_name
+      FROM news_articles a JOIN users u ON u.id=a.author_id WHERE a.id=?`).bind(article.id).first();
+    return json(newsJson(fresh, viewer.id));
+  }
+  return null;
+}
 async function commerceRoutes(req, env, url, viewer) {
   const path = url.pathname;
   const method = req.method;
@@ -7940,8 +8409,15 @@ async function commerceRoutes(req, env, url, viewer) {
   }
   const proPlans = path === '/api/v1/pro/plans' && method === 'GET';
   if (proPlans) {
-    return json({ plans: Object.values(PRO_PLANS).map((p) => ({ id: p.id, name: p.id,
-      price_mrc: p.price_mrc, duration_days: p.duration_days })) });
+    const advantage = viewer ? await marketDiscount(env, viewer.id) : null;
+    return json({
+      plans: await Promise.all(Object.values(PRO_PLANS).map(async (p) => ({
+        id: p.id, name: p.id, price_mrc: p.price_mrc,
+        member_price_mrc: await discountedPlanPrice(env, viewer?.id, p),
+        duration_days: p.duration_days,
+      }))),
+      advantage,
+    });
   }
   if (path === '/api/v1/pro/me' && method === 'GET') {
     if (!viewer) throw new HttpError(401, 'not_signed_in', 'Please sign in.');
@@ -7970,14 +8446,15 @@ async function commerceRoutes(req, env, url, viewer) {
       const row = await activatePro(env, viewer.id, planId, pay.id);
       return json({ ok: true, subscription: proJson(row) });
     }
+    const memberPrice = await discountedPlanPrice(env, viewer.id, plan);
     await ensureWallet(env, viewer.id);
     const at = nowIso();
     const upd = await env.DB.prepare('UPDATE coin_wallets SET balance=balance-?,updated_at=? WHERE owner_id=? AND balance>=?')
-      .bind(plan.price_mrc, at, viewer.id, plan.price_mrc).run();
+      .bind(memberPrice, at, viewer.id, memberPrice).run();
     if (!upd.meta.changes) {
       throw new HttpError(400, 'insufficient_balance', 'You do not have enough MRC for this plan.');
     }
-    await recordCoinTx(env, viewer.id, 'SPEND', plan.price_mrc, 'MASAREEN Pro ' + planId, null);
+    await recordCoinTx(env, viewer.id, 'SPEND', memberPrice, 'MASAREEN Pro ' + planId, null);
     const row = await activatePro(env, viewer.id, planId, null);
     return json({ ok: true, subscription: proJson(row) });
   }
@@ -9539,6 +10016,14 @@ export async function socialRoutes(req, env, ctx) {
     if (path === '/api/v1/ads' || path.startsWith('/api/v1/ads/') ||
         path === '/api/v1/campaigns' || path === '/api/v1/campaigns/') {
       const handled = await adsRoutes(req, env, url, await currentUser(req, env));
+      if (handled) return handled;
+    }
+    if (path.startsWith('/api/v1/news')) {
+      const handled = await newsRoutes(req, env, url, await currentUser(req, env));
+      if (handled) return handled;
+    }
+    if (path.startsWith('/api/v1/market')) {
+      const handled = await marketRoutes(req, env, url, await currentUser(req, env));
       if (handled) return handled;
     }
     if (path.startsWith('/api/v1/payments') || path.startsWith('/api/v1/coin/') ||

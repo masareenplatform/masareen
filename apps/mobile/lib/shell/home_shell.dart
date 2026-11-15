@@ -13,6 +13,8 @@ import 'package:masaren/screens/events_screen.dart';
 import 'package:masaren/screens/feed_screen.dart';
 import 'package:masaren/screens/feedback_screen.dart';
 import 'package:masaren/screens/messages_screen.dart';
+import 'package:masaren/screens/market_screen.dart';
+import 'package:masaren/screens/newsroom_screen.dart';
 import 'package:masaren/screens/notifications_screen.dart';
 import 'package:masaren/screens/opportunities_screen.dart';
 import 'package:masaren/screens/live_tv_screen.dart';
@@ -313,14 +315,12 @@ class _HomeShellState extends State<HomeShell> {
     if (_lastBack == null ||
         now.difference(_lastBack!) > const Duration(seconds: 2)) {
       _lastBack = now;
-      final message = MasarenLocalizations.of(context, 'menu.exitHint');
+      _feedKey.currentState?.refreshToTop();
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(
-          content: Text(message == 'menu.exitHint'
-              ? 'Press back again to exit'
-              : message),
-          duration: const Duration(seconds: 2),
+        ..showSnackBar(const SnackBar(
+          content: Text('Feed refreshed. Press back again to exit.'),
+          duration: Duration(seconds: 2),
           behavior: SnackBarBehavior.floating,
         ));
       return;
@@ -596,6 +596,16 @@ class _ShellDrawer extends StatelessWidget {
                         label: _t(context, 'nav.research', 'Research hub'),
                         onTap: () =>
                             _open(context, ResearchHubScreen(user: user))),
+                    _tile(context,
+                        icon: Icons.newspaper_outlined,
+                        label: 'Newsroom',
+                        onTap: () =>
+                            _open(context, NewsroomScreen(user: user))),
+                    _tile(context,
+                        icon: Icons.candlestick_chart_outlined,
+                        label: 'Impact Market',
+                        onTap: () =>
+                            _open(context, MarketScreen(user: user))),
                     _tile(context,
                         icon: Icons.leaderboard_outlined,
                         label: _t(context, 'nav.leaderboards', 'Leaderboards'),

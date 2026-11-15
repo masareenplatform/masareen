@@ -623,7 +623,7 @@ INSERT INTO organizations (owner_id,name,slug,type,description,logo_url,cover_ur
 SELECT u.id, 'Al Noor FC', 'al-noor-fc', 'CLUB',
   'Community football club with a first team, a youth academy and a girls programme.',
   'https://api.dicebear.com/9.x/shields/svg?seed=AlNoorFC',
-  'https://picsum.photos/seed/alnoor-stadium/1600/700',
+  'https://masareen.com/media/seed/football.jpg',
   'https://masareen.com', 'Jordan', 'Amman', 1, 'VERIFIED', 88, 74,
   '{"league":"Jordan League","division":"Premier","stadium":"Al Noor Park","capacity":4200,"founded":"1998","trophies":[{"name":"Jordan Cup","year":"2024"},{"name":"Community Shield","year":"2023"}]}',
   strftime('%Y-%m-%dT%H:%M:%SZ','now','-140 days')
@@ -700,8 +700,8 @@ AND NOT EXISTS (SELECT 1 FROM sports_events e WHERE e.org_id=o.id AND e.opponent
 INSERT INTO posts (author_id,text,kind,sdg,impact_value,impact_label,confidence_score,confidence_label,confidence_factors,like_count,comment_count,share_count,media_url,media_json,media_type,latitude,longitude,created_at)
 SELECT u.id, 'Matchday gallery: the academy and first team shared the pitch for our community open day. More than 300 children joined drills, and every coach was a local volunteer.', 'IMPACT', 11, 7.6, 'Strong impact', 78, 'High confidence',
   '{"ratings":5,"average_stars":4.5,"method":"seed"}', 44, 7, 9,
-  'https://picsum.photos/seed/alnoor-open-day-1/1200/800',
-  '[{"url":"https://picsum.photos/seed/alnoor-open-day-1/1200/800","type":"IMAGE","caption":"Academy warm-up on the main pitch"},{"url":"https://picsum.photos/seed/alnoor-open-day-2/1200/800","type":"IMAGE","caption":"Volunteer coaches with the under-12 group"}]',
+  'https://masareen.com/media/seed/football.jpg',
+  '[{"url":"https://masareen.com/media/seed/football.jpg","type":"IMAGE","caption":"Academy warm-up on the main pitch"},{"url":"https://masareen.com/media/seed/community.jpg","type":"IMAGE","caption":"Volunteer coaches with the under-12 group"}]',
   'GALLERY', 31.9539, 35.9106, strftime('%Y-%m-%dT%H:%M:%SZ','now','-3 hours')
 FROM users u WHERE u.email='alnoor@masareen.example'
 AND NOT EXISTS (SELECT 1 FROM posts WHERE text LIKE 'Matchday gallery: the academy%');

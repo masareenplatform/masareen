@@ -298,6 +298,79 @@ class AuthApi {
   static Future<void> deleteEvent(String id) async {
     await api.delete('/api/v1/events/$id');
   }
+  static Future<List<Map<String, dynamic>>> marketList() async {
+    final data = await api.get('/api/v1/market');
+    final list = data is List ? data : <dynamic>[];
+    return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  }
+
+  static Future<Map<String, dynamic>> marketDetail(String id) async {
+    final data = await api.get('/api/v1/market/$id');
+    return Map<String, dynamic>.from(data as Map);
+  }
+
+  static Future<Map<String, dynamic>> marketMe() async {
+    final data = await api.get('/api/v1/market/me');
+    return Map<String, dynamic>.from(data as Map);
+  }
+
+  static Future<Map<String, dynamic>> marketAdvantage() async {
+    final data = await api.get('/api/v1/market/advantage');
+    return Map<String, dynamic>.from(data as Map);
+  }
+
+  static Future<Map<String, dynamic>> tradeMarket(String id,
+      {required String side, required int shares}) async {
+    final data = await api.post('/api/v1/market/$id/trade', {
+      'side': side,
+      'shares': shares,
+    });
+    return Map<String, dynamic>.from(data as Map);
+  }
+
+  static Future<List<Map<String, dynamic>>> newsList({bool mine = false}) async {
+    final data = await api.get('/api/v1/news', {if (mine) 'mine': 1});
+    final list = data is List ? data : <dynamic>[];
+    return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  }
+
+  static Future<Map<String, dynamic>> newsDetail(String id) async {
+    final data = await api.get('/api/v1/news/$id');
+    return Map<String, dynamic>.from(data as Map);
+  }
+
+  static Future<Map<String, dynamic>> newsSnapshot(
+      String type, String id) async {
+    final data = await api.get('/api/v1/news/data', {
+      'entity_type': type,
+      'entity_id': id,
+    });
+    return Map<String, dynamic>.from(data as Map);
+  }
+
+  static Future<Map<String, dynamic>> createNews(
+      Map<String, dynamic> body) async {
+    final data = await api.post('/api/v1/news', body);
+    return Map<String, dynamic>.from(data as Map);
+  }
+
+  static Future<Map<String, dynamic>> updateNews(
+      String id, Map<String, dynamic> body) async {
+    final data = await api.patch('/api/v1/news/$id', body);
+    return Map<String, dynamic>.from(data as Map);
+  }
+
+  static Future<Map<String, dynamic>> fundNews(
+      String id, double amount) async {
+    final data = await api.post('/api/v1/news/$id/fund', {
+      'amount_mrc': amount,
+    });
+    return Map<String, dynamic>.from(data as Map);
+  }
+
+  static Future<void> rateNews(String id, int stars) async {
+    await api.post('/api/v1/news/$id/rate', {'stars': stars});
+  }
   static Future<Map<String, dynamic>> discoveryFeed({
     int limit = 12,
     int offset = 0,

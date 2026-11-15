@@ -22,6 +22,7 @@ import 'package:masaren/screens/program_detail_screen.dart';
 import 'package:masaren/screens/podcast_screen.dart';
 import 'package:masaren/screens/vod_screen.dart';
 import 'package:masaren/widgets/smart_image.dart';
+import 'package:masaren/widgets/festive_burst.dart';
 import 'package:masaren/screens/wallet_screen.dart';
 import 'package:masaren/screens/courses_screen.dart';
 import 'package:masaren/screens/opportunities_screen.dart';
@@ -367,6 +368,15 @@ class FeedScreenState extends State<FeedScreen> {
   }
 
   void refresh() => _load(reset: true);
+
+  void refreshToTop() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(0,
+          duration: const Duration(milliseconds: 380),
+          curve: Curves.easeOutCubic);
+    }
+    _load(reset: true);
+  }
 
   void _setMode(String mode) {
     if (mode == _mode) return;
@@ -765,6 +775,12 @@ class FeedScreenState extends State<FeedScreen> {
     try {
       final res = await AuthApi.toggleFollow(p.author.id);
       final following = res['following'] == true;
+      if (following && mounted) {
+        unawaited(FestiveBurst.show(context,
+            message: 'Following ${p.author.name}',
+            icon: Icons.people_alt_rounded,
+            color: const Color(0xFF0E6B5C)));
+      }
       final j = _posts.indexWhere((e) => e.id == p.id);
       if (j != -1) {
         _posts[j] = _posts[j].copyWith(
@@ -830,7 +846,15 @@ class FeedScreenState extends State<FeedScreen> {
     } catch (_) {
       _posts[i] = p;
     }
-    if (mounted) setState(() {});
+    if (mounted) {
+      setState(() {});
+      if (!wasLiked) {
+        unawaited(FestiveBurst.show(context,
+            message: 'Impact amplified',
+            icon: Icons.favorite_rounded,
+            color: const Color(0xFFE36A4A)));
+      }
+    }
   }
 }
 

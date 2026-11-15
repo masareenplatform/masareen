@@ -615,6 +615,29 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                       const SizedBox(height: 14),
                       Text(_post.text,
                           style: const TextStyle(fontSize: 16, height: 1.55)),
+                      if (_post.captureSource != 'UNKNOWN')
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                  _post.captureSource == 'CAMERA'
+                                      ? Icons.camera_alt_outlined
+                                      : Icons.photo_library_outlined,
+                                  size: 14,
+                                  color: _post.captureSource == 'CAMERA'
+                                      ? cs.primary
+                                      : null),
+                              const SizedBox(width: 4),
+                              Text(
+                                  ' · trust %',
+                                  style: TextStyle(
+                                      fontSize: 10,
+                                      color: cs.onSurfaceVariant)),
+                            ],
+                          ),
+                        ),
                       if (_post.deepfakeVerdict != 'UNSCANNED' &&
                           _post.deepfakeVerdict != 'LIKELY_AUTHENTIC')
                         Padding(

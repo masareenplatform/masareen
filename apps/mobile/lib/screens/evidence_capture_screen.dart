@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -41,6 +41,7 @@ class _EvidenceCaptureScreenState extends State<EvidenceCaptureScreen> {
   final Map<String, TextEditingController> _fieldControllers = {};
   final List<XFile> _images = [];
   XFile? _video;
+  String _captureSource = 'UNKNOWN';
   PlatformFile? _audio;
   final List<PlatformFile> _files = [];
   String _kind = 'PHOTO';
@@ -292,6 +293,27 @@ class _EvidenceCaptureScreenState extends State<EvidenceCaptureScreen> {
     }
   }
 
+  Future<void> _capturePhoto() async {
+    final picked = await ImagePicker().pickImage(
+        source: ImageSource.camera, maxWidth: 1800, imageQuality: 84);
+    if (picked == null) return;
+    setState(() {
+      _images.add(picked);
+      _video = null;
+      _captureSource = 'CAMERA';
+    });
+  }
+
+  Future<void> _captureVideo() async {
+    final picked = await ImagePicker().pickVideo(
+        source: ImageSource.camera, maxDuration: const Duration(minutes: 5));
+    if (picked == null) return;
+    setState(() {
+      _video = picked;
+      _images.clear();
+      _captureSource = 'CAMERA';
+    });
+  }
   Future<void> _pickImages() async {
     final picked = await ImagePicker().pickMultiImage(
         maxWidth: 1800, imageQuality: 84, limit: 10 - _images.length);
@@ -299,6 +321,7 @@ class _EvidenceCaptureScreenState extends State<EvidenceCaptureScreen> {
     setState(() {
       _images.addAll(picked.take(10 - _images.length));
       _video = null;
+      _captureSource = 'GALLERY';
     });
   }
 
@@ -309,6 +332,7 @@ class _EvidenceCaptureScreenState extends State<EvidenceCaptureScreen> {
     setState(() {
       _video = picked;
       _images.clear();
+      _captureSource = 'GALLERY';
     });
   }
 
@@ -430,6 +454,7 @@ class _EvidenceCaptureScreenState extends State<EvidenceCaptureScreen> {
         'description': _description.text.trim(),
         if (_claim.text.trim().isNotEmpty) 'claim': _claim.text.trim(),
         'kind': _kind,
+        'capture_source': _captureSource,
         'target_type': _targetType,
         'target_id': int.tryParse(targetId) ?? targetId,
         if (widget.participantId != null)
@@ -721,6 +746,14 @@ class _EvidenceCaptureScreenState extends State<EvidenceCaptureScreen> {
                   icon: Icons.photo_library_outlined,
                   label: '${_t('evidence.photos', 'Photos')} (${_images.length})',
                   onTap: _pickImages),
+              _AttachChip(
+                  icon: Icons.camera_alt_outlined,
+                  label: 'Take photo',
+                  onTap: _capturePhoto),
+              _AttachChip(
+                  icon: Icons.video_camera_back_outlined,
+                  label: 'Record video',
+                  onTap: _captureVideo),
               _AttachChip(
                   icon: Icons.videocam_outlined,
                   label: _video == null

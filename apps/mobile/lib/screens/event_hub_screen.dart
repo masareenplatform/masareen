@@ -1,4 +1,5 @@
-﻿import 'dart:io';
+﻿import 'dart:async';
+import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -9,7 +10,10 @@ import 'package:masaren/models.dart';
 import 'package:masaren/profile_router.dart';
 import 'package:masaren/screens/booth_screen.dart';
 import 'package:masaren/screens/create_booth_screen.dart';
+import 'package:masaren/screens/create_episode_screen.dart';
+import 'package:masaren/screens/create_vod_screen.dart';
 import 'package:masaren/screens/event_manage_screen.dart';
+import 'package:masaren/screens/event_report_screen.dart';
 import 'package:masaren/screens/moderators_screen.dart';
 import 'package:masaren/screens/evidence_capture_screen.dart';
 import 'package:masaren/screens/opportunity_detail_screen.dart';
@@ -20,6 +24,7 @@ import 'package:masaren/screens/vod_screen.dart';
 import 'package:masaren/services/share_policy.dart';
 import 'package:masaren/theme.dart';
 import 'package:masaren/widgets/animations.dart';
+import 'package:masaren/widgets/festive_burst.dart';
 import 'package:masaren/widgets.dart';
 import 'package:masaren/widgets/smart_image.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -533,6 +538,12 @@ class _EventHubScreenState extends State<EventHubScreen> {
       await AuthApi.eventParticipantVerdict(widget.eventId, participantId,
           status: status, override: override);
     }, success: _t('events.verdictSaved', 'Verification decision saved.'));
+    if (status == 'VERIFIED' && mounted) {
+      unawaited(FestiveBurst.show(context,
+          message: 'Contribution verified',
+          icon: Icons.verified_rounded,
+          color: const Color(0xFF0E6B5C)));
+    }
   }
 
   Future<void> _openBooth(String id) async {
@@ -541,6 +552,12 @@ class _EventHubScreenState extends State<EventHubScreen> {
     if (mounted) _load();
   }
 
+  Future<void> _openReport() async {
+    final data = _data;
+    if (data == null) return;
+    await Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => EventReportScreen(event: data)));
+  }
   Future<void> _openModerators(String title) async {
     await Navigator.of(context).push(MaterialPageRoute(
         builder: (_) => ModeratorsScreen(
@@ -680,6 +697,9 @@ class _EventHubScreenState extends State<EventHubScreen> {
     final canModerate = event['can_moderate'] == true;
     final canRemoveEvent = event['can_remove_event'] == true;
     final canCreateBooth = event['can_create_booth'] == true;
+    final companies = participants.where((p) =>
+        ['EXHIBITOR', 'SPONSOR', 'PARTNER', 'HOST']
+            .contains(p['role'])).toList();
     final title = (event['title'] ?? '').toString();
     final participantGroups = <String, List<Map<String, dynamic>>>{};
     for (final p in participants) {
@@ -697,6 +717,11 @@ class _EventHubScreenState extends State<EventHubScreen> {
                 tooltip: _t('events.dashboard', 'Event dashboard'),
                 onPressed: _openDashboard,
                 icon: const Icon(Icons.insights_outlined)),
+          if (canManage || canModerate)
+            IconButton(
+                tooltip: 'Impact report',
+                onPressed: _openReport,
+                icon: const Icon(Icons.assessment_outlined)),
           if (canManage || canModerate)
             IconButton(
                 tooltip: 'Moderators',
@@ -922,6 +947,29 @@ class _EventHubScreenState extends State<EventHubScreen> {
                                   Icons.add_photo_alternate_outlined,
                                   size: 17),
                               label: Text(_t('events.addMedia', 'Add media'))),
+                          OutlinedButton.icon(
+                              onPressed: () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                      builder: (_) => CreateVodScreen(
+                                          eventId: widget.eventId))),
+                              icon: const Icon(Icons.video_library_outlined,
+                                  size: 17),
+                              label: const Text('Add VOD replay')),
+                          if (podcastEpisodes.isNotEmpty)
+                            OutlinedButton.icon(
+                                onPressed: () => Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                        builder: (_) => CreateEpisodeScreen(
+                                              showId: podcastEpisodes.first['show_id']
+                                                  .toString(),
+                                              showTitle: (podcastEpisodes.first[
+                                                          'show_title'] ??
+                                                      'Event podcast')
+                                                  .toString(),
+                                              eventId: widget.eventId,
+                                            ))),
+                                icon: const Icon(Icons.podcasts, size: 17),
+                                label: const Text('Add episode')),
                           if (event['can_create_booth'] == true)
                             OutlinedButton.icon(
                                 onPressed: _createBooth,
@@ -939,6 +987,45 @@ class _EventHubScreenState extends State<EventHubScreen> {
                       ),
                     ),
                   ],
+                  if (companies.isNotEmpty)
+                    _Section(
+                      title: 'Companies at this event',
+                      icon: Icons.business_outlined,
+                      child: Column(
+                        children: companies.take(10).map((p) {
+                          final location = [p['city'], p['country']]
+                              .where((v) =>
+                                  v != null && v.toString().isNotEmpty)
+                              .join(', ');
+                          return ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: AppAvatar(
+                                name: (p['name'] ?? 'C').toString(),
+                                url: p['avatar_url']?.toString(),
+                                size: 36),
+                            title: Text((p['name'] ?? 'Company').toString(),
+                                style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700)),
+                            subtitle: Text(
+                                '${p['role_title'] ?? p['role']} · ${location.isEmpty ? 'At this event' : location} · ${p['post_count'] ?? 0} posts',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                    fontSize: 10.5,
+                                    color: cs.onSurfaceVariant)),
+                            trailing: const Icon(Icons.arrow_forward, size: 15),
+                            onTap: () => openEntityAuthor(context,
+                                author: Author(
+                                    id: p['user_id'].toString(),
+                                    name: (p['name'] ?? 'Company').toString(),
+                                    avatarUrl: p['avatar_url']?.toString(),
+                                    role: p['role']?.toString()),
+                                currentUser: widget.user),
+                          );
+                        }).toList(),
+                      ),
+                    ),
                   if (participants.isNotEmpty)
                     _Section(
                       title: _t('events.contributors', 'Contributors'),

@@ -5,11 +5,11 @@ The **landing page lives in an R2 bucket** (custom domain, e.g. `masareen.com`) 
 | Piece | Where |
 |---|---|
 | API + auth | `cloudflare/src/index.js` |
-| Database schema | `cloudflare/schema.sql` (tables: `users`, `login_events`, `contact_messages`) |
+| Database schema | `cloudflare/schema.sql` (63 tables: accounts, social feed, profiles, programs, commerce, ads, GPS, admin) |
 | Upgrade existing DB | `cloudflare/migrations/001-profile-fields.sql` |
 | Landing page + sign-up | `landing/index.html` → uploaded to R2 |
 | CEO dashboard | `landing/admin.html` → uploaded to R2 |
-| Tests (11, run offline) | `cloudflare/test/worker.test.mjs` |
+| Tests (45, run offline) | `cloudflare/test/worker.test.mjs` + `cloudflare/test/social.test.mjs` |
 
 ## 1. Put the landing page on R2
 
@@ -118,7 +118,7 @@ The Worker validates the required fields per role server-side, so the API cannot
 
 ```bash
 cd cloudflare
-npm test            # 11 offline API tests against an in-memory SQLite stand-in for D1
+npm test            # 45 offline API tests against an in-memory SQLite stand-in for D1
 npx wrangler d1 execute masareen --local --file=schema.sql
 npx wrangler dev    # real Worker at http://localhost:8787 (API only, unless you enable [assets])
 ```

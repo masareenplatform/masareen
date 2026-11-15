@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 class AppColors {
   static const brand = Color(0xFF0E6B5C);
@@ -27,8 +27,9 @@ ThemeData buildTheme({bool dark = false}) {
   final scheme = ColorScheme.fromSeed(
     seedColor: AppColors.brand,
     brightness: dark ? Brightness.dark : Brightness.light,
-    primary: AppColors.brand,
-    secondary: AppColors.accent,
+    primary: dark ? const Color(0xFF76D7C4) : AppColors.brand,
+    onPrimary: dark ? const Color(0xFF00382F) : Colors.white,
+    secondary: dark ? const Color(0xFFE8C46A) : AppColors.accent,
     surface: surface,
     onSurface: onBg,
   ).copyWith(
@@ -111,7 +112,7 @@ ThemeData buildTheme({bool dark = false}) {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
     ),
     textButtonTheme: TextButtonThemeData(
-      style: TextButton.styleFrom(foregroundColor: AppColors.brand),
+      style: TextButton.styleFrom(foregroundColor: scheme.primary),
     ),
     bottomNavigationBarTheme: BottomNavigationBarThemeData(
       backgroundColor: dark ? AppColors.darkBg : Colors.white,

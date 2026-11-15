@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -6,7 +6,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:masaren/api_client.dart';
 
 class CreateVodScreen extends StatefulWidget {
-  const CreateVodScreen({super.key});
+  final String? eventId;
+  const CreateVodScreen({super.key, this.eventId});
 
   @override
   State<CreateVodScreen> createState() => _CreateVodScreenState();
@@ -127,6 +128,8 @@ class _CreateVodScreenState extends State<CreateVodScreen> {
         'cover_url': _coverUrl ?? _videoPosterUrl,
         'duration_sec': minutes > 0 ? minutes * 60 : 0,
         'category': _category.text.trim(),
+        if (widget.eventId != null)
+          'event_id': int.tryParse(widget.eventId!),
         'sdg': int.tryParse(_sdg.text.trim()),
       });
       if (mounted) Navigator.pop(context, video);

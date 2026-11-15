@@ -113,6 +113,8 @@ CREATE TABLE IF NOT EXISTS posts (
   boosted_until TEXT,
   boost_weight REAL NOT NULL DEFAULT 0,
   paid_mrc REAL NOT NULL DEFAULT 0,
+  capture_source TEXT NOT NULL DEFAULT 'UNKNOWN',
+  capture_trust REAL NOT NULL DEFAULT 0,
   deepfake_score REAL NOT NULL DEFAULT 0,
   deepfake_verdict TEXT NOT NULL DEFAULT 'UNSCANNED',
   deepfake_signals_json TEXT,
@@ -461,6 +463,8 @@ CREATE TABLE IF NOT EXISTS event_booths (
   cta_label       TEXT,
   trial_price_mrc REAL NOT NULL DEFAULT 0,
   products_json   TEXT,
+  tour_json       TEXT,
+  ar_model_url    TEXT,
   active          INTEGER NOT NULL DEFAULT 0,
   views           INTEGER NOT NULL DEFAULT 0,
   interactions    INTEGER NOT NULL DEFAULT 0,
@@ -820,6 +824,8 @@ CREATE TABLE IF NOT EXISTS evidence (
   latitude      REAL,
   longitude     REAL,
   captured_at   TEXT,
+  capture_source TEXT NOT NULL DEFAULT 'UNKNOWN',
+  capture_trust REAL NOT NULL DEFAULT 0,
   deepfake_score REAL NOT NULL DEFAULT 0,
   deepfake_verdict TEXT NOT NULL DEFAULT 'UNSCANNED',
   deepfake_signals_json TEXT,
@@ -1301,3 +1307,55 @@ CREATE TABLE IF NOT EXISTS ad_events (
 CREATE INDEX IF NOT EXISTS idx_ad_events_campaign ON ad_events(campaign_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_ad_events_user ON ad_events(user_id, campaign_id, type, created_at);
 CREATE INDEX IF NOT EXISTS idx_ad_events_type ON ad_events(type, created_at);
+
+CREATE TABLE IF NOT EXISTS entity_markets (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  entity_type    TEXT NOT NULL,
+  entity_id      TEXT NOT NULL,
+  symbol         TEXT NOT NULL,
+  name           TEXT NOT NULL,
+  owner_id       INTEGER,
+  price_mrc      REAL NOT NULL DEFAULT 100,
+  previous_close REAL NOT NULL DEFAULT 100,
+  supply         INTEGER NOT NULL DEFAULT 100000,
+  impact_score   REAL NOT NULL DEFAULT 0,
+  volume_mrc     REAL NOT NULL DEFAULT 0,
+  trade_count    INTEGER NOT NULL DEFAULT 0,
+  status         TEXT NOT NULL DEFAULT 'ACTIVE',
+  created_at     TEXT NOT NULL,
+  updated_at     TEXT NOT NULL,
+  UNIQUE(entity_type, entity_id)
+);
+CREATE INDEX IF NOT EXISTS idx_entity_markets_type ON entity_markets(entity_type, status);
+CREATE TABLE IF NOT EXISTS market_holdings (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, market_id INTEGER NOT NULL,
+  shares INTEGER NOT NULL DEFAULT 0, avg_cost REAL NOT NULL DEFAULT 0, updated_at TEXT NOT NULL,
+  UNIQUE(user_id, market_id)
+);
+CREATE TABLE IF NOT EXISTS market_trades (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, market_id INTEGER NOT NULL, user_id INTEGER NOT NULL,
+  side TEXT NOT NULL, shares INTEGER NOT NULL, price_mrc REAL NOT NULL, gross_mrc REAL NOT NULL,
+  fee_mrc REAL NOT NULL, created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS market_price_history (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, market_id INTEGER NOT NULL, price_mrc REAL NOT NULL, at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS news_articles (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, author_id INTEGER NOT NULL, outlet_id INTEGER NOT NULL,
+  title TEXT NOT NULL, slug TEXT, summary TEXT, body TEXT NOT NULL, cover_url TEXT,
+  status TEXT NOT NULL DEFAULT 'DRAFT', verification_status TEXT NOT NULL DEFAULT 'PENDING',
+  verified_by INTEGER, verified_at TEXT, data_snapshot_json TEXT,
+  funding_goal_mrc REAL NOT NULL DEFAULT 0, funding_raised_mrc REAL NOT NULL DEFAULT 0,
+  mrc_earned REAL NOT NULL DEFAULT 0, views INTEGER NOT NULL DEFAULT 0,
+  rating_avg REAL NOT NULL DEFAULT 0, rating_count INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS news_funding (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, article_id INTEGER NOT NULL, user_id INTEGER NOT NULL,
+  amount_mrc REAL NOT NULL, fee_mrc REAL NOT NULL, created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS news_ratings (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, article_id INTEGER NOT NULL, user_id INTEGER NOT NULL,
+  stars INTEGER NOT NULL, created_at TEXT NOT NULL, UNIQUE(article_id, user_id)
+);

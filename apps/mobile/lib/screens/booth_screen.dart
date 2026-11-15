@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:masaren/api_client.dart';
 import 'package:masaren/l10n.dart';
 import 'package:masaren/models.dart';
@@ -7,6 +7,7 @@ import 'package:masaren/theme.dart';
 import 'package:masaren/widgets/animations.dart';
 import 'package:masaren/widgets.dart';
 import 'package:masaren/widgets/smart_image.dart';
+import 'package:masaren/screens/booth_tour_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class BoothScreen extends StatefulWidget {
@@ -257,6 +258,9 @@ class _BoothScreenState extends State<BoothScreen> {
     final owner = booth['owner'] is Map
         ? Map<String, dynamic>.from(booth['owner'] as Map)
         : const <String, dynamic>{};
+    final tour = booth['tour'] is List
+        ? (booth['tour'] as List).map((e) => e.toString()).where((e) => e.isNotEmpty).toList()
+        : <String>[];
     final products = booth['products'] is List
         ? (booth['products'] as List)
             .whereType<Map>()
@@ -398,6 +402,18 @@ class _BoothScreenState extends State<BoothScreen> {
                     Text(booth['description'].toString(),
                         style: TextStyle(
                             fontSize: 14, height: 1.6, color: cs.onSurface)),
+                  if (tour.isNotEmpty) ...[
+                    const SizedBox(height: 14),
+                    FilledButton.icon(
+                      onPressed: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                              builder: (_) => BoothTourScreen(
+                                  title: (booth['title'] ?? 'Booth').toString(),
+                                  images: tour))),
+                      icon: const Icon(Icons.threesixty, size: 20),
+                      label: const Text('Explore 360° booth tour'),
+                    ),
+                  ],
                   if (products.isNotEmpty) ...[
                     const SizedBox(height: 16),
                     _SectionTitle(

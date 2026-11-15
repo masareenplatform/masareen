@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
@@ -9,6 +9,7 @@ import 'package:masaren/theme.dart';
 import 'package:masaren/widgets.dart';
 import 'package:masaren/models.dart';
 import 'package:masaren/profile_ui.dart';
+import 'package:masaren/widgets/voice_recorder_sheet.dart';
 
 class CreatePostScreen extends StatefulWidget {
   final User user;
@@ -33,6 +34,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   final List<PlatformFile> _files = [];
   PlatformFile? _voice;
   File? _video;
+  String _captureSource = 'UNKNOWN';
   bool _busy = false;
   bool _showAdvanced = false;
   double? _lat;
@@ -149,6 +151,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     if (picked.isEmpty) return;
     setState(() {
       _video = null;
+      _captureSource = 'GALLERY';
       for (final x in picked.take(10 - _images.length)) {
         _images.add(_PickedImage(File(x.path)));
       }
@@ -161,22 +164,77 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     if (x != null) {
       setState(() {
         _video = null;
+        _captureSource = 'CAMERA';
         if (_images.length < 10) _images.add(_PickedImage(File(x.path)));
       });
     }
   }
 
+  Future<void> _takeVideo() async {
+    final x = await ImagePicker().pickVideo(
+        source: ImageSource.camera, maxDuration: const Duration(minutes: 10));
+    if (x != null) {
+      setState(() {
+        _video = File(x.path);
+        _captureSource = 'CAMERA';
+        _images.clear();
+      });
+    }
+  }
   Future<void> _pickVideo() async {
     final x = await ImagePicker().pickVideo(
         source: ImageSource.gallery, maxDuration: const Duration(minutes: 10));
     if (x != null) {
       setState(() {
         _video = File(x.path);
+        _captureSource = 'GALLERY';
         _images.clear();
       });
     }
   }
 
+  Future<void> _showVoiceMenu() async {
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.mic_none_rounded),
+              title: const Text('Record a voice note'),
+              subtitle: const Text(
+                  'Use the microphone with noise filtering and echo cancellation.'),
+              onTap: () => Navigator.pop(ctx, 'record'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.audio_file_outlined),
+              title: const Text('Choose an audio file'),
+              subtitle: const Text('MP3, WAV, M4A, AAC or OGG.'),
+              onTap: () => Navigator.pop(ctx, 'file'),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+    if (!mounted) return;
+    if (choice == 'record') {
+      final recorded = await showVoiceRecorder(context);
+      if (recorded == null || !mounted) return;
+      final file = File(recorded.path);
+      final size = await file.length();
+      if (!mounted) return;
+      setState(() => _voice = PlatformFile(
+            name: recorded.name,
+            size: size,
+            path: recorded.path,
+          ));
+    } else if (choice == 'file') {
+      await _pickVoice();
+    }
+  }
   Future<void> _pickVoice() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.audio,
@@ -507,6 +565,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       final body = <String, dynamic>{
         'text': text,
         'kind': _kind,
+        'capture_source': _captureSource,
         'author_name': widget.user.fullName,
         'author_handle': widget.user.email.split('@').first,
       };
@@ -810,10 +869,15 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                   onTap: _pickVideo,
                   cs: cs),
               _BuildChip(
+                  icon: Icons.video_camera_back_outlined,
+                  label: 'Reel',
+                  onTap: _takeVideo,
+                  cs: cs),
+              _BuildChip(
                   icon: Icons.mic_none_rounded,
                   label:
                       MasarenLocalizations.of(context, 'createPost.voiceNote'),
-                  onTap: _pickVoice,
+                  onTap: _showVoiceMenu,
                   cs: cs,
                   active: _voice != null),
               _BuildChip(

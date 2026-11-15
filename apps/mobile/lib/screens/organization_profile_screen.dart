@@ -669,7 +669,7 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen>
         controller: _tabController,
         isScrollable: false,
         labelPadding: EdgeInsets.zero,
-        labelColor: Colors.white,
+        labelColor: cs.onPrimary,
         unselectedLabelColor: cs.onSurfaceVariant,
         indicator: BoxDecoration(
           color: cs.primary,

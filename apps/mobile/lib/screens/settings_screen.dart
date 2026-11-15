@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:masaren/api_client.dart';
 import 'package:masaren/l10n.dart';
 import 'package:masaren/models.dart';
@@ -349,6 +349,39 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             subtitle: Text(_t('settings.pushHint',
                                 'Alerts for impact, opportunities and messages.')),
                             secondary: const Icon(Icons.notifications_outlined),
+                          ),
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: const Icon(Icons.ring_volume_outlined),
+                            title: const Text('Send a test notification'),
+                            subtitle: const Text(
+                                'Checks both the in-app inbox and this device.'),
+                            onTap: () async {
+                              await NotificationService.instance.showNotification(
+                                  99001,
+                                  'MASAREEN is ready',
+                                  'Notifications are working on this device.',
+                                  type: 'system');
+                              try {
+                                await AuthApi.testPush(
+                                    title: 'MASAREEN is ready',
+                                    body:
+                                        'Your smart notifications are working.');
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                          content: Text(
+                                              'Test notification sent.')));
+                                }
+                              } catch (e) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                          content: Text(
+                                              'In-app test shown. Push delivery: $e')));
+                                }
+                              }
+                            },
                           ),
                           SwitchListTile(
                             value: _settings?.emailEnabled ?? true,
