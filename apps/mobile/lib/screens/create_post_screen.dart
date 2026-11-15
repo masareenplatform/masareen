@@ -1,4 +1,5 @@
 ﻿import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
@@ -33,7 +34,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   final List<_PickedImage> _images = [];
   final List<PlatformFile> _files = [];
   PlatformFile? _voice;
-  File? _video;
+  XFile? _video;
   String _captureSource = 'UNKNOWN';
   bool _busy = false;
   bool _showAdvanced = false;
@@ -149,12 +150,15 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     final picked = await ImagePicker().pickMultiImage(
         maxWidth: 1600, imageQuality: 82, limit: 10 - _images.length);
     if (picked.isEmpty) return;
+    final added = <_PickedImage>[];
+    for (final x in picked.take(10 - _images.length)) {
+      added.add(_PickedImage(await x.readAsBytes(), x.name));
+    }
+    if (!mounted) return;
     setState(() {
       _video = null;
       _captureSource = 'GALLERY';
-      for (final x in picked.take(10 - _images.length)) {
-        _images.add(_PickedImage(File(x.path)));
-      }
+      _images.addAll(added);
     });
   }
 
@@ -162,10 +166,14 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     final x = await ImagePicker().pickImage(
         source: ImageSource.camera, maxWidth: 1600, imageQuality: 82);
     if (x != null) {
+      final bytes = await x.readAsBytes();
+      if (!mounted) return;
       setState(() {
         _video = null;
         _captureSource = 'CAMERA';
-        if (_images.length < 10) _images.add(_PickedImage(File(x.path)));
+        if (_images.length < 10) {
+          _images.add(_PickedImage(bytes, x.name));
+        }
       });
     }
   }
@@ -175,7 +183,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         source: ImageSource.camera, maxDuration: const Duration(minutes: 10));
     if (x != null) {
       setState(() {
-        _video = File(x.path);
+        _video = x;
         _captureSource = 'CAMERA';
         _images.clear();
       });
@@ -186,7 +194,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         source: ImageSource.gallery, maxDuration: const Duration(minutes: 10));
     if (x != null) {
       setState(() {
-        _video = File(x.path);
+        _video = x;
         _captureSource = 'GALLERY';
         _images.clear();
       });
@@ -484,15 +492,15 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     try {
       final media = <Map<String, dynamic>>[];
       for (final image in _images) {
-        final bytes = await image.file.readAsBytes();
-        final ext = image.file.path.split('.').last.toLowerCase();
+        final bytes = image.bytes;
+        final ext = image.name.split('.').last.toLowerCase();
         final ct = ext == 'png'
             ? 'image/png'
             : ext == 'webp'
                 ? 'image/webp'
                 : 'image/jpeg';
         final url = await AuthApi.uploadMedia(
-            bytes, image.file.path.split('/').last, ct);
+            bytes, image.name, ct);
         media.add({
           'type': 'IMAGE',
           'url': url,
@@ -506,14 +514,14 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       String? videoPosterUrl;
       if (_video != null) {
         final bytes = await _video!.readAsBytes();
-        final ext = _video!.path.split('.').last.toLowerCase();
+        final ext = _video!.name.split('.').last.toLowerCase();
         final ct = ext == 'webm'
             ? 'video/webm'
             : ext == 'mov'
                 ? 'video/quicktime'
                 : 'video/mp4';
         final result =
-            await AuthApi.uploadVideo(bytes, _video!.path.split('/').last, ct);
+            await AuthApi.uploadVideo(bytes, _video!.name, ct);
         videoUrl = result['url'] as String?;
         videoJobId = (result['job_id'] ?? result['video_job_id']) as String?;
         final rawHls = result['hls_url'] as String?;
@@ -536,20 +544,25 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         }
       }
 
-      if (_voice != null && _voice!.path != null) {
-        final bytes = await File(_voice!.path!).readAsBytes();
-        final url = await AuthApi.uploadAudio(
-            bytes, _voice!.name, _audioTypeFor(_voice!.name));
-        if (url.isNotEmpty) {
-          media.add({'type': 'AUDIO', 'url': url});
+      if (_voice != null) {
+        final bytes = _voice!.bytes ??
+            (_voice!.path == null
+                ? null
+                : await File(_voice!.path!).readAsBytes());
+        if (bytes != null) {
+          final url = await AuthApi.uploadAudio(
+              bytes, _voice!.name, _audioTypeFor(_voice!.name));
+          if (url.isNotEmpty) {
+            media.add({'type': 'AUDIO', 'url': url});
+          }
         }
       }
 
       final files = <Map<String, dynamic>>[];
       for (final file in _files) {
-        final path = file.path;
-        if (path == null) continue;
-        final bytes = await File(path).readAsBytes();
+        final bytes = file.bytes ??
+            (file.path == null ? null : await File(file.path!).readAsBytes());
+        if (bytes == null) continue;
         final ct = _contentTypeFor(file.name);
         final result = await AuthApi.uploadFile(bytes, file.name, ct);
         final url = result['url'] as String?;
@@ -739,8 +752,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                       children: [
                         ClipRRect(
                           borderRadius: BorderRadius.circular(14),
-                          child: Image.file(
-                            image.file,
+                          child: Image.memory(
+                            image.bytes,
                             width: 148,
                             height: 148,
                             fit: BoxFit.cover,
@@ -816,7 +829,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                         const Icon(Icons.videocam,
                             color: Colors.white, size: 48),
                         const SizedBox(height: 8),
-                        Text(_video!.path.split('/').last,
+                        Text(_video!.name,
                             style: const TextStyle(
                                 color: Colors.white70, fontSize: 12),
                             overflow: TextOverflow.ellipsis),
@@ -1396,9 +1409,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 }
 
 class _PickedImage {
-  final File file;
+  final Uint8List bytes;
+  final String name;
   String caption = '';
-  _PickedImage(this.file);
+  _PickedImage(this.bytes, this.name);
 }
 
 class _KindOption {

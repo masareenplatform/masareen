@@ -1,5 +1,4 @@
-﻿import 'dart:io';
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:masaren/api_client.dart';
 import 'package:masaren/theme.dart';
@@ -77,7 +76,7 @@ class ProfileScreenState extends State<ProfileScreen>
     if (xfile == null) return;
     setState(() => _busy = true);
     try {
-      final bytes = await File(xfile.path).readAsBytes();
+      final bytes = await xfile.readAsBytes();
       final ct = xfile.mimeType ?? 'image/jpeg';
       if (kind == 'avatar') {
         final url = await AuthApi.uploadAvatar(bytes, xfile.name, ct);
