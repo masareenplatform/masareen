@@ -62,7 +62,7 @@ Working Dir: C:\Users\sherifrashwan\Downloads\masareen-cloudflare-pack
   reopened); manifest reset to build 9. /api/app/version reports 0.4.4/9
   and size 99,350,022. Feedback, paid lessons, event announcements and
   voice uploads covered by 57 Worker tests.
-- 2026-11-15: Source at 0.4.11+16. Migrations 001-031 applied remotely (001-023 baselined; 024,025,027,028,029,030,031 applied). Worker deployed version b08d2705-292b-4c46-9d74-a2c4328ee5de with discovery feed, real TIYE galleries, structured evidence targets and free deepfake/NSFW scanning. Android 0.4.11+16 published in OTA. Worker tests 68, Flutter analyze clean, Flutter tests 9.
+- 2026-11-15: Source at 0.4.11+16. Migrations 001-031 applied remotely (001-023 baselined; 024,025,027,028,029,030,031 applied). Worker deployed version b08d2705-292b-4c46-9d74-a2c4328ee5de with discovery feed, real TIYE galleries, structured evidence targets and free deepfake/NSFW scanning. Android 0.4.11+16 and unsigned iOS 0.4.11+16 published in OTA (CodeMagic build 6af98fb9e5217ff48f0f95e2, IPA at /downloads/masareen.ipa). Worker tests 68, Flutter analyze clean, Flutter tests 9.
 - 2026-11-15: Live HLS verified at masareen.com/live/tv/index.m3u8. New 0.4.9+14 APK and OTA publish still pending.
 
 ## Pricing and verification
