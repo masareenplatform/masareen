@@ -1,3 +1,4 @@
+﻿import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:masaren/api_client.dart';
@@ -7,6 +8,7 @@ import 'package:masaren/l10n.dart';
 import 'package:masaren/widgets.dart';
 import 'package:masaren/widgets/animations.dart';
 import 'package:masaren/screens/forgot_password_screen.dart';
+import 'package:masaren/widgets/web_auth_layout.dart';
 
 class LoginScreen extends StatefulWidget {
   final void Function(String token, User user) onAuthenticated;
@@ -139,6 +141,14 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
+    if (kIsWeb && MediaQuery.sizeOf(context).width >= 900) {
+      return WebAuthLayout(
+        dark: dark,
+        title: MasarenLocalizations.of(context, 'login.signIn'),
+        subtitle: MasarenLocalizations.of(context, 'login.subtitle'),
+        child: _buildForm(dark),
+      );
+    }
     return Scaffold(
       body: Stack(
         children: [
@@ -295,26 +305,28 @@ class _LoginScreenState extends State<LoginScreen> {
             : gradientButton(
                 label: MasarenLocalizations.of(context, 'login.signIn'),
                 onPressed: _login),
-        const SizedBox(height: 14),
-        OutlinedButton.icon(
-          onPressed: _googleBusy ? null : _google,
-          icon: _googleBusy
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2))
-              : const Icon(Icons.g_mobiledata, size: 22),
-          label: Text(MasarenLocalizations.of(context, 'login.google')),
-          style: OutlinedButton.styleFrom(
-            minimumSize: const Size.fromHeight(50),
-            foregroundColor: cs.onSurface,
-            backgroundColor:
-                dark ? Colors.white.withValues(alpha: 0.08) : Colors.white,
-            side: BorderSide(color: border),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        if (!kIsWeb) ...[
+          const SizedBox(height: 14),
+          OutlinedButton.icon(
+            onPressed: _googleBusy ? null : _google,
+            icon: _googleBusy
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2))
+                : const Icon(Icons.g_mobiledata, size: 22),
+            label: Text(MasarenLocalizations.of(context, 'login.google')),
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size.fromHeight(50),
+              foregroundColor: cs.onSurface,
+              backgroundColor:
+                  dark ? Colors.white.withValues(alpha: 0.08) : Colors.white,
+              side: BorderSide(color: border),
+              shape:
+                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
           ),
-        ),
+        ],
         const SizedBox(height: 14),
         TextButton(
           onPressed: () => Navigator.pushNamed(context, '/register'),

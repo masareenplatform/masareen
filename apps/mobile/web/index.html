@@ -1,0 +1,71 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <base href="$FLUTTER_BASE_HREF">
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <meta name="description" content="MASAREEN web app - verified impact, entity markets, newsroom, events, opportunities and the full social engine.">
+  <meta name="theme-color" content="#0E6B5C">
+  <meta property="og:title" content="MASAREEN - Connecting paths. Creating impact.">
+  <meta property="og:description" content="The MASAREEN web app: verified impact, entity market, newsroom and every relationship on one engine.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://masareen.com/app/">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="MASAREEN">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="manifest" href="manifest.json">
+  <title>MASAREEN - Web App</title>
+  <style>
+    html, body { height: 100%; margin: 0; background: #0A1210; }
+    #masareen-loader {
+      position: fixed; inset: 0; z-index: 99999;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 22px; background:
+        radial-gradient(circle at 18% 20%, rgba(44,110,143,.28), transparent 38%),
+        radial-gradient(circle at 82% 80%, rgba(193,154,75,.18), transparent 34%),
+        linear-gradient(145deg, #0A1210 0%, #0E2A24 52%, #081820 100%);
+      color: #fff; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      transition: opacity .45s ease, visibility .45s ease;
+    }
+    #masareen-loader.hidden { opacity: 0; visibility: hidden; }
+    .m-mark {
+      width: 76px; height: 76px; border-radius: 22px; display: grid; place-items: center;
+      background: linear-gradient(135deg, #0E6B5C, #174B43 60%, #1F5668);
+      box-shadow: 0 20px 60px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.3);
+      font-weight: 900; font-size: 34px; letter-spacing: -2px;
+      border: 1px solid rgba(255,255,255,.18);
+    }
+    .m-name { font-size: 20px; font-weight: 900; letter-spacing: 4px; }
+    .m-sub { font-size: 12px; color: rgba(255,255,255,.62); letter-spacing: .6px; }
+    .m-bar { width: 190px; height: 3px; border-radius: 99px; overflow: hidden; background: rgba(255,255,255,.12); }
+    .m-bar span { display: block; height: 100%; width: 40%; border-radius: 99px;
+      background: linear-gradient(90deg, #76D7C4, #C19A4B);
+      animation: m-load 1.25s ease-in-out infinite; }
+    @keyframes m-load { 0% { transform: translateX(-120%); } 100% { transform: translateX(350%); } }
+  </style>
+</head>
+<body>
+  <div id="masareen-loader" role="status" aria-label="Loading MASAREEN">
+    <div class="m-mark">M</div>
+    <div class="m-name">MASAREEN</div>
+    <div class="m-sub">Connecting paths. Creating impact.</div>
+    <div class="m-bar"><span></span></div>
+  </div>
+  <script>
+    window.addEventListener('flutter-first-frame', function () {
+      var el = document.getElementById('masareen-loader');
+      if (el) el.classList.add('hidden');
+      setTimeout(function () { if (el) el.remove(); }, 700);
+    });
+    setTimeout(function () {
+      var el = document.getElementById('masareen-loader');
+      if (el) el.classList.add('hidden');
+    }, 20000);
+  </script>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>

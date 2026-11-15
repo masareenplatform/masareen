@@ -1,3 +1,4 @@
+﻿import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:masaren/api_client.dart';
@@ -253,8 +254,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
           child: Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
-              child: Form(
-                key: _formKey,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 640),
+                child: Form(
+                  key: _formKey,
                 child: Column(
                   children: [
                     BrandLogo(height: 130, forceWhite: dark),
@@ -428,28 +431,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             label: MasarenLocalizations.of(
                                 context, 'register.create'),
                             onPressed: _register),
-                    const SizedBox(height: 12),
-                    OutlinedButton.icon(
-                      onPressed: _googleBusy ? null : _google,
-                      icon: _googleBusy
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Icon(Icons.g_mobiledata, size: 22),
-                      label: Text(
-                          MasarenLocalizations.of(context, 'register.google')),
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size.fromHeight(50),
-                        foregroundColor: cs.onSurface,
-                        backgroundColor: dark
-                            ? Colors.white.withValues(alpha: 0.06)
-                            : Colors.white,
-                        side: BorderSide(color: cs.outlineVariant),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
+                    if (!kIsWeb) ...[
+                      const SizedBox(height: 12),
+                      OutlinedButton.icon(
+                        onPressed: _googleBusy ? null : _google,
+                        icon: _googleBusy
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2))
+                            : const Icon(Icons.g_mobiledata, size: 22),
+                        label: Text(MasarenLocalizations.of(
+                            context, 'register.google')),
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size.fromHeight(50),
+                          foregroundColor: cs.onSurface,
+                          backgroundColor: dark
+                              ? Colors.white.withValues(alpha: 0.06)
+                              : Colors.white,
+                          side: BorderSide(color: cs.outlineVariant),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14)),
+                        ),
                       ),
-                    ),
+                    ],
                     const SizedBox(height: 12),
                     TextButton(
                       onPressed: () => Navigator.pop(context),
@@ -457,6 +463,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           context, 'register.backToSignIn')),
                     ),
                   ],
+                ),
                 ),
               ),
             ),

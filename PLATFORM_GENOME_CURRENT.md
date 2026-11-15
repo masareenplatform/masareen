@@ -30,6 +30,7 @@ Working Dir: C:\Users\sherifrashwan\Downloads\masareen-cloudflare-pack
 - Flutter 3.44.5, Dart 3.12.2, Android SDK C:\Android\sdk, Java 17
 - Version 0.4.13+18 (source); published OTA APK 0.4.13+18, SHA-256
   8F7E809BF183DE7257C6094FA9E5DDE38485913EDDA6774DFAC1E178D609746C
+- Web app: responsive desktop shell at `/app/` (left workspace nav, wide feed, market/newsroom rail, persistent auth, mobile web fallback) using the same Flutter engine and screens as mobile
 - Persistent floating bottom bar, per-tab nested navigators, sliding drawer
 - Video: autoplay when 60% visible, one active video, global persisted mute
 - Feed: infinite scroll fixed, role badges, calculators, intro cards

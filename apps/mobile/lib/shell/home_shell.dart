@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+﻿import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:masaren/api_client.dart';
 import 'package:masaren/l10n.dart';
@@ -78,6 +79,7 @@ class _HomeShellState extends State<HomeShell> {
   static const _tabs = <int>[0, 1, 3, 4];
 
   int _tab = 0;
+  String _webActive = 'home';
   User? _user;
   bool _loadingUser = true;
   bool _announcementChecked = false;
@@ -89,11 +91,15 @@ class _HomeShellState extends State<HomeShell> {
   final _feedKey = GlobalKey<FeedScreenState>();
   final _profileKey = GlobalKey<ProfileScreenState>();
   final _scaffoldKey = GlobalKey<ScaffoldState>();
+  final _webNavKey = GlobalKey<NavigatorState>();
+  final ValueNotifier<int> _tabNotifier = ValueNotifier<int>(0);
   final Map<int, GlobalKey<NavigatorState>> _navKeys = {
     for (final i in _tabs) i: GlobalKey<NavigatorState>(),
   };
 
   NavigatorState? get _tabNavigator => _navKeys[_tab]?.currentState;
+  bool get _wideWeb =>
+      kIsWeb && MediaQuery.sizeOf(context).width >= 1024;
 
   @override
   void initState() {
@@ -114,6 +120,7 @@ class _HomeShellState extends State<HomeShell> {
   void dispose() {
     AnalyticsService.instance.flush();
     if (shellPush != null) shellPush = null;
+    _tabNotifier.dispose();
     super.dispose();
   }
 
@@ -269,6 +276,10 @@ class _HomeShellState extends State<HomeShell> {
   }
 
   void _openDrawer() {
+    if (_wideWeb && _user != null) {
+      _openWeb(SearchScreen(user: _user!));
+      return;
+    }
     _scaffoldKey.currentState?.openEndDrawer();
   }
 
@@ -284,21 +295,78 @@ class _HomeShellState extends State<HomeShell> {
       return;
     }
     setState(() => _tab = index);
+    _tabNotifier.value = index;
     if (index == 4) _profileKey.currentState?.refresh();
   }
 
   void _goToProfile() {
+    if (_wideWeb && mounted) {
+      setState(() => _webActive = 'profile');
+    }
     if (_tab == 4) {
+      _webNavKey.currentState?.popUntil((r) => r.isFirst);
       _navKeys[4]?.currentState?.popUntil((r) => r.isFirst);
       return;
     }
     setState(() => _tab = 4);
+    _tabNotifier.value = 4;
   }
 
   Future<T?> pushInTab<T>(Widget screen) async {
+    if (_wideWeb) {
+      final web = _webNavKey.currentState;
+      if (web != null) return web.push<T>(_shellRoute(screen));
+    }
     final nav = _tabNavigator;
     if (nav == null) return null;
     return nav.push<T>(_shellRoute(screen));
+  }
+
+  void _openWeb(Widget screen) {
+    final web = _webNavKey.currentState;
+    if (web == null) return;
+    setState(() => _webActive = _webKeyFor(screen));
+    web.popUntil((r) => r.isFirst);
+    web.push(_shellRoute(screen));
+  }
+
+  String _webKeyFor(Widget screen) {
+    if (screen is MarketScreen) return 'market';
+    if (screen is NewsroomScreen) return 'news';
+    if (screen is EventsScreen) return 'events';
+    if (screen is MessagesScreen) return 'messages';
+    if (screen is NotificationsScreen) return 'notifications';
+    if (screen is SearchScreen) return 'search';
+    if (screen is WalletScreen) return 'wallet';
+    if (screen is ProScreen) return 'pro';
+    if (screen is AdsScreen) return 'ads';
+    if (screen is SavedPostsScreen) return 'saved';
+    if (screen is ProgramsScreen) return 'programs';
+    if (screen is ProjectsScreen) return 'projects';
+    if (screen is OpportunitiesScreen) return 'opportunities';
+    if (screen is LiveTvScreen) return 'live';
+    if (screen is PodcastHubScreen) return 'podcasts';
+    if (screen is VodHubScreen) return 'vod';
+    if (screen is PassportScreen) return 'passport';
+    if (screen is VerificationScreen) return 'verification';
+    if (screen is AdminScreen) return 'admin';
+    if (screen is SettingsScreen) return 'settings';
+    return _webActive;
+  }
+
+  void _webTab(int index) {
+    final web = _webNavKey.currentState;
+    web?.popUntil((r) => r.isFirst);
+    setState(() {
+      _webActive = index == 0
+          ? 'home'
+          : index == 1
+              ? 'explore'
+              : index == 3
+                  ? 'courses'
+                  : 'profile';
+    });
+    _switchTab(index);
   }
 
   void _handleBack() {
@@ -331,18 +399,38 @@ class _HomeShellState extends State<HomeShell> {
   void _showCreateSheet() {
     final user = _user;
     if (user == null) return;
+    final sheet = _CreatePostSheet(
+      user: user,
+      navigator: _wideWeb ? _webNavKey.currentState : _tabNavigator,
+      onPosted: () {
+        _feedKey.currentState?.refresh();
+        if (mounted) {
+          setState(() => _tab = 0);
+          _tabNotifier.value = 0;
+        }
+      },
+    );
+    if (_wideWeb) {
+      showDialog(
+        context: context,
+        builder: (ctx) => Dialog(
+          insetPadding: const EdgeInsets.all(28),
+          clipBehavior: Clip.antiAlias,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 760, maxHeight: 720),
+            child: sheet,
+          ),
+        ),
+      );
+      return;
+    }
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _CreatePostSheet(
-        user: user,
-        navigator: _tabNavigator,
-        onPosted: () {
-          _feedKey.currentState?.refresh();
-          if (mounted) setState(() => _tab = 0);
-        },
-      ),
+      builder: (_) => sheet,
     );
   }
 
@@ -391,6 +479,77 @@ class _HomeShellState extends State<HomeShell> {
     );
   }
 
+  Widget _webRoot() => ValueListenableBuilder<int>(
+        valueListenable: _tabNotifier,
+        builder: (_, __, ___) => _buildBody(),
+      );
+
+  Widget _buildWebShell(User user) {
+    final cs = Theme.of(context).colorScheme;
+    final width = MediaQuery.sizeOf(context).width;
+    final showRail = width >= 1380;
+    return Scaffold(
+      backgroundColor: cs.surfaceContainerLow,
+      body: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _WebSidebar(
+            user: user,
+            balance: _balance,
+            activeKey: _webActive,
+            unreadMessages: _unreadMessages,
+            unreadNotifications: _unreadNotifications,
+            isDark: Theme.of(context).brightness == Brightness.dark,
+            isArabic:
+                Localizations.localeOf(context).languageCode == 'ar',
+            onTab: _webTab,
+            onProfile: () {
+              _webNavKey.currentState?.popUntil((r) => r.isFirst);
+              _goToProfile();
+            },
+            onCreate: _showCreateSheet,
+            onOpen: _openWeb,
+            onToggleTheme: widget.onToggleTheme,
+            onToggleLocale: widget.onToggleLocale,
+            onCheckUpdates: () => AppUpdater.checkAndPrompt(context,
+                silent: false),
+            onLogout: widget.onLogout,
+          ),
+          Expanded(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: cs.surfaceContainerLow,
+                border: BorderDirectional(
+                  start: BorderSide(
+                      color: cs.outlineVariant.withValues(alpha: .45)),
+                  end: BorderSide(
+                      color: cs.outlineVariant.withValues(alpha: .45)),
+                ),
+              ),
+              child: Navigator(
+                key: _webNavKey,
+                onGenerateRoute: (_) => _shellRoute(_webRoot()),
+                onDidRemovePage: (_) {},
+              ),
+            ),
+          ),
+          if (showRail)
+            _WebRightRail(
+              user: user,
+              balance: _balance,
+              onSearch: () => _openWeb(SearchScreen(user: user)),
+              onMarket: () => _openWeb(MarketScreen(user: user)),
+              onNews: () => _openWeb(NewsroomScreen(user: user)),
+              onProfile: () {
+                _webNavKey.currentState?.popUntil((r) => r.isFirst);
+                _goToProfile();
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -398,6 +557,7 @@ class _HomeShellState extends State<HomeShell> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     final user = _user;
+    if (_wideWeb && user != null) return _buildWebShell(user);
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
@@ -1311,17 +1471,20 @@ class _CreatePostSheet extends StatelessWidget {
           ),
           Divider(height: 1, color: cs.outlineVariant),
           Expanded(
-            child: GridView.builder(
-              padding: const EdgeInsets.all(16),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: 1.15,
-              ),
-              itemCount: types.length,
-              itemBuilder: (_, i) {
-                final t = types[i];
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final cols = constraints.maxWidth >= 620 ? 3 : 2;
+                return GridView.builder(
+                  padding: const EdgeInsets.all(16),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: cols,
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                    childAspectRatio: cols == 3 ? 1.42 : 1.15,
+                  ),
+                  itemCount: types.length,
+                  itemBuilder: (_, i) {
+                    final t = types[i];
                 return GestureDetector(
                   onTap: () {
                     final nav = navigator ?? Navigator.of(context);
@@ -1371,6 +1534,8 @@ class _CreatePostSheet extends StatelessWidget {
                     ),
                   ),
                 );
+                  },
+                );
               },
             ),
           ),
@@ -1387,4 +1552,694 @@ class _PostType {
   final IconData icon;
   final Color color;
   const _PostType(this.kind, this.label, this.desc, this.icon, this.color);
+}
+
+/* ------------------------------------------------------------------ */
+/* Desktop web shell                                                   */
+/* ------------------------------------------------------------------ */
+
+class _WebSidebar extends StatelessWidget {
+  final User user;
+  final double? balance;
+  final String activeKey;
+  final int unreadMessages;
+  final int unreadNotifications;
+  final bool isDark;
+  final bool isArabic;
+  final ValueChanged<int> onTab;
+  final VoidCallback onProfile;
+  final VoidCallback onCreate;
+  final void Function(Widget) onOpen;
+  final VoidCallback? onToggleTheme;
+  final VoidCallback? onToggleLocale;
+  final VoidCallback onCheckUpdates;
+  final VoidCallback onLogout;
+
+  const _WebSidebar({
+    required this.user,
+    required this.balance,
+    required this.activeKey,
+    required this.unreadMessages,
+    required this.unreadNotifications,
+    required this.isDark,
+    required this.isArabic,
+    required this.onTab,
+    required this.onProfile,
+    required this.onCreate,
+    required this.onOpen,
+    this.onToggleTheme,
+    this.onToggleLocale,
+    required this.onCheckUpdates,
+    required this.onLogout,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final admin = user.isAdmin || user.role.toUpperCase() == 'ADMIN';
+    return Container(
+      width: 258,
+      color: cs.surface,
+      child: SafeArea(
+        right: false,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 18, 16, 12),
+              child: Row(
+                children: [
+                  Image.asset('assets/images/masaren_logo.png', height: 30),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: cs.primary.withValues(alpha: .09),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text('WEB',
+                        style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: .8,
+                            color: cs.primary)),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: onProfile,
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: cs.surfaceContainerLow,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                        color: cs.outlineVariant.withValues(alpha: .5)),
+                  ),
+                  child: Row(
+                    children: [
+                      AppAvatar(
+                          name: user.fullName, url: user.avatarUrl, size: 38),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(user.fullName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w800)),
+                            Text(
+                                balance == null
+                                    ? user.role.toLowerCase()
+                                    : '${balance!.toStringAsFixed(0)} MRC',
+                                style: TextStyle(
+                                    fontSize: 10.5, color: cs.onSurfaceVariant)),
+                          ],
+                        ),
+                      ),
+                      Icon(Icons.more_horiz,
+                          size: 18, color: cs.onSurfaceVariant),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              child: SizedBox(
+                width: double.infinity,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: brandGradient,
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(
+                          color: cs.primary.withValues(alpha: .22),
+                          blurRadius: 18,
+                          offset: const Offset(0, 7)),
+                    ],
+                  ),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(14),
+                    onTap: onCreate,
+                    child: const Padding(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.add_rounded,
+                              color: Colors.white, size: 20),
+                          SizedBox(width: 7),
+                          Text('Create',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 13)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(10, 4, 10, 16),
+                children: [
+                  _webSection(context, 'WORKSPACE'),
+                  _webItem(context, Icons.home_outlined, Icons.home_rounded,
+                      'Home', selected: activeKey == 'home',
+                      onTap: () => onTab(0)),
+                  _webItem(context, Icons.explore_outlined, Icons.explore_rounded,
+                      'Explore', selected: activeKey == 'explore',
+                      onTap: () => onTab(1)),
+                  _webItem(context, Icons.candlestick_chart_outlined,
+                      Icons.candlestick_chart, 'Impact Market',
+                      onTap: () => onOpen(MarketScreen(user: user))),
+                  _webItem(context, Icons.newspaper_outlined,
+                      Icons.newspaper, 'Newsroom',
+                      onTap: () => onOpen(NewsroomScreen(user: user))),
+                  _webItem(context, Icons.event_outlined, Icons.event,
+                      'Events',
+                      onTap: () => onOpen(EventsScreen(user: user))),
+                  _webItem(context, Icons.school_outlined, Icons.school,
+                      'Courses', selected: activeKey == 'courses',
+                      onTap: () => onTab(3)),
+                  const SizedBox(height: 8),
+                  _webSection(context, 'COMMUNITY'),
+                  _webItem(context, Icons.forum_outlined, Icons.forum,
+                      'Messages', badge: unreadMessages, selected: activeKey == 'messages',
+                      onTap: () => onOpen(MessagesScreen(user: user))),
+                  _webItem(context, Icons.notifications_outlined,
+                      Icons.notifications, 'Notifications',
+                      badge: unreadNotifications,
+                      onTap: () =>
+                          onOpen(NotificationsScreen(userId: user.id))),
+                  _webItem(context, Icons.bookmark_border, Icons.bookmark,
+                      'Saved posts',
+                      onTap: () => onOpen(SavedPostsScreen(user: user))),
+                  _webItem(context, Icons.search, Icons.search_rounded, 'Search',
+                      onTap: () => onOpen(SearchScreen(user: user))),
+                  _webItem(context, Icons.person_outline, Icons.person,
+                      'My profile', selected: activeKey == 'profile',
+                      onTap: onProfile),
+                  const SizedBox(height: 8),
+                  _webSection(context, 'GROW'),
+                  _webItem(context, Icons.hub_outlined, Icons.hub, 'Programs',
+                      onTap: () => onOpen(ProgramsScreen(user: user))),
+                  _webItem(context, Icons.handshake_outlined, Icons.handshake,
+                      'Projects',
+                      onTap: () => onOpen(ProjectsScreen(user: user))),
+                  _webItem(context, Icons.work_outline, Icons.work,
+                      'Opportunities',
+                      onTap: () => onOpen(OpportunitiesScreen(user: user))),
+                  _webItem(context, Icons.live_tv_outlined, Icons.live_tv,
+                      'Live TV', onTap: () => onOpen(const LiveTvScreen())),
+                  _webItem(context, Icons.podcasts, Icons.podcasts,
+                      'Podcasts', onTap: () => onOpen(PodcastHubScreen(user: user))),
+                  _webItem(context, Icons.video_library_outlined,
+                      Icons.video_library, 'VOD',
+                      onTap: () => onOpen(VodHubScreen(user: user))),
+                  _webItem(context, Icons.account_balance_wallet_outlined,
+                      Icons.account_balance_wallet, 'Wallet',
+                      onTap: () => onOpen(WalletScreen(user: user))),
+                  _webItem(context, Icons.workspace_premium_outlined,
+                      Icons.workspace_premium, 'MASAREEN Pro',
+                      onTap: () => onOpen(ProScreen(user: user))),
+                  _webItem(context, Icons.campaign_outlined, Icons.campaign,
+                      'Ads Manager', onTap: () => onOpen(AdsScreen(user: user))),
+                  _webItem(context, Icons.badge_outlined, Icons.badge,
+                      'Impact passport',
+                      onTap: () => onOpen(PassportScreen(user: user))),
+                  _webItem(context, Icons.verified_user_outlined,
+                      Icons.verified_user, 'Verification',
+                      onTap: () => onOpen(VerificationScreen(user: user))),
+                  if (admin)
+                    _webItem(context, Icons.admin_panel_settings_outlined,
+                        Icons.admin_panel_settings, 'Administration',
+                        onTap: () => onOpen(AdminScreen(user: user))),
+                ],
+              ),
+            ),
+            Divider(height: 1, color: cs.outlineVariant.withValues(alpha: .5)),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+              child: Row(
+                children: [
+                  _webIconButton(
+                      context,
+                      isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+                      'Theme',
+                      () => onToggleTheme?.call()),
+                  _webIconButton(context, Icons.language_outlined,
+                      'Language', () => onToggleLocale?.call()),
+                  _webIconButton(context, Icons.settings_outlined, 'Settings',
+                      () => onOpen(SettingsScreen(user: user, onLogout: onLogout))),
+                  const Spacer(),
+                  _webIconButton(context, Icons.logout_outlined, 'Sign out',
+                      onLogout, danger: true),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _webSection(BuildContext context, String label) => Padding(
+        padding: const EdgeInsets.fromLTRB(10, 12, 10, 4),
+        child: Text(label,
+            style: TextStyle(
+                fontSize: 9.5,
+                letterSpacing: 1.1,
+                fontWeight: FontWeight.w800,
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurfaceVariant
+                    .withValues(alpha: .7))),
+      );
+
+  Widget _webItem(
+    BuildContext context,
+    IconData icon,
+    IconData activeIcon,
+    String label, {
+    bool selected = false,
+    int badge = 0,
+    required VoidCallback onTap,
+  }) {
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 2),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(11),
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
+          decoration: BoxDecoration(
+            color: selected ? cs.primary.withValues(alpha: .10) : null,
+            borderRadius: BorderRadius.circular(11),
+          ),
+          child: Row(
+            children: [
+              Icon(selected ? activeIcon : icon,
+                  size: 19,
+                  color: selected ? cs.primary : cs.onSurfaceVariant),
+              const SizedBox(width: 11),
+              Expanded(
+                child: Text(label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight:
+                            selected ? FontWeight.w800 : FontWeight.w600,
+                        color: selected ? cs.primary : cs.onSurface)),
+              ),
+              if (badge > 0)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                      color: AppColors.warm,
+                      borderRadius: BorderRadius.circular(9)),
+                  child: Text(badge > 99 ? '99+' : '$badge',
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w800)),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _webIconButton(BuildContext context, IconData icon, String tooltip,
+      VoidCallback onTap,
+      {bool danger = false}) {
+    final cs = Theme.of(context).colorScheme;
+    return IconButton(
+      tooltip: tooltip,
+      onPressed: onTap,
+      iconSize: 19,
+      visualDensity: VisualDensity.compact,
+      icon: Icon(icon,
+          color: danger ? AppColors.warm : cs.onSurfaceVariant),
+    );
+  }
+}
+
+class _WebRightRail extends StatefulWidget {
+  final User user;
+  final double? balance;
+  final VoidCallback onSearch;
+  final VoidCallback onMarket;
+  final VoidCallback onNews;
+  final VoidCallback onProfile;
+
+  const _WebRightRail({
+    required this.user,
+    required this.balance,
+    required this.onSearch,
+    required this.onMarket,
+    required this.onNews,
+    required this.onProfile,
+  });
+
+  @override
+  State<_WebRightRail> createState() => _WebRightRailState();
+}
+
+class _WebRightRailState extends State<_WebRightRail> {
+  List<Map<String, dynamic>> _markets = [];
+  List<Map<String, dynamic>> _news = [];
+  Map<String, dynamic>? _advantage;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final results = await Future.wait([
+        AuthApi.marketList(),
+        AuthApi.newsList(),
+        AuthApi.marketAdvantage(),
+      ]);
+      if (!mounted) return;
+      setState(() {
+        _markets = results[0] as List<Map<String, dynamic>>;
+        _news = results[1] as List<Map<String, dynamic>>;
+        _advantage = results[2] as Map<String, dynamic>;
+      });
+    } catch (_) {}
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final discount = _advantage?['discount_percent'] ?? 0;
+    final pro = _advantage?['pro_yearly_price_mrc'];
+    final markets = _markets.take(5).toList();
+    final news = _news.take(2).toList();
+    return Container(
+      width: 316,
+      color: cs.surface,
+      child: SafeArea(
+        left: false,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(18, 20, 18, 28),
+          children: [
+            InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: widget.onSearch,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                    color: cs.surfaceContainerLow,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                        color: cs.outlineVariant.withValues(alpha: .55))),
+                child: Row(
+                  children: [
+                    Icon(Icons.search, size: 19, color: cs.onSurfaceVariant),
+                    const SizedBox(width: 10),
+                    Text('Search MASAREEN',
+                        style: TextStyle(
+                            fontSize: 12.5, color: cs.onSurfaceVariant)),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            _panel(
+              context,
+              gradient: brandGradient,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('YOUR IMPACT ADVANTAGE',
+                      style: TextStyle(
+                          color: Colors.white.withValues(alpha: .7),
+                          fontSize: 9.5,
+                          letterSpacing: 1,
+                          fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 6),
+                  Text('$discount% off',
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 25,
+                          fontWeight: FontWeight.w900)),
+                  Text(
+                      pro == null
+                          ? 'Based on verified impact and holdings'
+                          : 'Pro yearly ${(pro as num).toInt()} MRC',
+                      style: TextStyle(
+                          color: Colors.white.withValues(alpha: .8),
+                          fontSize: 11)),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      _pill('Balance',
+                          '${widget.balance?.toStringAsFixed(0) ?? '-'} MRC'),
+                      const SizedBox(width: 8),
+                      _pill('Role', widget.user.role.toLowerCase()),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 18),
+            _heading(context, 'TRENDING MARKETS', 'See all', widget.onMarket),
+            const SizedBox(height: 6),
+            if (markets.isEmpty)
+              _muted(context, 'Market data is loading...')
+            else
+              ...markets.map((m) => _marketRow(context, m)),
+            const SizedBox(height: 18),
+            _heading(context, 'VERIFIED NEWSROOM', 'Open', widget.onNews),
+            const SizedBox(height: 6),
+            if (news.isEmpty)
+              _muted(context, 'No published news yet.')
+            else
+              ...news.map((n) => _newsRow(context, n)),
+            const SizedBox(height: 18),
+            InkWell(
+              borderRadius: BorderRadius.circular(18),
+              onTap: widget.onProfile,
+              child: _panel(
+                context,
+                child: Row(
+                  children: [
+                    AppAvatar(
+                        name: widget.user.fullName,
+                        url: widget.user.avatarUrl,
+                        size: 46),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(widget.user.fullName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 13)),
+                          const SizedBox(height: 2),
+                          Text(
+                              widget.user.email,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                  color: cs.onSurfaceVariant,
+                                  fontSize: 10.5)),
+                        ],
+                      ),
+                    ),
+                    Icon(Icons.chevron_right,
+                        size: 18, color: cs.onSurfaceVariant),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            Text(
+                'MASAREEN Web 0.4.13  |  one engine, every screen',
+                style: TextStyle(
+                    fontSize: 9.5,
+                    color: cs.onSurfaceVariant.withValues(alpha: .7))),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _heading(BuildContext context, String title, String action,
+      VoidCallback onTap) {
+    final cs = Theme.of(context).colorScheme;
+    return Row(
+      children: [
+        Expanded(
+          child: Text(title,
+              style: TextStyle(
+                  fontSize: 9.5,
+                  letterSpacing: 1.1,
+                  fontWeight: FontWeight.w900,
+                  color: cs.onSurfaceVariant)),
+        ),
+        TextButton(
+          onPressed: onTap,
+          style: TextButton.styleFrom(
+              padding: EdgeInsets.zero,
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap),
+          child: Text(action,
+              style: TextStyle(fontSize: 10.5, color: cs.primary)),
+        ),
+      ],
+    );
+  }
+
+  Widget _muted(BuildContext context, String text) => Text(text,
+      style: TextStyle(
+          fontSize: 11.5, color: Theme.of(context).colorScheme.onSurfaceVariant));
+
+  Widget _panel(BuildContext context,
+      {required Widget child, Gradient? gradient}) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+          gradient: gradient,
+          color: gradient == null ? cs.surfaceContainerLow : null,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+              color: gradient == null
+                  ? cs.outlineVariant.withValues(alpha: .55)
+                  : Colors.transparent)),
+      child: child,
+    );
+  }
+
+  Widget _pill(String label, String value) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+        decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: .13),
+            borderRadius: BorderRadius.circular(20)),
+        child: Text('$label $value',
+            style: TextStyle(
+                color: Colors.white.withValues(alpha: .9),
+                fontSize: 9.5,
+                fontWeight: FontWeight.w700)),
+      );
+
+  Widget _marketRow(BuildContext context, Map<String, dynamic> m) {
+    final cs = Theme.of(context).colorScheme;
+    final change = (m['change_percent'] as num?)?.toDouble() ?? 0;
+    final positive = change >= 0;
+    return InkWell(
+      borderRadius: BorderRadius.circular(10),
+      onTap: widget.onMarket,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 2),
+        child: Row(
+          children: [
+            Container(
+              width: 34,
+              height: 34,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                  color: cs.primary.withValues(alpha: .08),
+                  borderRadius: BorderRadius.circular(9)),
+              child: Text((m['symbol'] ?? 'M').toString().split('-').last,
+                  style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      color: cs.primary)),
+            ),
+            const SizedBox(width: 9),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text((m['name'] ?? '').toString(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          fontSize: 11.5, fontWeight: FontWeight.w700)),
+                  Text('${(m['price_mrc'] as num).toStringAsFixed(1)} MRC',
+                      style: TextStyle(
+                          fontSize: 10, color: cs.onSurfaceVariant)),
+                ],
+              ),
+            ),
+            Text('${positive ? '+' : ''}${change.toStringAsFixed(1)}%',
+                style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w800,
+                    color: positive ? const Color(0xFF0F9D58) : AppColors.warm)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _newsRow(BuildContext context, Map<String, dynamic> n) {
+    final cs = Theme.of(context).colorScheme;
+    final verified = (n['verification_status'] ?? '') == 'VERIFIED';
+    return InkWell(
+      borderRadius: BorderRadius.circular(10),
+      onTap: widget.onNews,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text((n['title'] ?? '').toString(),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                    fontSize: 11.5,
+                    height: 1.35,
+                    fontWeight: FontWeight.w700)),
+            const SizedBox(height: 3),
+            Row(
+              children: [
+                Icon(verified ? Icons.verified : Icons.schedule,
+                    size: 12,
+                    color: verified ? cs.primary : cs.onSurfaceVariant),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                      '${n['outlet_name'] ?? 'Newsroom'}  |  ${n['rating_avg'] ?? 0} stars',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          fontSize: 9.5, color: cs.onSurfaceVariant)),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

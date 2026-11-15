@@ -1,4 +1,5 @@
-import 'dart:async';
+﻿import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
@@ -140,7 +141,7 @@ class _MasarenAppState extends State<MasarenApp>
 
   Future<void> _loadLocale() async {
     final prefs = await SharedPreferences.getInstance();
-    final code = prefs.getString(_localeKey) ?? 'ar';
+    final code = prefs.getString(_localeKey) ?? (kIsWeb ? 'en' : 'ar');
     if (mounted) setState(() => _locale = Locale(code));
   }
 
@@ -156,6 +157,10 @@ class _MasarenAppState extends State<MasarenApp>
     if (!mounted) return;
 
     final prefs = await SharedPreferences.getInstance();
+    if (kIsWeb) {
+      await _checkAuth();
+      return;
+    }
     final onboarded = prefs.getBool(_onboardingKey) ?? false;
     if (!onboarded) {
       setState(() => _phase = _AppPhase.onboarding);
