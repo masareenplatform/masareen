@@ -1,12 +1,13 @@
-import 'dart:io';
-import 'dart:typed_data';
+﻿import 'dart:io';
 
 import 'package:archive/archive.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:xml/xml.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class DocumentViewerScreen extends StatefulWidget {
   final String url;
@@ -57,8 +58,23 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
     return response.bodyBytes;
   }
 
+  Future<void> _openPdfExternally() async {
+    final uri = Uri.tryParse(widget.url);
+    if (uri == null) return;
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
   Future<void> _load() async {
     try {
+      if (_isPdf && kIsWeb) {
+        if (mounted) {
+          setState(() {
+            _loading = false;
+            _pdfPath = 'web';
+          });
+        }
+        return;
+      }
       final bytes = await _download();
       if (_isPdf) {
         final dir = await getTemporaryDirectory();
@@ -140,7 +156,39 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
                         style: TextStyle(color: cs.error)),
                   ),
                 )
-              : _isPdf && _pdfPath != null
+              : _isPdf && kIsWeb
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.picture_as_pdf_outlined,
+                                size: 56, color: cs.primary),
+                            const SizedBox(height: 14),
+                            Text(widget.name,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w800)),
+                            const SizedBox(height: 8),
+                            Text(
+                                'The PDF opens securely in your browser PDF viewer.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                    color: cs.onSurfaceVariant,
+                                    fontSize: 12.5)),
+                            const SizedBox(height: 18),
+                            FilledButton.icon(
+                              onPressed: _openPdfExternally,
+                              icon: const Icon(Icons.open_in_new, size: 18),
+                              label: const Text('Open PDF'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  : _isPdf && _pdfPath != null
                   ? PDFView(
                       filePath: _pdfPath!,
                       enableSwipe: true,
