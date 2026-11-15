@@ -1,4 +1,7 @@
-﻿import 'package:flutter/material.dart';
+﻿import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:masaren/api_client.dart';
 import 'package:masaren/l10n.dart';
@@ -307,10 +310,11 @@ class _EventHubScreenState extends State<EventHubScreen> {
 
   Future<void> _addMedia() async {
     final title = TextEditingController();
-    final url = TextEditingController();
-    final thumb = TextEditingController();
     String type = 'IMAGE';
-    const types = ['IMAGE', 'VIDEO', 'PODCAST', 'REPORT', 'NEWS'];
+    String? mediaUrl;
+    String? pickedName;
+    var uploading = false;
+    final types = ['IMAGE', 'VIDEO', 'PODCAST', 'REPORT', 'NEWS'];
     final body = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
@@ -335,19 +339,108 @@ class _EventHubScreenState extends State<EventHubScreen> {
                   decoration: InputDecoration(
                       labelText: _t('events.mediaTitle', 'Title')),
                 ),
-                TextField(
-                  controller: url,
-                  keyboardType: TextInputType.url,
-                  decoration: InputDecoration(
-                      labelText: _t('events.mediaUrl', 'Media URL')),
+                const SizedBox(height: 12),
+                InkWell(
+                  onTap: uploading
+                      ? null
+                      : () async {
+                          final result = await FilePicker.platform.pickFiles(
+                            type: FileType.any,
+                            withData: false,
+                          );
+                          final file = result?.files.firstOrNull;
+                          if (file == null || file.path == null) return;
+                          setDialogState(() {
+                            pickedName = file.name;
+                            uploading = true;
+                          });
+                          try {
+                            final bytes = await File(file.path!).readAsBytes();
+                            final ext =
+                                file.name.split('.').last.toLowerCase();
+                            String? url;
+                            if (type == 'VIDEO' ||
+                                ['mp4', 'mov', 'm4v'].contains(ext)) {
+                              final uploaded = await AuthApi.uploadVideo(
+                                  bytes, file.name, 'video/mp4');
+                              url = uploaded['url']?.toString();
+                              if (url == null && uploaded['hls_url'] != null) {
+                                url = uploaded['hls_url'].toString();
+                              }
+                            } else if (type == 'PODCAST' ||
+                                ['mp3', 'wav', 'm4a', 'aac', 'ogg']
+                                    .contains(ext)) {
+                              url = await AuthApi.uploadAudio(
+                                  bytes,
+                                  file.name,
+                                  ext == 'wav' ? 'audio/wav' : 'audio/mpeg');
+                            } else if (['jpg', 'jpeg', 'png', 'webp', 'gif']
+                                .contains(ext)) {
+                              url = await AuthApi.uploadMedia(
+                                  bytes,
+                                  file.name,
+                                  ext == 'png'
+                                      ? 'image/png'
+                                      : ext == 'webp'
+                                          ? 'image/webp'
+                                          : 'image/jpeg');
+                            } else {
+                              final uploaded = await AuthApi.uploadFile(
+                                  bytes, file.name, 'application/pdf');
+                              url = uploaded['url']?.toString();
+                            }
+                            if (mounted) {
+                              setDialogState(() => mediaUrl = url);
+                            }
+                          } catch (e) {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(e.toString())));
+                            }
+                          } finally {
+                            if (mounted) {
+                              setDialogState(() => uploading = false);
+                            }
+                          }
+                        },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Theme.of(dialogContext)
+                          .colorScheme
+                          .surfaceContainerHighest
+                          .withValues(alpha: .45),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                            mediaUrl != null
+                                ? Icons.check_circle
+                                : Icons.upload_file,
+                            color: Theme.of(dialogContext).colorScheme.primary),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                              uploading
+                                  ? 'Uploading...'
+                                  : mediaUrl != null
+                                      ? 'File uploaded'
+                                      : (pickedName ??
+                                          'Choose a file from your device'),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 12.5)),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-                TextField(
-                  controller: thumb,
-                  keyboardType: TextInputType.url,
-                  decoration: InputDecoration(
-                      labelText:
-                          _t('events.thumbUrl', 'Thumbnail URL (optional)')),
-                ),
+                const SizedBox(height: 6),
+                const Text('No links needed',
+                    style: TextStyle(fontSize: 10.5)),
               ],
             ),
           ),
@@ -356,16 +449,17 @@ class _EventHubScreenState extends State<EventHubScreen> {
                 onPressed: () => Navigator.pop(dialogContext),
                 child: Text(_t('common.cancel', 'Cancel'))),
             FilledButton(
-              onPressed: () {
-                if (url.text.trim().isEmpty) return;
-                Navigator.pop(dialogContext, {
-                  'type': type,
-                  if (title.text.trim().isNotEmpty) 'title': title.text.trim(),
-                  'url': url.text.trim(),
-                  if (thumb.text.trim().isNotEmpty)
-                    'thumbnail_url': thumb.text.trim(),
-                });
-              },
+              onPressed: uploading || mediaUrl == null
+                  ? null
+                  : () {
+                      Navigator.pop(dialogContext, {
+                        'type': type,
+                        if (title.text.trim().isNotEmpty)
+                          'title': title.text.trim(),
+                        'url': mediaUrl,
+                        if (type == 'IMAGE') 'thumbnail_url': mediaUrl,
+                      });
+                    },
               child: Text(_t('common.add', 'Add')),
             ),
           ],
@@ -373,14 +467,11 @@ class _EventHubScreenState extends State<EventHubScreen> {
       ),
     );
     title.dispose();
-    url.dispose();
-    thumb.dispose();
     if (body == null) return;
     await _run(() async {
       await AuthApi.addEventMedia(widget.eventId, body);
     }, success: _t('events.mediaAdded', 'Media added.'));
   }
-
   Future<void> _createBooth() async {
     final created = await Navigator.of(context).push<bool>(MaterialPageRoute(
         builder: (_) => CreateBoothScreen(
