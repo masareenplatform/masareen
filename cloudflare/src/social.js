@@ -7539,9 +7539,8 @@ async function ensureMarket(env, type, id) {
 }
 async function seedMarkets(env) {
   await Promise.all([
-    env.DB.prepare(`SELECT id FROM users WHERE role IN
-      ('ORGANIZATION','INSTITUTION','UNIVERSITY','MEDIA','GOVERNMENT','CORPORATE')
-      ORDER BY id DESC LIMIT 40`).all(),
+    env.DB.prepare(`SELECT id FROM users WHERE role NOT IN ('ADMIN','SUPERADMIN')
+      AND name<>'Deleted member' ORDER BY id DESC LIMIT 80`).all(),
     env.DB.prepare(`SELECT id FROM events WHERE status='PUBLISHED' ORDER BY activity_verified_at DESC LIMIT 40`).all(),
     env.DB.prepare(`SELECT id FROM programs WHERE status='ACTIVE' LIMIT 30`).all(),
     env.DB.prepare(`SELECT id FROM projects LIMIT 30`).all(),
@@ -8087,7 +8086,7 @@ async function marketRoutes(req, env, url, viewer) {
       (SELECT COUNT(*) FROM market_holdings h WHERE h.market_id=m.id AND h.shares>0) holders,
       (SELECT role FROM users u WHERE m.entity_type='USER' AND u.id=m.entity_id) entity_role
       FROM entity_markets m WHERE m.status='ACTIVE'
-      ORDER BY COALESCE(m.impact_score,0) DESC, m.volume_mrc DESC LIMIT 120`).all()).results || [];
+      ORDER BY COALESCE(m.impact_score,0) DESC, m.volume_mrc DESC LIMIT 300`).all()).results || [];
     return json(rows.map((r) => marketJson(r, viewer?.id)));
   }
   const match = /^\/api\/v1\/market\/(\d+)(\/trade)?$/.exec(path);
