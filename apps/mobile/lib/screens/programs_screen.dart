@@ -1,6 +1,11 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:masaren/api_client.dart';
-import 'package:masaren/theme.dart';
+import 'package:masaren/l10n.dart';
+import 'package:masaren/screens/create_program_screen.dart';
+import 'package:masaren/widgets/entity_status.dart';
+import 'package:masaren/widgets/smart_image.dart';
+import 'package:masaren/widgets/stacked_avatars.dart';
+import 'package:masaren/profile_router.dart';
 import 'package:masaren/models.dart';
 import 'package:masaren/widgets.dart';
 import 'package:masaren/screens/program_detail_screen.dart';
@@ -25,7 +30,10 @@ class _ProgramsScreenState extends State<ProgramsScreen> {
   }
 
   Future<void> _load() async {
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       _items = await AuthApi.programs();
     } on ApiException catch (e) {
@@ -37,136 +45,20 @@ class _ProgramsScreenState extends State<ProgramsScreen> {
     }
   }
 
-  void _create() {
-    final cs = Theme.of(context).colorScheme;
-    final titleCtrl = TextEditingController();
-    final descCtrl = TextEditingController();
-    final sdgCtrl = TextEditingController();
-    bool busy = false;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSheetState) => Container(
-          height: MediaQuery.of(ctx).size.height * 0.5,
-          decoration: BoxDecoration(
-            color: cs.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Column(
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top: 12),
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: cs.outlineVariant,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 12, 0),
-                child: Row(
-                  children: [
-                    Icon(Icons.add_circle_outline, color: cs.primary, size: 22),
-                    const SizedBox(width: 10),
-                    Text('New program',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                          color: cs.onSurface,
-                        )),
-                    const Spacer(),
-                    TextButton(
-                      onPressed: busy
-                          ? null
-                          : () async {
-                              final t = titleCtrl.text.trim();
-                              if (t.isEmpty) return;
-                              setSheetState(() => busy = true);
-                              try {
-                                final s = int.tryParse(sdgCtrl.text) ?? 0;
-                                final p = await AuthApi.createProgram({
-                                  'title': t,
-                                  'description': descCtrl.text.trim().isNotEmpty
-                                      ? descCtrl.text.trim()
-                                      : null,
-                                  'sdg_goals': s > 0 ? [s] : [],
-                                  'organization_id': widget.user.id,
-                                });
-                                _items.insert(0, p);
-                                if (mounted) setState(() {});
-                                if (ctx.mounted) Navigator.pop(ctx);
-                              } catch (e) {
-                                if (ctx.mounted) {
-                                  ScaffoldMessenger.of(ctx).showSnackBar(
-                                      SnackBar(content: Text('Failed: $e')));
-                                }
-                              } finally {
-                                if (ctx.mounted) setSheetState(() => busy = false);
-                              }
-                            },
-                      child: busy
-                          ? const SizedBox(
-                              width: 18, height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Text('Create'),
-                    ),
-                  ],
-                ),
-              ),
-              Divider(height: 1, color: cs.outlineVariant),
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.all(20),
-                  children: [
-                    TextField(
-                      controller: titleCtrl,
-                      style: TextStyle(color: cs.onSurface),
-                      decoration: InputDecoration(
-                        labelText: 'Title',
-                        labelStyle: TextStyle(color: cs.onSurfaceVariant),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: descCtrl,
-                      maxLines: 3,
-                      minLines: 1,
-                      style: TextStyle(color: cs.onSurface),
-                      decoration: InputDecoration(
-                        labelText: 'Description',
-                        labelStyle: TextStyle(color: cs.onSurfaceVariant),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: sdgCtrl,
-                      keyboardType: TextInputType.number,
-                      style: TextStyle(color: cs.onSurface),
-                      decoration: InputDecoration(
-                        labelText: 'SDG (1–17)',
-                        labelStyle: TextStyle(color: cs.onSurfaceVariant),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+  Future<void> _create() async {
+    final created = await Navigator.of(context).push<Program>(
+        MaterialPageRoute(
+            builder: (_) => CreateProgramScreen(user: widget.user)));
+    if (created != null) {
+      setState(() => _items.insert(0, created));
+    }
   }
-
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Programs'),
+        title: Text(MasarenLocalizations.of(context, 'programs.title')),
         actions: [
           IconButton(
             icon: Icon(Icons.add, color: cs.primary),
@@ -182,23 +74,31 @@ class _ProgramsScreenState extends State<ProgramsScreen> {
                   onRefresh: _load,
                   child: ListView(
                     children: [
-                      const SectionTitle(title: 'Impact programs'),
+                      SectionTitle(
+                          title: MasarenLocalizations.of(
+                              context, 'programs.impact')),
                       if (_items.isEmpty)
                         Padding(
                           padding: const EdgeInsets.all(24),
                           child: Center(
-                            child: Text('No programs yet.',
-                                style: TextStyle(color: cs.onSurfaceVariant)),
+                            child: Text(
+                              MasarenLocalizations.of(
+                                  context, 'programs.empty'),
+                              style: TextStyle(color: cs.onSurfaceVariant),
+                            ),
                           ),
                         ),
-                      ..._items
-                          .map((p) => _ProgramCard(
-                                p: p,
-                                onTap: () => Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                        builder: (_) => ProgramDetailScreen(
-                                            programId: p.id))),
-                              )),
+                      ..._items.map((p) => _ProgramCard(
+                            p: p,
+                            currentUser: widget.user,
+                            onTap: () async {
+                              await Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                      builder: (_) => ProgramDetailScreen(
+                                          programId: p.id)));
+                              _load();
+                            },
+                          )),
                       const SizedBox(height: 24),
                     ],
                   ),
@@ -209,12 +109,15 @@ class _ProgramsScreenState extends State<ProgramsScreen> {
 
 class _ProgramCard extends StatelessWidget {
   final Program p;
+  final User currentUser;
   final VoidCallback onTap;
-  const _ProgramCard({required this.p, required this.onTap});
+  const _ProgramCard(
+      {required this.p, required this.currentUser, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final author = p.author;
     return Card(
       child: InkWell(
         onTap: onTap,
@@ -223,40 +126,92 @@ class _ProgramCard extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              Container(
+              SmartImage(
+                url: p.coverUrl,
                 width: 52,
                 height: 52,
-                decoration: BoxDecoration(
-                  gradient: brandGradient,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(Icons.hub, color: Colors.white),
+                borderRadius: BorderRadius.circular(14),
+                fallbackIcon: Icons.hub,
+                accent: cs.primary,
               ),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(p.title,
-                        style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: cs.onSurface,
-                            fontSize: 15)),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(p.title,
+                              style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: cs.onSurface,
+                                  fontSize: 15)),
+                        ),
+                        EntityStatusChip(
+                            status: p.verificationStatus,
+                            reason: p.rejectionReason),
+                      ],
+                    ),
+                    if (author != null) ...[
+                      const SizedBox(height: 4),
+                      InkWell(
+                        borderRadius: BorderRadius.circular(6),
+                        onTap: () => openEntityAuthor(context,
+                            author: author, currentUser: currentUser),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 3),
+                          child: Row(
+                            children: [
+                              AppAvatar(
+                                  name: author.name,
+                                  url: author.avatarUrl,
+                                  size: 18),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  author.name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                      color: cs.primary,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                     if (p.description != null)
                       Text(p.description!,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
+                          style: TextStyle(
+                              color: cs.onSurfaceVariant, fontSize: 13)),
                     const SizedBox(height: 4),
                     Row(
                       children: [
+                        StackedAvatars(
+                            people: p.membersPreview,
+                            total: p.members ?? 0,
+                            size: 20),
+                        if (p.membersPreview.isNotEmpty ||
+                            (p.members ?? 0) > 0)
+                          const SizedBox(width: 6),
                         if (p.sdg != null)
-                          Text('SDG ${p.sdg}',
-                              style: TextStyle(
-                                  color: cs.secondary, fontSize: 12)),
+                          Text(
+                              MasarenLocalizations.of(context, 'programs.sdg')
+                                  .replaceAll('{sdg}', '${p.sdg}'),
+                              style:
+                                  TextStyle(color: cs.secondary, fontSize: 12)),
                         if (p.members != null) ...[
                           const SizedBox(width: 12),
-                          Text('${p.members} members',
+                          Text(
+                              MasarenLocalizations.of(
+                                      context, 'programs.memberCount')
+                                  .replaceAll('{count}', '${p.members}'),
                               style: TextStyle(
                                   color: cs.onSurfaceVariant, fontSize: 12)),
                         ],
@@ -265,7 +220,7 @@ class _ProgramCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right, color: cs.outline),
+              Icon(directionalChevronIcon(context), color: cs.outline),
             ],
           ),
         ),

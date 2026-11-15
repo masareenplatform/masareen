@@ -1,20 +1,20 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 class AppColors {
-  static const brand = Color(0xFF1A73E8);
-  static const azure = Color(0xFF1A73E8);
-  static const accent = Color(0xFF34A853);
-  static const canvas = Color(0xFFF8F9FA);
-  static const ink = Color(0xFF202124);
-  static const muted = Color(0xFF5F6368);
-  static const line = Color(0xFFDADCE0);
-  static const warm = Color(0xFFEA4335);
-  static const amber = Color(0xFFFBBC04);
+  static const brand = Color(0xFF0E6B5C);
+  static const azure = Color(0xFF2C6E8F);
+  static const accent = Color(0xFFC19A4B);
+  static const canvas = Color(0xFFF6F5F1);
+  static const ink = Color(0xFF14211D);
+  static const muted = Color(0xFF65746E);
+  static const line = Color(0xFFDFE4DF);
+  static const warm = Color(0xFFB45345);
+  static const amber = Color(0xFFC19A4B);
 
-  static const darkBg = Color(0xFF111111);
-  static const darkSurface = Color(0xFF1E1E1E);
-  static const darkSurface2 = Color(0xFF2D2D2D);
-  static const darkLine = Color(0xFF3C4043);
+  static const darkBg = Color(0xFF0A1210);
+  static const darkSurface = Color(0xFF121C19);
+  static const darkSurface2 = Color(0xFF1B2723);
+  static const darkLine = Color(0xFF2E3B36);
 }
 
 ThemeData buildTheme({bool dark = false}) {
@@ -134,7 +134,7 @@ ThemeData buildTheme({bool dark = false}) {
 }
 
 const LinearGradient brandGradient = LinearGradient(
-  colors: [Color(0xFF1A73E8), Color(0xFF4285F4)],
+  colors: [Color(0xFF0E6B5C), Color(0xFF174B43)],
   begin: Alignment.topLeft,
   end: Alignment.bottomRight,
 );

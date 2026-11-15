@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:masaren/api_client.dart';
+import 'package:masaren/l10n.dart';
 import 'package:masaren/widgets.dart';
 import 'package:masaren/models.dart';
 import 'package:masaren/screens/post_detail_screen.dart';
 import 'package:masaren/screens/messages_screen.dart';
 import 'package:masaren/widgets/animations.dart';
+import 'package:masaren/profile_ui.dart';
 
 class ProfileViewScreen extends StatefulWidget {
   final String userId;
@@ -27,6 +29,39 @@ class _ProfileViewScreenState extends State<ProfileViewScreen> {
   String _role = '';
   String? _bio;
 
+  String _roleLabel(BuildContext context, String role) {
+    final value = role.toUpperCase();
+    final key = switch (value) {
+      String r when r.contains('GOV') => 'profile.role.government',
+      String r
+          when r.contains('MEDIA') ||
+              r.contains('PRESS') ||
+              r.contains('NEWS') =>
+        'profile.role.media',
+      String r
+          when r.contains('SPORT') ||
+              r.contains('CLUB') ||
+              r.contains('ATHLETE') =>
+        'profile.role.sports',
+      String r
+          when r.contains('NGO') ||
+              r.contains('ORG') ||
+              r.contains('COMPANY') ||
+              r.contains('INSTITUTION') =>
+        'profile.role.organization',
+      String r
+          when r.contains('ACADEMIC') ||
+              r.contains('STUDENT') ||
+              r.contains('RESEARCHER') =>
+        'profile.role.academic',
+      String r when r.contains('UNIVERSITY') => 'profile.role.organization',
+      String r when r.contains('JOURNALIST') => 'profile.role.journalist',
+      _ => 'profile.role.individual',
+    };
+    final label = MasarenLocalizations.of(context, key);
+    return label == key ? 'MASAREEN' : label;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -46,6 +81,7 @@ class _ProfileViewScreenState extends State<ProfileViewScreen> {
         _displayName = _personnel!.name;
         _role = _personnel!.role;
         _bio = _personnel!.bio.isNotEmpty ? _personnel!.bio : null;
+        _following = _personnel!.isFollowing;
       } catch (_) {
         // personnel failed, try getUser as fallback
         try {
@@ -53,6 +89,7 @@ class _ProfileViewScreenState extends State<ProfileViewScreen> {
           _displayName = user.fullName;
           _role = user.role;
           _bio = user.bio;
+          _following = user.isFollowing;
         } catch (_) {
           // both failed, try to get name from feed
           try {
@@ -83,16 +120,20 @@ class _ProfileViewScreenState extends State<ProfileViewScreen> {
     if (_busy) return;
     setState(() => _busy = true);
     try {
-      await AuthApi.followPersonnel(widget.userId);
+      final res = await AuthApi.followPersonnel(widget.userId);
       if (mounted) {
-        setState(() => _following = !_following);
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(_following ? 'Following' : 'Unfollowed')));
+        setState(
+            () => _following = res['following'] == true ? true : !_following);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(MasarenLocalizations.of(context,
+                _following ? 'action.following' : 'profile.unfollowed'))));
       }
     } catch (e) {
       if (mounted) {
+        final message = MasarenLocalizations.of(context, 'common.failed')
+            .replaceAll('{error}', '$e');
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Failed: $e')));
+            .showSnackBar(SnackBar(content: Text(message)));
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -140,20 +181,21 @@ class _ProfileViewScreenState extends State<ProfileViewScreen> {
 
     if (_error != null && _personnel == null && _posts.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Profile')),
+        appBar: AppBar(
+            title: Text(MasarenLocalizations.of(context, 'profile.title'))),
         body: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(Icons.person_off, size: 64, color: Colors.grey.shade400),
               const SizedBox(height: 16),
-              Text(_error!,
+              Text(MasarenLocalizations.of(context, 'profile.loadError'),
                   style: TextStyle(color: Colors.grey.shade600, fontSize: 16)),
               const SizedBox(height: 12),
               TextButton.icon(
                 onPressed: _load,
                 icon: const Icon(Icons.refresh),
-                label: const Text('Retry'),
+                label: Text(MasarenLocalizations.of(context, 'common.retry')),
               ),
             ],
           ),
@@ -166,120 +208,106 @@ class _ProfileViewScreenState extends State<ProfileViewScreen> {
     final isMe = widget.userId == widget.currentUser.id;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_displayName),
-        actions: [
-          if (!isMe) ...[
-            IconButton(
-              icon: const Icon(Icons.chat_bubble_outline),
-              tooltip: 'Message',
-              onPressed: _message,
-            ),
-            TextButton(
-              onPressed: _busy ? null : _follow,
-              child: Text(_following ? 'Following' : 'Follow',
-                  style: TextStyle(color: cs.primary)),
-            ),
-          ],
-        ],
-      ),
       body: Stack(
         children: [
-          Positioned.fill(child: FloatingShapes(shapeCount: 5)),
+          const Positioned.fill(child: FloatingShapes(shapeCount: 5)),
           RefreshIndicator(
             onRefresh: _load,
             child: ListView(
               children: [
-                // ── Header ──
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [cs.primary, cs.primary.withValues(alpha: 0.7)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                  ),
-                  child: Column(
+                ProfileHero(
+                  title: _displayName,
+                  subtitle: _roleLabel(context, _role),
+                  kind: 'individual',
+                  icon: Icons.person_outline,
+                  imageUrl: p?.avatarUrl,
+                  coverUrl: p?.coverUrl,
+                  badge: p == null
+                      ? null
+                      : ProfilePill(
+                          label: p.professionalRank,
+                          icon: Icons.workspace_premium_outlined,
+                          color: ProfileColors.gold),
+                  onShare: () => copyProfileLink(context, widget.userId,
+                      MasarenLocalizations.of(context, 'profile.linkCopied'),
+                      verified: _personnel?.emailVerified == true),
+                  stats: p == null
+                      ? const []
+                      : [
+                          ProfileStat(
+                              p.impactScore.toInt().toString(),
+                              MasarenLocalizations.of(
+                                  context, 'organization.impact'),
+                              icon: Icons.insights_outlined),
+                          ProfileStat(p.trustScore.toInt().toString(),
+                              MasarenLocalizations.of(context, 'profile.trust'),
+                              icon: Icons.verified_user_outlined),
+                          ProfileStat(
+                              p.currentReach.toInt().toString(),
+                              MasarenLocalizations.of(
+                                  context, 'personnel.metric.reach'),
+                              icon: Icons.visibility_outlined),
+                        ],
+                ),
+                if (!isMe)
+                  ProfileActionBar(
                     children: [
-                      ScaleInWidget(
-                        child: AppAvatar(
-                            name: _displayName, url: p?.avatarUrl, size: 90),
+                      Expanded(
+                        child: FilledButton.icon(
+                          onPressed: _message,
+                          icon: const Icon(Icons.chat_bubble_outline, size: 16),
+                          label: Text(
+                              MasarenLocalizations.of(
+                                  context, 'profile.message'),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis),
+                          style: profilePrimaryStyle(),
+                        ),
                       ),
-                      const SizedBox(height: 12),
-                      Text(_displayName,
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 22,
-                              fontWeight: FontWeight.w800)),
-                      if (_role.isNotEmpty) ...[
-                        const SizedBox(height: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.white24,
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Text(_role,
-                              style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600)),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _busy ? null : _follow,
+                          icon: Icon(
+                              _following ? Icons.check : Icons.person_add_alt_1,
+                              size: 16),
+                          label: Text(
+                              MasarenLocalizations.of(
+                                  context,
+                                  _following
+                                      ? 'action.following'
+                                      : 'action.follow'),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis),
+                          style: profileSecondaryStyle(context),
                         ),
-                      ],
-                      if (p != null) ...[
-                        const SizedBox(height: 14),
-                        SlideInWidget(
-                          delay: const Duration(milliseconds: 200),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              _StatValue(
-                                  value: p.impactScore.toInt().toString(),
-                                  label: 'Impact',
-                                  numericValue: p.impactScore.toDouble()),
-                              Container(
-                                  width: 1, height: 28, color: Colors.white30),
-                              _StatValue(
-                                  value: p.trustScore.toInt().toString(),
-                                  label: 'Trust',
-                                  numericValue: p.trustScore.toDouble()),
-                              Container(
-                                  width: 1, height: 28, color: Colors.white30),
-                              _StatValue(
-                                  value: p.professionalRank, label: 'Rank'),
-                            ],
-                          ),
-                        ),
-                      ],
+                      ),
                     ],
                   ),
-                ),
+                const SizedBox(height: 6),
 
-                // ── Bio ──
                 if (_bio != null && _bio!.isNotEmpty) ...[
-                  const SectionTitle(title: 'About'),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Text(_bio!,
-                            style: TextStyle(
-                                color: cs.onSurfaceVariant, height: 1.5)),
-                      ),
-                    ),
+                  ProfileSectionHeader(
+                      title: MasarenLocalizations.of(
+                          context, 'institution.about')),
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 14),
+                    padding: const EdgeInsets.all(16),
+                    decoration: profilePanel(context),
+                    child: Text(_bio!,
+                        style:
+                            TextStyle(color: cs.onSurfaceVariant, height: 1.5)),
                   ),
                 ],
-
                 // ── Posts ──
-                const SectionTitle(title: 'Posts'),
+                SectionTitle(
+                    title: MasarenLocalizations.of(context, 'profile.posts')),
                 if (_posts.isEmpty)
                   Padding(
                     padding: const EdgeInsets.all(24),
                     child: Center(
-                      child: Text('No posts yet.',
+                      child: Text(
+                          MasarenLocalizations.of(context, 'profile.noPosts'),
                           style: TextStyle(color: cs.onSurfaceVariant)),
                     ),
                   ),
@@ -327,41 +355,6 @@ class _ProfileViewScreenState extends State<ProfileViewScreen> {
               ],
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatValue extends StatelessWidget {
-  final String value;
-  final String label;
-  final double? numericValue;
-  const _StatValue(
-      {required this.value, required this.label, this.numericValue});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: Column(
-        children: [
-          if (numericValue != null)
-            CountUpNumber(
-              target: numericValue!,
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700),
-            )
-          else
-            Text(value,
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700)),
-          Text(label,
-              style: const TextStyle(color: Colors.white70, fontSize: 11)),
         ],
       ),
     );

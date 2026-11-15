@@ -1,0 +1,794 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>MASAREEN Complete Platform Guide</title>
+<style>
+  :root{
+    --ink:#0b1714; --forest:#123b33; --emerald:#146b59; --gold:#c7a15a;
+    --sand:#f4efe4; --paper:#fbfaf7; --mist:#e8efea; --slate:#5b6b65;
+    --line:#d7dfd9; --soft:#f2f5f2; --danger:#a8514a;
+  }
+  @page{ size:A4; margin:15mm 14mm 17mm 14mm; }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; color:var(--ink); background:#fff;
+    font-family:"Segoe UI","Cairo","Noto Sans Arabic",Arial,sans-serif;
+    font-size:10.4pt; line-height:1.55;
+  }
+  h1,h2,h3,h4{ line-height:1.2; margin:0 0 6px 0; color:var(--forest); }
+  h1{ font-size:28pt; letter-spacing:-.6px; }
+  h2{ font-size:18pt; margin-top:6px; border-bottom:2px solid var(--gold); padding-bottom:6px; }
+  h3{ font-size:13pt; margin-top:16px; color:var(--emerald); }
+  h4{ font-size:11pt; margin-top:12px; color:var(--ink); }
+  p{ margin:6px 0; }
+  ul,ol{ margin:5px 0 8px 20px; padding:0; }
+  li{ margin:3px 0; }
+  table{ width:100%; border-collapse:collapse; margin:8px 0 12px; font-size:9.2pt; }
+  th,td{ border:1px solid var(--line); padding:6px 7px; vertical-align:top; text-align:left; }
+  th{ background:var(--forest); color:#fff; font-weight:700; }
+  tr:nth-child(even) td{ background:var(--soft); }
+  code,.mono{ font-family:"Cascadia Mono","Consolas",monospace; font-size:8.8pt; background:var(--soft); padding:1px 4px; border-radius:4px; }
+  .cover{
+    min-height:250mm; display:flex; flex-direction:column; justify-content:space-between;
+    background:linear-gradient(145deg,#08110f 0%,#123b33 62%,#146b59 100%);
+    color:#fff; padding:28mm 20mm; margin:-15mm -14mm 0; page-break-after:always;
+  }
+  .cover .eyebrow{ letter-spacing:3px; text-transform:uppercase; font-size:9pt; color:#e2c98f; }
+  .cover h1{ color:#fff; font-size:42pt; margin-top:10mm; }
+  .cover h2{ color:#e8d6a4; border:none; font-size:23pt; margin-top:6mm; }
+  .cover .ar{ font-size:15pt; color:#f0e5c9; direction:rtl; margin-top:10mm; }
+  .cover .meta{ font-size:9pt; color:#c9d8d1; margin-top:14mm; line-height:1.8; }
+  .pill{ display:inline-block; background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.3);
+    border-radius:99px; padding:4px 10px; font-size:8.5pt; margin:3px 5px 3px 0; }
+  .page-break{ page-break-before:always; }
+  .toc a{ color:var(--forest); text-decoration:none; }
+  .toc li{ margin:4px 0; }
+  .lede{ font-size:11.5pt; color:var(--slate); }
+  .callout{ background:var(--sand); border-left:5px solid var(--gold); padding:9px 12px; margin:10px 0; border-radius:0 8px 8px 0; break-inside:avoid; }
+  .callout.green{ background:var(--mist); border-left-color:var(--emerald); }
+  .callout.red{ background:#fbeeec; border-left-color:var(--danger); }
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .grid3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:9px; }
+  .card{ border:1px solid var(--line); border-radius:10px; padding:9px 11px; background:var(--paper); }
+  .card b{ color:var(--forest); }
+  .kpi{ font-size:20pt; font-weight:800; color:var(--emerald); line-height:1; }
+  .small{ font-size:8.6pt; color:var(--slate); }
+  .formula{ background:#0b1714; color:#e9f2ed; border-radius:9px; padding:10px 13px; font-family:"Cascadia Mono","Consolas",monospace; font-size:8.7pt; line-height:1.6; margin:8px 0; }
+  .diagram{ border:1px solid var(--line); border-radius:12px; padding:8px; background:var(--paper); margin:10px 0; break-inside:avoid; }
+  .diagram svg{ width:100%; height:auto; display:block; }
+  .caption{ font-size:8.5pt; color:var(--slate); text-align:center; margin-top:4px; }
+  .ar-block{ direction:rtl; text-align:right; font-family:"Cairo","Segoe UI",Arial,sans-serif; background:var(--soft);
+    border-radius:10px; padding:12px 15px; margin:10px 0; }
+  .status{ display:inline-block; border-radius:99px; padding:2px 8px; font-size:8pt; font-weight:700; }
+  .verified{ background:#dcefe7; color:#0e6b58; }
+  .pending{ background:#f7ecd2; color:#8a651d; }
+  .reserved{ background:#f1e1df; color:#8f3e37; }
+  .footer-note{ margin-top:18px; padding-top:8px; border-top:1px solid var(--line); font-size:8.3pt; color:var(--slate); }
+  #entities table{ font-size:8.0pt; }`n  #entities table:first-of-type{ font-size:7.7pt; }`n  #entities table:first-of-type th,#entities table:first-of-type td{ padding:3px 4px; }`n  #entities th,#entities td{ padding:4px 5px; }`n  tr{ break-inside:avoid; }`n  .two-col{ columns:2; column-gap:20px; }
+  .two-col li{ break-inside:avoid; }
+  .no-break{ break-inside:avoid; }
+  @media print{
+    a{ color:inherit; text-decoration:none; }
+    .cover{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    th,.callout,.formula,.card,.diagram,.ar-block{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  }
+</style>
+</head>
+<body>
+
+<section class="cover">
+  <div>
+    <div class="eyebrow">MASAREEN · مسارين</div>
+    <h1>Complete Platform Guide</h1>
+    <h2>Activity · Evidence · Impact · Opportunity · MRC</h2>
+    <div class="ar">دليل المنصة الشامل: الأنشطة، الأدلة، قياس الأثر، اقتصاد عملة MRC، الفعاليات، الجامعات، البودكاست والفيديو</div>
+  </div>
+  <div>
+    <div>
+      <span class="pill">Version 0.4.11+16</span>
+      <span class="pill">Migrations 001-031</span>
+      <span class="pill">68 Worker tests</span>
+      <span class="pill">9 Flutter tests</span>
+    </div>
+    <div class="meta">
+      Prepared for the MASAREEN × TIYE Solutions × Ahram Canadian University (ACU) pilot.<br>
+      Platform owner: Abou Qerdan for Technological Solutions LLC — CR 257694 · Tax ID 774-932-473 · Activity Code 6020.<br>
+      Document date: 15 November 2026 · masareen.com
+    </div>
+  </div>
+</section>
+
+<h2>Contents</h2>
+<ol class="toc">
+  <li><a href="#exec">Executive summary</a></li>
+  <li><a href="#problem">The problem and the MASAREEN thesis</a></li>
+  <li><a href="#architecture">Platform architecture</a></li>
+  <li><a href="#entities">Entities, roles and permissions</a></li>
+  <li><a href="#map">The relational map</a></li>
+  <li><a href="#impact">Impact measurement: definitions and mechanisms</a></li>
+  <li><a href="#pms">Professional Merit Score (PMS), trust and reputation</a></li>
+  <li><a href="#mrc">The Masareen Coin (MRC) economy</a></li>
+  <li><a href="#events">Event hubs, contributors, booths and leads</a></li>
+  <li><a href="#tiye">TIYE Solutions: portfolio and enterprise dashboard</a></li>
+  <li><a href="#acu">ACU and “Knowledge to Impact”</a></li>
+  <li><a href="#podcast">Podcasts and VOD as first-class entities</a></li>
+  <li><a href="#sports">Football, sports entities and showcases</a></li>
+  <li><a href="#sharing">Verified-only external sharing policy</a></li>
+  <li><a href="#operations">Admin, analytics, moderation and operations</a></li>
+  <li><a href="#data">Data model and API surface</a></li>
+  <li><a href="#security">Security, privacy and PDPL</a></li>
+  <li><a href="#deploy">Release, OTA, Android and iOS</a></li>
+  <li><a href="#demo">Tomorrow’s demo script and credentials</a></li>
+  <li><a href="#roadmap">Roadmap and KPI targets</a></li>
+</ol>
+
+<h2 id="exec" class="page-break">1. Executive summary</h2>
+<p class="lede">MASAREEN is an evidence-first social and economic network. It converts real activities into structured records, verifies them with the institutions that hosted or witnessed them, and keeps the resulting value discoverable for 365 days and beyond.</p>
+<div class="callout green">
+  <b>One sentence:</b> MASAREEN is not an event app, a directory, or a job board. It is the continuity layer that turns a 3-day exhibition into a permanent, verified, monetisable digital economy.
+</div>
+<div class="grid3">
+  <div class="card"><div class="kpi">6</div><b>Flywheel stages</b><div class="small">Activity → Evidence → Discoverability → Interaction → Opportunity → new Activity.</div></div>
+  <div class="card"><div class="kpi">10</div><b>Event FRD modules</b><div class="small">Persistent pages, verification, authenticity, booths, cross-discovery, reputation, reach, dashboard, flow and rollout.</div></div>
+  <div class="card"><div class="kpi">MRC</div><b>Impact currency</b><div class="small">Rewards hosts, organisers, exhibitors, students and visitors; activates booths, boosts reach and unlocks Academy.</div></div>
+</div>
+<h3>What is live in this release</h3>
+<ul>
+  <li><b>Persistent event hubs</b> with organisers, hosts, exhibitors, sponsors, speakers, students, media and visitors, each with a role and verification state.</li>
+  <li><b>Verified activity</b>: contributors submit evidence; the host (ACU, MSMEDA, Al-Ahram, BiznEX, TWT, JobNile) verifies; both sides earn MRC; the event becomes a verified node across every participant profile.</li>
+  <li><b>Interactive digital booths</b>: products, media, quote/trial/contact CTAs, lead capture, unique views, interaction analytics, owner activation with MRC.</li>
+  <li><b>Cross-discovery and reputation</b>: events, programmes, capstone projects, research stages, courses, opportunities, podcasts and VOD are linked to institutions and discoverable from their profiles.</li>
+  <li><b>First-class podcast shows/episodes and VOD videos</b>, linked to events and playable inside the app.</li>
+  <li><b>Verified-only external sharing</b>: copying a link outside MASAREEN is blocked unless the content is verified.</li>
+  <li><b>TIYE and ACU demo ecosystem</b> seeded with their real portfolio, images, programme, students, research, booths, leads, ratings and MRC rewards.</li>
+  <li><b>Live TV</b> running from this device through mediaMTX and Cloudflare Tunnel, available at masareen.com/live/tv/index.m3u8.</li>
+</ul>
+
+<h2 id="problem">2. The problem and the MASAREEN thesis</h2>
+<p>Large events create enormous value in three days, then the value evaporates. Four gaps are structural:</p>
+<table>
+  <tr><th>Gap</th><th>What happens today</th><th>MASAREEN response</th></tr>
+  <tr><td><b>Documentation</b></td><td>Photos, exhibitor lists and coverage scatter across drives and social posts; no authoritative proof.</td><td>Activity record + evidence + host stamp + immutable timestamps.</td></tr>
+  <tr><td><b>Access</b></td><td>A buyer in Luxor or Riyadh who did not attend cannot experience the exhibitor.</td><td>Interactive booth, remote trial, quote request, 365-day availability.</td></tr>
+  <tr><td><b>Connection</b></td><td>Organiser, host, exhibitors, speakers and students remain isolated lists.</td><td>Bidirectional graph: every event appears on every contributor profile with the correct role.</td></tr>
+  <tr><td><b>Continuity</b></td><td>The campaign contract ends when the hall closes.</td><td>Persistent event hub, leads, ratings, reputation and renewals.</td></tr>
+</table>
+<div class="callout">
+  <b>Thesis:</b> if activity is captured as evidence, and evidence is verified by the institution that owns the context, then discovery, interaction and commercial opportunity can continue indefinitely — with MRC aligning every participant’s incentive.
+</div>
+
+<div class="diagram">
+<svg viewBox="0 0 860 300" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#146b59"/>
+    </marker>
+  </defs>
+  <rect x="15" y="20" width="830" height="260" rx="18" fill="#fbfaf7" stroke="#d7dfd9"/>
+  <g font-family="Segoe UI, Arial" font-size="12" text-anchor="middle">
+    <g>
+      <circle cx="130" cy="90" r="42" fill="#123b33"/>
+      <text x="130" y="87" fill="#fff" font-weight="700">TIYE</text>
+      <text x="130" y="104" fill="#d9e6df" font-size="9">Commercial engine</text>
+    </g>
+    <g>
+      <circle cx="430" cy="90" r="52" fill="#146b59"/>
+      <text x="430" y="84" fill="#fff" font-weight="700">MASAREEN</text>
+      <text x="430" y="100" fill="#d9e6df" font-size="9">Evidence + network</text>
+      <text x="430" y="113" fill="#d9e6df" font-size="9">+ MRC economy</text>
+    </g>
+    <g>
+      <circle cx="730" cy="90" r="46" fill="#c7a15a"/>
+      <text x="730" y="86" fill="#0b1714" font-weight="700">ACU</text>
+      <text x="730" y="102" fill="#3b3a2a" font-size="9">Academic host</text>
+    </g>
+    <line x1="176" y1="88" x2="374" y2="88" stroke="#146b59" stroke-width="2" marker-end="url(#arrow)"/>
+    <line x1="486" y1="88" x2="680" y2="88" stroke="#146b59" stroke-width="2" marker-end="url(#arrow)"/>
+    <line x1="704" y1="132" x2="477" y2="206" stroke="#c7a15a" stroke-width="2" marker-end="url(#arrow)"/>
+    <line x1="380" y1="206" x2="155" y2="135" stroke="#c7a15a" stroke-width="2" marker-end="url(#arrow)"/>
+    <text x="270" y="76" fill="#5b6b65" font-size="9">sells packages</text>
+    <text x="590" y="76" fill="#5b6b65" font-size="9">verifies students &amp; activities</text>
+    <text x="610" y="220" fill="#5b6b65" font-size="9">research, media, field crews</text>
+    <text x="235" y="232" fill="#5b6b65" font-size="9">campaigns, exhibitors, revenue</text>
+    <rect x="250" y="238" width="360" height="30" rx="15" fill="#e8efea" stroke="#146b59"/>
+    <text x="430" y="257" fill="#123b33" font-size="10" font-weight="700">Tripartite pilot: one flagship event + one student cohort</text>
+  </g>
+</svg>
+<div class="caption">Figure 1 — Tripartite ecosystem: commercial demand, academic legitimacy and evidence infrastructure.</div>
+</div>
+
+<h2 id="architecture" class="page-break">3. Platform architecture</h2>
+<div class="grid2">
+  <div class="card"><b>Mobile client</b><br>Flutter 3.44+/Dart 3.12, Arabic-first RTL/EN, floating shell navigation, deep links, FCM, offline-tolerant media, video/HLS playback, secure token storage.</div>
+  <div class="card"><b>Edge API</b><br>Single Cloudflare Worker: auth, social graph, impact engine, events, booths, podcasts, VOD, sports, commerce, admin, AI hooks, live proxy and OTA manifest.</div>
+  <div class="card"><b>Data</b><br>Cloudflare D1 (SQLite), 001-031 forward-only migrations, R2 public media bucket, D1 indexes for feed, graph, events, leads and analytics.</div>
+  <div class="card"><b>Media</b><br>R2 for images/VOD, mediaMTX for live HLS, Cloudflare Tunnel from this device, Worker edge cache at /live/*, chewie/video_player clients.</div>
+  <div class="card"><b>Notifications</b><br>In-app notifications + FCM push; category preferences; admin alerts bypass member settings; severity and amount thresholds.</div>
+  <div class="card"><b>Deployment</b><br>Wrangler for Worker/D1, GitHub Actions workflow, Codemagic for iOS, in-app APK OTA for Android, version manifest at /api/app/version.</div>
+</div>
+<h3>Request flow</h3>
+<ol>
+  <li>Flutter sends an authenticated request (Bearer session token) to <code>https://masareen.com/api/v1/*</code>.</li>
+  <li>The Worker resolves the member, applies rate limits and moderation, executes D1 queries, records analytics and returns JSON.</li>
+  <li>Media requests resolve through R2 (<code>/media/*</code>) or the live proxy (<code>/live/*</code> → mediaMTX through the tunnel).</li>
+  <li>Notifications are written to D1 and, if enabled, pushed through FCM; admin alerts always land in-app.</li>
+</ol>
+
+<h2 id="entities">4. Entities, roles and permissions</h2>
+<h3>4.1 People and organisation roles</h3>
+<table>
+  <tr><th>Role</th><th>Typical use</th><th>Core capabilities</th></tr>
+  <tr><td>INDIVIDUAL</td><td>Citizen, supporter</td><td>Feed, follow, comment, apply, attend, earn/spend MRC, share verified content.</td></tr>
+  <tr><td>STUDENT</td><td>ACU field crew, capstone teams</td><td>Programmes, projects, tasks, evidence, research stages, attendance rewards.</td></tr>
+  <tr><td>ACADEMIC / RESEARCHER</td><td>Faculty, principal investigators</td><td>Research stages, research verification, publications, supervision, PMS.</td></tr>
+  <tr><td>ORGANIZATION</td><td>TIYE, exhibitors, sponsors, media production</td><td>Events, booths, podcasts, VOD, opportunities, enterprise dashboard.</td></tr>
+  <tr><td>UNIVERSITY / INSTITUTION</td><td>ACU, host authorities</td><td>Host events, verify contributor evidence, earn MRC, publish programmes, projects and research.</td></tr>
+  <tr><td>GOVERNMENT</td><td>MSMEDA, ministries</td><td>Host public events, verify, publish services and announcements, transparency metrics.</td></tr>
+  <tr><td>MEDIA</td><td>Newsroom, podcast network</td><td>Event media, podcasts, VOD, verified news dossiers, press coverage.</td></tr>
+  <tr><td>SPORTS / CLUB / FEDERATION / ATHLETE</td><td>Football and sports ecosystem</td><td>Teams, squads, fixtures, results, player showcases, careers.</td></tr>
+</table>
+<h3>4.2 Entity catalogue</h3>
+<table>
+  <tr><th>Entity</th><th>What it represents</th><th>Key relationships</th></tr>
+  <tr><td><b>User / Profile</b></td><td>Person or organisation identity, role, bio, media, verification.</td><td>Authors posts/events; participates in events, programmes, projects; owns wallets, shows, videos, booths.</td></tr>
+  <tr><td><b>Institution profile</b></td><td>Government, university, media, sports, organization metadata: jurisdiction, services, departments, metrics, transparency.</td><td>One-to-one with a user; linked content and reputation.</td></tr>
+  <tr><td><b>Event</b></td><td>Persistent activity hub: type, dates, venue, cover, funding, programme, verification, source.</td><td>Organizer, host, participants, media, booths, ratings, podcasts, VOD, programme.</td></tr>
+  <tr><td><b>Event participant</b></td><td>Role-bearing contributor: organizer, host, exhibitor, sponsor, speaker, student, media, partner, visitor.</td><td>User ↔ event; evidence; verification; MRC rewards.</td></tr>
+  <tr><td><b>Event media</b></td><td>Image, video, podcast, report, news attached to the hub.</td><td>Event; creator; optionally podcast episode/VOD.</td></tr>
+  <tr><td><b>Booth</b></td><td>Interactive exhibitor space inside an event.</td><td>Event, owner, products, CTA, views, leads, activation.</td></tr>
+  <tr><td><b>Booth lead</b></td><td>Quote/trial/contact request with contact details and status.</td><td>Booth, event, visitor; private to owner + organizer.</td></tr>
+  <tr><td><b>Programme</b></td><td>Multi-activity intervention with tasks and projects.</td><td>Owner, members, tasks, projects, events.</td></tr>
+  <tr><td><b>Project / Capstone</b></td><td>Community, university, graduation, research or school project; team, goal, supervision.</td><td>Owner, members, institution, programme, tasks, evidence.</td></tr>
+  <tr><td><b>Course / Lesson</b></td><td>Structured learning with free/paid enrollment and rich lessons.</td><td>Author, enrollments, lessons, certificates, PMS learning velocity.</td></tr>
+  <tr><td><b>Opportunity</b></td><td>Job, internship, grant, volunteer, training or CSR opportunity.</td><td>Author, applicants, skills, SDG, PMS threshold.</td></tr>
+  <tr><td><b>Evidence / Submission</b></td><td>Target-linked record (programme, project, event, task, institution or research stage) with media/files, GPS, witnesses and a deepfake/NSFW scan; review pipeline.</td><td>Owner, target, verifier, scan verdict, status, confidence.</td></tr>
+  <tr><td><b>Research stage</b></td><td>Public research progress: idea, literature, methodology, fieldwork, analysis, results, published.</td><td>Researcher, institution, project, post, media.</td></tr>
+  <tr><td><b>Podcast show / episode</b></td><td>Show identity and playable episodes with guests and event links.</td><td>Owner, event, programme, media, guests.</td></tr>
+  <tr><td><b>VOD video</b></td><td>Replay, recap, documentary or demo with MP4/HLS source.</td><td>Owner, event, programme, views.</td></tr>
+  <tr><td><b>Post / Comment / Reaction</b></td><td>Feed activity with moderation, media, impact, confidence and ranking.</td><td>Author, likes, comments, shares, bookmarks, reports.</td></tr>
+  <tr><td><b>Wallet / Transaction / Reward</b></td><td>MRC balance and ledger; event reward audit.</td><td>Owner, counterparty, event, booth, reference.</td></tr>
+  <tr><td><b>Leaderboard</b></td><td>Ranking for institutions, governments, programmes, opportunities, events, courses, projects.</td><td>Admin moderation, published post.</td></tr>
+  <tr><td><b>Notification / Report / Inquiry / Leaderboard</b></td><td>Action and governance records; rankings for institutions, governments, programmes, opportunities, events, courses and projects.</td><td>User, target, admin workflow, published ranking post.</td></tr>
+</table>
+
+<h2 id="map">5. The relational map</h2>
+<div class="diagram">
+<svg viewBox="0 0 980 600" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#7d9189"/>
+    </marker>
+  </defs>
+  <rect width="980" height="600" fill="#fbfaf7"/>
+  <g font-family="Segoe UI, Arial" font-size="10.5" text-anchor="middle">
+    <!-- center -->
+    <rect x="400" y="258" width="180" height="76" rx="14" fill="#146b59"/>
+    <text x="490" y="288" fill="#fff" font-size="15" font-weight="700">EVENT HUB</text>
+    <text x="490" y="306" fill="#d8e8e2" font-size="9">persistent digital node</text>
+    <text x="490" y="320" fill="#d8e8e0" font-size="9">activity + evidence + 365d</text>
+
+    <!-- top row -->
+    <rect x="70" y="44" width="170" height="58" rx="11" fill="#123b33"/>
+    <text x="155" y="68" fill="#fff" font-weight="700">TIYE / ORGANIZER</text>
+    <text x="155" y="85" fill="#cfdfd8" font-size="9">campaign + enterprise</text>
+
+    <rect x="400" y="34" width="180" height="58" rx="11" fill="#c7a15a"/>
+    <text x="490" y="58" fill="#0b1714" font-weight="700">HOST AUTHORITY</text>
+    <text x="490" y="75" fill="#3d3a27" font-size="9">ACU · MSMEDA · Al-Ahram</text>
+
+    <rect x="740" y="44" width="170" height="58" rx="11" fill="#2c6e8f"/>
+    <text x="825" y="68" fill="#fff" font-weight="700">EXHIBITORS</text>
+    <text x="825" y="85" fill="#d7e7f0" font-size="9">Al-Sultan · GB · MCV · Raya</text>
+
+    <!-- left -->
+    <rect x="40" y="180" width="170" height="58" rx="11" fill="#6a4cb0"/>
+    <text x="125" y="203" fill="#fff" font-weight="700">STUDENTS / CREW</text>
+    <text x="125" y="220" fill="#e4dcf3" font-size="9">ACU field documentation</text>
+
+    <rect x="40" y="360" width="170" height="58" rx="11" fill="#2f6bd8"/>
+    <text x="125" y="383" fill="#fff" font-weight="700">MEDIA / PODCAST</text>
+    <text x="125" y="400" fill="#dbe6fb" font-size="9">newsroom · episodes</text>
+
+    <rect x="70" y="492" width="170" height="58" rx="11" fill="#b45345"/>
+    <text x="155" y="515" fill="#fff" font-weight="700">VISITORS / BUYERS</text>
+    <text x="155" y="532" fill="#f2d9d5" font-size="9">Luxor · Gulf · remote</text>
+
+    <!-- right -->
+    <rect x="770" y="180" width="170" height="58" rx="11" fill="#146b59"/>
+    <text x="855" y="203" fill="#fff" font-weight="700">BOOTHS</text>
+    <text x="855" y="220" fill="#d8e8e2" font-size="9">products · CTA · leads</text>
+
+    <rect x="770" y="360" width="170" height="58" rx="11" fill="#8a651d"/>
+    <text x="855" y="383" fill="#fff" font-weight="700">PODCAST / VOD</text>
+    <text x="855" y="400" fill="#f4e8c8" font-size="9">shows · episodes · replays</text>
+
+    <rect x="700" y="492" width="170" height="58" rx="11" fill="#123b33"/>
+    <text x="785" y="515" fill="#fff" font-weight="700">MRC WALLET</text>
+    <text x="785" y="532" fill="#cfdfd8" font-size="9">earn · spend · rewards</text>
+
+    <!-- bottom -->
+    <rect x="400" y="492" width="180" height="58" rx="11" fill="#5b6b65"/>
+    <text x="490" y="515" fill="#fff" font-weight="700">PROGRAMME</text>
+    <text x="490" y="532" fill="#e2e8e5" font-size="9">Knowledge to Impact</text>
+
+    <rect x="400" y="392" width="180" height="58" rx="11" fill="#0e6b58"/>
+    <text x="490" y="415" fill="#fff" font-weight="700">PROJECTS / RESEARCH</text>
+    <text x="490" y="432" fill="#d8e8e2" font-size="9">capstones · stages · evidence</text>
+
+    <!-- edges -->
+    <g stroke="#7d9189" stroke-width="1.6" fill="none" marker-end="url(#a2)">
+      <path d="M240 73 L400 264"/>
+      <path d="M490 92 L490 258"/>
+      <path d="M740 73 L580 264"/>
+      <path d="M210 209 L400 276"/>
+      <path d="M210 389 L400 300"/>
+      <path d="M240 521 L400 322"/>
+      <path d="M770 209 L580 276"/>
+      <path d="M770 389 L580 304"/>
+      <path d="M700 521 L580 320"/>
+      <path d="M490 334 L490 392"/>
+      <path d="M490 450 L490 492"/>
+    </g>
+    <g stroke="#c7a15a" stroke-width="1.4" fill="none" stroke-dasharray="4 4">
+      <path d="M125 238 C110 330 115 430 185 500"/>
+      <path d="M125 418 C250 470 330 510 400 520"/>
+      <path d="M855 238 C900 300 900 430 830 492"/>
+      <path d="M785 492 C700 460 610 430 570 392"/>
+    </g>
+    <text x="490" y="570" fill="#5b6b65" font-size="9">Solid: primary ownership / participation · Dashed: discovery, reward and continuity paths</text>
+  </g>
+</svg>
+<div class="caption">Figure 2 — Entity relational map. Every event is a node, not a page: it is joined to people, institutions, commerce, media and money.</div>
+</div>
+
+<h2 id="impact">6. Impact measurement: definitions and mechanisms</h2>
+<p>MASAREEN separates <b>activity</b>, <b>evidence</b>, <b>verification</b>, <b>impact</b> and <b>reach</b>. Reach is attention. Impact is verified change. The platform never presents reach as impact.</p>
+<h3>6.1 The evidence hierarchy</h3>
+<table>
+  <tr><th>Level</th><th>Signal</th><th>Who can create</th><th>What it unlocks</th></tr>
+  <tr><td>L0</td><td>Self-declared post or profile claim</td><td>Any member</td><td>Discovery only; cannot be externally shared unless verified.</td></tr>
+  <tr><td>L1</td><td>Activity record with media/link</td><td>Author</td><td>Feed, comments, impact voting.</td></tr>
+  <tr><td>L2</td><td>Submitted evidence</td><td>Owner / contributor</td><td>Verification queue; host review.</td></tr>
+  <tr><td>L3</td><td>Host-verified contribution</td><td>Host or admin</td><td>Verified badge, MRC reward, trust/PMS boost, external share.</td></tr>
+  <tr><td>L4</td><td>Verified outcome with measurable result</td><td>Host + evidence</td><td>Impact passport, institutional reputation, funding and partnership eligibility.</td></tr>
+</table>
+<h3>6.1b Structured evidence, not a link box</h3>
+<p>Evidence is no longer a single URL field. Every record must name the <b>exact entity it proves</b> and carries structured context that a host or admin can review without leaving MASAREEN.</p>
+<table>
+  <tr><th>Evidence target</th><th>Typical structured fields</th><th>Who can attach</th></tr>
+  <tr><td>POST</td><td>Observed change, measured metric, primary source</td><td>Post author or admin</td></tr>
+  <tr><td>PROGRAM</td><td>Activity date, beneficiaries reached, outputs delivered</td><td>Any signed-in contributor</td></tr>
+  <tr><td>PROJECT / capstone</td><td>Milestone, deliverable, team and partners</td><td>Any signed-in contributor</td></tr>
+  <tr><td>EVENT</td><td>Role, attendance, venue; optional participant record</td><td>Event owner, participant or admin</td></tr>
+  <tr><td>TASK</td><td>Task outcome, completion date, quantity/scope</td><td>Assignee, task author or admin</td></tr>
+  <tr><td>OPPORTUNITY</td><td>Application stage, result, reference</td><td>Applicant</td></tr>
+  <tr><td>INSTITUTION / RESEARCH_STAGE</td><td>Service, official reference, authority; research stage, sample size, method</td><td>Contributor or researcher</td></tr>
+  <tr><td>COURSE / VOD / PODCAST_SHOW</td><td>Lesson, completion, assessment; publication reference</td><td>Contributor or owner</td></tr>
+</table>
+<p>Each evidence record stores title, description, claim, evidence kind, target, structured <code>fields_json</code>, photos/video/audio/documents in R2, latitude/longitude, claimed location, captured time, source/collector name, witnesses and scan metadata. The mobile capture flow requires GPS and at least one supporting description, file or structured field. A participant record is validated against the event and the signed-in user, so a contributor cannot attach proof to somebody else's contribution.</p>
+<h3>6.2 Post-level Impact Score Algorithm v2 (0–10 / ISA 0–1000)</h3>
+<p>The live score is a <b>non-linear, multi-domain</b> model. It is deliberately not a linear sum: every metric saturates, every domain decays at its own rate, and evidence coverage, location proof, actor history, cross-domain consistency and community confirmation are combined multiplicatively. The same verified activity cannot be inflated by one repeated metric.</p>
+<table>
+  <tr><th>Domain</th><th>Metric examples</th><th>Initial domain weight</th></tr>
+  <tr><td>Environmental</td><td>CO₂ kg, water litres, trees, biodiversity</td><td>20%</td></tr>
+  <tr><td>Social</td><td>People reached, volunteer hours, lives improved, inclusion</td><td>24%</td></tr>
+  <tr><td>Economic</td><td>Income EGP, jobs, local GDP contribution</td><td>16%</td></tr>
+  <tr><td>Governance</td><td>Transparency, policy adherence, community engagement</td><td>10%</td></tr>
+  <tr><td>Educational</td><td>Students reached, learning hours, curriculum, retention</td><td>16%</td></tr>
+  <tr><td>Infrastructure</td><td>Facilities, maintenance hours, people with new access</td><td>14%</td></tr>
+</table>
+<div class="formula">
+normalized_metric = 1 − exp(−log(1+value) / log(1+k))&nbsp;&nbsp;[log metrics]<br>
+normalized_metric = 1 − exp(−value / k)&nbsp;&nbsp;[linear metrics]<br><br>
+domain_score = Σ(metric_weight × normalized_metric) / Σ(metric_weight)<br>
+temporal_decay(ENV)=e^(−0.05d) · SOC=max(0,1−(min(d,365)/365)²) · GOV=sigmoid(0.05(d−180))<br>
+temporal_decay(ECO)=e^(−0.1d) · EDU=e^(−0.03d) · INF=max(0.5,1−0.02d)<br><br>
+coverage = supplied_metrics / 46<br>
+consistency = (1 − 0.25×tanh(variance(domain_scores)×6)) × (0.72 + 0.28×coverage)<br>
+geo = 1.00 (no GPS) · 1.06 (GPS) · 1.12 (GPS + claimed location)<br>
+actor = 1 + 0.5×e^(−verified_actions/50)<br>
+bayes_rating = (avg_stars×n + 3×2) / (n+2) / 5<br>
+engagement = tanh(log(1 + likes×2 + comments×2.5 + shares×3) / log(61))<br>
+community = 0.65×bayes_rating + 0.35×engagement<br><br>
+raw = Σ(domain_score × domain_weight × decay) × geo × actor × consistency × (0.82 + 0.18×community)<br>
+impact = 10 × (1 − e^(−2.4×raw))<br>
+ISA = round(impact × 100) → 0–1000
+</div>
+<p><b>GPS is part of the evidence, not decoration.</b> Structured impact/evidence posts require a captured location. If the author also states the place, the post reaches geo level 2 (GPS + claimed location) and receives the higher factor; a host can reject a mismatch during verification. GPS is not used to secretly track members: it is stored on the post and shown in the evidence context.</p>
+<div class="formula">
+confidence = clamp(22 + coverage×35 + min(15, voters×3)<br>
+&nbsp;&nbsp;+ (author_verified ? 15 : 0) + (GPS ? 5 : 0) + engagement×8, 5, 99)
+</div>
+<table>
+  <tr><th>Output</th><th>Rule</th><th>Meaning</th></tr>
+  <tr><td>Awaiting ratings</td><td>ISA 0</td><td>No impact signal yet.</td></tr>
+  <tr><td>Early signal</td><td>impact &lt; 4.5</td><td>Some traction, weak evidence.</td></tr>
+  <tr><td>Emerging impact</td><td>4.5 ≤ impact &lt; 6.5</td><td>Credible but limited confirmation.</td></tr>
+  <tr><td>Strong impact</td><td>6.5 ≤ impact &lt; 8</td><td>Strong multi-domain evidence and confirmation.</td></tr>
+  <tr><td>Verified high impact</td><td>impact ≥ 8 and confidence ≥ 70</td><td>High evidence, high confidence, verified author.</td></tr>
+</table>
+<p>Legacy posts without structured metrics fall back to the earlier weighted rating/engagement formula; they are automatically upgraded the next time a structured rating is submitted after migration 029.</p>
+<div class="callout">
+  <b>Why this matters:</b> a viral post with no verification can score high on reach but cannot earn the “Verified high impact” label, cannot be externally shared, and does not count as a verified submission for PMS or trust. A single metric cannot buy impact: saturation, domain decay and consistency penalties are intentional.
+</div>
+<h3>6.2b Home-feed ranking, stochasticity and paid promotion</h3>
+<p>The home feed is a relevance-ranked stream with <b>per-session stochasticity</b>. Each refresh creates a new seed; pagination keeps the same seed so pages never repeat or skip. This directly fixes the “same posts again and again” problem while preserving stable infinite scroll.</p>
+<div class="formula">
+base = 0.34×impact + 0.18×verified + 0.18×recency + 0.14×velocity<br>
+&nbsp;&nbsp;+ 0.08×following + 0.05×interest + 0.03×media + 0.02×self<br>
+seeded_explore = hash(seed, post) × 0.30 + hash(seed, post, b) × 0.14<br>
+paid_boost = active boost ? clamp(boost_weight, 0, 0.38) × 1.4 : 0<br>
+final = base + seeded_explore + paid_boost<br><br>
+author_diversity_penalty = 0.22 × prior_posts_by_author<br>
+promoted_slots = max(1, round(limit × 15%))
+</div>
+<ul>
+  <li><b>Paid content is a percentage, not a takeover:</b> active promoted posts are reserved about 15% of feed slots (at least one per page when available) and receive a bounded score boost. Ads are already served as separate paid slots with frequency caps.</li>
+  <li><b>Boost with MRC:</b> <code>POST /api/v1/posts/:id/boost</code> debits 5–5000 MRC, promotes for 1–30 days, and records <code>paid_mrc</code>, <code>boost_weight</code> and <code>boosted_until</code>. A 25 MRC boost buys one day; 150 MRC buys six days at a stronger weight.</li>
+  <li><b>Fairness:</b> paid boost cannot bypass missing evidence, moderation, sharing restrictions or author verification. It only affects discovery ranking.</li>
+</ul>
+<div class="callout green">
+  <b>Measured result:</b> two seeded requests <code>seed=alpha</code> and <code>seed=beta</code> produce different orders, while repeating <code>seed=alpha</code> produces exactly the same order for pagination.
+</div>
+<h3>6.2c Deepfake and NSFW authenticity gate</h3>
+<p>Authenticity is reviewed <b>before</b> a host can verify evidence. The gate is free-tier by design: local forensic scoring always runs, and Cloudflare Workers AI is used when the <code>AI</code> binding is available. If the model call fails, the local result still protects the pipeline.</p>
+<table>
+  <tr><th>Signal</th><th>How it is checked</th><th>Effect</th></tr>
+  <tr><td>AI-text patterns</td><td>Formulaic phrasing, punctuation regularity, sentence-length variance and generator markers.</td><td>Raises the AI-content score; suspicious text enters review.</td></tr>
+  <tr><td>Generator metadata</td><td>Filename, URL and embedded markers for Midjourney, DALL-E, Stable Diffusion, Firefly and similar tools.</td><td>Raises the AI-content score for the attached media.</td></tr>
+  <tr><td>Image safety</td><td>Cloudflare Workers AI vision checks the first image for NSFW content; local text markers cover captions and descriptions.</td><td>Explicit content is blocked with <code>nsfw_blocked</code>.</td></tr>
+  <tr><td>Evidence scan</td><td>A scan is stored on every post, evidence record, submission and event contribution.</td><td>Verdict and score are visible to the reviewer and in admin operations.</td></tr>
+</table>
+<div class="formula">
+ai_score = max(local_text_forensics, media_url_markers, first_image_forensics, cloud_ai)<br>
+AI verdict: LIKELY_AI at score ?%? 0.80 ?? SUSPICIOUS at score ?%? 0.55 ?? LIKELY_AUTHENTIC<br>
+NSFW verdict: BLOCKED at score ?%? 0.80 ?? REVIEW at score ?%? 0.50 ?? SAFE
+</div>
+<ul>
+  <li><b>Public scan endpoint:</b> <code>POST /api/v1/ai/deepfake/scan</code> accepts text and media URLs; admins use <code>POST /api/v1/admin/ai/deepfake/scan</code> for an audited review.</li>
+  <li><b>Verification pipeline:</b> <code>DEEPFAKE_NSFW_SCAN</code> is the first step. A LIKELY_AI verdict forces <span class="status pending">HUMAN_REVIEW</span> and lowers confidence to 12; SUSPICIOUS lowers it to 25.</li>
+  <li><b>No silent approval:</b> verifying flagged evidence or a flagged event contribution returns <code>409 deepfake_review_required</code>. A host or admin may explicitly override with <code>override_deepfake: true</code> after reviewing the original files; the override is recorded.</li>
+  <li><b>Privacy:</b> only the evidence media needed for the check is fetched; the scan does not create a separate identity or tracking profile.</li>
+</ul>
+<div class="callout">
+  <b>Free and defensible:</b> local forensics work without any paid vendor. Cloudflare Workers AI adds vision and safety checks inside the existing free allocation, and every verdict stores which provider produced it.
+</div>
+<h3>6.2d Mixed-entity discovery and infinite feed</h3>
+<p>The home feed is no longer a post-only stream. After the ranked posts, the app appends <b>discovery cards for every public entity type</b>: events, programmes, projects, opportunities, podcasts and VOD. Each card carries an explicit <b>impact percentage</b>, verification state, cover media and a direct route into the entity.</p>
+<ul>
+  <li><b>One stream, many entities:</b> <code>GET /api/v1/discovery/feed</code> merges six entity tables and round-robins them so one type cannot dominate the page.</li>
+  <li><b>Percentages are honest:</b> verified events show their verification strength, approved programmes/projects use their review state, and podcasts/VOD carry their own score. The UI never labels reach as impact.</li>
+  <li><b>Infinite by design:</b> posts paginate with a stable seed; when posts are exhausted, discovery pages continue. Exhausted discovery pages rotate a new seed and keep loading, so the feed has no terminal “finished” state.</li>
+  <li><b>Dark mode:</b> a one-tap sun/moon control in the feed app bar and the drawer switch persist the choice locally; cards, tabs, forms and galleries use the active colour scheme.</li>
+</ul>
+<h3>6.2e Data entry is a screen, not a URL box</h3>
+<p>Programme, project, opportunity, podcast show, episode, VOD, booth, event and course creation now use full screens with descriptive fields and device uploads. Users choose a cover photo, audio file or video from their phone; the app uploads it to R2 and stores the returned URL. No image URL is requested from a member. Fields include the context a reviewer needs: lead organisation, category, SDG, dates, location, beneficiaries, budget, skills, guests, duration and success criteria.</p>
+<h3>6.3 Verification states</h3>
+<p>Event contributions, submissions and evidence move through: <span class="status pending">SUBMITTED</span> → <span class="status pending">UNDER_REVIEW</span> → <span class="status verified">VERIFIED</span> or <span class="status reserved">REJECTED</span>. Every state change records actor and timestamp. Hosts cannot verify their own contribution. Admin override is audited.</p>
+<h3>6.4 Event-level measures</h3>
+<table>
+  <tr><th>Measure</th><th>Definition</th><th>Where shown</th></tr>
+  <tr><td>Verified events</td><td>Events whose organizer role was verified by a host.</td><td>Organizer reputation, institution profile, dashboard.</td></tr>
+  <tr><td>Clients</td><td>Distinct confirmed hosts, sponsors, exhibitors and partners across verified events.</td><td>Reputation card.</td></tr>
+  <tr><td>Rating</td><td>Average 1–5 host/exhibitor/visitor rating.</td><td>Event hub, reputation.</td></tr>
+  <tr><td>Verification rate</td><td>Verified events ÷ published events.</td><td>Reputation and dashboard.</td></tr>
+  <tr><td>Booth leads</td><td>Qualified quote/trial/contact requests.</td><td>Booth analytics, enterprise dashboard.</td></tr>
+  <tr><td>Reward total</td><td>MRC issued for verification, attendance and experience.</td><td>Event dashboard.</td></tr>
+</table>
+
+<h2 id="pms">7. Professional Merit Score, trust and reputation</h2>
+<p>PMS is a 0–100 professional quality score. It rewards verified execution, documentation and learning — not posting volume.</p>
+<table>
+  <tr><th>Dimension</th><th>Weight</th><th>Main signals</th></tr>
+  <tr><td>Reliability</td><td>15%</td><td>Verified posts, email verification, verified submissions.</td></tr>
+  <tr><td>Execution quality</td><td>15%</td><td>Verified tasks, verified submissions, project delivery.</td></tr>
+  <tr><td>Leadership</td><td>10%</td><td>Owned programmes/projects, organisation ownership, followers.</td></tr>
+  <tr><td>Documentation quality</td><td>10%</td><td>Evidence records, posts, structured submissions.</td></tr>
+  <tr><td>Verification confidence</td><td>15%</td><td>Average confidence of verified activity.</td></tr>
+  <tr><td>Learning velocity</td><td>8%</td><td>Courses completed, certificates.</td></tr>
+  <tr><td>Technical skills</td><td>10%</td><td>Skills, endorsements.</td></tr>
+  <tr><td>Innovation</td><td>7%</td><td>Innovation posts, projects.</td></tr>
+  <tr><td>Consistency</td><td>5%</td><td>Active months.</td></tr>
+  <tr><td>Community impact</td><td>5%</td><td>Followers, recommendations, impact posts.</td></tr>
+</table>
+<div class="formula">PMS = Σ (dimension_score × weight)<br>
+Tier: BRONZE &lt; 50 · SILVER ≥ 50 · GOLD ≥ 70 · PLATINUM ≥ 85<br><br>
+trust_score = clamp(<br>
+&nbsp;&nbsp;(verified_posts / posts) × 35<br>
+&nbsp;&nbsp;+ (verified_submissions / submissions) × 35<br>
+&nbsp;&nbsp;+ (email_verified ? 15 : 0)<br>
+&nbsp;&nbsp;+ min(15, recommendations × 3), 0, 100)
+</div>
+<p>Organizer reputation is separate and event-specific: total published events, host-verified events, distinct clients, average event rating, verification rate and rank among organizers. A host university earns reputation from the events it hosts, not only from events it authors.</p>
+<div class="callout green">
+  <b>ACU example:</b> Knowledge to Impact counts as a verified hosted event; its capstone projects and research stages feed student PMS and institutional reputation. The same activity appears on TIYE’s profile as organizer, ACU’s profile as host, and each student’s portfolio as verified contribution.
+</div>
+
+<h2 id="mrc">8. The Masareen Coin (MRC) economy</h2>
+<p>MRC is an internal impact currency, recorded in a double-entry-style ledger (<code>coin_wallets</code>, <code>coin_transactions</code>) with a separate audit table for event rewards (<code>event_rewards</code>). Every change has a reference and a counterparty where relevant.</p>
+<h3>8.1 Verified event flows in this release</h3>
+<table>
+  <tr><th>Action</th><th>Payer</th><th>Receiver</th><th>Amount</th><th>Rule</th></tr>
+  <tr><td>Organizer verification by host</td><td>Platform reward pool (credit)</td><td>Host + organizer</td><td>50 + 50 MRC</td><td>Once per event, host ≠ organizer, evidence submitted.</td></tr>
+  <tr><td>Contributor verification</td><td>Platform reward pool</td><td>Verifier + organizer + contributor</td><td>10 + 10 + 10 MRC</td><td>Once per participant contribution.</td></tr>
+  <tr><td>Attendance claim</td><td>Platform reward pool</td><td>Attendee</td><td>5 MRC</td><td>Join event, once per event.</td></tr>
+  <tr><td>Booth experience</td><td>Platform reward pool</td><td>Visitor</td><td>2 MRC</td><td>Once per booth lead.</td></tr>
+  <tr><td>Booth activation</td><td>Booth owner</td><td>Platform (burn/spend)</td><td>25 MRC</td><td>Booth becomes visible and can receive leads.</td></tr>
+  <tr><td>Paid trial</td><td>Visitor</td><td>Exhibitor</td><td>Booth-defined, e.g. 10–20 MRC</td><td>Atomic debit/credit before lead creation.</td></tr>
+  <tr><td>Event funding</td><td>Supporter</td><td>Event organizer</td><td>Any amount ≤ 100,000</td><td>Cannot fund your own event.</td></tr>
+</table>
+<h3>8.2 Commercial packaging (TIYE)</h3>
+<p>TIYE sells a “Digital Continuity &amp; Interactive Exhibitor Booth Package.” Each package includes a platform activation allocation and an initial MRC balance for the exhibitor. MASAREEN charges the platform/infrastructure allocation; TIYE keeps the commercial margin. This makes platform presence a revenue line, not a cost centre.</p>
+<div class="diagram">
+<svg viewBox="0 0 900 210" xmlns="http://www.w3.org/2000/svg">
+  <rect width="900" height="210" fill="#fbfaf7" rx="14"/>
+  <g font-family="Segoe UI, Arial" font-size="10" text-anchor="middle">
+    <rect x="20" y="55" width="150" height="90" rx="12" fill="#123b33"/>
+    <text x="95" y="83" fill="#fff" font-weight="700">TIYE sells package</text>
+    <text x="95" y="101" fill="#cfdfd8">exhibitor pays</text>
+    <text x="95" y="117" fill="#cfdfd8">margin + allocation</text>
+
+    <rect x="220" y="40" width="170" height="120" rx="12" fill="#146b59"/>
+    <text x="305" y="68" fill="#fff" font-weight="700">MASAREEN</text>
+    <text x="305" y="86" fill="#d8e8e2">event hub</text>
+    <text x="305" y="102" fill="#d8e8e2">booth + verification</text>
+    <text x="305" y="118" fill="#d8e8e2">dashboard + MRC</text>
+
+    <rect x="440" y="55" width="170" height="90" rx="12" fill="#c7a15a"/>
+    <text x="525" y="82" fill="#0b1714" font-weight="700">EXHIBITOR</text>
+    <text x="525" y="100" fill="#3d3a27">booth active</text>
+    <text x="525" y="116" fill="#3d3a27">quotes + trials</text>
+
+    <rect x="660" y="55" width="215" height="90" rx="12" fill="#2c6e8f"/>
+    <text x="767" y="82" fill="#fff" font-weight="700">365-day RETURN</text>
+    <text x="767" y="100" fill="#d7e7f0">remote buyers</text>
+    <text x="767" y="116" fill="#d7e7f0">leads → renewals</text>
+
+    <g stroke="#7d9189" stroke-width="2" fill="none">
+      <path d="M170 100 L220 100"/>
+      <path d="M390 100 L440 100"/>
+      <path d="M610 100 L660 100"/>
+    </g>
+  </g>
+</svg>
+<div class="caption">Figure 3 — MRC / package loop: the exhibitor pays for continuity, not for a one-off impression.</div>
+</div>
+
+<h2 id="events" class="page-break">9. Event hubs, contributors, booths and leads</h2>
+<h3>9.1 The five-stage flow</h3>
+<ol>
+  <li><b>Create:</b> organizer creates the event, adds host, exhibitors, sponsors, speakers, students and media; links the programme.</li>
+  <li><b>Document:</b> contributors submit contribution summaries and evidence links; event media, podcasts and VOD are attached.</li>
+  <li><b>Verify:</b> the host reviews evidence, approves/rejects, and the event becomes a verified activity; MRC is issued.</li>
+  <li><b>Cross-link:</b> the verified event appears on organizer, host, exhibitor, speaker, student and media profiles; entity links make it discoverable in both directions.</li>
+  <li><b>Year-round interaction:</b> booths collect quotes/trials/leads, visitors rate, organizers read dashboards, and the event keeps producing opportunity.</li>
+</ol>
+<h3>9.2 Booths and lead privacy</h3>
+<p>Each booth has products, media, a CTA type (quote, trial, book, contact), optional trial price, unique views, interactions and leads. Leads are visible only to the booth owner and the event organizer (and admins). A visitor receives 2 MRC for a verified experience; a paid trial moves MRC atomically from visitor to exhibitor.</p>
+<h3>9.3 FRD module coverage</h3>
+<table>
+  <tr><th>FRD module</th><th>Implementation</th></tr>
+  <tr><td>1. Digital event presence</td><td>Permanent event hub with organizer, host, dates, venue, cover, description, programme, media, podcast/VOD, source and all participants.</td></tr>
+  <tr><td>2. Activity verification</td><td>Role-based participants; evidence; host verdict; verified badge/date; 50+50 MRC for organizer verification.</td></tr>
+  <tr><td>3. Data authenticity</td><td>Created/updated timestamps, evidence provenance, verifier identity, status states, audit trail, moderation and abuse reporting.</td></tr>
+  <tr><td>4. Interactive booths</td><td>Booth entity, products, video, CTA, trial price, unique views, leads, analytics, activation fee.</td></tr>
+  <tr><td>5. Cross-discovery</td><td>Entity links in both directions + authored/participated content on institution profiles + linked event sections.</td></tr>
+  <tr><td>6. Reputation</td><td>Verified events, clients, rating, verification rate, rank, badge.</td></tr>
+  <tr><td>7. Extended reach</td><td>Every participant profile surfaces the event; event media, podcasts and VOD remain discoverable; view/lead analytics.</td></tr>
+  <tr><td>8. Enterprise dashboard</td><td>Managed-events portfolio, verification queue, contributors, booths, leads, rewards, ratings, reputation.</td></tr>
+  <tr><td>9. 5-stage flow</td><td>Create → Document → Verify → Cross-link → Year-round interaction.</td></tr>
+  <tr><td>10. Rollout</td><td>MVP hubs/booths now; ranking/AI recommendations next; enterprise V2.0 roadmap documented.</td></tr>
+</table>
+
+<h2 id="tiye">10. TIYE Solutions: portfolio and enterprise dashboard</h2>
+<p>The seeded TIYE ecosystem reflects the real public portfolio:</p>
+<table>
+  <tr><th>Event</th><th>Role</th><th>Host</th><th>Demo capability</th></tr>
+  <tr><td>Al-Ahram Commercial Vehicle Show (ACV) 2026</td><td>Organizer / digital partner</td><td>Al-Ahram Establishment</td><td>Upcoming event, pending contributor proof, live booth walkthroughs.</td></tr>
+  <tr><td>ACV 2025</td><td>Organizer / digital partner</td><td>Al-Ahram Establishment</td><td>Verified event, 4 exhibitor booths, remote buyer lead, ratings, MRC rewards.</td></tr>
+  <tr><td>Knowledge to Impact</td><td>Organizer / media partner</td><td>ACU</td><td>Programme, podcast episodes, research, capstones, ACU host verification.</td></tr>
+  <tr><td>Turathna 2024</td><td>Organizer / digital identity partner</td><td>MSMEDA</td><td>Artisan booths, export quote, heritage continuity.</td></tr>
+  <tr><td>BiznEX 2022</td><td>Organizer / digital partner</td><td>BiznEX</td><td>Investor continuity, sponsor, cross-links.</td></tr>
+  <tr><td>Egypt Retail Summit 2022</td><td>Organizer / digital partner</td><td>BiznEX</td><td>Expert content, retail supply-chain links.</td></tr>
+  <tr><td>Tanmia Wa Tatweer 2022</td><td>Organizer / marketing partner</td><td>TWT</td><td>Entrepreneurship and training continuity.</td></tr>
+  <tr><td>Sha3’lna Job Fair</td><td>Organizer / campaign partner</td><td>JobNile</td><td>Verified talent, job opportunities, employer booth.</td></tr>
+</table>
+<h3>Enterprise dashboard</h3>
+<p>The dashboard is available to event organizers and hosts (and admins for demo). It includes: portfolio summary, reputation badge/rank, per-event verification queue, contributor roster, booth performance, incoming leads with status, MRC reward ledger, ratings, and a direct link to the public event hub.</p>
+
+<h2 id="acu">11. ACU and “Knowledge to Impact”</h2>
+<p>The ACU programme is modelled as a first-class programme, not a marketing page:</p>
+<ul>
+  <li><b>Programme:</b> “Knowledge to Impact · من المعرفة إلى الأثر”, owned by ACU, with organization “ACU x TIYE Academy”, SDG 4, 60 beneficiaries, six-month window.</li>
+  <li><b>Tasks:</b> produce 6 podcast episodes, document 50 ACV exhibitor profiles, run a 25-student field crew, publish the Day-90 impact readout.</li>
+  <li><b>Members:</b> dean (academic supervisor), researcher (research lead), two students (student crew), TIYE Academy (training partner).</li>
+  <li><b>Capstones:</b> ACV exhibitor lead intelligence; verified newsroom for Turathna artisans; Knowledge to Impact podcast analytics.</li>
+  <li><b>Research:</b> “Measuring the impact of verified event media”, stage RESULTS, linked to the podcast analytics project and ACU.</li>
+  <li><b>Opportunities:</b> TIYE field documentation internship, ACU research assistant, TIYE Academy AI scholarship, fleet procurement analyst at Al-Sultan.</li>
+  <li><b>Host role:</b> ACU verifies the Knowledge to Impact organizer contribution and earns 50 MRC; its profile shows the verified event, programme, three capstones and research stage.</li>
+</ul>
+<div class="callout green">
+  <b>180-day logic:</b> Days 1–30 coordination, 31–90 operation and production, 91–150 expansion and integration, 151–180 evaluation and sustainability. The platform records each phase as activities, evidence, tasks and outcomes, so the final report is generated from the graph rather than reconstructed from memory.
+</div>
+
+<h2 id="podcast" class="page-break">12. Podcasts and VOD as first-class entities</h2>
+<div class="grid2">
+  <div class="card"><b>Podcast show</b><br>Owner, title, slug, description, cover, category, SDG, language, status, verification, episode count and latest episode date.</div>
+  <div class="card"><b>Podcast episode</b><br>Show, linked event, title, description, audio/video URL, duration, season/episode number, guests, transcript, publication date, verification.</div>
+  <div class="card"><b>VOD video</b><br>Owner, linked event/programme, title, description, cover, MP4/HLS URL, duration, category, SDG, views, verification.</div>
+  <div class="card"><b>Discovery</b><br>Global hubs, event hubs, institution profiles, deep links from notifications and feeds.</div>
+</div>
+<p>Seeded demo content: two shows, five episodes and four VOD videos. “Knowledge to Impact” includes the dean, TIYE founder and student crew; “TIYE Events Podcast” covers ACV and Turathna. Audio is playable in-app; VOD uses MP4/HLS with full-screen chewie playback.</p>
+
+<h2 id="sports">13. Football, sports entities and showcases</h2>
+<ul>
+  <li><b>Sports profile:</b> club/federation identity, league, division, stadium, capacity, founded, trophies, squad, fixtures, results, news, stats and follow.</li>
+  <li><b>Player showcase:</b> position, jersey, nationality, height/weight, preferred foot, market value, career stats, season table, timeline, achievements, related players, interview request and message.</li>
+  <li><b>Visual language:</b> pitch-green gradients, gold trophies, animated stat cards and count-up numbers, floating shapes and entrance motion.</li>
+  <li><b>Verified-only sharing:</b> sports profile share is available only when the sports entity is verified.</li>
+</ul>
+
+<h2 id="sharing">14. Verified-only external sharing policy</h2>
+<p>External sharing means copying a public link, invoking the OS share sheet, or otherwise moving MASAREEN content outside the app. It is a <b>verified-content privilege</b>.</p>
+<table>
+  <tr><th>Content</th><th>Share allowed when</th><th>UX when blocked</th></tr>
+  <tr><td>Post</td><td><code>verified_content = author_verified AND confidence ≥ 60</code></td><td>Snackbar: “Only verified content can be shared outside MASAREEN.”</td></tr>
+  <tr><td>Event</td><td>Host-verified activity (<code>activity_verified</code>)</td><td>Same message; share icon remains visible but denied.</td></tr>
+  <tr><td>Booth</td><td>Parent event is host-verified</td><td>Same message.</td></tr>
+  <tr><td>Profile / institution</td><td>Verified account or verified institution profile</td><td>Same message.</td></tr>
+  <tr><td>Podcast show / VOD</td><td><code>verification_status = APPROVED</code></td><td>Same message.</td></tr>
+  <tr><td>Courses / programmes / projects / opportunities</td><td>Approved by platform moderation</td><td>Reserved for next UI pass; API-level policy documented.</td></tr>
+</table>
+<p>The backend independently rejects post shares that are not verified (<code>403 verified_only</code>), so the policy cannot be bypassed by calling the API directly.</p>
+
+<h2 id="operations" class="page-break">15. Admin, analytics, moderation and operations</h2>
+<h3>15.1 Admin surface</h3>
+<ul>
+  <li><b>Users:</b> search, role, verification, suspension, tester flags, deletion and account actions.</li>
+  <li><b>Entity review:</b> courses, events, programmes, projects, opportunities; approve/reject with reasons and fee refunds.</li>
+  <li><b>Moderation:</b> reports, hidden content, post/comment review, Arabic/English hate-speech detection and REVIEW states.</li>
+  <li><b>Commerce:</b> payments, coin transactions, pro subscriptions, Paymob webhooks, ads moderation and campaign metrics.</li>
+  <li><b>Operations center:</b> AI embedding status/backfill, video jobs/requeue, user behavior, Live TV settings.</li>
+  <li><b>Analytics:</b> totals, growth series, SDG distribution, top campaigns/posts/users, CSV exports (users, transactions, reports, impact, analytics).</li>
+  <li><b>Announcements &amp; OTA:</b> targeted popups, Android/iOS update manifest publishing.</li>
+</ul>
+<h3>15.2 Analytics events</h3>
+<p>Feed impressions, post dwell, video watch, feed scroll, profile views, event opens, attendance, booth views/interactions/leads, live TV opens, AI and moderation events. Admin behavior lookup aggregates event mix and recent activity per user.</p>
+<h3>15.3 AI and trust</h3>
+<p>Local-hash embeddings (128 dimensions), semantic search, AI transcription/ingest hooks, moderation status, duplicate/abuse reports, confidence scoring and admin review. The V2.0 roadmap (vision/fraud/graph agents) is explicitly future; the pilot uses human-in-the-loop host verification.</p>
+
+<h2 id="data">16. Data model and API surface</h2>
+<h3>16.1 Core tables (001-031)</h3>
+<div class="two-col">
+  <ul>
+    <li>users, user_profiles, user_settings, follows, blocks, reports</li>
+    <li>posts, post_media, comments, post_likes, bookmarks, post_views, post_impact_votes</li>
+    <li>courses, course_lessons, course_enrollments</li>
+    <li>programs, program_members, tasks, projects, project_members</li>
+    <li>opportunities, opportunity_applications</li>
+    <li>events, event_attendees, event_participants, event_media, event_booths, booth_leads, booth_views, event_ratings, event_rewards</li>
+    <li>podcast_shows, podcast_episodes, vod_videos</li>
+    <li>research_stages, entity_links, institution_profiles</li>
+    <li>submissions, evidence, verification_pipelines, recognition_awards</li>
+    <li>coin_wallets, coin_transactions, payments, pro_subscriptions, daily_claims</li>
+    <li>notifications, device_tokens, messages, conversations</li>
+    <li>sports_teams, sports_profiles, sports_matches, player stats</li>
+    <li>ads, analytics_events, admin_audit, announcements, platform_settings</li>
+  </ul>
+</div>
+<h3>16.2 Representative routes</h3>
+<table>
+  <tr><th>Domain</th><th>Routes</th></tr>
+  <tr><td>Auth/profiles</td><td>/api/v1/users/*, /api/v1/auth/*, /api/v1/personnel/*</td></tr>
+  <tr><td>Social</td><td>/api/v1/posts*, /api/v1/comments*, /api/v1/messages*, /api/v1/notifications*</td></tr>
+  <tr><td>Impact</td><td>/api/v1/impact/posts/:id, /api/v1/submissions*, /api/v1/evidence*, /api/v1/verification*</td></tr>
+  <tr><td>Authenticity</td><td>/api/v1/ai/deepfake/scan, /api/v1/admin/ai/deepfake/scan, /api/v1/admin/ai/status</td></tr>
+  <tr><td>Events</td><td>/api/v1/events*, /api/v1/events/:id/participants*, /api/v1/events/:id/booths, /api/v1/booths/:id/leads, /api/v1/events/:id/dashboard, /api/v1/events/organizers/:id</td></tr>
+  <tr><td>Institutions</td><td>/api/v1/institutions, /api/v1/users/:id/institution, /api/v1/entity-links, /api/v1/research/stages</td></tr>
+  <tr><td>Podcast/VOD</td><td>/api/v1/podcasts, /api/v1/podcasts/:id/episodes, /api/v1/vod, /api/v1/vod/:id</td></tr>
+  <tr><td>Programmes/projects</td><td>/api/v1/programs*, /api/v1/projects*, /api/v1/tasks*</td></tr>
+  <tr><td>Courses/opportunities</td><td>/api/v1/courses*, /api/v1/opportunities*</td></tr>
+  <tr><td>Sports</td><td>/api/v1/sports/*, /api/v1/orgs/*, /api/v1/players/*</td></tr>
+  <tr><td>Commerce</td><td>/api/v1/wallet*, /api/v1/coin*, /api/v1/payments*, /api/v1/ads*</td></tr>
+  <tr><td>Admin</td><td>/api/v1/admin/*</td></tr>
+  <tr><td>Live/OTA</td><td>/live/*, /api/v1/live/tv, /api/app/version</td></tr>
+</table>
+<h3>16.3 Event JSON (detail)</h3>
+<p>Event detail returns: event fields, attendees, participants with role/status/evidence/verifier, media, booths, ratings, reward summary, organizer reputation, programme, projects, research stages, opportunities, podcast episodes, VOD videos, viewer flags (<code>is_owner</code>, <code>can_manage</code>, <code>can_verify</code>, <code>can_create_booth</code>) and the viewer’s participation.</p>
+
+<h2 id="security">17. Security, privacy and PDPL</h2>
+<ul>
+  <li><b>Auth:</b> PBKDF2-SHA256 passwords (100,000 iterations), signed session tokens, secure storage on device, email verification, magic links, Google sign-in.</li>
+  <li><b>Authorization:</b> ownership checks on entities, booths, leads, participants and dashboards; admin-only routes; self-verification blocked.</li>
+  <li><b>Privacy:</b> lead lists private to owner/organizer; profile visibility settings; show-email toggle; message privacy; block/report; data deletion.</li>
+  <li><b>PDPL:</b> explicit consent at registration; de-identified aggregated reports for sponsors; purpose limitation; data minimisation in public JSON; audit logs.</li>
+  <li><b>Integrity:</b> rate limits, upload size limits, moderation, CSV injection protection, atomic wallet operations, idempotent rewards.</li>
+  <li><b>Media:</b> public R2 with controlled upload paths; HLS through edge proxy; no tunnel credentials in the client.</li>
+</ul>
+
+<h2 id="deploy" class="page-break">18. Release, OTA, Android and iOS</h2>
+<h3>18.1 Source version</h3>
+<p>Current source: <b>0.4.11+16</b>. Backend migrations: 001-031. Worker tests: <b>68 passing</b>. Flutter analyzer: clean. Flutter tests: <b>9 passing</b>.</p>
+<h3>18.2 Android</h3>
+<ol>
+  <li>Apply D1 migrations (024, 025, 027, 028, 029, 030) with <code>npm run db:migrate:all</code> or Wrangler.</li>
+  <li>Deploy the Worker with <code>npx wrangler deploy</code>.</li>
+  <li>Build the release APK: <code>flutter build apk --release</code> (signed with the existing keystore).</li>
+  <li>Upload the APK, publish the version manifest via <code>POST /api/v1/admin/ota</code>; the in-app updater downloads and installs it.</li>
+</ol>
+<h3>18.3 iOS / CodeMagic</h3>
+<p>The repository includes <code>codemagic.yaml</code> and an iOS workflow. CodeMagic builds the IPA with the App Store distribution certificate/profile stored in its environment. Because this Windows device cannot run Xcode, iOS compilation runs on CodeMagic’s macOS machines; the resulting IPA is distributed via TestFlight/App Store Connect.</p>
+<h3>18.4 Splash and visual quality</h3>
+<p>Android 12+ uses a transparent system splash icon and a background that exactly matches the Flutter splash; the only visible brand mark is the full MASAREEN logo with the loader. All avatars use initials fallbacks; all network images use error fallbacks; seed media URLs were HTTP-checked.</p>
+
+<h2 id="demo">19. Tomorrow’s demo script and credentials</h2>
+<h3>19.1 Accounts</h3>
+<table>
+  <tr><th>Account</th><th>Email</th><th>Password</th><th>Use</th></tr>
+  <tr><td>TIYE Solutions</td><td><code>tiyesolutions@masareen.com</code></td><td><code>MasareenDemo2026!</code></td><td>Portfolio, ACV 2026/2025, dashboard, booths, leads.</td></tr>
+  <tr><td>ACU</td><td><code>acu@masareen.com</code></td><td><code>MasareenDemo2026!</code></td><td>Host profile, Knowledge to Impact, capstones, research.</td></tr>
+  <tr><td>Admin</td><td>Configured admin email</td><td>Existing admin password</td><td>All dashboards, moderation, analytics, OTA.</td></tr>
+</table>
+<h3>19.2 Ten-minute flow</h3>
+<ol>
+  <li><b>Open Events:</b> show the TIYE × ACU × MASAREEN banner with animated gradient; open ACV 2026.</li>
+  <li><b>Event hub:</b> point to host Al-Ahram, verified badges, contributor roles, programme link, media, booths.</li>
+  <li><b>Booth:</b> open Al-Sultan Fleet Experience; show products, trial price, request a trial; show MRC experience reward.</li>
+  <li><b>Dashboard:</b> open the enterprise dashboard; show verification queue, 4 booths, lead, rewards, reputation.</li>
+  <li><b>Knowledge to Impact:</b> open from the banner; show ACU as host, podcast episodes, capstones, research stage, linked opportunities.</li>
+  <li><b>Podcast/VOD:</b> play an episode; open a VOD replay.</li>
+  <li><b>Institution profile:</b> open ACU profile; show verified reputation, programmes, events, projects, research, podcasts, VOD, linked entities.</li>
+  <li><b>Verified sharing:</b> try sharing an unverified event/booth (blocked), then a verified one (copied).</li>
+  <li><b>Evidence authenticity:</b> open verification or an event contribution, capture a photo + GPS, show the target type/fields and the deepfake/NSFW scan verdict; then show the host verifying it or the override warning.</li>
+  <li><b>Live TV:</b> open MASAREEN Live TV; confirm the channel is live.</li>
+</ol>
+<h3>19.3 Demo URLs</h3>
+<ul>
+  <li>Platform: <code>https://masareen.com</code></li>
+  <li>Live TV: <code>https://masareen.com/live/tv/index.m3u8</code></li>
+  <li>TIYE reference: <code>https://tiyesolutions.com/events-conferences/</code></li>
+</ul>
+
+<h2 id="roadmap">20. Roadmap and KPI targets</h2>
+<table>
+  <tr><th>Horizon</th><th>Scope</th><th>Success measures</th></tr>
+  <tr><td>Day 1–15</td><td>TIYE/ACU scope lock, accounts, event hub, package pricing, booth onboarding.</td><td>One flagship event, host agreement, 25–30 student crew, 50 exhibitor profiles planned.</td></tr>
+  <tr><td>Day 16–60</td><td>Event page live, interactive booths, evidence capture, podcast production, host verification.</td><td>50 verified exhibitor profiles, 6 podcast episodes, 100+ booth interactions, 20+ qualified leads.</td></tr>
+  <tr><td>Day 61–90</td><td>ROI readout, sponsor renewal, academy redemption, reputation/ranking.</td><td>Lead-to-meeting conversion, MRC circulation, renewals, verified event rate.</td></tr>
+  <tr><td>Day 91–180</td><td>ACU expansion, new sectors, AI duplicate/fraud detection, recommendation engine.</td><td>More institutions, cross-sector opportunities, de-identified sponsor intelligence.</td></tr>
+  <tr><td>2027</td><td>V2.0 IIaaS: graph database, event bus, vision/fraud agents, advanced matching.</td><td>Enterprise scale, multi-country, audited impact reporting.</td></tr>
+</table>
+<div class="callout">
+  <b>North-star metric:</b> verified opportunities created per verified activity. Not impressions. Not likes. Verified outcomes.
+</div>
+
+<h2 class="page-break">Appendix A — Glossary</h2>
+<table>
+  <tr><th>Term</th><th>Meaning</th></tr>
+  <tr><td>Activity</td><td>A real event, project, training, research stage, contribution or initiative.</td></tr>
+  <tr><td>Evidence</td><td>A URL, image, report, video, transcript or record that supports an activity claim.</td></tr>
+  <tr><td>Host</td><td>The institution that owns the context and verifies the contributor’s role/evidence.</td></tr>
+  <tr><td>Verified</td><td>A state where evidence has been reviewed by an authorised host/admin and stamped with actor + time.</td></tr>
+  <tr><td>MRC</td><td>Masareen Coin, the internal impact currency.</td></tr>
+  <tr><td>PMS</td><td>Professional Merit Score, a weighted 0–100 quality score.</td></tr>
+  <tr><td>Booth</td><td>An interactive exhibitor space inside an event.</td></tr>
+  <tr><td>Lead</td><td>A quote, trial or contact request submitted to a booth.</td></tr>
+  <tr><td>VOD</td><td>Video on demand: replay, recap, documentary or product demo.</td></tr>
+  <tr><td>Entity link</td><td>A typed relation between two entities (TEACHES, HOSTS, COVERS, PARTNER, etc.).</td></tr>
+</table>
+<h2>Appendix B — Validation evidence</h2>
+<ul>
+  <li>Worker test suite: 68 passing, including non-linear ISA/GPS/paid feed rotation, event hubs, podcasts/VOD, TIYE/ACU seed login, verified-only sharing, booths/leads/MRC, structured evidence targets, deepfake/NSFW blocking and admin operations.</li>
+  <li>Flutter: analyzer clean; 9 tests passing (models, media URL resolution, wallet parsing, GPS, video mute, animations).</li>
+  <li>Seed SQL executed successfully against a fresh SQLite schema: 21 users, 8 events, 31+ participants, 10 booths, 4 leads, 2 podcast shows, 5 episodes, 4 VOD videos, 72 entity links.</li>
+  <li>TIYE media URLs and demo audio/video URLs checked with HTTP HEAD (200).</li>
+  <li>Live HLS verified locally, through <code>media.masareen.com</code>, and through <code>masareen.com/live/tv/index.m3u8</code>.</li>
+  <li>Remote D1 migrations 030 and 031 applied; Worker deployed as version <code>b08d2705-292b-4c46-9d74-a2c4328ee5de</code>. Android <b>0.4.11+16</b> is published in OTA with real TIYE galleries, discovery feed, dark mode and full-screen data entry.</li>
+</ul>
+<div class="footer-note">
+  MASAREEN Complete Platform Guide · Version 0.4.11+16 · 15 November 2026 · masareen.com<br>
+  Confidential pilot documentation prepared for TIYE Solutions and Ahram Canadian University.
+</div>
+</body>
+</html>

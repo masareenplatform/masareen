@@ -1,12 +1,12 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:masaren/api_client.dart';
 import 'package:masaren/l10n.dart';
 import 'package:masaren/models.dart';
+import 'package:masaren/profile_router.dart';
 import 'package:masaren/screens/messages_screen.dart';
 import 'package:masaren/screens/post_detail_screen.dart';
-import 'package:masaren/screens/profile_view_screen.dart';
 import 'package:masaren/widgets.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -132,7 +132,7 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final loc = (String key) => MasarenLocalizations.of(context, key);
+    String loc(String key) => MasarenLocalizations.of(context, key);
     final result = _result;
     return Scaffold(
       appBar: AppBar(
@@ -193,11 +193,11 @@ class _SearchScreenState extends State<SearchScreen> {
                                   icon: const Icon(Icons.chat_bubble_outline),
                                   onPressed: () => _message(u),
                                 ),
-                                onTap: () => Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                        builder: (_) => ProfileViewScreen(
-                                            userId: u.id,
-                                            currentUser: widget.user))),
+                                onTap: () => openUserProfile(context,
+                                    userId: u.id,
+                                    currentUser: widget.user,
+                                    role: u.role,
+                                    name: u.name),
                               )),
                         ],
                         if (result.hashtags.isNotEmpty) ...[
@@ -273,7 +273,9 @@ class _TrendingList extends StatelessWidget {
               ),
               title: Text('#${t.tag}',
                   style: const TextStyle(fontWeight: FontWeight.w700)),
-              subtitle: Text('${t.count} posts'),
+              subtitle: Text(
+                  MasarenLocalizations.of(context, 'search.postsCount')
+                      .replaceAll('{count}', '${t.count}')),
               trailing: const Icon(Icons.north_east, size: 18),
               onTap: () => onTag(t.tag),
             );
@@ -304,7 +306,7 @@ class _PostResult extends StatelessWidget {
               child: Text(post.author.name,
                   style: const TextStyle(fontWeight: FontWeight.w700)),
             ),
-            Text(timeAgo(post.createdAt),
+            Text(timeAgo(post.createdAt, context: context),
                 style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
           ]),
           const SizedBox(height: 8),

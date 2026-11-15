@@ -1,14 +1,20 @@
+﻿
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
-import 'package:video_player/video_player.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:masaren/models.dart';
+import 'package:masaren/l10n.dart';
+import 'package:masaren/widgets/autoplay_video.dart';
+import 'package:masaren/widgets/smart_image.dart';
 
 /// Full-width media attached to a post: a swipeable image gallery or an
-/// inline HLS/MP4 player. Keeps the feed edge-to-edge and caption-aware.
+/// inline video player. Keeps the feed edge-to-edge and caption-aware.
 class PostMediaGallery extends StatefulWidget {
   final List<PostMedia> media;
   final String? videoHlsUrl;
   final String? videoPosterUrl;
+  final String? videoId;
   final ValueChanged<String>? onImageTap;
 
   const PostMediaGallery({
@@ -16,6 +22,7 @@ class PostMediaGallery extends StatefulWidget {
     required this.media,
     this.videoHlsUrl,
     this.videoPosterUrl,
+    this.videoId,
     this.onImageTap,
   });
 
@@ -28,28 +35,35 @@ class _PostMediaGalleryState extends State<PostMediaGallery> {
 
   @override
   Widget build(BuildContext context) {
+    final audio = widget.media.where((m) => m.isAudio && m.url.isNotEmpty).toList();
+    if (audio.isNotEmpty) return _VoiceNotePlayer(media: audio.first);
     final video = widget.media.where((m) => m.isVideo).toList();
     if (video.isNotEmpty) {
       final v = video.first;
-      return PostVideoPlayer(
+      return AutoplayVideo(
+        id: widget.videoId,
         url: widget.videoHlsUrl ?? v.hlsUrl ?? v.url,
         posterUrl: widget.videoPosterUrl ?? v.posterUrl,
       );
     }
     if (widget.videoHlsUrl != null && widget.media.isEmpty) {
-      return PostVideoPlayer(
+      return AutoplayVideo(
+        id: widget.videoId,
         url: widget.videoHlsUrl!,
         posterUrl: widget.videoPosterUrl,
       );
     }
 
-    final images = widget.media.where((m) => !m.isVideo && m.url.isNotEmpty).toList();
+    final images =
+        widget.media.where((m) => !m.isVideo && m.url.isNotEmpty).toList();
     if (images.isEmpty) return const SizedBox.shrink();
 
     if (images.length == 1) {
       return _GalleryImage(
         image: images.first,
-        onTap: widget.onImageTap == null ? null : () => widget.onImageTap!(images.first.url),
+        onTap: widget.onImageTap == null
+            ? null
+            : () => widget.onImageTap!(images.first.url),
       );
     }
 
@@ -63,16 +77,21 @@ class _PostMediaGalleryState extends State<PostMediaGallery> {
             itemCount: images.length,
             onPageChanged: (i) => setState(() => _page = i),
             itemBuilder: (context, i) => GestureDetector(
-              onTap: widget.onImageTap == null ? null : () => widget.onImageTap!(images[i].url),
+              onTap: widget.onImageTap == null
+                  ? null
+                  : () => widget.onImageTap!(images[i].url),
               child: _ImageFill(url: images[i].url),
             ),
           ),
           Positioned(
             top: 10,
             right: 10,
-            child: _Chip(label: '${active + 1}/${images.length}', icon: Icons.photo_library_outlined),
+            child: _Chip(
+                label: '${active + 1}/${images.length}',
+                icon: Icons.photo_library_outlined),
           ),
-          if (images[active].caption != null && images[active].caption!.trim().isNotEmpty)
+          if (images[active].caption != null &&
+              images[active].caption!.trim().isNotEmpty)
             Positioned(
               left: 0,
               right: 0,
@@ -93,7 +112,9 @@ class _PostMediaGalleryState extends State<PostMediaGallery> {
                   width: selected ? 16 : 6,
                   height: 6,
                   decoration: BoxDecoration(
-                    color: selected ? Colors.white : Colors.white.withValues(alpha: 0.55),
+                    color: selected
+                        ? Colors.white
+                        : Colors.white.withValues(alpha: 0.55),
                     borderRadius: BorderRadius.circular(3),
                   ),
                 );
@@ -120,7 +141,11 @@ class _GalleryImage extends StatelessWidget {
         children: [
           GestureDetector(onTap: onTap, child: _ImageFill(url: image.url)),
           if (image.caption != null && image.caption!.trim().isNotEmpty)
-            Positioned(left: 0, right: 0, bottom: 0, child: _Caption(text: image.caption!)),
+            Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: _Caption(text: image.caption!)),
         ],
       ),
     );
@@ -133,33 +158,13 @@ class _ImageFill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Image.network(
-      url,
+    return SmartImage(
+      url: url,
       fit: BoxFit.cover,
-      width: double.infinity,
-      height: double.infinity,
-      loadingBuilder: (context, child, progress) {
-        if (progress == null) return child;
-        return Container(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          alignment: Alignment.center,
-          child: const SizedBox(
-            width: 22,
-            height: 22,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
-        );
-      },
-      errorBuilder: (context, error, stack) => Container(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        alignment: Alignment.center,
-        child: Icon(Icons.broken_image_outlined,
-            color: Theme.of(context).colorScheme.onSurfaceVariant, size: 34),
-      ),
+      fallbackIcon: Icons.broken_image_outlined,
     );
   }
 }
-
 class _Caption extends StatelessWidget {
   final String text;
   const _Caption({required this.text});
@@ -179,7 +184,11 @@ class _Caption extends StatelessWidget {
         text,
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
-        style: const TextStyle(color: Colors.white, fontSize: 13, height: 1.35, fontWeight: FontWeight.w500),
+        style: const TextStyle(
+            color: Colors.white,
+            fontSize: 13,
+            height: 1.35,
+            fontWeight: FontWeight.w500),
       ),
     );
   }
@@ -203,171 +212,328 @@ class _Chip extends StatelessWidget {
         children: [
           Icon(icon, size: 13, color: Colors.white),
           const SizedBox(width: 4),
-          Text(label, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
+          Text(label,
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700)),
         ],
       ),
     );
   }
 }
 
-/// Inline video player that prefers HLS when the backend has finished
-/// transcoding, and falls back to the original MP4/WebM upload until then.
-class PostVideoPlayer extends StatefulWidget {
-  final String url;
-  final String? posterUrl;
-  const PostVideoPlayer({super.key, required this.url, this.posterUrl});
+class PostFilesList extends StatelessWidget {
+  final List<PostFile> files;
+  const PostFilesList({super.key, required this.files});
 
-  @override
-  State<PostVideoPlayer> createState() => _PostVideoPlayerState();
-}
-
-class _PostVideoPlayerState extends State<PostVideoPlayer> {
-  VideoPlayerController? _controller;
-  bool _ready = false;
-  bool _playing = false;
-  bool _muted = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _open();
-  }
-
-  Future<void> _open() async {
-    final controller = VideoPlayerController.networkUrl(Uri.parse(widget.url));
-    _controller = controller;
-    try {
-      await controller.initialize();
-      await controller.setLooping(true);
-      await controller.setVolume(0);
-      if (!mounted) return;
-      setState(() => _ready = true);
-    } catch (_) {
-      if (mounted) setState(() => _ready = false);
+  IconData _iconFor(PostFile file) {
+    final type = (file.contentType ?? '').toLowerCase();
+    final name = file.name.toLowerCase();
+    if (type.contains('pdf') || name.endsWith('.pdf')) {
+      return Icons.picture_as_pdf_outlined;
     }
-  }
-
-  @override
-  void didUpdateWidget(covariant PostVideoPlayer oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.url != widget.url) {
-      _controller?.dispose();
-      _controller = null;
-      _ready = false;
-      _playing = false;
-      _open();
+    if (type.contains('word') ||
+        name.endsWith('.doc') ||
+        name.endsWith('.docx')) {
+      return Icons.description_outlined;
     }
-  }
-
-  @override
-  void dispose() {
-    _controller?.dispose();
-    super.dispose();
-  }
-
-  void _toggle() {
-    final c = _controller;
-    if (c == null || !c.value.isInitialized) return;
-    setState(() {
-      _playing = !_playing;
-      if (_playing) {
-        c.play();
-      } else {
-        c.pause();
-      }
-    });
-  }
-
-  void _toggleMute() {
-    final c = _controller;
-    if (c == null) return;
-    setState(() {
-      _muted = !_muted;
-      c.setVolume(_muted ? 0 : 1);
-    });
+    if (type.contains('sheet') ||
+        name.endsWith('.xls') ||
+        name.endsWith('.xlsx')) {
+      return Icons.table_chart_outlined;
+    }
+    if (type.contains('presentation') ||
+        name.endsWith('.ppt') ||
+        name.endsWith('.pptx')) {
+      return Icons.slideshow_outlined;
+    }
+    if (type.contains('zip') || name.endsWith('.zip')) {
+      return Icons.folder_zip_outlined;
+    }
+    return Icons.attach_file_rounded;
   }
 
   @override
   Widget build(BuildContext context) {
-    final c = _controller;
-    final ratio = _ready && c != null && c.value.isInitialized && c.value.aspectRatio > 0
-        ? c.value.aspectRatio
-        : 16 / 9;
-    final isHls = widget.url.contains('.m3u8');
-
-    return AspectRatio(
-      aspectRatio: ratio.clamp(0.8, 2.2).toDouble(),
-      child: GestureDetector(
-        onTap: _ready ? _toggle : null,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            if (widget.posterUrl != null && (!_ready || !_playing))
-              Image.network(widget.posterUrl!, fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const ColoredBox(color: Colors.black))
-            else
-              const ColoredBox(color: Colors.black),
-            if (_ready && c != null) VideoPlayer(c),
-            if (!_ready)
-              const Center(
-                child: SizedBox(
-                  width: 28,
-                  height: 28,
-                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.4),
+    if (files.isEmpty) return const SizedBox.shrink();
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: files.map((file) {
+          return Material(
+            color: dark ? const Color(0xFF1A2622) : const Color(0xFFF1F4EF),
+            borderRadius: BorderRadius.circular(12),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () async {
+                final uri = Uri.tryParse(file.url);
+                if (uri == null) return;
+                final ok =
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                if (!ok && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text(
+                          MasarenLocalizations.of(context, 'common.failed')
+                              .replaceAll('{error}', file.url))));
+                }
+              },
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 260),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color: dark
+                          ? const Color(0xFF2E3B36)
+                          : const Color(0xFFDDE5DE)),
                 ),
-              ),
-            if (_ready && !_playing)
-              Center(
-                child: Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.52),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
-                  ),
-                  child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 38),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(_iconFor(file), size: 18, color: cs.primary),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            file.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                                color: cs.onSurface,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600),
+                          ),
+                          if (file.sizeLabel.isNotEmpty)
+                            Text(
+                              file.sizeLabel,
+                              style: TextStyle(
+                                  color: cs.onSurfaceVariant, fontSize: 10),
+                            ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Icon(Icons.download_rounded,
+                        size: 16, color: cs.onSurfaceVariant),
+                  ],
                 ),
-              ),
-            Positioned(
-              top: 10,
-              left: 10,
-              child: _Chip(
-                label: isHls ? 'HLS' : 'Video',
-                icon: isHls ? Icons.hd_outlined : Icons.videocam_outlined,
               ),
             ),
-            if (_ready)
-              Positioned(
-                top: 6,
-                right: 6,
-                child: IconButton(
-                  onPressed: _toggleMute,
-                  icon: Icon(_muted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
-                      color: Colors.white, size: 19),
-                  style: IconButton.styleFrom(
-                    backgroundColor: Colors.black.withValues(alpha: 0.45),
-                    minimumSize: const Size(32, 32),
-                    padding: EdgeInsets.zero,
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+class PostLinkCard extends StatelessWidget {
+  final String url;
+  const PostLinkCard({super.key, required this.url});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final uri = Uri.tryParse(url);
+    final host = uri?.host.replaceFirst('www.', '');
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+      child: Material(
+        color: dark ? const Color(0xFF1A2622) : const Color(0xFFF1F4EF),
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () async {
+            if (uri == null) return;
+            final ok =
+                await launchUrl(uri, mode: LaunchMode.externalApplication);
+            if (!ok && context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text(
+                      MasarenLocalizations.of(context, 'common.failed')
+                          .replaceAll('{error}', url))));
+            }
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                  color:
+                      dark ? const Color(0xFF2E3B36) : const Color(0xFFDDE5DE)),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.link_rounded, size: 18, color: cs.primary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        MasarenLocalizations.of(context, 'post.openLink'),
+                        style: TextStyle(
+                            color: cs.onSurface,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700),
+                      ),
+                      if (host != null && host.isNotEmpty)
+                        Text(
+                          host,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                              color: cs.onSurfaceVariant, fontSize: 10.5),
+                        ),
+                    ],
                   ),
                 ),
-              ),
-            if (_ready && c != null)
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: VideoProgressIndicator(
-                  c,
-                  allowScrubbing: true,
-                  colors: const VideoProgressColors(
-                    playedColor: Colors.white,
-                    bufferedColor: Colors.white38,
-                    backgroundColor: Colors.white12,
-                  ),
-                ),
-              ),
-          ],
+                Icon(Icons.open_in_new_rounded,
+                    size: 16, color: cs.onSurfaceVariant),
+              ],
+            ),
+          ),
         ),
+      ),
+    );
+  }
+}
+
+class _VoiceNotePlayer extends StatefulWidget {
+  final PostMedia media;
+  const _VoiceNotePlayer({required this.media});
+
+  @override
+  State<_VoiceNotePlayer> createState() => _VoiceNotePlayerState();
+}
+
+class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
+  final AudioPlayer _player = AudioPlayer();
+  Duration _position = Duration.zero;
+  Duration _duration = Duration.zero;
+  bool _playing = false;
+  bool _ready = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _player.onDurationChanged.listen((d) {
+      if (mounted) setState(() => _duration = d);
+    });
+    _player.onPositionChanged.listen((p) {
+      if (mounted) setState(() => _position = p);
+    });
+    _player.onPlayerComplete.listen((_) {
+      if (mounted) {
+        setState(() {
+          _playing = false;
+          _position = Duration.zero;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _player.dispose();
+    super.dispose();
+  }
+
+  Future<void> _toggle() async {
+    if (_playing) {
+      await _player.pause();
+      if (mounted) setState(() => _playing = false);
+      return;
+    }
+    setState(() => _playing = true);
+    try {
+      if (!_ready) {
+        await _player.setSourceUrl(widget.media.url);
+        _ready = true;
+      }
+      await _player.resume();
+    } catch (_) {
+      if (mounted) setState(() => _playing = false);
+    }
+  }
+
+  String _fmt(Duration d) {
+    final minutes = d.inMinutes;
+    final seconds = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return '$minutes:$seconds';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final total = _duration.inMilliseconds <= 0 ? 1 : _duration.inMilliseconds;
+    final progress =
+        (_position.inMilliseconds / total).clamp(0.0, 1.0).toDouble();
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: cs.primary.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: cs.primary.withValues(alpha: 0.22)),
+      ),
+      child: Row(
+        children: [
+          InkWell(
+            onTap: _toggle,
+            borderRadius: BorderRadius.circular(999),
+            child: Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                  color: cs.primary, shape: BoxShape.circle),
+              child: Icon(
+                  _playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                  color: cs.onPrimary,
+                  size: 26),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('Voice note',
+                    style: TextStyle(
+                        fontSize: 12.5, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 6),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    minHeight: 4,
+                    backgroundColor: cs.primary.withValues(alpha: 0.15),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          Text(
+              _duration.inMilliseconds > 0
+                  ? '${_fmt(_position)} / ${_fmt(_duration)}'
+                  : _fmt(_position),
+              style: TextStyle(
+                  color: cs.onSurfaceVariant,
+                  fontSize: 10.5,
+                  fontFeatures: const [FontFeature.tabularFigures()])),
+        ],
       ),
     );
   }

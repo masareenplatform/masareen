@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:masaren/l10n.dart';
 import 'package:masaren/theme.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -16,26 +17,26 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final _pages = const [
     _OnboardPageData(
       icon: Icons.shield_outlined,
-      title: 'Verify, Don\'t Trust',
-      subtitle: 'Every claim goes through AI + human verification. Your impact is cryptographically backed, not self-reported.',
+      titleKey: 'onboarding.verifyTitle',
+      subtitleKey: 'onboarding.verifySubtitle',
       gradient: [Color(0xFF1A73E8), Color(0xFF4285F4)],
     ),
     _OnboardPageData(
       icon: Icons.route,
-      title: 'Two Paths to Impact',
-      subtitle: 'Path A, Market your skills through opportunities. Path B, Execute field work and capture verified evidence.',
+      titleKey: 'onboarding.pathsTitle',
+      subtitleKey: 'onboarding.pathsSubtitle',
       gradient: [Color(0xFF34A853), Color(0xFF0F9D58)],
     ),
     _OnboardPageData(
       icon: Icons.token,
-      title: 'Earn MASAREEN Coin',
-      subtitle: 'Every verified outcome earns MRC tokens. Build your reputation score (PMS) and unlock exclusive opportunities.',
+      titleKey: 'onboarding.coinTitle',
+      subtitleKey: 'onboarding.coinSubtitle',
       gradient: [Color(0xFFF4B400), Color(0xFFE37400)],
     ),
     _OnboardPageData(
       icon: Icons.public,
-      title: 'Impact is Portable',
-      subtitle: 'Your portfolio, reputation, and evidence travel with you across institutions and borders. Own your impact story.',
+      titleKey: 'onboarding.portableTitle',
+      subtitleKey: 'onboarding.portableSubtitle',
       gradient: [Color(0xFFEA4335), Color(0xFFD33426)],
     ),
   ];
@@ -68,7 +69,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               alignment: Alignment.topRight,
               child: TextButton(
                 onPressed: widget.onComplete,
-                child: Text('Skip', style: TextStyle(color: cs.onSurfaceVariant)),
+                child: Text(MasarenLocalizations.of(context, 'onboarding.skip'),
+                    style: TextStyle(color: cs.onSurfaceVariant)),
               ),
             ),
             Expanded(
@@ -93,7 +95,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           child: Icon(p.icon, color: Colors.white, size: 56),
                         ),
                         const SizedBox(height: 40),
-                        Text(p.title,
+                        Text(MasarenLocalizations.of(context, p.titleKey),
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 26,
@@ -101,7 +103,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               color: cs.onSurface,
                             )),
                         const SizedBox(height: 16),
-                        Text(p.subtitle,
+                        Text(MasarenLocalizations.of(context, p.subtitleKey),
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 15,
@@ -160,13 +162,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
 class _OnboardPageData {
   final IconData icon;
-  final String title;
-  final String subtitle;
+  final String titleKey;
+  final String subtitleKey;
   final List<Color> gradient;
   const _OnboardPageData({
     required this.icon,
-    required this.title,
-    required this.subtitle,
+    required this.titleKey,
+    required this.subtitleKey,
     required this.gradient,
   });
 }

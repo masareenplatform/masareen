@@ -1,0 +1,713 @@
+﻿MASAREEN PLATFORM GUIDE
+=======================
+
+Last updated: 2026-10-30
+Production site: https://masareen.com
+Mobile app: MASAREEN (Flutter)
+Backend: Cloudflare Worker + D1 + R2
+
+1. WHAT MASAREEN IS
+-------------------
+MASAREEN is an impact and professional network for verified public work. It
+combines a social feed, professional profiles, programs and projects, learning
+courses, opportunities, field evidence, sports organisations, messaging,
+notifications, a coin wallet, paid plans, and an ads manager.
+
+The platform is Arabic-first and bilingual (English/Arabic). The mobile client
+is the primary product; the landing site is static and served from R2. All API
+traffic is served by one Cloudflare Worker under /api/*.
+
+2. REPOSITORY MAP
+-----------------
+apps/mobile/                 Flutter application
+  lib/api_client.dart        Typed API client for every mobile feature
+  lib/models.dart            Shared mobile models
+  lib/l10n.dart              English/Arabic localization maps
+  lib/screens/               Feature screens
+  lib/services/              Polling, notifications and live sync
+  android/                   Generated Android project
+  ios/                       Generated iOS project (git-ignored)
+  tool/patch_android.py      Re-applies Android configuration in CI
+  tool/patch_ios.py          Re-applies iOS configuration in CI
+
+cloudflare/                  Worker API
+  src/index.js               Router entry point
+  src/social.js              Main domain logic and routes
+  src/ads.js                 Ads manager logic (where split out)
+  schema.sql                 Canonical full schema for local/test databases
+  migrations/                Ordered production migrations 001-031
+  test/                      Node test runner suites
+  wrangler.toml              Worker, D1 and R2 bindings
+
+landing/                     Static landing site served from R2
+  index.html                 Bilingual marketing site + sign-up + contact
+  admin.html                 CEO dashboard
+  mobile-auth.html           Mobile Google sign-in handoff
+  privacy.html               Privacy policy (store-ready)
+  terms.html                 Terms of use (store-ready)
+docs/                        Platform and product documentation
+.github/workflows/           Android, iOS, web and Worker CI
+analytics/                   Analytics assets
+infrastructure/              Infrastructure notes and deployment assets
+ip-legal/                    Patents, trademarks, copyright and notices
+logo/                        Brand and store image assets
+testing/                     Maestro E2E suites and test account matrix
+
+3. ARCHITECTURE
+---------------
+Client
+  Flutter mobile app and static landing page.
+
+Edge API
+  Cloudflare Worker named "masareen".
+  Routes: masareen.com/api/* and www.masareen.com/api/*.
+  The same Worker handles auth, social, professional, commerce, ads and admin.
+
+Storage
+  D1 database "masareen" for all relational data.
+  R2 bucket "masareen-landing" for media and the static site.
+  Media is public through the masareen.com custom domain under /media/*.
+
+Email
+  Resend for verification, password reset, contact messages and notifications.
+  MAIL_FROM uses the verified notify.masareen.com domain.
+
+No Durable Objects and no external queue are required. Near-real-time behaviour
+is implemented with short polling plus an 8-second live interaction endpoint.
+
+4. ENVIRONMENTS
+---------------
+Production
+  Worker: masareen
+  Worker version at time of writing: 198255ee-0590-438c-b40b-0617aa5e2169
+  D1: masareen (a14a1b7c-a93e-4030-b58a-eaa908e61e37)
+  R2: masareen-landing
+  Health: https://masareen.com/api/health
+
+Local Worker
+  npx wrangler dev
+  Uses the local D1 database by default.
+
+Local mobile
+  flutter pub get
+  flutter run
+  API base URL is selected in lib/api_client.dart or supplied with
+  --dart-define=API_BASE_URL=...
+
+5. LOCAL DEVELOPMENT
+--------------------
+Backend:
+  cd cloudflare
+  npm install
+  npx wrangler d1 execute masareen --local --file schema.sql
+  npx wrangler dev
+  npm test
+
+Mobile:
+  cd apps/mobile
+  flutter pub get
+  flutter analyze --no-pub
+  flutter run
+
+Do not use `dart analyze --no-pub` for this project; use `flutter analyze`.
+
+6. CONFIGURATION AND SECRETS
+----------------------------
+Non-secret values live in cloudflare/wrangler.toml:
+  GOOGLE_CLIENT_ID
+  ADMIN_EMAILS
+  ALLOWED_ORIGINS
+  COOKIE_DOMAIN
+  MAIL_FROM
+  CONTACT_TO
+  MAIL_REPLY_TO
+  CONTACT_COPY_USER
+
+Secrets must be set with `npx wrangler secret put NAME` and must never be
+committed:
+  SESSION_SECRET
+  GOOGLE_CLIENT_SECRET
+  RESEND_API_KEY
+  PAYMOB_API_KEY
+  PAYMOB_INTEGRATION_ID
+  PAYMOB_IFRAME_ID
+  PAYMOB_HMAC_SECRET
+
+The mobile app has no private server secrets. Its API base URL is public.
+
+7. DATABASE AND MIGRATIONS
+--------------------------
+schema.sql is the canonical schema for local and test databases.
+Production changes are applied as ordered files in cloudflare/migrations/.
+
+Rules:
+  - Never edit an already-applied migration.
+  - Add the next numbered migration.
+  - Update schema.sql in the same change.
+  - Run the Worker test suite after schema changes.
+  - Apply with:
+      npx wrangler d1 execute masareen --remote --file migrations/NNN-name.sql
+
+Latest migrations:
+  022-announcements-lesson-media.sql
+    announcements + dismissals, rich course lesson media/files/links
+  023-admin-analytics-ai-leaderboards.sql
+    analytics_events, admin audit and leaderboard review support
+  024-entity-connections-research.sql
+    events.funding_goal, events.funding_raised
+    projects.project_type, institution_id, academic_year, student_names, supervisor
+    entity_links table + source/target indexes
+    research_stages table + researcher/institution indexes
+
+Source schema is at migrations 001-031. Apply all pending migrations before
+deploying the event, podcast and VOD Worker routes:
+  025-event-hub-tiye-acu.sql
+    event participants/evidence, event media, booths, leads, views, ratings, rewards
+    events.program_id/event_type/source_url/activity verification
+  027-podcast-vod.sql
+    podcast_shows, podcast_episodes, vod_videos
+  029-nonlinear-impact-feed.sql`n    ISA v2 columns, GPS/location claim, paid boost columns and feed indexes`n  028-tiye-acu-demo-seed.sql
+    TIYE portfolio + ACU Knowledge to Impact demo ecosystem
+
+Apply with:
+  npm run db:migrate:all
+If D1 was managed manually before Wrangler tracking existed, baseline 001-023
+once in d1_migrations, then apply 024-030 (027 podcast/VOD must precede 028 seed; 030 adds deepfake/evidence fields).
+
+8. AUTHENTICATION AND SESSIONS
+------------------------------
+Supported sign-in:
+  - Email and password
+  - Google Sign-In
+  - Session cookie for browser clients
+  - Bearer access token for mobile clients
+
+Flows:
+  - Email registration with verification token
+  - Login and logout
+  - Password reset by email
+  - Google ID token verification
+  - Session rotation and tamper detection
+
+Admin access is controlled by ADMIN_EMAILS. Admin routes return 401 when the
+caller is not signed in and 403 when the caller is signed in but not an admin.
+
+9. CORE DOMAINS
+---------------
+9.1 Social feed
+  Posts support text, media galleries, video, files, links, location, kind,
+  SDG tag, impact value and visibility.
+  Actions: like, comment, share, bookmark, hide, report, vote on impact.
+  Feed modes: for_you, following, latest, impact.
+  Ranking is deterministic: score, then created_at, then id.
+  Pagination does not wrap. An offset at or beyond the end returns an empty
+  list. Clients should stop loading when the returned page is shorter than the
+  requested limit.
+
+9.2 Impact and confidence
+  Post impact is recomputed after likes, comments, shares, unlikes and comment
+  deletion.
+  Confidence is derived from vote count, author verification and engagement:
+    clamp(40 + min(30, votes * 6) + (verified ? 16 : 0)
+          + min(12, engagement * 12), 5, 99)
+  The previous confidence value is not fed back into the calculation, avoiding
+  a self-reinforcing score.
+
+9.3 Professional profiles
+  Personnel profiles support:
+    headline, summary, mission, beat, expertise, specializations, skills,
+    languages, education, experience, certificates, awards, publications,
+    memberships, employment status, availability, website, social links,
+    coverage regions, coverage hours and visibility.
+  Visibility values: PUBLIC, CONNECTIONS, PRIVATE.
+  Users can edit their own profile; admins can edit any profile.
+  Profiles aggregate impact, trust, reach, engagement, media value, badges and
+  the Professional Merit Score (PMS).
+
+9.4 Programs, projects and courses
+  Programs contain tasks and linked projects. Users can enroll and complete
+  tasks. Projects support membership. Courses support enrollment and progress.
+  Completion feeds verification and professional scoring.
+
+9.5 Opportunities
+  Organisations publish opportunities with type, location, deadline and tags.
+  Members apply once per opportunity. Matching notifications are deduplicated.
+
+9.6 Verification and evidence
+  Evidence records attach proof to reports and submissions. Submission review
+  moves work through verification states. Verified work contributes to the
+  impact passport and professional score.
+
+9.7 Sports
+  Sports organisations, squads, results, player careers and showcases are
+  supported through dedicated tables and routes.
+
+9.8 Messaging and notifications
+  Conversations support direct messages, unread counts, blocking and reporting.
+  Notifications cover social actions, follows, messages, opportunities,
+  reports and system events.
+  In-app polling:
+    conversations list: 15 seconds
+    open chat thread: 5 seconds
+    notification polling: 15 seconds
+    live post counters: 8 seconds
+
+9.9 Live interactions and presence
+  GET /api/v1/live/interactions?post_ids=1,2,3
+  Auth required. Maximum 60 post IDs.
+  Returns:
+    posts[] with likes, comments, shares, impact_value, confidence_score,
+    latest_comment_id, liked_by_me and bookmarked_by_me
+    unread_messages
+    unread_notifications
+    server_time
+
+  The mobile LiveSyncService watches visible feed posts and the open post
+  detail screen. It polls every 8 seconds, pauses when the app is not resumed,
+  and ignores empty watch sets. Message and notification counts are returned by
+  the same endpoint.
+
+  Authenticated requests update users.last_active_at at most once every five
+  minutes. Admin DAU/WAU/MAU metrics union login events with last_active_at.
+
+9.10 GPS records
+  POST /api/v1/gps/records
+  GET  /api/v1/gps/records
+  Auth required.
+  POST accepts latitude, longitude and optional accuracy, altitude, speed,
+  heading and captured_at. Coordinates are validated. GET returns the latest
+  100 records for the current user.
+  The mobile post composer records a GPS point when the user attaches a
+  location, in addition to embedding the coordinates in the post.
+  Settings > Privacy > Location history shows the latest 100 points with
+  timestamps and accuracy; tapping a row opens it in the device maps app.
+
+9.11 Wallet, coins and plans
+  Every user has a coin wallet.
+  The daily reward is set by the server (default 10 MRC, one claim per
+  account per day). A client may send an amount for backward compatibility,
+  but the Worker ignores it, so the reward cannot be inflated from the app.
+  Operators can override it with the optional DAILY_REWARD_MRC Worker var
+  (capped at 500). Wallet responses include daily_reward, claimed_today and
+  last_claim_at so clients display the real state.
+  Pro plans:
+    monthly: 500 MRC for 30 days
+    yearly: 4500 MRC for 365 days
+  Coin transfers debit the sender and credit the recipient atomically.
+  The wallet screen supports claiming daily rewards and transferring coins.
+  The server enforces caps even if a client submits a different amount.
+
+9.12 Payments
+  Paymob is integrated for card payments and subscriptions.
+  Until Paymob secrets are configured, /api/v1/payments/psp/status reports
+  enabled=false and production checkout is unavailable.
+  Wallet and coin flows work without Paymob.
+
+9.13 Ads manager
+  Advertisers create campaigns with budget, schedule, targeting and creatives.
+  Limits:
+    minimum budget: 50 MRC
+    maximum budget: 100000 MRC
+    maximum 5 creatives per campaign
+    maximum 3 active or paused campaigns per user
+    daily impression cap: 8 per user
+    campaign frequency cap: 12 hours
+    maximum 3 feed ads per feed session
+  Pricing:
+    impression: 0.2 MRC
+    click: 2 MRC
+  Activation debits the full budget. Budget edits debit or refund the
+  difference. Completing or rejecting a campaign refunds funded minus spent.
+  Events consume reserved budget and auto-complete the campaign when exhausted.
+  The feed excludes the advertiser's own campaigns and enforces frequency caps.
+
+9.14 Admin
+  Admin screens cover users, reports, payments, inquiries, ads, testers and
+  platform analytics.
+  /api/v1/admin/stats returns nested totals, series, top_campaigns,
+  recent_reports, recent_payments, recent_inquiries and recent_users.
+  /api/v1/admin/reports returns an array by default and {items, counts} when
+  called with ?with_counts=1. Count keys are lowercase.
+
+9.15 Universities, research and entity links
+  GET /api/v1/institutions?q=&type= lists universities, government bodies,
+  organisations, media and sports entities with content counts.
+  GET /api/v1/users/:id/institution returns the profile plus linked courses,
+  events (with funding), programs, projects, opportunities and research stages.
+  UNIVERSITY and RESEARCHER are valid user roles alongside INSTITUTION.
+  GET/POST /api/v1/research/stages publishes a stage (IDEA, LITERATURE,
+  METHODOLOGY, FIELDWORK, ANALYSIS, RESULTS, PUBLISHED). Publishing creates a
+  RESEARCH_STAGE feed post, notifies followers and links the stage to its
+  institution. Create is limited to academic/researcher/university roles.
+  GET/POST/DELETE /api/v1/entity-links connects any two entities
+  (user, course, event, program, project, opportunity, research_stage, post)
+  with an ownership-checked relation such as TEACHES, HOSTS or PARTNER.
+  POST /api/v1/events/:id/fund moves MRC from the supporter wallet to the event
+  author and increments funding_raised. Final-year projects set project_type
+  (UNIVERSITY, GRADUATION, RESEARCH, SCHOOL) and institution_id, then appear on
+  that institution's profile.
+  Mobile: Universities screen + drawer entries, Research hub, rich institution
+  profiles with follow, funding, linked content and an owner "Connect content"
+  action.
+
+10. API CONVENTIONS
+-------------------
+Base path: /api/v1
+Content type: application/json
+Auth: session cookie or Authorization: Bearer <token>
+Errors: JSON with an error code and human-readable message
+Pagination: limit and offset, no wrapping
+Time: ISO-8601 UTC strings
+
+Representative route groups:
+  /api/health
+  /api/config
+  /api/auth/*
+  /api/v1/users/*
+  /api/v1/posts/*
+  /api/v1/live/interactions
+  /api/v1/gps/records
+  /api/v1/personnel/*
+  /api/v1/programs/*
+  /api/v1/projects/*
+  /api/v1/courses/*
+  /api/v1/opportunities/*
+  /api/v1/evidence/*
+  /api/v1/submissions/*
+  /api/v1/sports/*
+  /api/v1/messages/*
+  /api/v1/notifications/*
+  /api/v1/wallet/*
+  /api/v1/payments/*
+  /api/v1/ads/*
+  /api/v1/admin/*
+
+11. MOBILE APP
+--------------
+Main navigation: Home, Explore, Create, Courses, Profile.
+
+Navigation shell (2026-10-30):
+  The five destinations live in a persistent floating bottom bar with visible
+  labels and the member's avatar on the Profile item. Each tab owns a nested
+  Navigator, so screens opened inside a tab (messages, wallet, settings,
+  profiles, post detail, ...) keep the bar visible.
+  A sliding end drawer, opened from the menu icon or an edge swipe, contains
+  the full menu: account, platform, finance, administration (admins) and
+  system actions (settings, theme, language, sign out).
+  Back pops the active tab stack first; back on the Home root asks for a second
+  press before exiting.
+Feature screens include feed, post detail, search, messages, notifications,
+professional profile, organisation profiles, government profiles, institution
+profiles, news media profiles, sports profiles, player showcase, programs,
+projects, courses, opportunities, verification, wallet, payments, pro plans,
+ads manager, settings, location history, admin and tester management.
+
+Key services:
+  PollingService          notification polling and local notifications
+  LiveSyncService         visible post counters, unread counts, 8-second poll
+  NotificationService     local notification presentation
+
+Share and export:
+  Profile share copies https://masareen.com/u/{userId}
+  Post share copies https://masareen.com/p/{postId}
+  Professional profile export copies a formatted text summary.
+  These actions use the system clipboard and show a confirmation snackbar.
+
+12. LOCALIZATION
+----------------
+lib/l10n.dart contains one nested map with English and Arabic entries.
+Both locales must have identical key sets.
+Current parity: 1469 keys per locale (verified 2026-10-30).
+
+When adding a string:
+  1. Add the English key.
+  2. Add the Arabic key.
+  3. Keep the same key name and interpolation placeholders.
+  4. Run flutter analyze.
+  5. Verify the key counts remain equal.
+
+13. TESTING
+-----------
+Backend:
+  cd cloudflare
+  npm test
+  Current result: 68 tests passing (auth, social graph, feed modes, professional profiles, programs, opportunities, evidence, sports, messaging, notifications, settings, wallet, coin transfers, server-set daily reward, inquiries, ads, live interactions, GPS, presence, Paymob webhook HMAC/replay/refund, pro payment replay, verification hardening, task ownership, course/project leave, admin operations, universities/research/entity links/event funding, event hubs/booths/leads/MRC, podcasts/VOD, verified-only sharing, TIYE/ACU demo seed, ISA v2/GPS/paid feed rotation, structured evidence targets, deepfake/NSFW blocking, health and config).
+  Coverage includes auth, social graph, feed modes and pagination, professional
+  profiles, programs, opportunities, evidence, sports, messaging, notifications,
+  settings, wallet, coin transfers, inquiries, ads, live interactions, GPS,
+  presence metrics, health and config.
+
+Mobile:
+  cd apps/mobile
+  flutter analyze --no-pub
+  Current result: 0 issues.
+  `flutter test` covers LivePostStats parsing, media URL normalization, Wallet
+  daily-reward state, GpsRecord parsing, CountUpNumber rendering and video mute (9 tests passing).
+  Add widget tests for share helpers and professional profile editing before
+  store release.
+
+Manual checks:
+  - Feed loads and paginates without wrapping.
+  - Like, comment, share and bookmark update counters.
+  - Live counters update within 8 seconds while the feed is open.
+  - Post detail refreshes comments when the latest comment changes.
+  - Conversations refresh every 15 seconds; open chat every 5 seconds.
+  - Profile share copies the correct URL.
+  - Professional export copies readable text.
+  - Professional editor saves all fields and visibility.
+  - GPS capture stores a record and attaches coordinates to the post.
+
+14. BUILD AND RELEASE
+---------------------
+Android:
+  cd apps/mobile
+  flutter build apk --release
+  Output: build/app/outputs/flutter-apk/app-release.apk
+  Rebuilt and published on 2026-10-30 after the full E2E pass:
+    version 0.4.3+8
+    size 98,775,666 bytes (94.20 MB)
+    SHA-256 330273581FDDB8045BC49DA72387FBCA0C5CEE7C9420E455DE1663703D4E0523
+  The build is debug-signed and is not Play Store ready.
+  Live at https://masareen.com/downloads/masareen.apk.
+  The APK is replaced when the android-apk workflow runs (on push to main) or
+  when it is uploaded manually:
+    npx wrangler r2 object put masareen-landing/downloads/masareen.apk \
+      --file masareen.apk --content-type application/vnd.android.package-archive \
+      --cache-control "public, max-age=300" --remote
+
+iOS:
+  The ios/ directory is generated in CI and is git-ignored.
+  Workflow: .github/workflows/ios-ipa.yml
+  It runs flutter create --platforms=ios, applies tool/patch_ios.py, analyzes,
+  builds with --no-codesign and publishes an unsigned IPA.
+  A local Podfile is provided for macOS builds; it sets iOS 13.0 and uses the
+  standard Flutter pod helper.
+  A signed App Store build requires an Apple Developer account, certificates,
+  provisioning profiles and a macOS runner.
+
+Worker:
+  cd cloudflare
+  npx wrangler deploy
+  Verify:
+    https://masareen.com/api/health
+    unauthenticated /api/v1/ads/* and /api/v1/admin/* return 401
+
+OTA UPDATES (outside the stores)
+--------------------------------
+Update manifest:
+  GET /api/app/version is public and returns:
+    android: version, build, url, size, etag, notes
+    ios: version, build, url, notes
+    minimumBuild
+    ota: { provider: "shorebird", appId }
+  Bump APP_ANDROID_VERSION / APP_ANDROID_BUILD / APP_MIN_BUILD in
+  cloudflare/wrangler.toml when the APK is replaced. The android-apk workflow
+  uploads it to R2 at downloads/masareen.apk and can update the vars.
+
+Android (sideloaded APK):
+  The app checks the manifest on launch and from Menu > Check for updates.
+  When a newer build exists it downloads the APK from R2, asks for the
+  "install unknown apps" permission once, and opens the Android installer.
+  Android updates the app in place; data is preserved. The app requests the
+  REQUEST_INSTALL_PACKAGES permission (see tool/patch_android.py).
+
+iOS:
+  Native builds cannot self-install outside the App Store. The app can open the
+  download/TestFlight page. For Dart-only changes, use Shorebird code push:
+    cd apps/mobile
+    npm i -g shorebird
+    shorebird login
+    shorebird init --force        # replaces the placeholder app id
+    shorebird release ios         # signed/TestFlight build
+    shorebird patch ios           # Dart-only OTA patch
+  Android can use the same Shorebird patches instead of, or in addition to,
+  the APK updater. Native/plugin/permission changes always need a new build.
+
+15. OPERATIONS RUNBOOK
+----------------------
+Deploy backend:
+  1. npm test
+  2. Apply any new D1 migration
+  3. npx wrangler deploy
+  4. Check /api/health
+  5. Check one authenticated read and one unauthenticated rejection
+
+Rollback backend:
+  Use the Cloudflare dashboard to redeploy the previous Worker version.
+  D1 migrations are forward-only; write a compensating migration if needed.
+
+Rotate secrets:
+  npx wrangler secret put NAME
+  Redeploy only if the Worker caches configuration at startup.
+
+Inspect D1:
+  npx wrangler d1 execute masareen --remote --command "SELECT ..."
+
+Upload media:
+  Use the Worker upload route. Files are stored in R2 and served under /media/*.
+
+16. SECURITY AND PRIVACY
+------------------------
+  - Passwords are hashed and salted; never log credentials or tokens.
+  - Session cookies are signed and tamper-checked.
+  - CORS allows only configured origins.
+  - Admin routes require an allow-listed email.
+  - Coordinate input is range-validated.
+  - Live interaction requests are authenticated and capped at 60 IDs.
+  - Blocking and reporting are enforced in messaging and feed queries.
+  - Privacy settings control profile visibility, messaging and notifications.
+  - Do not commit secrets, keystores, provisioning profiles or production data.
+
+17. KNOWN LIMITATIONS
+---------------------
+  - Paymob is not configured; real card payments are disabled.
+  - The published APK is debug-signed.
+  - iOS output is unsigned and requires sideloading.
+  - No physical-device QA has been completed for the latest changes.
+  - Live updates use polling, not WebSockets or server push.
+  - Some admin and profile screens contain unused legacy widgets.
+
+18. NEXT STEPS
+--------------
+  1. Add Flutter widget tests for share/export and professional editing.
+  2. Configure Paymob secrets and verify the full payment lifecycle.
+  3. Create a release keystore and produce a Play Store AAB.
+  4. Complete Apple signing and produce a signed IPA.
+  5. Add store screenshots and data-safety disclosures (policy pages exist).
+  6. Run end-to-end QA on physical Android and iOS devices.
+  7. Rebuild and publish the APK and IPA after the current changes.
+
+19. CHANGE LOG FOR THIS PHASE
+-----------------------------
+  - Added live interaction polling with unread counts.
+  - Added authenticated presence tracking and active-user metrics.
+  - Added GPS record storage and mobile capture.
+  - Fixed confidence score feedback loop.
+  - Fixed feed pagination wrapping and added deterministic ordering.
+  - Recompute impact after unlike and comment deletion.
+  - Added profile share links and professional profile export.
+  - Added professional editor fields and visibility control.
+  - Added message and chat polling.
+  - Reduced notification polling to 15 seconds.
+  - Added iOS Podfile and verified CI workflow coverage.
+  - Applied migration 013 and 014 (atomic commerce: daily_claims, tasks.author_id, evidence.task_id) and deployed Worker version 2ce2b58d.
+  - Built and uploaded APK 0.4.2+7 (98,023,890 bytes, ETag 6389caee5c2b317b50ae9a388e37bf18).
+  - Backend tests: 36 passing.
+  - Mobile analyzer: 0 errors; mobile tests: 2 passing.
+  - Firebase Cloud Messaging wired end-to-end: backend FCM v1 dispatcher (src/fcm.js) signs service-account JWTs, sends pushes from notify() and /api/v1/notifications/test-push; mobile NotificationService registers the device token with /api/v1/users/me/device-token, handles background/foreground messages and token refresh.
+  - Codemagic iOS pipeline (codemagic.yaml + tools/codemagic-ios-build.mjs) builds the unsigned IPA on Apple Silicon; GitHub Actions ios-ipa.yml triggers it when CODEMAGIC_API_KEY is set.
+  - Profile/program/verification/payment bug fixes across all screens (see change log).
+
+  Release-readiness pass (2026-10-30):
+  - Daily reward is now server-defined and capped; the client cannot inflate it.
+    Wallet responses expose daily_reward, claimed_today and last_claim_at.
+  - Mobile wallet shows the server reward and blocks a second claim per day.
+  - Added a Location history screen (Settings > Privacy) for the latest 100 GPS
+    points with accuracy and an "Open in Maps" action.
+  - Added bilingual privacy.html and terms.html on the landing site, linked from
+    the footer and uploaded to R2 with the rest of the site.
+  - Synced the remaining repo material into the pack: backend, apps/web,
+    apps/admin, testing, ip-legal, logo, analytics, infrastructure, k8s and the
+    historical notes under docs/archive/repo.
+  - Redesigned the navigation shell: persistent floating bottom bar with
+    labels and the member's avatar, per-tab nested navigators, sliding end
+    drawer, unread badges, haptics and double-back-to-exit.
+  - Rebuilt and published the APK (0.4.2+7, 98,155,330 bytes,
+    SHA-256 2AA406E82D5E50473F7D57C3D1661655C97EC38991F95766A95D5AEE7AAE6E66).
+  - Deployed Worker version 0cb56f65 and uploaded the landing site, privacy and
+    terms pages to R2.
+  - Verified production: /api/health 200, protected routes 401, privacy/terms
+    200, APK 98,155,330 bytes.
+  - End-to-end emulator check: deep-link login, live feed, persistent bar on
+    Messages, Profile tab, and the sliding menu.
+  - Backend tests: 52 passing. Mobile: flutter analyze clean, 9 tests passing.
+  - Localization parity: 1469 keys per locale.
+
+  Full E2E pass on an Android emulator against production (2026-10-30):
+  - Fixed the "Instance of 'CountUpNumber'..." profile stat bug: Dart string
+    interpolation needs ${widget.prefix}, not $widget.prefix. Regression tests
+    were added in test/animations_test.dart.
+  - Fixed status-bar overlap on government, organization, sports, news, player
+    and institution profiles; added a top scrim to the own profile cover.
+  - Uploaded profile photos now survive Google sign-in and app restarts.
+  - Course and opportunity cards open detail screens with enrollment and
+    application tracking, before and after applying.
+  - Daily reward default reduced from 500 to 10 MRC (server-set, capped at 500)
+    so one claim cannot buy a Pro plan. Re-claim is blocked.
+  - Ads Manager hero no longer squeezes the title into one character per line.
+  - Restored the drawer's Arabic label and the course/institution separators.
+  - Publishing a post returns to Home, refreshes the feed and the Profile post
+    count.
+  - Verified: share (copy + counter), like/comment/bookmark, theme and language
+    switches, logout and email/password login, notifications, messages, search,
+    passport, verification, ads manager, Pro plans, location history.
+
+  Engagement and launch release (2026-10-30, v0.4.3+8):
+  - Infinite scrolling fixed for good: the server no longer re-ranks posts
+    using a per-page seen penalty, the client ignores stale responses, advances
+    by the server page size, deduplicates ids and auto-fills short pages.
+    Verified with a 25-post pagination test and on the emulator.
+  - Video now autoplays when at least 60% visible, pauses off-screen, and only
+    one video plays at a time. Mute is global and persisted: unmuting one video
+    keeps every following video unmuted until muted again.
+  - Entity creation is verified and priced. New courses/events/programs/
+    projects/opportunities start as PENDING and are only public after an admin
+    approves them. Owners see a Pending review chip; rejected items refund the
+    fee. Prices: course 50, event 25, program 100, project 75, opportunity 30
+    MRC. Pro members create courses, events and programs for free.
+  - Admin > Entity review shows the pending queue with approve/reject actions.
+  - Daily cron (06:00 UTC) creates one official RECOGNITION post for each member
+    who reaches a new impact milestone (50/100/250/500/1000) and notifies them.
+    Admin trigger: POST /api/v1/admin/recognition/sweep.
+  - Feed post headers show role badges for government, institutions, media,
+    sports, academic, professional and individual authors.
+  - The feed includes impact, CO2, water and coin calculators plus rotating
+    MASAREEN discovery cards that link to verification, passport, wallet,
+    courses, opportunities, Pro and programs.
+  - OTA: GET /api/app/version, an Android in-app APK updater (downloads from R2
+    and opens the installer; data preserved) and Shorebird configuration for
+    Dart-only iOS/Android patches. iOS native builds still require the store or
+    sideloading.
+  - Version 0.4.3+8, APK 98,775,666 bytes, SHA-256 33027358...3D4E0523.
+
+  Community, learning and agent-OTA release (2026-10-31, v0.4.4+9):
+  - Admin access now includes sherif.moh.rashwan@gmail.com in ADMIN_EMAILS.
+  - Inline feed comments: each post returns its two leading comments and the
+    card shows View all N comments, opening the full thread.
+  - Double-tap any post photo/video to like it with a heart burst and haptic
+    feedback. The heart animation is purely visual; the like is idempotent.
+  - Profile posts are vertical, full-width cards with media thumbnails, kind
+    chips, actions and dates (no horizontal strip).
+  - Entity covers and member previews (migration 018): events/programs/
+    opportunities accept cover_url; courses/events/programs/projects return
+    members_preview (stacked avatars) and author avatars.
+  - Course lessons and paid access (migration 021): authors add ordered lessons
+    with content, video URL, duration and preview flags. Paid courses debit the
+    learner and credit the author atomically on first enrollment; preview
+    lessons stay open and locked lessons hide content until enrollment.
+    Enrollment cancellation is blocked for paid courses.
+  - Dedicated full-screen course and event creation forms with cover, SDG,
+    duration/capacity, online/venue and free/paid pricing. Event announcements
+    automatically publish a feed post when the event is approved (or immediately
+    for admins/test mode); approval also announces pending events.
+  - Voice notes: POST /api/v1/media/audio (M4A/MP3/AAC/OGG/WAV/WEBM, 25 MB),
+    inline feed playback with progress, and a Voice note picker in the composer.
+    Podcast episodes use the same audio pipeline.
+  - Feedback (migration 019): any signed-in member can send idea/bug/feature/
+    praise with a 1-5 rating from the drawer. Admins review it from Admin >
+    Feedback and set OPEN/REVIEWED/CLOSED; admins are notified in-app/push.
+  - Agent-ready OTA (migration 020): platform_settings stores release values.
+    Admins use Admin > App updates or POST /api/v1/admin/ota with
+    {platform,version,build,url,notes,force}; GET /api/app/version reads those
+    settings and falls back to Worker vars. Force updates cannot be dismissed.
+  - OTA verified end to end on the emulator: prompt for 0.4.4 build 10,
+    download from R2, Android package installer update, app reopened. The live
+    manifest was then set back to build 9.
+  - Version 0.4.4+9, APK 99,350,022 bytes, SHA-256
+    A848646781192DC158620F09D252CA60B0D6AE0C738C5F880C5E5399C110B5D5.
+  - Live/VOD tooling in tools/media: mediaMTX RTMP/HLS + Cloudflare tunnel for
+    live, and NVENC multi-bitrate HLS to R2 for VOD. See tools/media/README.md.
+  - Worker deployed e906f290-9544-4a51-9464-29d39e8006e6; migrations 018-021
+    applied; 57 Worker tests and 9 Flutter tests passing.
+
+END OF GUIDE

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:masaren/api_client.dart';
+import 'package:masaren/l10n.dart';
 import 'package:masaren/models.dart';
 import 'package:masaren/theme.dart';
 import 'package:masaren/widgets.dart';
 import 'package:masaren/screens/interview_screen.dart';
 import 'package:masaren/screens/player_showcase_screen.dart';
 import 'package:masaren/widgets/animations.dart';
+import 'package:masaren/profile_ui.dart';
 
 const Color _greenField = Color(0xFF1B5E20);
 const Color _greenPitch = Color(0xFF2E7D32);
@@ -36,18 +38,18 @@ class _SportsProfileScreenState extends State<SportsProfileScreen>
 
   // ── tabs ──────────────────────────────────────────────────────────────
   late TabController _tabCtrl;
-  static const _tabs = [
-    'Squad',
-    'Fixtures',
-    'Results',
-    'News',
-    'About',
+  static const _tabKeys = [
+    'sports.squad',
+    'sports.fixtures',
+    'sports.results',
+    'sports.news',
+    'institution.about',
   ];
 
   @override
   void initState() {
     super.initState();
-    _tabCtrl = TabController(length: _tabs.length, vsync: this);
+    _tabCtrl = TabController(length: _tabKeys.length, vsync: this);
     _load();
   }
 
@@ -65,8 +67,8 @@ class _SportsProfileScreenState extends State<SportsProfileScreen>
       final squadRes = await api.get('/api/v1/orgs/${widget.orgId}/squad');
       final fixRes = await api.get('/api/v1/orgs/${widget.orgId}/fixtures');
       final resRes = await api.get('/api/v1/orgs/${widget.orgId}/results');
-      final newsRes = await api.get('/api/v1/posts',
-          {'author_id': widget.orgId, 'limit': 20});
+      final newsRes = await api
+          .get('/api/v1/posts', {'author_id': widget.orgId, 'limit': 20});
       if (mounted) {
         setState(() {
           _org = orgData as Map<String, dynamic>;
@@ -92,13 +94,15 @@ class _SportsProfileScreenState extends State<SportsProfileScreen>
       await api.post('/api/v1/orgs/${widget.orgId}/follow');
       if (mounted) {
         setState(() => _following = !_following);
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(_following ? 'Following' : 'Unfollowed')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(MasarenLocalizations.of(context,
+                _following ? 'action.following' : 'profile.unfollowed'))));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Failed: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(MasarenLocalizations.of(context, 'common.failed')
+                .replaceAll('{error}', '$e'))));
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -106,7 +110,8 @@ class _SportsProfileScreenState extends State<SportsProfileScreen>
   }
 
   void _scheduleInterview() {
-    final roomId = 'match-${widget.orgId}-${DateTime.now().millisecondsSinceEpoch}';
+    final roomId =
+        'match-${widget.orgId}-${DateTime.now().millisecondsSinceEpoch}';
     Navigator.of(context).push(MaterialPageRoute(
       builder: (_) => InterviewScreen(
         roomId: roomId,
@@ -117,11 +122,12 @@ class _SportsProfileScreenState extends State<SportsProfileScreen>
   }
 
   // ── helpers ───────────────────────────────────────────────────────────
-  String _str(dynamic v, [String fallback = '']) =>
-      v?.toString() ?? fallback;
+  String _str(dynamic v, [String fallback = '']) => v?.toString() ?? fallback;
   String _num(dynamic v, [String fallback = '0']) {
     if (v == null) return fallback;
-    if (v is num) return v % 1 == 0 ? v.toInt().toString() : v.toStringAsFixed(1);
+    if (v is num) {
+      return v % 1 == 0 ? v.toInt().toString() : v.toStringAsFixed(1);
+    }
     return v.toString();
   }
 
@@ -149,7 +155,8 @@ class _SportsProfileScreenState extends State<SportsProfileScreen>
     if (_error != null || _org == null) {
       return Scaffold(
         appBar: AppBar(),
-        body: ErrorView(message: _error ?? 'Team not found', onRetry: () => _load()),
+        body: ErrorView(
+            message: _error ?? 'Team not found', onRetry: () => _load()),
       );
     }
 
@@ -159,186 +166,75 @@ class _SportsProfileScreenState extends State<SportsProfileScreen>
     return Scaffold(
       body: Stack(
         children: [
-          Positioned.fill(child: FloatingShapes(shapeCount: 4, baseColor: const Color(0xFF2E7D32))),
+          const Positioned.fill(
+              child:
+                  FloatingShapes(shapeCount: 4, baseColor: Color(0xFF2E7D32))),
           CustomScrollView(
-        slivers: [
-          _buildHeroHeader(cs, dark, org),
-          SliverToBoxAdapter(child: _buildStatsBar(cs, dark)),
-          SliverToBoxAdapter(child: _buildActions(cs)),
-          SliverToBoxAdapter(child: _buildTabBar(cs, dark)),
-          SliverToBoxAdapter(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 250),
-              child: _buildTabContent(cs, dark, org),
-            ),
+            slivers: [
+              SliverToBoxAdapter(
+                  child: SizedBox(height: MediaQuery.paddingOf(context).top)),
+              _buildHeroHeader(cs, dark, org),
+              SliverToBoxAdapter(child: _buildStatsBar(cs, dark)),
+              SliverToBoxAdapter(child: _buildActions(cs)),
+              SliverToBoxAdapter(child: _buildTabBar(cs, dark)),
+              SliverToBoxAdapter(
+                child: AnimatedBuilder(
+                  animation: _tabCtrl,
+                  builder: (context, _) => AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 250),
+                    transitionBuilder: (child, animation) =>
+                        FadeTransition(opacity: animation, child: child),
+                    child: KeyedSubtree(
+                      key: ValueKey(_tabCtrl.index),
+                      child: _buildTabContent(cs, dark, org),
+                    ),
+                  ),
+                ),
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 32)),
+            ],
           ),
-          const SliverToBoxAdapter(child: SizedBox(height: 32)),
         ],
       ),
-    ],
-  ),
     );
   }
 
   // ── Hero Header ───────────────────────────────────────────────────────
   Widget _buildHeroHeader(ColorScheme cs, bool dark, Map<String, dynamic> org) {
-    return SliverAppBar(
-      expandedHeight: 260,
-      pinned: true,
-      stretch: true,
-      backgroundColor: _greenField,
-      flexibleSpace: FlexibleSpaceBar(
-        background: Stack(
-          fit: StackFit.expand,
-          children: [
-            // Stadium gradient background
-            Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [_greenField, _greenPitch, Color(0xFF388E3C)],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-              ),
-            ),
-            // Pattern overlay (grass stripes)
-            Positioned.fill(
-              child: Opacity(
-                opacity: 0.08,
-                child: CustomPaint(painter: _GrassPatternPainter()),
-              ),
-            ),
-            // Dark gradient overlay
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.black.withValues(alpha: 0.3),
-                    Colors.black.withValues(alpha: 0.7),
-                  ],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-              ),
-            ),
-            // Team info
-            Positioned(
-              left: 20,
-              right: 20,
-              bottom: 20,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      // Team badge
-                      Container(
-                        width: 72,
-                        height: 72,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: cs.surface,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.3),
-                              blurRadius: 12,
-                            ),
-                          ],
-                        ),
-                        child: org['logo_url'] != null
-                            ? ClipOval(
-                                child: Image.network(
-                                  org['logo_url'],
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => Icon(
-                                    Icons.sports_soccer,
-                                    size: 36,
-                                    color: _greenPitch,
-                                  ),
-                                ),
-                              )
-                            : Icon(
-                                Icons.sports_soccer,
-                                size: 36,
-                                color: _greenPitch,
-                              ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _str(org['name'], 'Unknown Team'),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 22,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Row(
-                              children: [
-                                if (org['league'] != null)
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 3),
-                                    decoration: BoxDecoration(
-                                      color: _gold.withValues(alpha: 0.2),
-                                      borderRadius: BorderRadius.circular(6),
-                                      border: Border.all(
-                                          color: _gold.withValues(alpha: 0.5)),
-                                    ),
-                                    child: Text(
-                                      _str(org['league']),
-                                      style: const TextStyle(
-                                        color: _gold,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  ),
-                                const SizedBox(width: 6),
-                                if (org['division'] != null)
-                                  Text(
-                                    _str(org['division']),
-                                    style: const TextStyle(
-                                      color: Colors.white60,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
+    final league = _str(org['league'], 'Sports');
+    final city = _str(org['city'], 'Egypt');
+    return SliverToBoxAdapter(
+      child: FadeSlideIn(
+        child: ProfileHero(
+          title: _str(org['name'], 'Unknown Team'),
+          subtitle: '$league  ·  $city',
+          kind: 'sports',
+          icon: Icons.shield_outlined,
+          imageUrl: org['logo_url']?.toString(),
+          coverUrl: org['cover_url']?.toString(),
+          badge: ProfilePill(
+              label: league,
+              icon: Icons.emoji_events_outlined,
+              color: ProfileColors.gold),
+          onShare: () => copyProfileLink(context, widget.orgId,
+              MasarenLocalizations.of(context, 'profile.linkCopied'),
+              verified: _org?['verified'] == true),
         ),
       ),
-      actions: [
-        _HeaderAction(
-          icon: Icons.share_outlined,
-          onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Team link copied'))),
-        ),
-      ],
     );
   }
 
   // ── Stats Bar ─────────────────────────────────────────────────────────
   Widget _buildStatsBar(ColorScheme cs, bool dark) {
     final items = [
-      _StatItem('W', _num(_stats['wins']), AppColors.accent),
-      _StatItem('D', _num(_stats['draws']), AppColors.amber),
-      _StatItem('L', _num(_stats['losses']), AppColors.warm),
-      _StatItem('PTS', _num(_stats['points']), cs.primary),
+      _StatItem(MasarenLocalizations.of(context, 'sports.wins'),
+          _num(_stats['wins']), AppColors.accent),
+      _StatItem(MasarenLocalizations.of(context, 'sports.draws'),
+          _num(_stats['draws']), AppColors.amber),
+      _StatItem(MasarenLocalizations.of(context, 'sports.losses'),
+          _num(_stats['losses']), AppColors.warm),
+      _StatItem(MasarenLocalizations.of(context, 'sports.points'),
+          _num(_stats['points']), cs.primary),
     ];
     return Container(
       margin: const EdgeInsets.fromLTRB(14, 12, 14, 4),
@@ -393,10 +289,13 @@ class _SportsProfileScreenState extends State<SportsProfileScreen>
               child: FilledButton.icon(
                 onPressed: _busy ? null : _follow,
                 icon: Icon(
-                  _following ? Icons.check_circle_outline : Icons.person_add_outlined,
+                  _following
+                      ? Icons.check_circle_outline
+                      : Icons.person_add_outlined,
                   size: 18,
                 ),
-                label: Text(_following ? 'Following' : 'Follow'),
+                label: Text(MasarenLocalizations.of(context,
+                    _following ? 'action.following' : 'action.follow')),
                 style: FilledButton.styleFrom(
                   backgroundColor: _following ? AppColors.accent : cs.primary,
                   shape: RoundedRectangleBorder(
@@ -412,7 +311,8 @@ class _SportsProfileScreenState extends State<SportsProfileScreen>
               child: OutlinedButton.icon(
                 onPressed: _scheduleInterview,
                 icon: const Icon(Icons.videocam_outlined, size: 18),
-                label: const Text('Match Interview'),
+                label: Text(
+                    MasarenLocalizations.of(context, 'sports.matchInterview')),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: _greenPitch,
                   side: const BorderSide(color: _greenPitch),
@@ -427,8 +327,9 @@ class _SportsProfileScreenState extends State<SportsProfileScreen>
             height: 42,
             width: 42,
             child: OutlinedButton(
-              onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Profile link copied'))),
+              onPressed: () => copyProfileLink(context, widget.orgId,
+                  MasarenLocalizations.of(context, 'profile.linkCopied'),
+                  verified: _org?['verified'] == true),
               style: OutlinedButton.styleFrom(
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
@@ -447,7 +348,9 @@ class _SportsProfileScreenState extends State<SportsProfileScreen>
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: dark ? AppColors.darkSurface2.withValues(alpha: 0.6) : cs.surfaceContainerLow.withValues(alpha: 0.6),
+        color: dark
+            ? AppColors.darkSurface2.withValues(alpha: 0.6)
+            : cs.surfaceContainerLow.withValues(alpha: 0.6),
         borderRadius: BorderRadius.circular(12),
       ),
       child: TabBar(
@@ -464,7 +367,9 @@ class _SportsProfileScreenState extends State<SportsProfileScreen>
         ),
         indicatorSize: TabBarIndicatorSize.tab,
         dividerHeight: 0,
-        tabs: _tabs.map((t) => Tab(text: t)).toList(),
+        tabs: _tabKeys
+            .map((k) => Tab(text: MasarenLocalizations.of(context, k)))
+            .toList(),
       ),
     );
   }
@@ -497,42 +402,6 @@ class _StatItem {
   _StatItem(this.label, this.value, this.color);
 }
 
-class _HeaderAction extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  const _HeaderAction({required this.icon, required this.onTap});
-  @override
-  Widget build(BuildContext context) => Container(
-        margin: const EdgeInsets.only(right: 8),
-        decoration: const BoxDecoration(
-          color: Colors.black38,
-          shape: BoxShape.circle,
-        ),
-        child: IconButton(
-            icon: Icon(icon, color: Colors.white, size: 20), onPressed: onTap),
-      );
-}
-
-// ── Grass pattern painter ───────────────────────────────────────────────
-
-class _GrassPatternPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white
-      ..strokeWidth = 1;
-    final stripeH = size.height / 14;
-    for (var i = 0; i < 14; i += 2) {
-      final y = i * stripeH;
-      canvas.drawRect(
-          Rect.fromLTWH(0, y, size.width, stripeH), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
 // ═══════════════════════════════════════════════════════════════════════════
 //  TAB: Squad
 // ═══════════════════════════════════════════════════════════════════════════
@@ -561,11 +430,11 @@ class _SquadTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     if (squad.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.all(40),
+      return Padding(
+        padding: const EdgeInsets.all(40),
         child: Center(
-          child: Text('No squad data available.',
-              style: TextStyle(color: AppColors.muted)),
+          child: Text(MasarenLocalizations.of(context, 'sports.noSquad'),
+              style: const TextStyle(color: AppColors.muted)),
         ),
       );
     }
@@ -591,104 +460,106 @@ class _SquadTab extends StatelessWidget {
           return SlideInWidget(
             delay: Duration(milliseconds: i * 80),
             child: GestureDetector(
-            onTap: () {
-              final playerId = p['id'] ?? p['user_id'] ?? '';
-              if (playerId.toString().isNotEmpty) {
-                Navigator.of(context).push(MaterialPageRoute(
-                  builder: (_) => PlayerShowcaseScreen(
-                    playerId: playerId.toString(),
-                    currentUser: currentUser,
-                  ),
-                ));
-              }
-            },
-            child: Container(
-              decoration: glassDecoration(
-                  Theme.of(context).brightness == Brightness.dark),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Player photo / jersey area
-                  Expanded(
-                    flex: 3,
-                    child: Stack(
-                      children: [
-                        Positioned.fill(
-                          child: photo != null
-                              ? Image.network(photo, fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => Container(
+              onTap: () {
+                final playerId = p['id'] ?? p['user_id'] ?? '';
+                if (playerId.toString().isNotEmpty) {
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => PlayerShowcaseScreen(
+                      playerId: playerId.toString(),
+                      currentUser: currentUser,
+                    ),
+                  ));
+                }
+              },
+              child: Container(
+                decoration: glassDecoration(
+                    Theme.of(context).brightness == Brightness.dark),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Player photo / jersey area
+                    Expanded(
+                      flex: 3,
+                      child: Stack(
+                        children: [
+                          Positioned.fill(
+                            child: photo != null
+                                ? Image.network(photo,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Container(
+                                          color: cs.surfaceContainerLow,
+                                          child: const Icon(Icons.person,
+                                              size: 32),
+                                        ))
+                                : Container(
                                     color: cs.surfaceContainerLow,
                                     child: const Icon(Icons.person, size: 32),
-                                  ))
-                              : Container(
-                                  color: cs.surfaceContainerLow,
-                                  child: const Icon(Icons.person, size: 32),
+                                  ),
+                          ),
+                          // Jersey number
+                          Positioned(
+                            top: 6,
+                            right: 6,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.7),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                jersey.toString(),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 13,
                                 ),
-                        ),
-                        // Jersey number
-                        Positioned(
-                          top: 6,
-                          right: 6,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.7),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              jersey.toString(),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 13,
                               ),
                             ),
                           ),
-                        ),
-                        // Position badge
-                        Positioned(
-                          bottom: 6,
-                          left: 6,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: _positionColor(pos),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              pos,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 10,
+                          // Position badge
+                          Positioned(
+                            bottom: 6,
+                            left: 6,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: _positionColor(pos),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                pos,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 10,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  // Name
-                  Expanded(
-                    flex: 1,
-                    child: Center(
-                      child: Text(
-                        name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
+                    // Name
+                    Expanded(
+                      flex: 1,
+                      child: Center(
+                        child: Text(
+                          name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
             ),
           );
         },
@@ -707,12 +578,13 @@ class _FixturesTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tbd = MasarenLocalizations.of(context, 'sports.tbd');
     if (fixtures.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.all(40),
+      return Padding(
+        padding: const EdgeInsets.all(40),
         child: Center(
-          child: Text('No upcoming fixtures.',
-              style: TextStyle(color: AppColors.muted)),
+          child: Text(MasarenLocalizations.of(context, 'sports.noFixtures'),
+              style: const TextStyle(color: AppColors.muted)),
         ),
       );
     }
@@ -724,7 +596,7 @@ class _FixturesTab extends StatelessWidget {
       separatorBuilder: (_, __) => const SizedBox(height: 6),
       itemBuilder: (_, i) {
         final f = fixtures[i] as Map<String, dynamic>;
-        final opponent = (f['opponent'] ?? f['away_team'] ?? 'TBD').toString();
+        final opponent = (f['opponent'] ?? f['away_team'] ?? tbd).toString();
         final date = (f['date'] ?? f['match_date'] ?? '').toString();
         final time = (f['time'] ?? f['kick_off'] ?? '').toString();
         final venue = (f['venue'] ?? f['location'] ?? '').toString();
@@ -732,8 +604,8 @@ class _FixturesTab extends StatelessWidget {
 
         return Container(
           padding: const EdgeInsets.all(14),
-          decoration: glassDecoration(
-              Theme.of(context).brightness == Brightness.dark),
+          decoration:
+              glassDecoration(Theme.of(context).brightness == Brightness.dark),
           child: Row(
             children: [
               // Date block
@@ -741,8 +613,8 @@ class _FixturesTab extends StatelessWidget {
                 width: 52,
                 padding: const EdgeInsets.symmetric(vertical: 6),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                      colors: [_greenField, _greenPitch]),
+                  gradient:
+                      const LinearGradient(colors: [_greenField, _greenPitch]),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Column(
@@ -757,8 +629,8 @@ class _FixturesTab extends StatelessWidget {
                     ),
                     Text(
                       date.length >= 7
-                          ? _monthShort(date.substring(5, 7))
-                          : '???',
+                          ? _monthShort(context, date.substring(5, 7))
+                          : '—',
                       style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 10,
@@ -773,7 +645,9 @@ class _FixturesTab extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isHome ? 'vs $opponent' : '@ $opponent',
+                      MasarenLocalizations.of(
+                              context, isHome ? 'sports.vs' : 'sports.at')
+                          .replaceAll('{team}', opponent),
                       style: const TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 14,
@@ -790,8 +664,7 @@ class _FixturesTab extends StatelessWidget {
                 ),
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: isHome
                       ? _greenPitch.withValues(alpha: 0.15)
@@ -799,7 +672,8 @@ class _FixturesTab extends StatelessWidget {
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  isHome ? 'HOME' : 'AWAY',
+                  MasarenLocalizations.of(
+                      context, isHome ? 'sports.home' : 'sports.away'),
                   style: TextStyle(
                     color: isHome ? _greenPitch : AppColors.warm,
                     fontSize: 10,
@@ -814,13 +688,9 @@ class _FixturesTab extends StatelessWidget {
     );
   }
 
-  String _monthShort(String m) {
-    const months = {
-      '01': 'JAN', '02': 'FEB', '03': 'MAR', '04': 'APR',
-      '05': 'MAY', '06': 'JUN', '07': 'JUL', '08': 'AUG',
-      '09': 'SEP', '10': 'OCT', '11': 'NOV', '12': 'DEC',
-    };
-    return months[m] ?? '???';
+  String _monthShort(BuildContext context, String m) {
+    final label = MasarenLocalizations.of(context, 'sports.month.$m');
+    return label == 'sports.month.$m' ? '—' : label;
   }
 }
 
@@ -834,12 +704,13 @@ class _ResultsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tbd = MasarenLocalizations.of(context, 'sports.tbd');
     if (results.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.all(40),
+      return Padding(
+        padding: const EdgeInsets.all(40),
         child: Center(
-          child: Text('No results yet.',
-              style: TextStyle(color: AppColors.muted)),
+          child: Text(MasarenLocalizations.of(context, 'sports.noResults'),
+              style: const TextStyle(color: AppColors.muted)),
         ),
       );
     }
@@ -851,7 +722,7 @@ class _ResultsTab extends StatelessWidget {
       separatorBuilder: (_, __) => const SizedBox(height: 6),
       itemBuilder: (_, i) {
         final r = results[i] as Map<String, dynamic>;
-        final opponent = (r['opponent'] ?? r['away_team'] ?? 'TBD').toString();
+        final opponent = (r['opponent'] ?? r['away_team'] ?? tbd).toString();
         final date = (r['date'] ?? r['match_date'] ?? '').toString();
         final homeScore = r['home_score'] ?? r['score_for'];
         final awayScore = r['away_score'] ?? r['score_against'];
@@ -873,8 +744,8 @@ class _ResultsTab extends StatelessWidget {
 
         return Container(
           padding: const EdgeInsets.all(14),
-          decoration: glassDecoration(
-              Theme.of(context).brightness == Brightness.dark),
+          decoration:
+              glassDecoration(Theme.of(context).brightness == Brightness.dark),
           child: Row(
             children: [
               // Result badge
@@ -887,7 +758,11 @@ class _ResultsTab extends StatelessWidget {
                 ),
                 child: Center(
                   child: Text(
-                    won ? 'W' : (drawn ? 'D' : 'L'),
+                    MasarenLocalizations.of(
+                        context,
+                        won
+                            ? 'sports.wins'
+                            : (drawn ? 'sports.draws' : 'sports.losses')),
                     style: TextStyle(
                       color: resultColor,
                       fontWeight: FontWeight.w800,
@@ -902,7 +777,9 @@ class _ResultsTab extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isHome ? 'vs $opponent' : '@ $opponent',
+                      MasarenLocalizations.of(
+                              context, isHome ? 'sports.vs' : 'sports.at')
+                          .replaceAll('{team}', opponent),
                       style: const TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 14,
@@ -944,11 +821,11 @@ class _NewsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (news.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.all(40),
+      return Padding(
+        padding: const EdgeInsets.all(40),
         child: Center(
-          child: Text('No news posts from this club.',
-              style: TextStyle(color: AppColors.muted)),
+          child: Text(MasarenLocalizations.of(context, 'sports.noNews'),
+              style: const TextStyle(color: AppColors.muted)),
         ),
       );
     }
@@ -969,8 +846,8 @@ class _NewsTab extends StatelessWidget {
 
         return Container(
           padding: const EdgeInsets.all(14),
-          decoration: glassDecoration(
-              Theme.of(context).brightness == Brightness.dark),
+          decoration:
+              glassDecoration(Theme.of(context).brightness == Brightness.dark),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -987,15 +864,15 @@ class _NewsTab extends StatelessWidget {
                       size: 14, color: AppColors.muted),
                   const SizedBox(width: 3),
                   Text('$likes',
-                      style:
-                          const TextStyle(fontSize: 12, color: AppColors.muted)),
+                      style: const TextStyle(
+                          fontSize: 12, color: AppColors.muted)),
                   const SizedBox(width: 14),
                   const Icon(Icons.comment_outlined,
                       size: 14, color: AppColors.muted),
                   const SizedBox(width: 3),
                   Text('$comments',
-                      style:
-                          const TextStyle(fontSize: 12, color: AppColors.muted)),
+                      style: const TextStyle(
+                          fontSize: 12, color: AppColors.muted)),
                   const Spacer(),
                   Text(
                     date.length >= 10 ? date.substring(0, 10) : '',
@@ -1022,21 +899,39 @@ class _AboutTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final notSpecified =
+        MasarenLocalizations.of(context, 'personnel.notSpecified');
     final infoItems = [
-      _AboutInfo(Icons.stadium, 'Stadium', org['stadium'] ?? org['venue'] ?? 'Not specified'),
-      _AboutInfo(Icons.people, 'Capacity',
-          org['capacity'] != null ? org['capacity'].toString() : 'Not specified'),
-      _AboutInfo(Icons.emoji_events, 'League', org['league'] ?? 'Not specified'),
-      _AboutInfo(Icons.category, 'Division', org['division'] ?? 'Not specified'),
-      _AboutInfo(Icons.flag, 'Country', org['country'] ?? 'Not specified'),
-      _AboutInfo(Icons.calendar_today, 'Founded', org['founded'] ?? 'Not specified'),
+      _AboutInfo(
+          Icons.stadium,
+          MasarenLocalizations.of(context, 'sports.stadium'),
+          org['stadium'] ?? org['venue'] ?? notSpecified),
+      _AboutInfo(
+          Icons.people,
+          MasarenLocalizations.of(context, 'sports.capacity'),
+          org['capacity'] != null ? org['capacity'].toString() : notSpecified),
+      _AboutInfo(
+          Icons.emoji_events,
+          MasarenLocalizations.of(context, 'sports.league'),
+          org['league'] ?? notSpecified),
+      _AboutInfo(
+          Icons.category,
+          MasarenLocalizations.of(context, 'sports.division'),
+          org['division'] ?? notSpecified),
+      _AboutInfo(Icons.flag, MasarenLocalizations.of(context, 'sports.country'),
+          org['country'] ?? notSpecified),
+      _AboutInfo(
+          Icons.calendar_today,
+          MasarenLocalizations.of(context, 'sports.founded'),
+          org['founded'] ?? notSpecified),
     ];
 
     final trophies = org['trophies'] is List
         ? List<dynamic>.from(org['trophies'])
         : <dynamic>[];
 
-    final bio = (org['bio'] ?? org['about'] ?? org['description'] ?? '').toString();
+    final bio =
+        (org['bio'] ?? org['about'] ?? org['description'] ?? '').toString();
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -1044,7 +939,8 @@ class _AboutTab extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (bio.isNotEmpty) ...[
-            const SectionTitle(title: 'About'),
+            SectionTitle(
+                title: MasarenLocalizations.of(context, 'institution.about')),
             Container(
               width: double.infinity,
               margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
@@ -1055,7 +951,9 @@ class _AboutTab extends StatelessWidget {
                   style: const TextStyle(color: AppColors.muted, height: 1.5)),
             ),
           ],
-          const SectionTitle(title: 'Club Information'),
+          SectionTitle(
+              title:
+                  MasarenLocalizations.of(context, 'sports.clubInformation')),
           ...infoItems.map((item) => Container(
                 margin: const EdgeInsets.symmetric(vertical: 3),
                 padding: const EdgeInsets.all(12),
@@ -1066,8 +964,8 @@ class _AboutTab extends StatelessWidget {
                     Icon(item.icon, color: _greenPitch, size: 20),
                     const SizedBox(width: 12),
                     Text('${item.label}: ',
-                        style:
-                            const TextStyle(color: AppColors.muted, fontSize: 13)),
+                        style: const TextStyle(
+                            color: AppColors.muted, fontSize: 13)),
                     Expanded(
                       child: Text(
                         item.value,
@@ -1079,7 +977,8 @@ class _AboutTab extends StatelessWidget {
                 ),
               )),
           if (trophies.isNotEmpty) ...[
-            const SectionTitle(title: 'Trophies'),
+            SectionTitle(
+                title: MasarenLocalizations.of(context, 'sports.trophies')),
             SizedBox(
               height: 90,
               child: ListView.separated(
@@ -1088,7 +987,8 @@ class _AboutTab extends StatelessWidget {
                 separatorBuilder: (_, __) => const SizedBox(width: 8),
                 itemBuilder: (_, i) {
                   final t = trophies[i];
-                  final title = t is Map ? (t['name'] ?? t['title'] ?? '') : t.toString();
+                  final title =
+                      t is Map ? (t['name'] ?? t['title'] ?? '') : t.toString();
                   final year = t is Map ? (t['year'] ?? '').toString() : '';
                   return Container(
                     width: 80,
@@ -1098,8 +998,7 @@ class _AboutTab extends StatelessWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.emoji_events,
-                            color: _gold, size: 26),
+                        const Icon(Icons.emoji_events, color: _gold, size: 26),
                         const SizedBox(height: 4),
                         Text(title,
                             maxLines: 1,
@@ -1130,5 +1029,3 @@ class _AboutInfo {
   final String value;
   _AboutInfo(this.icon, this.label, this.value);
 }
-
-

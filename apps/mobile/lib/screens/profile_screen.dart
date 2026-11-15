@@ -1,30 +1,34 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:masaren/api_client.dart';
 import 'package:masaren/theme.dart';
 import 'package:masaren/widgets.dart';
 import 'package:masaren/models.dart';
+import 'package:masaren/l10n.dart';
 import 'package:masaren/screens/post_detail_screen.dart';
 import 'package:masaren/screens/edit_profile_screen.dart';
 import 'package:masaren/screens/personnel_profile_screen.dart';
+import 'package:masaren/screens/settings_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   final User user;
   final VoidCallback onLogout;
   final VoidCallback? onToggleTheme;
+  final VoidCallback? onMenu;
   const ProfileScreen({
     super.key,
     required this.user,
     required this.onLogout,
     this.onToggleTheme,
+    this.onMenu,
   });
 
   @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
+  State<ProfileScreen> createState() => ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen>
+class ProfileScreenState extends State<ProfileScreen>
     with SingleTickerProviderStateMixin {
   late User _user;
   List<Post> _posts = [];
@@ -39,8 +43,8 @@ class _ProfileScreenState extends State<ProfileScreen>
     _user = widget.user;
     _fadeController = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 600));
-    _fadeAnimation = CurvedAnimation(
-        parent: _fadeController, curve: Curves.easeOutCubic);
+    _fadeAnimation =
+        CurvedAnimation(parent: _fadeController, curve: Curves.easeOutCubic);
     _fadeController.forward();
     _refresh();
   }
@@ -50,6 +54,8 @@ class _ProfileScreenState extends State<ProfileScreen>
     _fadeController.dispose();
     super.dispose();
   }
+
+  Future<void> refresh() => _refresh();
 
   Future<void> _refresh() async {
     setState(() => _busy = true);
@@ -64,6 +70,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Future<void> _upload(String kind) async {
+    if (_busy) return;
     final picker = ImagePicker();
     final xfile = await picker.pickImage(
         source: ImageSource.gallery, maxWidth: 1280, imageQuality: 82);
@@ -81,17 +88,55 @@ class _ProfileScreenState extends State<ProfileScreen>
       }
       if (mounted) {
         setState(() {});
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('$kind updated')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(MasarenLocalizations.of(
+                context,
+                kind == 'avatar'
+                    ? 'profile.uploadAvatar'
+                    : 'profile.uploadCover'))));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Upload failed: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(
+                MasarenLocalizations.of(context, 'profile.uploadFailed')
+                    .replaceAll('{error}', e.toString()))));
       }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  String _roleLabel(BuildContext context, String? roleType) {
+    final key = switch (roleType) {
+      'MEDIA' => 'profile.mediaInstitution',
+      'GOVERNMENT' => 'profile.government',
+      'SPORTS' => 'profile.sports',
+      'ORGANIZATION' => 'profile.organization',
+      'INDIVIDUAL' => 'profile.individual',
+      _ => null,
+    };
+    if (key == null) return roleType ?? '';
+    return MasarenLocalizations.of(context, key);
+  }
+
+  String _postKindLabel(BuildContext context, String? kind) {
+    final key = switch (kind?.toUpperCase()) {
+      'RECOGNITION' => 'post.recognition',
+      'STORY' => 'post.story',
+      'NEWS' => 'post.news',
+      'VIDEO' => 'post.video',
+      'EVIDENCE' => 'post.evidence',
+      'ANNOUNCEMENT' => 'post.announcement',
+      'SYNERGY' => 'post.synergy',
+      'OPPORTUNITY' => 'post.opportunity',
+      'PROGRAM' => 'post.program',
+      'INTERVIEW' => 'post.interview',
+      'TRENDING' => 'post.trending',
+      _ => null,
+    };
+    if (key == null) return kind ?? '';
+    return MasarenLocalizations.of(context, key);
   }
 
   @override
@@ -99,18 +144,10 @@ class _ProfileScreenState extends State<ProfileScreen>
     final cs = Theme.of(context).colorScheme;
     final dark = Theme.of(context).brightness == Brightness.dark;
     final u = _user;
-    final roleLabel = const {
-      'MEDIA': 'Media Institution',
-      'GOVERNMENT': 'Government',
-      'SPORTS': 'Sports',
-      'ORGANIZATION': 'Organization',
-      'INDIVIDUAL': 'Individual',
-    }[u.roleType] ?? u.roleType;
+    final roleLabel = _roleLabel(context, u.roleType);
 
     return Scaffold(
-      body: AbsorbPointer(
-        absorbing: _busy,
-        child: RefreshIndicator(
+      body: RefreshIndicator(
         onRefresh: _refresh,
         color: cs.primary,
         backgroundColor: cs.surface,
@@ -134,15 +171,21 @@ class _ProfileScreenState extends State<ProfileScreen>
                     const SizedBox(height: 24),
                     _buildStatsRow(context, cs, dark),
                     const SizedBox(height: 8),
-                    const SectionTitle(title: 'About'),
+                    SectionTitle(
+                        title:
+                            MasarenLocalizations.of(context, 'profile.about')),
                     _buildAboutCard(context, cs, dark, u),
                     if (u.city != null || u.country != null) ...[
                       const SizedBox(height: 8),
                       _buildLocationChips(context, cs, dark, u),
                     ],
-                    const SectionTitle(title: 'Skills'),
+                    SectionTitle(
+                        title:
+                            MasarenLocalizations.of(context, 'profile.skills')),
                     _buildSkillsSection(context, cs, dark, u),
-                    const SectionTitle(title: 'My posts'),
+                    SectionTitle(
+                        title: MasarenLocalizations.of(
+                            context, 'profile.myPosts')),
                     _buildPostsSection(context, cs, dark, u),
                     const SizedBox(height: 100),
                   ],
@@ -152,12 +195,11 @@ class _ProfileScreenState extends State<ProfileScreen>
           ],
         ),
       ),
-      ),
     );
   }
 
-  Widget _buildSliverAppBar(
-      BuildContext context, ColorScheme cs, bool dark, User u, String roleLabel) {
+  Widget _buildSliverAppBar(BuildContext context, ColorScheme cs, bool dark,
+      User u, String roleLabel) {
     return SliverAppBar(
       expandedHeight: 220,
       pinned: true,
@@ -165,7 +207,24 @@ class _ProfileScreenState extends State<ProfileScreen>
       backgroundColor: cs.surface,
       surfaceTintColor: Colors.transparent,
       leading: const SizedBox.shrink(),
-      actions: const [SizedBox.shrink()],
+      actions: [
+        if (widget.onMenu != null)
+          IconButton(
+            tooltip: MasarenLocalizations.of(context, 'nav.more'),
+            icon: const Icon(Icons.menu_open),
+            onPressed: widget.onMenu,
+          ),
+        IconButton(
+          tooltip: MasarenLocalizations.of(context, 'settings.title'),
+          icon: const Icon(Icons.settings_outlined),
+          onPressed: () async {
+            await Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) =>
+                    SettingsScreen(user: _user, onLogout: widget.onLogout)));
+            _refresh();
+          },
+        ),
+      ],
       flexibleSpace: FlexibleSpaceBar(
         background: Stack(
           fit: StackFit.expand,
@@ -188,6 +247,26 @@ class _ProfileScreenState extends State<ProfileScreen>
                     cs.surface,
                   ],
                   stops: const [0.0, 0.6, 1.0],
+                ),
+              ),
+            ),
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: MediaQuery.paddingOf(context).top + 28,
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withValues(alpha: 0.30),
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -217,24 +296,26 @@ class _ProfileScreenState extends State<ProfileScreen>
             Positioned(
               top: MediaQuery.of(context).padding.top + 8,
               left: 8,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: cs.surface.withValues(alpha: 0.8),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.15),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+              child: !Navigator.of(context).canPop()
+                  ? const SizedBox.shrink()
+                  : Container(
+                      decoration: BoxDecoration(
+                        color: cs.surface.withValues(alpha: 0.8),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.15),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: IconButton(
+                        icon: Icon(directionalBackIcon(context),
+                            size: 18, color: cs.onSurface),
+                        onPressed: () => Navigator.maybePop(context),
+                      ),
                     ),
-                  ],
-                ),
-                child: IconButton(
-                  icon: Icon(Icons.arrow_back_ios_new_rounded,
-                      size: 18, color: cs.onSurface),
-                  onPressed: () => Navigator.maybePop(context),
-                ),
-              ),
             ),
           ],
         ),
@@ -265,8 +346,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               ),
               if (u.emailVerified) ...[
                 const SizedBox(width: 6),
-                Icon(Icons.verified_rounded,
-                    color: cs.primary, size: 22),
+                Icon(Icons.verified_rounded, color: cs.primary, size: 22),
               ],
             ],
           ),
@@ -382,8 +462,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                   ),
                 ],
               ),
-              child:
-                  const Icon(Icons.camera_alt_rounded, size: 14, color: Colors.white),
+              child: const Icon(Icons.camera_alt_rounded,
+                  size: 14, color: Colors.white),
             ),
           ),
         ],
@@ -432,9 +512,9 @@ class _ProfileScreenState extends State<ProfileScreen>
             }
           },
           icon: const Icon(Icons.edit_outlined, size: 18),
-          label: const Text(
-            'Edit profile',
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+          label: Text(
+            MasarenLocalizations.of(context, 'profile.edit'),
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
           ),
           style: OutlinedButton.styleFrom(
             foregroundColor: cs.primary,
@@ -459,9 +539,9 @@ class _ProfileScreenState extends State<ProfileScreen>
               builder: (_) => PersonnelProfileScreen(
                   userId: _user.id, currentUser: _user))),
           icon: const Icon(Icons.workspace_premium_outlined, size: 18),
-          label: const Text(
-            'Open professional profile',
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+          label: Text(
+            MasarenLocalizations.of(context, 'profile.openProfessional'),
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
           ),
           style: FilledButton.styleFrom(
             backgroundColor: cs.primary,
@@ -479,25 +559,26 @@ class _ProfileScreenState extends State<ProfileScreen>
     final stats = [
       _StatData(
         value: _user.pmsScore.toInt().toString(),
-        label: 'PMS Score',
+        label: MasarenLocalizations.of(context, 'profile.impactScore'),
         icon: Icons.analytics_outlined,
         gradient: [cs.primary, cs.primary.withValues(alpha: 0.7)],
       ),
       _StatData(
         value: _posts.length.toString(),
-        label: 'Posts',
+        label: MasarenLocalizations.of(context, 'profile.posts'),
         icon: Icons.article_outlined,
         gradient: [cs.secondary, cs.secondary.withValues(alpha: 0.7)],
       ),
       _StatData(
         value: _user.followersCount?.toString() ?? '0',
-        label: 'Followers',
+        label: MasarenLocalizations.of(context, 'profile.followers'),
         icon: Icons.people_outline_rounded,
         gradient: [cs.tertiary, cs.tertiary.withValues(alpha: 0.7)],
       ),
       _StatData(
-        value: _user.emailVerified ? 'Yes' : 'No',
-        label: 'Verified',
+        value: MasarenLocalizations.of(
+            context, _user.emailVerified ? 'profile.yes' : 'profile.no'),
+        label: MasarenLocalizations.of(context, 'profile.verified'),
         icon: Icons.verified_outlined,
         gradient: [
           _user.emailVerified ? cs.secondary : cs.onSurfaceVariant,
@@ -547,7 +628,9 @@ class _ProfileScreenState extends State<ProfileScreen>
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: stat.gradient.map((c) => c.withValues(alpha: 0.15)).toList(),
+                colors: stat.gradient
+                    .map((c) => c.withValues(alpha: 0.15))
+                    .toList(),
               ),
               borderRadius: BorderRadius.circular(10),
             ),
@@ -612,7 +695,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 ),
                 const SizedBox(width: 10),
                 Text(
-                  'About',
+                  MasarenLocalizations.of(context, 'profile.about'),
                   style: TextStyle(
                     color: cs.onSurface,
                     fontSize: 15,
@@ -623,7 +706,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             ),
             const SizedBox(height: 12),
             Text(
-              u.bio ?? 'No bio yet. Tap edit to tell your impact story.',
+              u.bio ?? MasarenLocalizations.of(context, 'profile.noBio'),
               style: TextStyle(
                 color: cs.onSurfaceVariant,
                 fontSize: 14,
@@ -645,17 +728,16 @@ class _ProfileScreenState extends State<ProfileScreen>
         runSpacing: 8,
         children: [
           if (u.city != null)
-            _buildStyledChip(
-                cs, dark, Icons.location_on_outlined, u.city!),
+            _buildStyledChip(cs, dark, Icons.location_on_outlined, u.city!),
           if (u.country != null)
-            _buildStyledChip(
-                cs, dark, Icons.flag_outlined, u.country!),
+            _buildStyledChip(cs, dark, Icons.flag_outlined, u.country!),
         ],
       ),
     );
   }
 
-  Widget _buildStyledChip(ColorScheme cs, bool dark, IconData icon, String label) {
+  Widget _buildStyledChip(
+      ColorScheme cs, bool dark, IconData icon, String label) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
@@ -709,7 +791,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                   size: 28, color: cs.onSurfaceVariant.withValues(alpha: 0.5)),
               const SizedBox(height: 8),
               Text(
-                'No skills added yet.',
+                MasarenLocalizations.of(context, 'profile.noSkills'),
                 style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
               ),
             ],
@@ -781,11 +863,10 @@ class _ProfileScreenState extends State<ProfileScreen>
           child: Column(
             children: [
               Icon(Icons.post_add_rounded,
-                  size: 32,
-                  color: cs.onSurfaceVariant.withValues(alpha: 0.5)),
+                  size: 32, color: cs.onSurfaceVariant.withValues(alpha: 0.5)),
               const SizedBox(height: 10),
               Text(
-                'No posts yet.',
+                MasarenLocalizations.of(context, 'profile.noPosts'),
                 style: TextStyle(
                   color: cs.onSurfaceVariant,
                   fontSize: 14,
@@ -794,7 +875,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               ),
               const SizedBox(height: 4),
               Text(
-                'Share your impact story with the community.',
+                MasarenLocalizations.of(context, 'profile.noPostsHint'),
                 style: TextStyle(
                   color: cs.onSurfaceVariant.withValues(alpha: 0.7),
                   fontSize: 12,
@@ -806,96 +887,157 @@ class _ProfileScreenState extends State<ProfileScreen>
       );
     }
 
-    return SizedBox(
-      height: 260,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: _posts.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 12),
-        itemBuilder: (context, i) => _buildPostCard(context, cs, dark, u, _posts[i]),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        children: [
+          for (final post in _posts) ...[
+            _buildPostCard(context, cs, dark, u, post),
+            const SizedBox(height: 12),
+          ],
+        ],
       ),
     );
   }
 
   Widget _buildPostCard(
       BuildContext context, ColorScheme cs, bool dark, User u, Post p) {
-    return GestureDetector(
-      onTap: () => Navigator.of(context).push(MaterialPageRoute(
-          builder: (_) => PostDetailScreen(
-              post: p, currentUser: u, onChanged: (_) {}))),
-      child: Container(
-        width: 200,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: dark
-              ? cs.surfaceContainerHigh.withValues(alpha: 0.5)
-              : cs.surfaceContainerHighest.withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: cs.outlineVariant.withValues(alpha: dark ? 0.3 : 0.6),
-            width: 1,
-          ),
-        ),
+    final media = p.media.isNotEmpty ? p.media.first : null;
+    final isVideo = media?.isVideo == true || p.videoHlsUrl != null;
+    final thumb = p.videoPosterUrl ??
+        media?.posterUrl ??
+        (media != null && !media.isVideo ? media.url : null);
+    return Material(
+      color: dark
+          ? cs.surfaceContainerHigh.withValues(alpha: 0.55)
+          : cs.surfaceContainerHighest.withValues(alpha: 0.45),
+      borderRadius: BorderRadius.circular(16),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => Navigator.of(context).push(MaterialPageRoute(
+            builder: (_) => PostDetailScreen(
+                post: p, currentUser: u, onChanged: (_) {}))),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (p.kind != null)
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: cs.primaryContainer.withValues(alpha: 0.6),
-                  borderRadius: BorderRadius.circular(6),
+            if (thumb != null)
+              AspectRatio(
+                aspectRatio: 16 / 9,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image.network(
+                      thumb,
+                      fit: BoxFit.cover,
+                      cacheWidth: 1000,
+                      errorBuilder: (_, __, ___) => _postThumbFallback(
+                          cs, isVideo ? Icons.videocam : Icons.image_outlined),
+                    ),
+                    if (isVideo)
+                      const Center(
+                        child: CircleAvatar(
+                          backgroundColor: Colors.black54,
+                          child: Icon(Icons.play_arrow_rounded,
+                              color: Colors.white),
+                        ),
+                      ),
+                  ],
                 ),
-                child: Text(
-                  p.kind!,
-                  style: TextStyle(
-                    color: cs.onPrimaryContainer,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
+              ),
+            Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (p.kind != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: cs.primaryContainer.withValues(alpha: 0.6),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        _postKindLabel(context, p.kind),
+                        style: TextStyle(
+                          color: cs.onPrimaryContainer,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  const SizedBox(height: 8),
+                  Text(
+                    p.text,
+                    style: TextStyle(
+                      color: cs.onSurface,
+                      fontSize: 14,
+                      height: 1.5,
+                    ),
+                    maxLines: 6,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Icon(Icons.favorite_rounded,
+                          size: 15, color: cs.primary),
+                      const SizedBox(width: 4),
+                      Text('${p.likes}',
+                          style: TextStyle(
+                              color: cs.onSurfaceVariant, fontSize: 12)),
+                      const SizedBox(width: 14),
+                      Icon(Icons.chat_bubble_outline_rounded,
+                          size: 15, color: cs.onSurfaceVariant),
+                      const SizedBox(width: 4),
+                      Text('${p.comments}',
+                          style: TextStyle(
+                              color: cs.onSurfaceVariant, fontSize: 12)),
+                      const SizedBox(width: 14),
+                      Icon(Icons.share_outlined,
+                          size: 15, color: cs.onSurfaceVariant),
+                      const SizedBox(width: 4),
+                      Text('${p.shares}',
+                          style: TextStyle(
+                              color: cs.onSurfaceVariant, fontSize: 12)),
+                      const Spacer(),
+                      if (p.createdAt != null)
+                        Text(_shortDate(p.createdAt!),
+                            style: TextStyle(
+                                color: cs.onSurfaceVariant, fontSize: 11)),
+                    ],
+                  ),
+                ],
               ),
-            const SizedBox(height: 8),
-            Expanded(
-              child: Text(
-                p.text,
-                style: TextStyle(
-                  color: cs.onSurface,
-                  fontSize: 13,
-                  height: 1.5,
-                ),
-                maxLines: 4,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Icon(Icons.favorite_rounded,
-                    size: 15, color: cs.primary),
-                const SizedBox(width: 4),
-                Text(
-                  '${p.likes}',
-                  style: TextStyle(
-                      color: cs.onSurfaceVariant, fontSize: 12),
-                ),
-                const SizedBox(width: 14),
-                Icon(Icons.chat_bubble_outline_rounded,
-                    size: 15, color: cs.onSurfaceVariant),
-                const SizedBox(width: 4),
-                Text(
-                  '${p.comments}',
-                  style: TextStyle(
-                      color: cs.onSurfaceVariant, fontSize: 12),
-                ),
-              ],
             ),
           ],
         ),
       ),
     );
+  }
+
+  Widget _postThumbFallback(ColorScheme cs, IconData icon) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [cs.primary.withValues(alpha: 0.25), cs.primaryContainer],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Center(
+          child: Icon(icon, size: 38, color: cs.onPrimaryContainer)),
+    );
+  }
+
+  String _shortDate(String raw) {
+    final parsed = DateTime.tryParse(raw)?.toLocal();
+    if (parsed == null) return '';
+    final diff = DateTime.now().difference(parsed);
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m';
+    if (diff.inHours < 24) return '${diff.inHours}h';
+    if (diff.inDays < 7) return '${diff.inDays}d';
+    return '${parsed.day}/${parsed.month}/${parsed.year % 100}';
   }
 
   Widget _coverGradient(ColorScheme cs, bool dark) {
@@ -927,3 +1069,4 @@ class _StatData {
     required this.gradient,
   });
 }
+

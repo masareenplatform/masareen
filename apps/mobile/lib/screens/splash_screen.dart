@@ -1,10 +1,10 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:masaren/theme.dart';
-import 'package:audioplayers/audioplayers.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SplashScreen extends StatefulWidget {
-  final VoidCallback onComplete;
-  const SplashScreen({super.key, required this.onComplete});
+  const SplashScreen({super.key});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -22,19 +22,28 @@ class _SplashScreenState extends State<SplashScreen>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 1400),
     );
     _fadeIn = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.6, curve: Curves.easeOut)),
+      CurvedAnimation(
+          parent: _controller,
+          curve: const Interval(0.0, 0.7, curve: Curves.easeOut)),
     );
-    _scaleUp = Tween<double>(begin: 0.5, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.6, curve: Curves.elasticOut)),
+    _scaleUp = Tween<double>(begin: 0.86, end: 1.0).animate(
+      CurvedAnimation(
+          parent: _controller,
+          curve: const Interval(0.0, 0.8, curve: Curves.easeOutCubic)),
     );
     _controller.forward();
-    _audio.play(AssetSource('sounds/app_startup.wav'), volume: 0.8);
-    Future.delayed(const Duration(milliseconds: 2200), () {
-      if (mounted) widget.onComplete();
-    });
+    _playStartupSound();
+  }
+
+  Future<void> _playStartupSound() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (prefs.getBool('masaren_startup_sound') == false) return;
+      await _audio.play(AssetSource('sounds/app_startup.wav'), volume: 0.6);
+    } catch (_) {}
   }
 
   @override
@@ -48,6 +57,8 @@ class _SplashScreenState extends State<SplashScreen>
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
     final cs = Theme.of(context).colorScheme;
+    final logoSize =
+        (MediaQuery.of(context).size.width * 0.7).clamp(180.0, 300.0);
     return Scaffold(
       backgroundColor: dark ? AppColors.darkBg : Colors.white,
       body: Center(
@@ -56,31 +67,28 @@ class _SplashScreenState extends State<SplashScreen>
           builder: (context, child) {
             return Opacity(
               opacity: _fadeIn.value,
-              child: Transform.scale(
-                scale: _scaleUp.value,
-                child: child,
-              ),
+              child: Transform.scale(scale: _scaleUp.value, child: child),
             );
           },
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Image.asset(
-                dark ? 'assets/images/masaren_logo_white.png' : 'assets/images/masaren_logo_512.png',
-                width: 300,
-                height: 300,
-                color: dark ? null : null,
-                colorBlendMode: dark ? BlendMode.srcIn : null,
+                dark
+                    ? 'assets/images/masaren_logo_white.png'
+                    : 'assets/images/masaren_logo_512.png',
+                width: logoSize,
+                height: logoSize,
                 errorBuilder: (_, __, ___) => Icon(
                   Icons.shield,
-                  size: 160,
+                  size: logoSize * 0.55,
                   color: cs.primary,
                 ),
               ),
-              const SizedBox(height: 48),
+              const SizedBox(height: 40),
               SizedBox(
-                width: 28,
-                height: 28,
+                width: 26,
+                height: 26,
                 child: CircularProgressIndicator(
                   strokeWidth: 2.5,
                   color: cs.primary,

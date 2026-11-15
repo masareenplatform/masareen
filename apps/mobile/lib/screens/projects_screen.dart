@@ -1,6 +1,11 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:masaren/api_client.dart';
-import 'package:masaren/theme.dart';
+import 'package:masaren/l10n.dart';
+import 'package:masaren/screens/create_project_screen.dart';
+import 'package:masaren/widgets/entity_status.dart';
+import 'package:masaren/widgets/smart_image.dart';
+import 'package:masaren/widgets/stacked_avatars.dart';
+import 'package:masaren/profile_router.dart';
 import 'package:masaren/models.dart';
 import 'package:masaren/widgets.dart';
 
@@ -14,6 +19,7 @@ class ProjectsScreen extends StatefulWidget {
 
 class _ProjectsScreenState extends State<ProjectsScreen> {
   List<Project> _items = [];
+  final Set<String> _busyIds = {};
   bool _loading = true;
   String? _error;
 
@@ -24,7 +30,10 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   }
 
   Future<void> _load() async {
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       _items = await AuthApi.projects();
     } on ApiException catch (e) {
@@ -37,89 +46,45 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   }
 
   Future<void> _create() async {
-    final title = TextEditingController();
-    final desc = TextEditingController();
-    final cat = TextEditingController();
-    final goal = TextEditingController();
-    final created = await showDialog<Project>(
-      context: context,
-      builder: (c) => AlertDialog(
-        title: const Text('New project'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(controller: title, decoration: const InputDecoration(labelText: 'Title')),
-            TextField(controller: desc, decoration: const InputDecoration(labelText: 'Description')),
-            TextField(controller: cat, decoration: const InputDecoration(labelText: 'Category')),
-            TextField(controller: goal, keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Funding goal')),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(c), child: const Text('Cancel')),
-          FilledButton(
-            onPressed: () {
-              if (title.text.trim().isEmpty) return;
-              Navigator.pop(
-                  c,
-                  Project(
-                      id: '',
-                      title: title.text.trim(),
-                      description: desc.text.trim().isNotEmpty ? desc.text.trim() : null,
-                      category: cat.text.trim().isNotEmpty ? cat.text.trim() : 'Community',
-                      goal: double.tryParse(goal.text) ?? 0));
-            },
-            child: const Text('Create'),
-          ),
-        ],
-      ),
-    );
-    if (created == null) return;
-    try {
-      final p = await AuthApi.createProject({
-        'title': created.title,
-        'description': created.description,
-        'category': created.category,
-        'goal': created.goal,
-      });
-      _items.insert(0, p);
-      if (mounted) setState(() {});
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Failed: $e')));
-      }
+    final created = await Navigator.of(context).push<Project>(
+        MaterialPageRoute(
+            builder: (_) => CreateProjectScreen(user: widget.user)));
+    if (created != null) {
+      setState(() => _items.insert(0, created));
     }
   }
-
-  Future<void> _join(Project p) async {
+  Future<void> _join(Project project, bool joined) async {
+    if (_busyIds.contains(project.id)) return;
+    setState(() => _busyIds.add(project.id));
     try {
-      final updated = await AuthApi.joinProject(p.id);
-      final i = _items.indexWhere((e) => e.id == p.id);
-      if (i != -1) {
-        _items[i] = updated;
-        if (mounted) setState(() {});
-      }
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Joined ${p.title}')));
-      }
+      final updated = joined
+          ? await AuthApi.leaveProject(project.id)
+          : await AuthApi.joinProject(project.id);
+      final index = _items.indexWhere((p) => p.id == project.id);
+      if (index != -1) setState(() => _items[index] = updated);
     } catch (e) {
       if (mounted) {
+        final message = e is ApiException
+            ? (e.message ?? '$e')
+            : e.toString();
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Failed: $e')));
+            .showSnackBar(SnackBar(content: Text(message)));
       }
+    } finally {
+      if (mounted) setState(() => _busyIds.remove(project.id));
     }
   }
-
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('Projects')),
+      appBar: AppBar(
+          title: Text(MasarenLocalizations.of(context, 'projects.title'))),
       floatingActionButton: FloatingActionButton(
         onPressed: _create,
-        backgroundColor: AppColors.azure,
-        child: const Icon(Icons.add, color: Colors.white),
+        backgroundColor: cs.primary,
+        foregroundColor: cs.onPrimary,
+        child: const Icon(Icons.add),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -129,61 +94,196 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                   onRefresh: _load,
                   child: ListView(
                     children: [
-                      const SectionTitle(title: 'Community & impact projects'),
+                      SectionTitle(
+                          title: MasarenLocalizations.of(
+                              context, 'projects.community')),
                       if (_items.isEmpty)
-                        const Padding(
-                          padding: EdgeInsets.all(24),
-                          child: Text('No projects yet.',
-                              style: TextStyle(color: AppColors.muted)),
+                        Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Text(
+                            MasarenLocalizations.of(context, 'projects.empty'),
+                            style: TextStyle(color: cs.onSurfaceVariant),
+                          ),
                         ),
                       ..._items.map((p) {
-                        final pct = p.goal > 0
-                            ? (p.raised / p.goal).clamp(0, 1)
-                            : 0.0;
+                        final pct =
+                            p.goal > 0 ? (p.raised / p.goal).clamp(0, 1) : 0.0;
+                        final author = p.author;
                         return Card(
                           child: Padding(
                             padding: const EdgeInsets.all(16),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
+                                if (p.cover != null)
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 10),
+                                    child: SmartImage(
+                                      url: p.cover,
+                                      height: 140,
+                                      borderRadius: BorderRadius.circular(14),
+                                      fallbackIcon: Icons.handshake_outlined,
+                                    ),
+                                  ),
                                 Row(
                                   children: [
                                     Expanded(
                                       child: Text(p.title,
-                                          style: const TextStyle(
-                                              color: Colors.white,
+                                          style: TextStyle(
+                                              color: cs.onSurface,
                                               fontWeight: FontWeight.w800,
                                               fontSize: 16)),
                                     ),
                                     Text(p.category,
-                                        style: const TextStyle(
-                                            color: AppColors.muted, fontSize: 12)),
+                                        style: TextStyle(
+                                            color: cs.secondary, fontSize: 12)),
+                                    EntityStatusChip(
+                                        status: p.verificationStatus,
+                                        reason: p.rejectionReason),
                                   ],
                                 ),
+                                if (author != null) ...[
+                                  const SizedBox(height: 4),
+                                  InkWell(
+                                    borderRadius: BorderRadius.circular(6),
+                                    onTap: () => openEntityAuthor(context,
+                                        author: author,
+                                        currentUser: widget.user),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 3),
+                                      child: Row(
+                                        children: [
+                                          AppAvatar(
+                                              name: author.name,
+                                              url: author.avatarUrl,
+                                              size: 18),
+                                          const SizedBox(width: 4),
+                                          Expanded(
+                                            child: Text(
+                                              author.name,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                  color: cs.primary,
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w600),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ] else if (p.ownerName != null &&
+                                    p.ownerName!.isNotEmpty) ...[
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      Icon(Icons.person_outline_rounded,
+                                          size: 14, color: cs.onSurfaceVariant),
+                                      const SizedBox(width: 4),
+                                      Expanded(
+                                        child: Text(
+                                          p.ownerName!,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                              color: cs.onSurfaceVariant,
+                                              fontSize: 12),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                                if (p.projectType != 'COMMUNITY') ...[
+                                  const SizedBox(height: 7),
+                                  Wrap(
+                                    spacing: 6,
+                                    runSpacing: 6,
+                                    children: [
+                                      _ProjectTag(
+                                          icon: Icons.school_outlined,
+                                          label: MasarenLocalizations.of(
+                                                  context,
+                                                  'projects.type.${p.projectType}')
+                                              .replaceAll(
+                                                  'projects.type.', '')),
+                                      if ((p.academicYear ?? '').isNotEmpty)
+                                        _ProjectTag(
+                                            icon: Icons.calendar_today_outlined,
+                                            label: p.academicYear!),
+                                      if ((p.supervisor ?? '').isNotEmpty)
+                                        _ProjectTag(
+                                            icon: Icons.person_pin_outlined,
+                                            label: p.supervisor!),
+                                    ],
+                                  ),
+                                  if ((p.studentNames ?? '').isNotEmpty)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 5),
+                                      child: Text(p.studentNames!,
+                                          style: TextStyle(
+                                              color: cs.onSurfaceVariant,
+                                              fontSize: 12)),
+                                    ),
+                                ],
                                 if (p.description != null)
                                   Padding(
                                     padding: const EdgeInsets.only(top: 4),
                                     child: Text(p.description!,
-                                        style: const TextStyle(
-                                            color: AppColors.muted)),
+                                        style: TextStyle(
+                                            color: cs.onSurfaceVariant)),
                                   ),
                                 const SizedBox(height: 10),
+                                Row(
+                                  children: [
+                                    StackedAvatars(
+                                        people: p.membersPreview,
+                                        total: p.members,
+                                        size: 20),
+                                    const SizedBox(width: 6),
+                                    Text('${p.members}',
+                                        style: TextStyle(
+                                            color: cs.onSurfaceVariant,
+                                            fontSize: 12)),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
                                 LinearProgressIndicator(
                                   value: pct.toDouble(),
-                                  backgroundColor: AppColors.darkSurface2,
-                                  color: AppColors.accent,
+                                  backgroundColor: cs.surfaceContainerHighest,
+                                  color: cs.primary,
                                 ),
                                 const SizedBox(height: 6),
                                 Text(
-                                    '${p.raised.toInt()} / ${p.goal.toInt()} raised · ${p.members} members',
-                                    style: const TextStyle(
-                                        color: AppColors.muted, fontSize: 12)),
+                                    MasarenLocalizations.of(
+                                            context, 'projects.progress')
+                                        .replaceAll(
+                                            '{raised}', '${p.raised.toInt()}')
+                                        .replaceAll(
+                                            '{goal}', '${p.goal.toInt()}')
+                                        .replaceAll(
+                                            '{members}', '${p.members}'),
+                                    style: TextStyle(
+                                        color: cs.onSurfaceVariant,
+                                        fontSize: 12)),
                                 const SizedBox(height: 8),
                                 Align(
-                                  alignment: Alignment.centerRight,
-                                  child: TextButton(
-                                    onPressed: () => _join(p),
-                                    child: const Text('Join project'),
+                                  alignment: AlignmentDirectional.centerEnd,
+                                  child: TextButton.icon(
+                                    onPressed: _busyIds.contains(p.id)
+                                        ? null
+                                        : () => _join(p, p.joined),
+                                    icon: Icon(
+                                        p.joined
+                                            ? Icons.exit_to_app
+                                            : Icons.login,
+                                        size: 16),
+                                    label: Text(MasarenLocalizations.of(
+                                        context,
+                                        p.joined
+                                            ? 'projects.leaveProject'
+                                            : 'projects.joinProject')),
                                   ),
                                 ),
                               ],
@@ -195,6 +295,36 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                     ],
                   ),
                 ),
+    );
+  }
+}
+
+class _ProjectTag extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  const _ProjectTag({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+      decoration: BoxDecoration(
+        color: cs.primary.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12.5, color: cs.primary),
+          const SizedBox(width: 4),
+          Text(label,
+              style: TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w700,
+                  color: cs.primary)),
+        ],
+      ),
     );
   }
 }

@@ -1,17 +1,21 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:masaren/api_client.dart';
+import 'package:masaren/l10n.dart';
 import 'package:masaren/theme.dart';
 import 'package:masaren/widgets.dart';
 import 'package:masaren/models.dart';
+import 'package:masaren/profile_ui.dart';
 
 class CreatePostScreen extends StatefulWidget {
   final User user;
   final Post? initial;
   final String? initialKind;
-  const CreatePostScreen({super.key, required this.user, this.initial, this.initialKind});
+  const CreatePostScreen(
+      {super.key, required this.user, this.initial, this.initialKind});
 
   @override
   State<CreatePostScreen> createState() => _CreatePostScreenState();
@@ -20,11 +24,14 @@ class CreatePostScreen extends StatefulWidget {
 class _CreatePostScreenState extends State<CreatePostScreen> {
   final _text = TextEditingController();
   final _program = TextEditingController();
-  final _impact = TextEditingController();
-  final _impactLabel = TextEditingController(text: 'impact');
+  final _link = TextEditingController();
+  final _place = TextEditingController();
+  final Map<String, TextEditingController> _metricCtrl = {};
   int _sdg = 0;
   String _kind = 'story';
   final List<_PickedImage> _images = [];
+  final List<PlatformFile> _files = [];
+  PlatformFile? _voice;
   File? _video;
   bool _busy = false;
   bool _showAdvanced = false;
@@ -33,31 +40,85 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   bool _gpsLoading = false;
 
   static const _kinds = [
-    _KindOption('story', 'Story', Icons.auto_stories, Color(0xFF1A73E8)),
-    _KindOption('impact', 'Impact', Icons.trending_up, Color(0xFF34A853)),
-    _KindOption('evidence', 'Evidence', Icons.eco, Color(0xFF0F9D58)),
-    _KindOption('program', 'Program', Icons.hub, Color(0xFF4285F4)),
-    _KindOption('task', 'Task', Icons.check_circle, Color(0xFF0D652D)),
-    _KindOption('announcement', 'Platform', Icons.campaign, Color(0xFFF4B400)),
-    _KindOption('recognition', 'Recognition', Icons.emoji_events, Color(0xFFEA4335)),
-    _KindOption('course', 'Course', Icons.school, Color(0xFF1E8E3E)),
-    _KindOption('event', 'Event', Icons.event, Color(0xFFE37400)),
+    _KindOption(
+        'story', 'post.story', Icons.auto_stories, ProfileColors.forest),
+    _KindOption(
+        'impact', 'post.impact', Icons.trending_up, ProfileColors.emerald),
+    _KindOption('evidence', 'post.evidence', Icons.eco, ProfileColors.petrol),
+    _KindOption('program', 'post.program', Icons.hub, ProfileColors.forest),
+    _KindOption(
+        'task', 'post.task', Icons.check_circle, ProfileColors.graphite),
+    _KindOption(
+        'announcement', 'post.platform', Icons.campaign, ProfileColors.gold),
+    _KindOption('recognition', 'post.recognition', Icons.emoji_events,
+        ProfileColors.rose),
+    _KindOption('course', 'post.course', Icons.school, ProfileColors.petrol),
+    _KindOption('event', 'post.event', Icons.event, ProfileColors.emerald),
   ];
 
-  static const _sdgLabels = [
-    'None', 'No Poverty', 'Zero Hunger', 'Good Health', 'Quality Education',
-    'Gender Equality', 'Clean Water', 'Affordable Energy', 'Decent Work',
-    'Industry & Innovation', 'Reduced Inequalities', 'Sustainable Cities',
-    'Responsible Consumption', 'Climate Action', 'Life Below Water',
-    'Life on Land', 'Peace & Justice', 'Partnerships',
+  static const _sdgKeys = [
+    'sdg.0',
+    'sdg.1',
+    'sdg.2',
+    'sdg.3',
+    'sdg.4',
+    'sdg.5',
+    'sdg.6',
+    'sdg.7',
+    'sdg.8',
+    'sdg.9',
+    'sdg.10',
+    'sdg.11',
+    'sdg.12',
+    'sdg.13',
+    'sdg.14',
+    'sdg.15',
+    'sdg.16',
+    'sdg.17',
   ];
 
+  static const Map<String, Map<String, _ImpactMetricDef>> _impactMetricDefs = {
+    'environmental': {
+      'co2_kg': _ImpactMetricDef('CO2 avoided / sequestered', 'kg'),
+      'water_liters': _ImpactMetricDef('Water saved', 'litres'),
+      'trees': _ImpactMetricDef('Trees planted', 'trees'),
+      'biodiversity': _ImpactMetricDef('Biodiversity score', '0-1'),
+    },
+    'social': {
+      'people_reached': _ImpactMetricDef('People reached', 'people'),
+      'volunteer_hours': _ImpactMetricDef('Volunteer hours', 'hours'),
+      'lives_improved': _ImpactMetricDef('Lives improved', 'people'),
+      'inclusion': _ImpactMetricDef('Inclusion score', '0-1'),
+    },
+    'economic': {
+      'income_egp': _ImpactMetricDef('Income generated', 'EGP'),
+      'jobs': _ImpactMetricDef('Jobs created', 'jobs'),
+      'local_gdp_egp': _ImpactMetricDef('Local GDP contribution', 'EGP'),
+    },
+    'governance': {
+      'transparency': _ImpactMetricDef('Transparency score', '0-100'),
+      'policy_adherence': _ImpactMetricDef('Policy adherence', '%'),
+      'community_engagement': _ImpactMetricDef('Community engagement', '0-1'),
+    },
+    'educational': {
+      'students_reached': _ImpactMetricDef('Students reached', 'students'),
+      'learning_hours': _ImpactMetricDef('Learning hours', 'hours'),
+      'curriculum': _ImpactMetricDef('Curriculum coverage', '%'),
+      'retention': _ImpactMetricDef('Knowledge retention', '%'),
+    },
+    'infrastructure': {
+      'facilities': _ImpactMetricDef('Facilities built', 'facilities'),
+      'maintenance_hours': _ImpactMetricDef('Maintenance hours', 'hours'),
+      'access': _ImpactMetricDef('People with new access', 'people'),
+    },
+  };
   @override
   void initState() {
     super.initState();
     if (widget.initial != null) {
       _text.text = widget.initial!.text;
       _program.text = widget.initial!.programTag ?? '';
+      _link.text = widget.initial!.linkUrl ?? '';
       _sdg = widget.initial!.sdg ?? 0;
       _kind = widget.initial!.kind ?? 'story';
     }
@@ -68,15 +129,19 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   void dispose() {
     _text.dispose();
     _program.dispose();
-    _impact.dispose();
-    _impactLabel.dispose();
+    _link.dispose();
+    _place.dispose();
+    for (final controller in _metricCtrl.values) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
   Future<void> _pickImage() async {
     if (_images.length >= 10) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('You can add up to 10 photos')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content:
+              Text(MasarenLocalizations.of(context, 'createPost.photoLimit'))));
       return;
     }
     final picked = await ImagePicker().pickMultiImage(
@@ -104,7 +169,110 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   Future<void> _pickVideo() async {
     final x = await ImagePicker().pickVideo(
         source: ImageSource.gallery, maxDuration: const Duration(minutes: 10));
-    if (x != null) setState(() { _video = File(x.path); _images.clear(); });
+    if (x != null) {
+      setState(() {
+        _video = File(x.path);
+        _images.clear();
+      });
+    }
+  }
+
+  Future<void> _pickVoice() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.audio,
+      allowMultiple: false,
+    );
+    if (!mounted || result == null || result.files.isEmpty) return;
+    final file = result.files.first;
+    if (file.size > 25 * 1024 * 1024) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(
+              MasarenLocalizations.of(context, 'createPost.fileTooLarge'))));
+      return;
+    }
+    setState(() => _voice = file);
+  }
+
+  String _audioTypeFor(String name) {
+    final ext = name.split('.').last.toLowerCase();
+    switch (ext) {
+      case 'mp3':
+        return 'audio/mpeg';
+      case 'aac':
+        return 'audio/aac';
+      case 'ogg':
+        return 'audio/ogg';
+      case 'wav':
+        return 'audio/wav';
+      case 'webm':
+        return 'audio/webm';
+      default:
+        return 'audio/mp4';
+    }
+  }
+
+  Future<void> _pickFiles() async {
+    if (_files.length >= 5) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content:
+              Text(MasarenLocalizations.of(context, 'createPost.fileLimit'))));
+      return;
+    }
+    final result = await FilePicker.platform.pickFiles(
+      allowMultiple: true,
+      type: FileType.custom,
+      allowedExtensions: const [
+        'pdf',
+        'doc',
+        'docx',
+        'xls',
+        'xlsx',
+        'ppt',
+        'pptx',
+        'txt',
+        'csv',
+        'zip'
+      ],
+    );
+    if (!mounted || result == null) return;
+    final accepted = <PlatformFile>[];
+    for (final file in result.files) {
+      if (_files.length + accepted.length >= 5) break;
+      if (file.size > 25 * 1024 * 1024) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(
+                MasarenLocalizations.of(context, 'createPost.fileTooLarge'))));
+        continue;
+      }
+      accepted.add(file);
+    }
+    if (accepted.isNotEmpty) setState(() => _files.addAll(accepted));
+  }
+
+  String _contentTypeFor(String name) {
+    final ext = name.split('.').last.toLowerCase();
+    switch (ext) {
+      case 'pdf':
+        return 'application/pdf';
+      case 'doc':
+        return 'application/msword';
+      case 'docx':
+        return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      case 'xls':
+        return 'application/vnd.ms-excel';
+      case 'xlsx':
+        return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+      case 'ppt':
+        return 'application/vnd.ms-powerpoint';
+      case 'pptx':
+        return 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+      case 'csv':
+        return 'text/csv';
+      case 'zip':
+        return 'application/zip';
+      default:
+        return 'text/plain';
+    }
   }
 
   Future<void> _editCaption(int index) async {
@@ -113,18 +281,23 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     final value = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Photo caption'),
+        title:
+            Text(MasarenLocalizations.of(context, 'createPost.photoCaption')),
         content: TextField(
           controller: controller,
           maxLength: 240,
           maxLines: 3,
-          decoration: const InputDecoration(hintText: 'Say something about this photo…'),
+          decoration: InputDecoration(
+              hintText:
+                  MasarenLocalizations.of(context, 'createPost.photoHint')),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(MasarenLocalizations.of(context, 'action.cancel'))),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, controller.text.trim()),
-            child: const Text('Save'),
+            child: Text(MasarenLocalizations.of(context, 'action.save')),
           ),
         ],
       ),
@@ -143,14 +316,18 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       } catch (_) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Could not check location services')),
+            SnackBar(
+                content: Text(MasarenLocalizations.of(
+                    context, 'createPost.locationCheckFailed'))),
           );
         }
         return;
       }
       if (!serviceEnabled && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Location services disabled. Enable in settings.')),
+          SnackBar(
+              content: Text(MasarenLocalizations.of(
+                  context, 'createPost.locationDisabled'))),
         );
         return;
       }
@@ -161,7 +338,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       } catch (_) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Could not check location permission')),
+            SnackBar(
+                content: Text(MasarenLocalizations.of(
+                    context, 'createPost.locationPermissionCheckFailed'))),
           );
         }
         return;
@@ -172,7 +351,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         } catch (_) {}
         if (permission == LocationPermission.denied && mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Location permission denied')),
+            SnackBar(
+                content: Text(MasarenLocalizations.of(
+                    context, 'createPost.locationDenied'))),
           );
           return;
         }
@@ -180,17 +361,33 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
       if (permission == LocationPermission.deniedForever && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Location permanently denied. Enable in settings.')),
+          SnackBar(
+              content: Text(MasarenLocalizations.of(
+                  context, 'createPost.locationPermanentlyDenied'))),
         );
         return;
       }
 
       final pos = await Geolocator.getCurrentPosition(
           locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.high,
-            timeLimit: Duration(seconds: 10),
-          ));
-      if (mounted) setState(() { _lat = pos.latitude; _lng = pos.longitude; });
+        accuracy: LocationAccuracy.high,
+        timeLimit: Duration(seconds: 10),
+      ));
+      if (mounted) {
+        setState(() {
+          _lat = pos.latitude;
+          _lng = pos.longitude;
+        });
+      }
+      AuthApi.captureGps({
+        'latitude': pos.latitude,
+        'longitude': pos.longitude,
+        'accuracy': pos.accuracy,
+        'altitude': pos.altitude,
+        'speed': pos.speed,
+        'heading': pos.heading,
+        'captured_at': DateTime.now().toUtc().toIso8601String(),
+      }).catchError((_) => <String, dynamic>{});
     } catch (e) {
       if (mounted) {
         debugPrint('GPS error: $e');
@@ -203,8 +400,26 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   Future<void> _submit() async {
     final text = _text.text.trim();
     if (text.isEmpty) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Write something first')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content:
+              Text(MasarenLocalizations.of(context, 'createPost.writeFirst'))));
+      return;
+    }
+    if ((_kind == 'impact' || _kind == 'evidence') && _lat == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text(
+              'GPS is required for impact and evidence posts so the claimed place can be checked.')));
+      return;
+    }
+    if (_kind == 'evidence' &&
+        _link.text.trim().isEmpty &&
+        _images.isEmpty &&
+        _files.isEmpty &&
+        _voice == null &&
+        _video == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content:
+              Text('Add a proof link, image, file or video for evidence.')));
       return;
     }
     setState(() => _busy = true);
@@ -213,8 +428,13 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       for (final image in _images) {
         final bytes = await image.file.readAsBytes();
         final ext = image.file.path.split('.').last.toLowerCase();
-        final ct = ext == 'png' ? 'image/png' : ext == 'webp' ? 'image/webp' : 'image/jpeg';
-        final url = await AuthApi.uploadMedia(bytes, image.file.path.split('/').last, ct);
+        final ct = ext == 'png'
+            ? 'image/png'
+            : ext == 'webp'
+                ? 'image/webp'
+                : 'image/jpeg';
+        final url = await AuthApi.uploadMedia(
+            bytes, image.file.path.split('/').last, ct);
         media.add({
           'type': 'IMAGE',
           'url': url,
@@ -234,8 +454,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             : ext == 'mov'
                 ? 'video/quicktime'
                 : 'video/mp4';
-        final result = await AuthApi.uploadVideo(
-            bytes, _video!.path.split('/').last, ct);
+        final result =
+            await AuthApi.uploadVideo(bytes, _video!.path.split('/').last, ct);
         videoUrl = result['url'] as String?;
         videoJobId = (result['job_id'] ?? result['video_job_id']) as String?;
         final rawHls = result['hls_url'] as String?;
@@ -245,7 +465,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         final rawPoster = result['poster_url'] as String?;
         videoPosterUrl = rawPoster == null
             ? null
-            : (rawPoster.startsWith('http') ? rawPoster : '${api.baseUrl}$rawPoster');
+            : (rawPoster.startsWith('http')
+                ? rawPoster
+                : '${api.baseUrl}$rawPoster');
         if (videoUrl != null && videoUrl.isNotEmpty) {
           media.add({
             'type': 'VIDEO',
@@ -256,6 +478,32 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         }
       }
 
+      if (_voice != null && _voice!.path != null) {
+        final bytes = await File(_voice!.path!).readAsBytes();
+        final url = await AuthApi.uploadAudio(
+            bytes, _voice!.name, _audioTypeFor(_voice!.name));
+        if (url.isNotEmpty) {
+          media.add({'type': 'AUDIO', 'url': url});
+        }
+      }
+
+      final files = <Map<String, dynamic>>[];
+      for (final file in _files) {
+        final path = file.path;
+        if (path == null) continue;
+        final bytes = await File(path).readAsBytes();
+        final ct = _contentTypeFor(file.name);
+        final result = await AuthApi.uploadFile(bytes, file.name, ct);
+        final url = result['url'] as String?;
+        if (url == null || url.isEmpty) continue;
+        files.add({
+          'url': url,
+          'name': (result['name'] ?? file.name).toString(),
+          'size': file.size,
+          'content_type': ct,
+        });
+      }
+
       final body = <String, dynamic>{
         'text': text,
         'kind': _kind,
@@ -263,14 +511,26 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         'author_handle': widget.user.email.split('@').first,
       };
 
-      if (_program.text.trim().isNotEmpty) body['program_tag'] = _program.text.trim();
+      if (_program.text.trim().isNotEmpty) {
+        body['program_tag'] = _program.text.trim();
+      }
+      if (_link.text.trim().isNotEmpty) body['link_url'] = _link.text.trim();
       if (_sdg > 0) body['sdg'] = _sdg;
-      final iv = double.tryParse(_impact.text);
-      if (iv != null && iv > 0) {
-        body['impact_value'] = iv;
-        body['impact_label'] = _impactLabel.text.trim().isNotEmpty ? _impactLabel.text.trim() : 'impact';
+      final metricValues = <String, Map<String, double>>{};
+      for (final domain in _impactMetricDefs.entries) {
+        final values = <String, double>{};
+        for (final metric in domain.value.keys) {
+          final value = double.tryParse(_metricCtrl['.']?.text.trim() ?? '');
+          if (value != null && value > 0) values[metric] = value;
+        }
+        if (values.isNotEmpty) metricValues[domain.key] = values;
+      }
+      if (metricValues.isNotEmpty) body['impact_metrics'] = metricValues;
+      if (_place.text.trim().isNotEmpty) {
+        body['location_claim'] = _place.text.trim();
       }
       if (media.isNotEmpty) body['media'] = media;
+      if (files.isNotEmpty) body['files'] = files;
       if (videoJobId != null) body['video_job_id'] = videoJobId;
       if (videoHlsUrl != null) body['video_hls_url'] = videoHlsUrl;
       if (videoPosterUrl != null) body['video_poster_url'] = videoPosterUrl;
@@ -279,16 +539,25 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         body['longitude'] = _lng;
       }
 
-      await AuthApi.createPost(body);
+      if (widget.initial != null) {
+        await AuthApi.editPostFull(widget.initial!.id, body);
+      } else {
+        await AuthApi.createPost(body);
+      }
       if (mounted) {
         Navigator.pop(context, true);
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Post published')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(MasarenLocalizations.of(
+                context,
+                widget.initial != null
+                    ? 'createPost.updated'
+                    : 'createPost.published'))));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Failed: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(MasarenLocalizations.of(context, 'common.failed')
+                .replaceAll('{error}', '$e'))));
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -302,10 +571,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+          icon: Icon(directionalBackIcon(context), size: 20),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('New post'),
+        title: Text(MasarenLocalizations.of(context, 'createPost.newPost')),
         actions: [
           TextButton(
             onPressed: _busy ? null : _submit,
@@ -315,36 +584,26 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             ),
             child: _busy
                 ? SizedBox(
-                    width: 18, height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: cs.primary))
-                : const Text('Post', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: cs.primary))
+                : Text(MasarenLocalizations.of(context, 'createPost.post'),
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w700, fontSize: 15)),
           ),
         ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Row(
-            children: [
-              AppAvatar(name: widget.user.fullName, url: widget.user.avatarUrl, size: 44),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(widget.user.fullName,
-                        style: TextStyle(color: cs.onSurface, fontWeight: FontWeight.w600)),
-                    Text('Posting publicly',
-                        style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          Text('Post type',
-              style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w500)),
+          _buildComposerHero(cs, dark),
+          const SizedBox(height: 18),
+          Text(MasarenLocalizations.of(context, 'createPost.postType'),
+              style: TextStyle(
+                  color: cs.onSurfaceVariant,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500)),
           const SizedBox(height: 8),
           SizedBox(
             height: 100,
@@ -362,19 +621,27 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                     width: 82,
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: sel ? k.color.withValues(alpha: dark ? 0.3 : 0.15) : cs.surfaceContainerHighest,
+                      color: sel
+                          ? k.color.withValues(alpha: dark ? 0.3 : 0.15)
+                          : cs.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: sel ? k.color : cs.outlineVariant, width: sel ? 2 : 1),
+                      border: Border.all(
+                          color: sel ? k.color : cs.outlineVariant,
+                          width: sel ? 2 : 1),
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(k.icon, color: sel ? k.color : cs.onSurfaceVariant, size: 24),
+                        Icon(k.icon,
+                            color: sel ? k.color : cs.onSurfaceVariant,
+                            size: 24),
                         const SizedBox(height: 4),
-                        Text(k.label, textAlign: TextAlign.center,
+                        Text(MasarenLocalizations.of(context, k.label),
+                            textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 11,
-                              fontWeight: sel ? FontWeight.w700 : FontWeight.w500,
+                              fontWeight:
+                                  sel ? FontWeight.w700 : FontWeight.w500,
                               color: sel ? k.color : cs.onSurfaceVariant,
                             )),
                       ],
@@ -384,7 +651,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               },
             ),
           ),
-
           const SizedBox(height: 8),
           TextField(
             controller: _text,
@@ -392,13 +658,13 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             minLines: 3,
             style: TextStyle(color: cs.onSurface, fontSize: 15),
             decoration: InputDecoration(
-              hintText: _kindHint(),
+              hintText: _kindHint(context),
               hintStyle: TextStyle(color: cs.onSurfaceVariant),
               border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             ),
           ),
-
           if (_images.isNotEmpty)
             SizedBox(
               height: 148,
@@ -452,7 +718,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                             child: Container(
                               padding: const EdgeInsets.all(4),
                               decoration: const BoxDecoration(
-                                  color: Colors.black54, shape: BoxShape.circle),
+                                  color: Colors.black54,
+                                  shape: BoxShape.circle),
                               child: const Icon(Icons.close,
                                   color: Colors.white, size: 16),
                             ),
@@ -475,62 +742,108 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                 },
               ),
             ),
-
           if (_video != null)
             Stack(
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(14),
                   child: Container(
-                    height: 200, width: double.infinity,
+                    height: 200,
+                    width: double.infinity,
                     color: Colors.black,
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.videocam, color: Colors.white, size: 48),
+                        const Icon(Icons.videocam,
+                            color: Colors.white, size: 48),
                         const SizedBox(height: 8),
                         Text(_video!.path.split('/').last,
-                            style: const TextStyle(color: Colors.white70, fontSize: 12),
+                            style: const TextStyle(
+                                color: Colors.white70, fontSize: 12),
                             overflow: TextOverflow.ellipsis),
                       ],
                     ),
                   ),
                 ),
                 Positioned(
-                  top: 8, right: 8,
+                  top: 8,
+                  right: 8,
                   child: GestureDetector(
                     onTap: () => setState(() => _video = null),
                     child: Container(
                       padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
-                      child: const Icon(Icons.close, color: Colors.white, size: 18),
+                      decoration: const BoxDecoration(
+                          color: Colors.black54, shape: BoxShape.circle),
+                      child: const Icon(Icons.close,
+                          color: Colors.white, size: 18),
                     ),
                   ),
                 ),
               ],
             ),
-
+          if (_voice != null) ...[
+            const SizedBox(height: 10),
+            _buildVoicePreview(cs),
+          ],
+          if (_files.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            _buildFilesPreview(cs, dark),
+          ],
           const SizedBox(height: 12),
           Wrap(
-            spacing: 8, runSpacing: 8,
+            spacing: 8,
+            runSpacing: 8,
             children: [
-              _BuildChip(icon: Icons.photo_library_outlined, label: 'Gallery', onTap: _pickImage, cs: cs),
-              _BuildChip(icon: Icons.camera_alt_outlined, label: 'Camera', onTap: _takePhoto, cs: cs),
-              _BuildChip(icon: Icons.videocam_outlined, label: 'Video', onTap: _pickVideo, cs: cs),
+              _BuildChip(
+                  icon: Icons.photo_library_outlined,
+                  label: MasarenLocalizations.of(context, 'createPost.gallery'),
+                  onTap: _pickImage,
+                  cs: cs),
+              _BuildChip(
+                  icon: Icons.camera_alt_outlined,
+                  label: MasarenLocalizations.of(context, 'createPost.camera'),
+                  onTap: _takePhoto,
+                  cs: cs),
+              _BuildChip(
+                  icon: Icons.videocam_outlined,
+                  label: MasarenLocalizations.of(context, 'createPost.video'),
+                  onTap: _pickVideo,
+                  cs: cs),
+              _BuildChip(
+                  icon: Icons.mic_none_rounded,
+                  label:
+                      MasarenLocalizations.of(context, 'createPost.voiceNote'),
+                  onTap: _pickVoice,
+                  cs: cs,
+                  active: _voice != null),
+              _BuildChip(
+                  icon: Icons.attach_file_rounded,
+                  label: MasarenLocalizations.of(context, 'createPost.addFile'),
+                  onTap: _pickFiles,
+                  cs: cs,
+                  active: _files.isNotEmpty),
               _BuildChip(
                 icon: Icons.my_location,
-                label: _lat != null ? 'GPS Captured' : 'Add GPS',
-                onTap: _captureGps, cs: cs, active: _lat != null, loading: _gpsLoading,
+                label: MasarenLocalizations.of(
+                    context,
+                    _lat != null
+                        ? 'createPost.gpsCaptured'
+                        : 'createPost.addGps'),
+                onTap: _captureGps,
+                cs: cs,
+                active: _lat != null,
+                loading: _gpsLoading,
               ),
               _BuildChip(
                 icon: Icons.expand_more,
-                label: _showAdvanced ? 'Less' : 'More',
+                label: MasarenLocalizations.of(context,
+                    _showAdvanced ? 'createPost.less' : 'createPost.more'),
                 onTap: () => setState(() => _showAdvanced = !_showAdvanced),
-                cs: cs, active: _showAdvanced,
+                cs: cs,
+                active: _showAdvanced,
               ),
             ],
           ),
-
           if (_lat != null) ...[
             const SizedBox(height: 8),
             Container(
@@ -542,41 +855,44 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.location_on, color: AppColors.accent, size: 16),
+                  const Icon(Icons.location_on,
+                      color: AppColors.accent, size: 16),
                   const SizedBox(width: 6),
-                  Text('${_lat!.toStringAsFixed(5)}, ${_lng!.toStringAsFixed(5)}',
-                      style: const TextStyle(color: AppColors.accent, fontSize: 12, fontWeight: FontWeight.w500)),
+                  Text(
+                      '${_lat!.toStringAsFixed(5)}, ${_lng!.toStringAsFixed(5)}',
+                      style: const TextStyle(
+                          color: AppColors.accent,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500)),
                 ],
               ),
             ),
           ],
-
+          if (_hasKindDetails) ...[
+            const SizedBox(height: 16),
+            _buildKindDetails(cs),
+          ],
           if (_showAdvanced) ...[
             const SizedBox(height: 16),
             Divider(color: cs.outlineVariant),
             const SizedBox(height: 12),
-            Text('Link to program',
-                style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w500)),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _program,
-              style: TextStyle(color: cs.onSurface),
-              decoration: InputDecoration(
-                hintText: 'Search or enter program name…',
-                prefixIcon: const Icon(Icons.hub, size: 20),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            Text('SDG Goal',
-                style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w500)),
+            if (!_showsProgram) ...[
+              _detailLabel(cs, 'createPost.linkProgram'),
+              const SizedBox(height: 8),
+              _programField(cs),
+              const SizedBox(height: 16),
+            ],
+            if (!_showsImpact) ...[
+              _impactFields(cs),
+              const SizedBox(height: 16),
+            ],
+            _detailLabel(cs, 'createPost.sdgGoal'),
             const SizedBox(height: 8),
             SizedBox(
               height: 44,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
-                itemCount: 18,
+                itemCount: 17,
                 separatorBuilder: (_, __) => const SizedBox(width: 6),
                 itemBuilder: (_, i) {
                   final sdg = i + 1;
@@ -587,14 +903,16 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                       duration: const Duration(milliseconds: 200),
                       width: 44,
                       decoration: BoxDecoration(
-                        color: sel ? _sdgColor(sdg) : cs.surfaceContainerHighest,
+                        color:
+                            sel ? _sdgColor(sdg) : cs.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       alignment: Alignment.center,
                       child: Text('$sdg',
                           style: TextStyle(
                             color: sel ? Colors.white : cs.onSurfaceVariant,
-                            fontWeight: FontWeight.w700, fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
                           )),
                     ),
                   );
@@ -604,37 +922,15 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             if (_sdg > 0)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
-                child: Text(_sdgLabels[_sdg], style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
+                child: Text(MasarenLocalizations.of(context, _sdgKeys[_sdg]),
+                    style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
               ),
-            const SizedBox(height: 16),
-
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _impact,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    style: TextStyle(color: cs.onSurface),
-                    decoration: InputDecoration(
-                      hintText: 'Impact value',
-                      prefixIcon: const Icon(Icons.insights, size: 20),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextField(
-                    controller: _impactLabel,
-                    style: TextStyle(color: cs.onSurface),
-                    decoration: InputDecoration(
-                      hintText: 'Label (e.g. trees planted)',
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+            if (!_showsLink) ...[
+              const SizedBox(height: 16),
+              _detailLabel(cs, 'createPost.linkUrl'),
+              const SizedBox(height: 8),
+              _linkField(cs),
+            ],
           ],
           const SizedBox(height: 32),
         ],
@@ -642,28 +938,394 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     );
   }
 
-  String _kindHint() {
-    if (_kind == 'course') return 'Share a course: title, who it is for, lessons and how to enroll. Create it in Courses for enrollment.';
-    if (_kind == 'event') return 'Share an event: date, venue or online link, and who should attend. Create it in Events for RSVPs.';
+  Widget _buildComposerHero(ColorScheme cs, bool dark) {
+    final option =
+        _kinds.firstWhere((k) => k.value == _kind, orElse: () => _kinds.first);
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        gradient: LinearGradient(
+          colors: [option.color, option.color.withValues(alpha: 0.78)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: option.color.withValues(alpha: 0.28),
+            blurRadius: 22,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(13),
+                  border:
+                      Border.all(color: Colors.white.withValues(alpha: 0.18)),
+                ),
+                child: Icon(option.icon, color: Colors.white, size: 20),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      MasarenLocalizations.of(context, option.label),
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800),
+                    ),
+                    Text(
+                      MasarenLocalizations.of(
+                          context, 'createPost.postingPublicly'),
+                      style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.7),
+                          fontSize: 11.5),
+                    ),
+                  ],
+                ),
+              ),
+              AppAvatar(
+                  name: widget.user.fullName,
+                  url: widget.user.avatarUrl,
+                  size: 36),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Text(
+            _kindHint(context),
+            style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.86),
+                fontSize: 12.5,
+                height: 1.45,
+                fontWeight: FontWeight.w500),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVoicePreview(ColorScheme cs) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+          color: cs.primary.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: cs.primary.withValues(alpha: 0.25))),
+      child: Row(
+        children: [
+          Icon(Icons.graphic_eq_rounded, color: cs.primary, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+                '${MasarenLocalizations.of(context, 'createPost.voiceNote')} · ${_voice!.name}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                    fontSize: 12.5, fontWeight: FontWeight.w600)),
+          ),
+          IconButton(
+            onPressed: () => setState(() => _voice = null),
+            icon: const Icon(Icons.close, size: 18),
+            tooltip: MasarenLocalizations.of(context, 'createPost.removeFile'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilesPreview(ColorScheme cs, bool dark) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: _files.map((file) {
+        final ext = file.name.split('.').last.toUpperCase();
+        return Container(
+          constraints: const BoxConstraints(maxWidth: 260),
+          padding: const EdgeInsets.fromLTRB(10, 7, 6, 7),
+          decoration: BoxDecoration(
+            color: dark ? const Color(0xFF1A2622) : const Color(0xFFF1F4EF),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+                color:
+                    dark ? const Color(0xFF2E3B36) : const Color(0xFFDDE5DE)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.insert_drive_file_outlined,
+                  size: 17, color: cs.primary),
+              const SizedBox(width: 7),
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(file.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                            color: cs.onSurface,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600)),
+                    Text('$ext  ·  ${(file.size / 1024).ceil()} KB',
+                        style: TextStyle(
+                            color: cs.onSurfaceVariant, fontSize: 10)),
+                  ],
+                ),
+              ),
+              IconButton(
+                onPressed: () => setState(() => _files.remove(file)),
+                icon: const Icon(Icons.close_rounded, size: 15),
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                color: cs.onSurfaceVariant,
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  bool get _showsImpact => _kind == 'impact' || _kind == 'evidence';
+
+  bool get _showsProgram => _kind == 'program' || _kind == 'task';
+
+  bool get _showsLink =>
+      _kind == 'evidence' ||
+      _kind == 'event' ||
+      _kind == 'course' ||
+      _kind == 'announcement' ||
+      _kind == 'recognition';
+
+  bool get _hasKindDetails => _showsImpact || _showsProgram || _showsLink;
+
+  Widget _detailLabel(ColorScheme cs, String key) {
+    return Text(MasarenLocalizations.of(context, key),
+        style: TextStyle(
+            color: cs.onSurfaceVariant,
+            fontSize: 13,
+            fontWeight: FontWeight.w500));
+  }
+
+  Widget _buildKindDetails(ColorScheme cs) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final option =
+        _kinds.firstWhere((k) => k.value == _kind, orElse: () => _kinds.first);
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: option.color.withValues(alpha: dark ? 0.12 : 0.06),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: option.color.withValues(alpha: 0.25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.tune_rounded, size: 18, color: option.color),
+              const SizedBox(width: 7),
+              Text(
+                MasarenLocalizations.of(context, 'createPost.details'),
+                style: TextStyle(
+                    color: option.color,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800),
+              ),
+            ],
+          ),
+          if (_showsImpact) ...[
+            const SizedBox(height: 12),
+            _impactFields(cs),
+          ],
+          if (_showsProgram) ...[
+            const SizedBox(height: 12),
+            _programField(cs),
+          ],
+          if (_showsLink) ...[
+            const SizedBox(height: 12),
+            _linkField(cs),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _programField(ColorScheme cs) {
+    return TextField(
+      controller: _program,
+      style: TextStyle(color: cs.onSurface),
+      decoration: InputDecoration(
+        hintText: MasarenLocalizations.of(context, 'createPost.programHint'),
+        prefixIcon: const Icon(Icons.hub, size: 20),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      ),
+    );
+  }
+
+  Widget _impactFields(ColorScheme cs) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Impact is non-linear: each domain saturates, decays over time, and is weighted by evidence coverage, actor history, consistency and community confirmation. GPS is optional and only adds a geographic confidence factor.',
+          style: TextStyle(
+              fontSize: 11.5, height: 1.45, color: cs.onSurfaceVariant),
+        ),
+        const SizedBox(height: 10),
+        TextField(
+          controller: _place,
+          style: TextStyle(color: cs.onSurface, fontSize: 13),
+          decoration: const InputDecoration(
+            labelText: 'Claimed location (city, venue, site)',
+            prefixIcon: Icon(Icons.place_outlined, size: 19),
+            isDense: true,
+          ),
+        ),
+        const SizedBox(height: 10),
+        ..._impactMetricDefs.entries
+            .map((domain) => _impactDomainCard(cs, domain.key, domain.value)),
+      ],
+    );
+  }
+
+  Widget _impactDomainCard(
+      ColorScheme cs, String domain, Map<String, _ImpactMetricDef> defs) {
+    final meta = switch (domain) {
+      'environmental' => ('Environment', Icons.eco_outlined),
+      'social' => ('Social', Icons.groups_outlined),
+      'economic' => ('Economic', Icons.trending_up),
+      'governance' => ('Governance', Icons.account_balance_outlined),
+      'educational' => ('Education', Icons.school_outlined),
+      'infrastructure' => ('Infrastructure', Icons.construction_outlined),
+      _ => (domain, Icons.insights),
+    };
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest.withValues(alpha: .35),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(meta.$2, size: 16, color: cs.primary),
+              const SizedBox(width: 6),
+              Text(meta.$1,
+                  style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                      color: cs.onSurface)),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: defs.entries.map((entry) {
+              final controller = _metricCtrl.putIfAbsent(
+                  '$domain.${entry.key}', () => TextEditingController());
+              return SizedBox(
+                width: (MediaQuery.sizeOf(context).width - 80) / 2,
+                child: TextField(
+                  controller: controller,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  style: TextStyle(color: cs.onSurface, fontSize: 13),
+                  decoration: InputDecoration(
+                    labelText: entry.value.label,
+                    suffixText: entry.value.unit,
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 10),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _linkField(ColorScheme cs) {
+    return TextField(
+      controller: _link,
+      keyboardType: TextInputType.url,
+      style: TextStyle(color: cs.onSurface),
+      decoration: InputDecoration(
+        hintText: MasarenLocalizations.of(context, 'createPost.linkUrlHint'),
+        prefixIcon: const Icon(Icons.link_rounded, size: 20),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      ),
+    );
+  }
+
+  String _kindHint(BuildContext context) {
+    if (_kind == 'course') {
+      return MasarenLocalizations.of(context, 'createPost.hint.course');
+    }
+    if (_kind == 'event') {
+      return MasarenLocalizations.of(context, 'createPost.hint.event');
+    }
     switch (_kind) {
-      case 'impact': return 'Describe the verified impact outcome…';
-      case 'evidence': return 'Describe the evidence you captured in the field…';
-      case 'program': return 'Share a program update…';
-      case 'task': return 'Share a completed task result…';
-      case 'announcement': return 'Make an announcement…';
-      case 'recognition': return 'Recognize someone\'s contribution…';
-      default: return 'Share your impact story…';
+      case 'impact':
+        return MasarenLocalizations.of(context, 'createPost.hint.impact');
+      case 'evidence':
+        return MasarenLocalizations.of(context, 'createPost.hint.evidence');
+      case 'program':
+        return MasarenLocalizations.of(context, 'createPost.hint.program');
+      case 'task':
+        return MasarenLocalizations.of(context, 'createPost.hint.task');
+      case 'announcement':
+        return MasarenLocalizations.of(context, 'createPost.hint.announcement');
+      case 'recognition':
+        return MasarenLocalizations.of(context, 'createPost.hint.recognition');
+      default:
+        return MasarenLocalizations.of(context, 'createPost.hint.story');
     }
   }
 
   static Color _sdgColor(int sdg) {
     const colors = [
       Colors.transparent,
-      Color(0xFFE5243B), Color(0xFFDDA63A), Color(0xFF4C9F38), Color(0xFFC5192D),
-      Color(0xFFFF3A21), Color(0xFF26BDE2), Color(0xFF22B14C), Color(0xFFFCC30B),
-      Color(0xFFA21942), Color(0xFFFD6925), Color(0xFFDD1367), Color(0xFFFD9D24),
-      Color(0xFFBF8B2E), Color(0xFF3F7E44), Color(0xFF0A97D9), Color(0xFF56C02B),
-      Color(0xFF00689D), Color(0xFF19486A),
+      Color(0xFFE5243B),
+      Color(0xFFDDA63A),
+      Color(0xFF4C9F38),
+      Color(0xFFC5192D),
+      Color(0xFFFF3A21),
+      Color(0xFF26BDE2),
+      Color(0xFF22B14C),
+      Color(0xFFFCC30B),
+      Color(0xFFA21942),
+      Color(0xFFFD6925),
+      Color(0xFFDD1367),
+      Color(0xFFFD9D24),
+      Color(0xFFBF8B2E),
+      Color(0xFF3F7E44),
+      Color(0xFF0A97D9),
+      Color(0xFF56C02B),
+      Color(0xFF00689D),
+      Color(0xFF19486A),
     ];
     return sdg >= 0 && sdg < colors.length ? colors[sdg] : Colors.blue;
   }
@@ -691,8 +1353,12 @@ class _BuildChip extends StatelessWidget {
   final bool active;
   final bool loading;
   const _BuildChip({
-    required this.icon, required this.label, required this.onTap, required this.cs,
-    this.active = false, this.loading = false,
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    required this.cs,
+    this.active = false,
+    this.loading = false,
   });
 
   @override
@@ -702,7 +1368,9 @@ class _BuildChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: active ? cs.primary.withValues(alpha: 0.15) : cs.surfaceContainerHighest,
+          color: active
+              ? cs.primary.withValues(alpha: 0.15)
+              : cs.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: active ? cs.primary : cs.outlineVariant),
         ),
@@ -710,18 +1378,29 @@ class _BuildChip extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (loading)
-              const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+              const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2))
             else
-              Icon(icon, size: 16, color: active ? cs.primary : cs.onSurfaceVariant),
+              Icon(icon,
+                  size: 16, color: active ? cs.primary : cs.onSurfaceVariant),
             const SizedBox(width: 6),
-            Text(label, style: TextStyle(
-              fontSize: 13,
-              color: active ? cs.primary : cs.onSurfaceVariant,
-              fontWeight: active ? FontWeight.w600 : FontWeight.w400,
-            )),
+            Text(label,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: active ? cs.primary : cs.onSurfaceVariant,
+                  fontWeight: active ? FontWeight.w600 : FontWeight.w400,
+                )),
           ],
         ),
       ),
     );
   }
+}
+
+class _ImpactMetricDef {
+  final String label;
+  final String unit;
+  const _ImpactMetricDef(this.label, this.unit);
 }

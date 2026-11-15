@@ -147,8 +147,9 @@ export async function sendFcmMessageToToken(env, deviceToken, payload, fetcher =
   const type = String(payload.type || 'system');
   const title = String(payload.title || 'MASAREEN').slice(0, 140);
   const body = String(payload.body || '').slice(0, 300);
-  const routePayload =
-    type === 'message'
+  const routePayload = payload.link
+    ? String(payload.link)
+    : type === 'message'
       ? 'messages'
       : type.startsWith('opportunity')
       ? 'opportunities'
@@ -167,6 +168,9 @@ export async function sendFcmMessageToToken(env, deviceToken, payload, fetcher =
       payload: routePayload,
       actor_id: payload.actorId == null ? '' : String(payload.actorId),
       post_id: payload.postId == null ? '' : String(payload.postId),
+      link: payload.link == null ? '' : String(payload.link),
+      entity_type: payload.entityType == null ? '' : String(payload.entityType),
+      entity_id: payload.entityId == null ? '' : String(payload.entityId),
       click_action: 'FLUTTER_NOTIFICATION_CLICK',
     },
     android: {

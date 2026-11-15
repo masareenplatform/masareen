@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:masaren/api_client.dart';
+import 'package:masaren/l10n.dart';
 import 'package:masaren/models.dart';
 
 class PaymentsScreen extends StatefulWidget {
@@ -56,19 +57,26 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
     if (mounted) setState(() => _loading = false);
   }
 
-  String get _selectedMethodKey => _selectedMethod == 0 ? 'card' : 'vodafone_cash';
+  String get _selectedMethodKey => _selectedMethod == 0
+      ? 'card'
+      : (_selectedMethod == 1 ? 'vodafone_cash' : 'instapay');
 
   Future<void> _pay() async {
-    final amount = double.tryParse(_amountCtl.text.trim());
+    var amount = double.tryParse(_amountCtl.text.trim());
     if (amount == null || amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid amount')),
+        SnackBar(
+            content: Text(
+                MasarenLocalizations.of(context, 'payments.invalidAmount'))),
       );
       return;
     }
+    if (amount > 100000) amount = 100000;
     if (_selectedMethod == 1 && _phoneCtl.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Phone number required for Vodafone Cash')),
+        SnackBar(
+            content: Text(
+                MasarenLocalizations.of(context, 'payments.phoneRequired'))),
       );
       return;
     }
@@ -85,41 +93,74 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
       if (!mounted) return;
 
       final redirectUrl = resp['redirect_url'] as String?;
-      final paymentKey = resp['payment_key'] as String?;
       final orderId = resp['order_id']?.toString();
+      final paymentId = resp['payment'] is Map
+          ? (resp['payment']['id'] ?? resp['payment']['payment_id'])?.toString()
+          : null;
 
       if (redirectUrl != null && redirectUrl.isNotEmpty) {
         final uri = Uri.parse(redirectUrl);
         if (await canLaunchUrl(uri)) {
           await launchUrl(uri, mode: LaunchMode.externalApplication);
         } else {
+          if (!mounted) return;
           _showResultDialog(
-            title: 'Payment Details',
+            title: MasarenLocalizations.of(context, 'payments.details'),
             redirectUrl: redirectUrl,
-            paymentKey: paymentKey,
             orderId: orderId,
           );
         }
       } else {
         _showResultDialog(
-          title: 'Payment Initiated',
+          title: MasarenLocalizations.of(context, 'payments.initiated'),
           redirectUrl: null,
-          paymentKey: paymentKey,
           orderId: orderId,
         );
+      }
+
+      if (paymentId != null) {
+        String? finalStatus;
+        for (var i = 0; i < 10; i++) {
+          await Future.delayed(const Duration(seconds: 3));
+          try {
+            final status = await AuthApi.paymentStatus(paymentId);
+            finalStatus = status['status']?.toString();
+            if (finalStatus == 'SUCCESS' ||
+                finalStatus == 'FAILED' ||
+                finalStatus == 'REVIEW' ||
+                finalStatus == 'REFUNDED' ||
+                finalStatus == 'VOIDED') {
+              break;
+            }
+          } catch (_) {
+            break;
+          }
+        }
+        if (mounted && finalStatus != null) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(MasarenLocalizations.of(
+                  context,
+                  finalStatus == 'SUCCESS'
+                      ? 'payments.success'
+                      : 'payments.notCompleted'))));
+        }
       }
 
       await _load();
     } on ApiException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Payment failed: ${e.message}')),
+          SnackBar(
+              content: Text(MasarenLocalizations.of(context, 'payments.failed')
+                  .replaceAll('{error}', e.message ?? ''))),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Payment failed: $e')),
+          SnackBar(
+              content: Text(MasarenLocalizations.of(context, 'payments.failed')
+                  .replaceAll('{error}', '$e'))),
         );
       }
     } finally {
@@ -130,7 +171,6 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
   void _showResultDialog({
     required String title,
     String? redirectUrl,
-    String? paymentKey,
     String? orderId,
   }) {
     final cs = Theme.of(context).colorScheme;
@@ -143,24 +183,23 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (orderId != null) ...[
-              Text('Order ID', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
+              Text(MasarenLocalizations.of(context, 'payments.orderId'),
+                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
               const SizedBox(height: 2),
-              Text(orderId, style: TextStyle(color: cs.onSurface, fontWeight: FontWeight.w600)),
-              const SizedBox(height: 12),
-            ],
-            if (paymentKey != null) ...[
-              Text('Payment Key', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
-              const SizedBox(height: 2),
-              SelectableText(paymentKey, style: TextStyle(color: cs.onSurface, fontSize: 13)),
+              Text(orderId,
+                  style: TextStyle(
+                      color: cs.onSurface, fontWeight: FontWeight.w600)),
               const SizedBox(height: 12),
             ],
             if (redirectUrl != null) ...[
-              Text('Redirect URL', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
+              Text(MasarenLocalizations.of(context, 'payments.redirectUrl'),
+                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
               const SizedBox(height: 2),
-              SelectableText(redirectUrl, style: TextStyle(color: cs.primary, fontSize: 13)),
+              SelectableText(redirectUrl,
+                  style: TextStyle(color: cs.primary, fontSize: 13)),
             ],
-            if (redirectUrl == null && paymentKey == null && orderId == null)
-              const Text('Payment intent created. Check your inbox for updates.'),
+            if (redirectUrl == null && orderId == null)
+              Text(MasarenLocalizations.of(context, 'payments.intentCreated')),
           ],
         ),
         actions: [
@@ -173,23 +212,25 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                 }
               },
               icon: const Icon(Icons.open_in_new, size: 18),
-              label: const Text('Open in Browser'),
+              label: Text(
+                  MasarenLocalizations.of(context, 'payments.openBrowser')),
             ),
-          if (redirectUrl != null || paymentKey != null)
+          if (redirectUrl != null)
             TextButton.icon(
               onPressed: () {
-                final text = redirectUrl ?? paymentKey ?? '';
-                Clipboard.setData(ClipboardData(text: text));
+                Clipboard.setData(ClipboardData(text: redirectUrl));
                 ScaffoldMessenger.of(ctx).showSnackBar(
-                  const SnackBar(content: Text('Copied to clipboard')),
+                  SnackBar(
+                      content: Text(
+                          MasarenLocalizations.of(context, 'payments.copied'))),
                 );
               },
               icon: const Icon(Icons.copy, size: 18),
-              label: const Text('Copy'),
+              label: Text(MasarenLocalizations.of(context, 'payments.copy')),
             ),
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Close'),
+            child: Text(MasarenLocalizations.of(context, 'payments.close')),
           ),
         ],
       ),
@@ -202,7 +243,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Payments'),
+        title: Text(MasarenLocalizations.of(context, 'payments.title')),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -213,12 +254,14 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                     children: [
                       Icon(Icons.payment_outlined, size: 48, color: cs.outline),
                       const SizedBox(height: 12),
-                      Text(_error!, style: TextStyle(color: cs.onSurfaceVariant)),
+                      Text(_error!,
+                          style: TextStyle(color: cs.onSurfaceVariant)),
                       const SizedBox(height: 12),
                       TextButton.icon(
                         onPressed: _load,
                         icon: const Icon(Icons.refresh),
-                        label: const Text('Retry'),
+                        label: Text(
+                            MasarenLocalizations.of(context, 'common.retry')),
                       ),
                     ],
                   ),
@@ -261,9 +304,11 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
           Row(
             children: [
               Container(
-                width: 40, height: 40,
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
-                  color: (enabled ? Colors.green : Colors.orange).withValues(alpha: 0.15),
+                  color: (enabled ? Colors.green : Colors.orange)
+                      .withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
@@ -286,7 +331,8 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                       ),
                     ),
                     Text(
-                      enabled ? 'Active' : 'Unavailable',
+                      MasarenLocalizations.of(context,
+                          enabled ? 'payments.active' : 'payments.unavailable'),
                       style: TextStyle(
                         color: enabled ? Colors.green : Colors.orange,
                         fontSize: 13,
@@ -302,10 +348,13 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
           const SizedBox(height: 12),
           Row(
             children: [
-              _InfoChip(label: 'Currency', value: currency.toString(), cs: cs),
+              _InfoChip(
+                  label: MasarenLocalizations.of(context, 'payments.currency'),
+                  value: currency.toString(),
+                  cs: cs),
               const SizedBox(width: 12),
               _InfoChip(
-                label: 'Methods',
+                label: MasarenLocalizations.of(context, 'payments.methods'),
                 value: methodsList.isEmpty ? '-' : methodsList.join(', '),
                 cs: cs,
               ),
@@ -328,7 +377,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Top Up',
+            MasarenLocalizations.of(context, 'wallet.topUp'),
             style: TextStyle(
               fontWeight: FontWeight.w600,
               fontSize: 16,
@@ -341,14 +390,15 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             style: TextStyle(color: cs.onSurface),
             decoration: InputDecoration(
-              hintText: 'Amount (EGP)',
+              hintText: MasarenLocalizations.of(context, 'payments.amountEgp'),
               prefixIcon: const Icon(Icons.attach_money, size: 20),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             ),
           ),
           const SizedBox(height: 16),
           Text(
-            'Payment Method',
+            MasarenLocalizations.of(context, 'payments.paymentMethod'),
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w500,
@@ -361,7 +411,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
               Expanded(
                 child: _MethodCard(
                   icon: Icons.credit_card,
-                  label: 'Card',
+                  label: MasarenLocalizations.of(context, 'payments.card'),
                   selected: _selectedMethod == 0,
                   cs: cs,
                   onTap: () => setState(() => _selectedMethod = 0),
@@ -371,10 +421,21 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
               Expanded(
                 child: _MethodCard(
                   icon: Icons.phone_android,
-                  label: 'Vodafone Cash',
+                  label:
+                      MasarenLocalizations.of(context, 'payments.vodafoneCash'),
                   selected: _selectedMethod == 1,
                   cs: cs,
                   onTap: () => setState(() => _selectedMethod = 1),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _MethodCard(
+                  icon: Icons.account_balance,
+                  label: MasarenLocalizations.of(context, 'payments.instaPay'),
+                  selected: _selectedMethod == 2,
+                  cs: cs,
+                  onTap: () => setState(() => _selectedMethod = 2),
                 ),
               ),
             ],
@@ -386,9 +447,10 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
               keyboardType: TextInputType.phone,
               style: TextStyle(color: cs.onSurface),
               decoration: InputDecoration(
-                hintText: 'Phone number',
+                hintText: MasarenLocalizations.of(context, 'payments.phone'),
                 prefixIcon: const Icon(Icons.phone, size: 20),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
             ),
           ],
@@ -400,10 +462,12 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
               onPressed: _paying ? null : _pay,
               child: _paying
                   ? const SizedBox(
-                      width: 20, height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white),
                     )
-                  : const Text('Pay Now'),
+                  : Text(MasarenLocalizations.of(context, 'payments.payNow')),
             ),
           ),
         ],
@@ -416,7 +480,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Payment History',
+          MasarenLocalizations.of(context, 'payments.history'),
           style: TextStyle(
             fontWeight: FontWeight.w600,
             fontSize: 16,
@@ -429,7 +493,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
             padding: const EdgeInsets.all(24),
             child: Center(
               child: Text(
-                'No payments yet.',
+                MasarenLocalizations.of(context, 'payments.noPayments'),
                 style: TextStyle(color: cs.onSurfaceVariant),
               ),
             ),
@@ -453,7 +517,8 @@ class _InfoChip extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
+          Text(label,
+              style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
           const SizedBox(height: 2),
           Text(
             value,
@@ -497,13 +562,16 @@ class _MethodCard extends StatelessWidget {
               : cs.surfaceContainerHighest.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: selected ? cs.primary : cs.outlineVariant.withValues(alpha: 0.4),
+            color: selected
+                ? cs.primary
+                : cs.outlineVariant.withValues(alpha: 0.4),
             width: selected ? 2 : 1,
           ),
         ),
         child: Column(
           children: [
-            Icon(icon, color: selected ? cs.primary : cs.onSurfaceVariant, size: 22),
+            Icon(icon,
+                color: selected ? cs.primary : cs.onSurfaceVariant, size: 22),
             const SizedBox(height: 6),
             Text(
               label,
@@ -527,11 +595,33 @@ class _HistoryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final status = (payment['status'] ?? payment['state'] ?? '').toString().toUpperCase();
+    final status =
+        (payment['status'] ?? payment['state'] ?? '').toString().toUpperCase();
     final amount = payment['amount'] ?? payment['amount_egp'] ?? '';
-    final method = (payment['method'] ?? payment['payment_method'] ?? '').toString();
+    final method =
+        (payment['method'] ?? payment['payment_method'] ?? '').toString();
     final createdAt = payment['created_at'] ?? payment['createdAt'];
-    final orderId = payment['order_id']?.toString() ?? payment['id']?.toString();
+    final orderId =
+        payment['order_id']?.toString() ?? payment['id']?.toString();
+    final statusKey = switch (status) {
+      'SUCCESS' ||
+      'SUCCESSFUL' ||
+      'PAID' ||
+      'COMPLETE' =>
+        'payments.status.paid',
+      'PENDING' || 'PROCESSING' => 'payments.status.pending',
+      'FAILED' || 'CANCELLED' || 'DECLINED' => 'payments.status.failed',
+      _ => 'payments.status.unknown',
+    };
+    final methodKey = switch (method.toLowerCase()) {
+      'card' => 'payments.card',
+      'vodafone_cash' => 'payments.vodafoneCash',
+      'instapay' => 'payments.instaPay',
+      _ => null,
+    };
+    final methodLabel = methodKey == null
+        ? method
+        : MasarenLocalizations.of(context, methodKey);
 
     Color statusColor;
     IconData statusIcon;
@@ -569,7 +659,8 @@ class _HistoryTile extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 40, height: 40,
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
               color: statusColor.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(10),
@@ -593,20 +684,23 @@ class _HistoryTile extends StatelessWidget {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'EGP',
-                      style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
+                      MasarenLocalizations.of(context, 'payments.egp'),
+                      style:
+                          TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
                     ),
                     if (method.isNotEmpty) ...[
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: cs.surfaceContainerHigh,
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          method,
-                          style: TextStyle(color: cs.onSurfaceVariant, fontSize: 10),
+                          methodLabel,
+                          style: TextStyle(
+                              color: cs.onSurfaceVariant, fontSize: 10),
                         ),
                       ),
                     ],
@@ -616,16 +710,23 @@ class _HistoryTile extends StatelessWidget {
                 Row(
                   children: [
                     Text(
-                      status,
-                      style: TextStyle(color: statusColor, fontSize: 12, fontWeight: FontWeight.w500),
+                      MasarenLocalizations.of(context, statusKey),
+                      style: TextStyle(
+                          color: statusColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500),
                     ),
                     if (createdAt != null) ...[
                       const SizedBox(width: 8),
                       Text(
                         createdAt.toString().length > 10
-                            ? createdAt.toString().substring(0, 16).replaceFirst('T', ' ')
+                            ? createdAt
+                                .toString()
+                                .substring(0, 16)
+                                .replaceFirst('T', ' ')
                             : createdAt.toString(),
-                        style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11),
+                        style:
+                            TextStyle(color: cs.onSurfaceVariant, fontSize: 11),
                       ),
                     ],
                   ],
@@ -635,7 +736,8 @@ class _HistoryTile extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(
                       '#$orderId',
-                      style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11),
+                      style:
+                          TextStyle(color: cs.onSurfaceVariant, fontSize: 11),
                     ),
                   ),
               ],

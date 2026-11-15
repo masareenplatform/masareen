@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:masaren/api_client.dart';
 import 'package:masaren/l10n.dart';
@@ -17,14 +19,23 @@ class _MessagesScreenState extends State<MessagesScreen> {
   List<Conversation> _items = [];
   bool _loading = true;
   String? _error;
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
     _load();
+    _timer =
+        Timer.periodic(const Duration(seconds: 15), (_) => _load(silent: true));
   }
 
-  Future<void> _load() async {
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _load({bool silent = false}) async {
     try {
       final rows = await AuthApi.conversations();
       if (!mounted) return;
@@ -35,6 +46,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
       });
     } catch (e) {
       if (!mounted) return;
+      if (silent) return;
       setState(() {
         _loading = false;
         _error = e.toString();
@@ -71,7 +83,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final loc = (String key) => MasarenLocalizations.of(context, key);
+    String loc(String key) => MasarenLocalizations.of(context, key);
     return Scaffold(
       appBar: AppBar(title: Text(loc('messages.title'))),
       floatingActionButton: FloatingActionButton(
@@ -116,7 +128,9 @@ class _MessagesScreenState extends State<MessagesScreen> {
                                           fontWeight: FontWeight.w700)),
                                 ),
                                 if (c.lastMessageAt != null)
-                                  Text(timeAgo(c.lastMessageAt),
+                                  Text(
+                                      timeAgo(c.lastMessageAt,
+                                          context: context),
                                       style: TextStyle(
                                           fontSize: 11,
                                           color: cs.onSurfaceVariant)),
@@ -158,32 +172,39 @@ class _ChatScreenState extends State<ChatScreen> {
   List<ChatMessage> _messages = [];
   bool _loading = true;
   bool _sending = false;
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
     _load();
+    _timer =
+        Timer.periodic(const Duration(seconds: 5), (_) => _load(silent: true));
   }
 
   @override
   void dispose() {
+    _timer?.cancel();
     _ctl.dispose();
     _scroll.dispose();
     super.dispose();
   }
 
-  Future<void> _load() async {
+  Future<void> _load({bool silent = false}) async {
     try {
+      final before = _messages.isEmpty ? null : _messages.last.id;
       final thread = await AuthApi.conversation(widget.conversation.id);
       if (!mounted) return;
+      final after = thread.messages.isEmpty ? null : thread.messages.last.id;
       setState(() {
         _messages = thread.messages;
         _loading = false;
       });
-      _scrollToEnd();
+      if (!silent || before != after) _scrollToEnd();
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
+      if (silent) return;
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(e.toString())));
     }
@@ -283,7 +304,8 @@ class _ChatScreenState extends State<ChatScreen> {
                               if (m.createdAt != null)
                                 Padding(
                                   padding: const EdgeInsets.only(top: 4),
-                                  child: Text(timeAgo(m.createdAt),
+                                  child: Text(
+                                      timeAgo(m.createdAt, context: context),
                                       style: TextStyle(
                                           fontSize: 10,
                                           color: (m.mine

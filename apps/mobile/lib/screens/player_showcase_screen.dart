@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:masaren/api_client.dart';
+import 'package:masaren/l10n.dart';
 import 'package:masaren/models.dart';
 import 'package:masaren/theme.dart';
+import 'package:masaren/profile_ui.dart';
 import 'package:masaren/widgets.dart';
 import 'package:masaren/screens/interview_screen.dart';
+import 'package:masaren/screens/messages_screen.dart';
 import 'package:masaren/widgets/animations.dart';
 
 const Color _redTone = Color(0xFFCE1126);
-const Color _whiteTone = Color(0xFFFFFFFF);
-const Color _blackTone = Color(0xFF111111);
 
 class PlayerShowcaseScreen extends StatefulWidget {
   final String playerId;
@@ -74,16 +75,34 @@ class _PlayerShowcaseScreenState extends State<PlayerShowcaseScreen> {
       await api.post('/api/v1/players/${widget.playerId}/follow');
       if (mounted) {
         setState(() => _following = !_following);
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(_following ? 'Following' : 'Unfollowed')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(MasarenLocalizations.of(context,
+                _following ? 'action.following' : 'profile.unfollowed'))));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Failed: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(MasarenLocalizations.of(context, 'common.failed')
+                .replaceAll('{error}', '$e'))));
       }
     } finally {
       if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _messagePlayer() async {
+    try {
+      final conversation = await AuthApi.openConversation(widget.playerId);
+      if (!mounted) return;
+      await Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => ChatScreen(
+              conversation: conversation, user: widget.currentUser)));
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(MasarenLocalizations.of(context, 'common.failed')
+                .replaceAll('{error}', '$e'))));
+      }
     }
   }
 
@@ -120,14 +139,19 @@ class _PlayerShowcaseScreenState extends State<PlayerShowcaseScreen> {
               message = null;
             });
             try {
-              final data =
-                  await api.get('/api/v1/sports/search', {'q': q});
-              final players =
-                  data is Map && data['players'] is List ? data['players'] as List : <dynamic>[];
+              final data = await api.get('/api/v1/sports/search', {'q': q});
+              final players = data is Map && data['players'] is List
+                  ? data['players'] as List
+                  : <dynamic>[];
               setSheet(() => results = players);
-              if (players.isEmpty) setSheet(() => message = 'No players found.');
+              if (players.isEmpty) {
+                setSheet(() => message =
+                    MasarenLocalizations.of(sheetContext, 'player.noPlayers'));
+              }
             } catch (e) {
-              setSheet(() => message = 'Search failed: $e');
+              setSheet(() => message =
+                  MasarenLocalizations.of(sheetContext, 'player.searchFailed')
+                      .replaceAll('{error}', '$e'));
             } finally {
               setSheet(() => searching = false);
             }
@@ -147,7 +171,9 @@ class _PlayerShowcaseScreenState extends State<PlayerShowcaseScreen> {
               await _load();
             } catch (e) {
               setSheet(() {
-                message = 'Sync failed: $e';
+                message =
+                    MasarenLocalizations.of(sheetContext, 'player.syncFailed')
+                        .replaceAll('{error}', '$e');
                 syncing = false;
               });
             }
@@ -162,12 +188,14 @@ class _PlayerShowcaseScreenState extends State<PlayerShowcaseScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Link a sports profile',
-                    style:
-                        TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+                Text(
+                    MasarenLocalizations.of(
+                        context, 'player.linkSportsProfile'),
+                    style: const TextStyle(
+                        fontSize: 20, fontWeight: FontWeight.w800)),
                 const SizedBox(height: 6),
-                const Text(
-                    'Search TheSportsDB to fill position, club, height, weight, photo and biography automatically.'),
+                Text(MasarenLocalizations.of(
+                    context, 'player.linkSportsDescription')),
                 const SizedBox(height: 16),
                 TextField(
                   controller: search,
@@ -175,7 +203,8 @@ class _PlayerShowcaseScreenState extends State<PlayerShowcaseScreen> {
                   textInputAction: TextInputAction.search,
                   onSubmitted: (_) => runSearch(),
                   decoration: InputDecoration(
-                    hintText: 'Player name',
+                    hintText:
+                        MasarenLocalizations.of(context, 'player.nameHint'),
                     prefixIcon: const Icon(Icons.search),
                     suffixIcon: IconButton(
                         onPressed: searching ? null : runSearch,
@@ -203,20 +232,22 @@ class _PlayerShowcaseScreenState extends State<PlayerShowcaseScreen> {
                         final p = results[i] as Map;
                         return ListTile(
                           enabled: !syncing,
-                          leading: CircleAvatar(
-                            backgroundImage: p['photo_url'] != null
-                                ? NetworkImage(p['photo_url'].toString())
-                                : null,
-                            child: p['photo_url'] == null
-                                ? const Icon(Icons.person)
-                                : null,
+                          leading: AppAvatar(
+                            name: p['name']?.toString() ?? 'Player',
+                            url: p['photo_url']?.toString(),
+                            size: 40,
                           ),
-                          title: Text(p['name']?.toString() ?? 'Player'),
+                          title: Text(p['name']?.toString() ??
+                              MasarenLocalizations.of(
+                                  sheetContext, 'player.fallback')),
                           subtitle: Text([
                             p['club'],
                             p['position'],
                             p['nationality']
-                          ].where((v) => v != null && v.toString().isNotEmpty).join(' · ')),
+                          ]
+                              .where(
+                                  (v) => v != null && v.toString().isNotEmpty)
+                              .join(' · ')),
                           trailing: const Icon(Icons.link),
                           onTap: () => sync(p),
                         );
@@ -233,8 +264,7 @@ class _PlayerShowcaseScreenState extends State<PlayerShowcaseScreen> {
   }
 
   // ── helpers ───────────────────────────────────────────────────────────
-  String _str(dynamic v, [String fallback = '']) =>
-      v?.toString() ?? fallback;
+  String _str(dynamic v, [String fallback = '']) => v?.toString() ?? fallback;
 
   double _parseNum(dynamic v) {
     if (v == null) return 0;
@@ -248,16 +278,6 @@ class _PlayerShowcaseScreenState extends State<PlayerShowcaseScreen> {
       return v % 1 == 0 ? v.toInt().toString() : v.toStringAsFixed(1);
     }
     return v.toString();
-  }
-
-  Color get _posColor {
-    final pos = (_player?['position'] ?? '').toString().toUpperCase();
-    if (pos.contains('GK') || pos.contains('GOAL')) return AppColors.amber;
-    if (pos.contains('DEF') || pos.contains('BACK')) return AppColors.azure;
-    if (pos.contains('MID') || pos.contains('WING')) return AppColors.accent;
-    if (pos.contains('FWD') || pos.contains('FORWARD') || pos.contains('STRIKER'))
-      return _redTone;
-    return AppColors.muted;
   }
 
   // ══════════════════════════════════════════════════════════════════════
@@ -278,7 +298,8 @@ class _PlayerShowcaseScreenState extends State<PlayerShowcaseScreen> {
       return Scaffold(
         appBar: AppBar(),
         body: Center(
-          child: Text(_error ?? 'Player not found',
+          child: Text(
+              _error ?? MasarenLocalizations.of(context, 'player.notFound'),
               style: TextStyle(color: cs.error)),
         ),
       );
@@ -290,215 +311,145 @@ class _PlayerShowcaseScreenState extends State<PlayerShowcaseScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          Positioned.fill(child: FloatingShapes(shapeCount: 4, baseColor: const Color(0xFFC62828))),
+          const Positioned.fill(
+              child:
+                  FloatingShapes(shapeCount: 4, baseColor: Color(0xFFC62828))),
           CustomScrollView(
-        slivers: [
-          _buildHeroSection(cs, dark, p),
-          SliverToBoxAdapter(child: _buildNationalBadge(cs, dark)),
-          SliverToBoxAdapter(child: _buildStatsCards(cs, dark, p)),
-          SliverToBoxAdapter(child: _buildCareerTable(cs, dark)),
-          SliverToBoxAdapter(child: _buildTimelineSection(cs, dark)),
-          SliverToBoxAdapter(child: _buildAchievementsSection(cs, dark)),
-          SliverToBoxAdapter(child: _buildActions(cs)),
-          SliverToBoxAdapter(child: _buildRelatedPlayers(cs, dark)),
-          const SliverToBoxAdapter(child: SizedBox(height: 32)),
+            slivers: [
+              SliverToBoxAdapter(
+                  child: SizedBox(height: MediaQuery.paddingOf(context).top)),
+              _buildHeroSection(cs, dark, p),
+              SliverToBoxAdapter(child: _buildNationalBadge(cs, dark)),
+              SliverToBoxAdapter(child: _buildStatsCards(cs, dark, p)),
+              SliverToBoxAdapter(child: _buildCareerTable(cs, dark)),
+              SliverToBoxAdapter(child: _buildTimelineSection(cs, dark)),
+              SliverToBoxAdapter(child: _buildAchievementsSection(cs, dark)),
+              SliverToBoxAdapter(child: _buildActions(cs)),
+              SliverToBoxAdapter(child: _buildRelatedPlayers(cs, dark)),
+              const SliverToBoxAdapter(child: SizedBox(height: 32)),
+            ],
+          ),
         ],
       ),
-    ],
-  ),
     );
   }
 
   // ── Hero Section ──────────────────────────────────────────────────────
-  Widget _buildHeroSection(
-      ColorScheme cs, bool dark, Map<String, dynamic> p) {
+  Widget _buildHeroSection(ColorScheme cs, bool dark, Map<String, dynamic> p) {
     final jersey = p['jersey_number'] ?? p['number'] ?? '?';
     final name = _str(p['name'], _str(p['full_name'], 'Player'));
     final position = _str(p['position'], 'MF').toUpperCase();
 
-    return SliverAppBar(
-      expandedHeight: 340,
-      pinned: true,
-      stretch: true,
-      backgroundColor: _blackTone,
-      flexibleSpace: FlexibleSpaceBar(
-        background: Stack(
-          fit: StackFit.expand,
-          children: [
-            // Player photo
-            if (p['photo_url'] != null || p['avatar_url'] != null)
-              Image.network(
-                (p['photo_url'] ?? p['avatar_url']).toString(),
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
-                  color: _blackTone,
-                  child: const Icon(Icons.person, size: 80, color: Colors.white24),
-                ),
-              )
-            else
-              Container(
-                color: _blackTone,
-                child: const Icon(Icons.person, size: 80, color: Colors.white24),
-              ),
-            // Gradient overlay
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.transparent,
-                    _redTone.withValues(alpha: 0.4),
-                    Colors.black.withValues(alpha: 0.85),
-                  ],
-                  stops: const [0.0, 0.5, 1.0],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-              ),
-            ),
-            // Player info
-            Positioned(
-              left: 20,
-              right: 20,
-              bottom: 20,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Jersey number
-                  Text(
-                    '#$jersey',
-                    style: TextStyle(
-                      color: _redTone.withValues(alpha: 0.6),
-                      fontSize: 48,
-                      fontWeight: FontWeight.w900,
-                      height: 1,
-                    ),
-                  ),
-                  // Name
-                  Text(
-                    name,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 28,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  // Position badge
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: _posColor,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      position,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+    return SliverToBoxAdapter(
+      child: FadeSlideIn(
+        child: ProfileHero(
+          title: name,
+          subtitle: '#$jersey  ·  $position',
+          kind: 'player',
+          icon: Icons.sports_soccer,
+          imageUrl: (p['photo_url'] ?? p['avatar_url'])?.toString(),
+          badge: ProfilePill(
+              label: position,
+              icon: Icons.shield_outlined,
+              color: ProfileColors.gold),
+          trailing: widget.playerId == widget.currentUser.id
+              ? _HeaderAction(icon: Icons.sync, onTap: _openSportsSync)
+              : null,
+          onShare: () => copyProfileLink(context, widget.playerId,
+              MasarenLocalizations.of(context, 'profile.linkCopied'),
+              verified: _player?['verified'] == true),
         ),
       ),
-      actions: [
-        if (widget.playerId == widget.currentUser.id)
-          _HeaderAction(
-            icon: Icons.sync,
-            onTap: _openSportsSync,
-          ),
-        _HeaderAction(
-          icon: Icons.share_outlined,
-          onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Profile link copied'))),
-        ),
-      ],
     );
   }
 
-  // ── National Team Badge ───────────────────────────────────────────────
   Widget _buildNationalBadge(ColorScheme cs, bool dark) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(14, 12, 14, 4),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            _redTone.withValues(alpha: 0.12),
-            dark ? AppColors.darkSurface2.withValues(alpha: 0.9) : Colors.white.withValues(alpha: 0.9),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-            color: _redTone.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        children: [
-          // Egypt flag
-          PulsingWidget(
-            child: Container(
+    final player = _player;
+    final nationality = player?['nationality']?.toString() ??
+        player?['national_team']?.toString();
+    if (nationality == null || nationality.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 4),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: profilePanel(context),
+        child: Row(
+          children: [
+            Container(
               width: 48,
               height: 32,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(4),
+                borderRadius: BorderRadius.circular(6),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.15),
-                    blurRadius: 4,
+                    color: Colors.black.withValues(alpha: 0.12),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
-              child: CustomPaint(painter: _EgyptFlagPainter()),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Egyptian National Team',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 14,
-                  ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: Container(
+                  color: cs.primaryContainer,
+                  child: const Icon(Icons.flag, color: Colors.white, size: 18),
                 ),
-                Text(
-                  'World Cup 2026 Qualifier',
-                  style: TextStyle(
-                    color: _redTone.withValues(alpha: 0.8),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-          const Icon(Icons.flag, color: _redTone, size: 22),
-        ],
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    nationality,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w800, fontSize: 14),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    MasarenLocalizations.of(context, 'player.nationalTeam'),
+                    style: const TextStyle(
+                        color: ProfileColors.slate,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
+            ),
+            ProfilePill(
+                label: MasarenLocalizations.of(context, 'player.caps')
+                    .replaceAll('{caps}', '${player?['caps'] ?? '-'}'),
+                icon: Icons.flag_outlined,
+                color: ProfileColors.rose),
+          ],
+        ),
       ),
     );
   }
 
-  // ── Player Stats Cards ────────────────────────────────────────────────
-  Widget _buildStatsCards(
-      ColorScheme cs, bool dark, Map<String, dynamic> p) {
+  Widget _buildStatsCards(ColorScheme cs, bool dark, Map<String, dynamic> p) {
     final stats = [
-      _AnimStat('Goals', _num(p['goals'] ?? p['total_goals']), Icons.sports_soccer, _redTone, numericTarget: _parseNum(p['goals'] ?? p['total_goals'])),
-      _AnimStat('Assists', _num(p['assists'] ?? p['total_assists']),
-          Icons.swap_vert, AppColors.accent, numericTarget: _parseNum(p['assists'] ?? p['total_assists'])),
-      _AnimStat('Appearances', _num(p['appearances'] ?? p['caps']),
-          Icons.shield, cs.primary, numericTarget: _parseNum(p['appearances'] ?? p['caps'])),
-      _AnimStat('Minutes', _num(p['minutes_played'] ?? p['minutes']),
-          Icons.access_time, AppColors.amber, numericTarget: _parseNum(p['minutes_played'] ?? p['minutes'])),
+      _AnimStat(MasarenLocalizations.of(context, 'player.goals'),
+          _num(p['goals'] ?? p['total_goals']), Icons.sports_soccer, _redTone,
+          numericTarget: _parseNum(p['goals'] ?? p['total_goals'])),
+      _AnimStat(
+          MasarenLocalizations.of(context, 'player.assists'),
+          _num(p['assists'] ?? p['total_assists']),
+          Icons.swap_vert,
+          AppColors.accent,
+          numericTarget: _parseNum(p['assists'] ?? p['total_assists'])),
+      _AnimStat(MasarenLocalizations.of(context, 'player.appearances'),
+          _num(p['appearances'] ?? p['caps']), Icons.shield, cs.primary,
+          numericTarget: _parseNum(p['appearances'] ?? p['caps'])),
+      _AnimStat(
+          MasarenLocalizations.of(context, 'player.minutes'),
+          _num(p['minutes_played'] ?? p['minutes']),
+          Icons.access_time,
+          AppColors.amber,
+          numericTarget: _parseNum(p['minutes_played'] ?? p['minutes'])),
     ];
 
     return Padding(
@@ -551,52 +502,77 @@ class _PlayerShowcaseScreenState extends State<PlayerShowcaseScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SectionTitle(title: 'Career Statistics'),
-          Container(
-            width: double.infinity,
-            decoration: glassDecoration(dark),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: DataTable(
-                headingRowColor: WidgetStateProperty.all(
-                    _redTone.withValues(alpha: 0.08)),
-                columns: const [
-                  DataColumn(label: Text('Season',
-                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12))),
-                  DataColumn(label: Text('Team',
-                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
-                      numeric: false),
-                  DataColumn(label: Text('Apps',
-                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12))),
-                  DataColumn(label: Text('Goals',
-                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12))),
-                  DataColumn(label: Text('Assists',
-                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12))),
-                  DataColumn(label: Text('Mins',
-                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12))),
-                ],
-                rows: _careerStats.map((s) {
-                  final row = s as Map<String, dynamic>;
-                  return DataRow(cells: [
-                    DataCell(Text(_str(row['season'], '?'),
-                        style: const TextStyle(fontSize: 12))),
-                    DataCell(Text(_str(row['team'], '?'),
-                        style: const TextStyle(fontSize: 12))),
-                    DataCell(Text(_num(row['appearances']),
-                        style: const TextStyle(fontSize: 12))),
-                    DataCell(Text(_num(row['goals']),
-                        style: const TextStyle(fontSize: 12, color: _redTone, fontWeight: FontWeight.w700))),
-                    DataCell(Text(_num(row['assists']),
-                        style: const TextStyle(fontSize: 12, color: AppColors.accent, fontWeight: FontWeight.w700))),
-                    DataCell(Text(_num(row['minutes']),
-                        style: const TextStyle(fontSize: 12))),
-                  ]);
-                }).toList(),
+            SectionTitle(
+                title: MasarenLocalizations.of(context, 'player.careerStats')),
+            Container(
+              width: double.infinity,
+              decoration: glassDecoration(dark),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: DataTable(
+                  headingRowColor:
+                      WidgetStateProperty.all(_redTone.withValues(alpha: 0.08)),
+                  columns: [
+                    DataColumn(
+                        label: Text(
+                            MasarenLocalizations.of(context, 'player.season'),
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w700, fontSize: 12))),
+                    DataColumn(
+                        label: Text(
+                            MasarenLocalizations.of(context, 'player.team'),
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w700, fontSize: 12)),
+                        numeric: false),
+                    DataColumn(
+                        label: Text(
+                            MasarenLocalizations.of(context, 'player.apps'),
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w700, fontSize: 12))),
+                    DataColumn(
+                        label: Text(
+                            MasarenLocalizations.of(context, 'player.goals'),
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w700, fontSize: 12))),
+                    DataColumn(
+                        label: Text(
+                            MasarenLocalizations.of(context, 'player.assists'),
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w700, fontSize: 12))),
+                    DataColumn(
+                        label: Text(
+                            MasarenLocalizations.of(context, 'player.mins'),
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w700, fontSize: 12))),
+                  ],
+                  rows: _careerStats.map((s) {
+                    final row = s as Map<String, dynamic>;
+                    return DataRow(cells: [
+                      DataCell(Text(_str(row['season'], '?'),
+                          style: const TextStyle(fontSize: 12))),
+                      DataCell(Text(_str(row['team'], '?'),
+                          style: const TextStyle(fontSize: 12))),
+                      DataCell(Text(_num(row['appearances']),
+                          style: const TextStyle(fontSize: 12))),
+                      DataCell(Text(_num(row['goals']),
+                          style: const TextStyle(
+                              fontSize: 12,
+                              color: _redTone,
+                              fontWeight: FontWeight.w700))),
+                      DataCell(Text(_num(row['assists']),
+                          style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.accent,
+                              fontWeight: FontWeight.w700))),
+                      DataCell(Text(_num(row['minutes']),
+                          style: const TextStyle(fontSize: 12))),
+                    ]);
+                  }).toList(),
+                ),
               ),
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
       ),
     );
   }
@@ -621,11 +597,13 @@ class _PlayerShowcaseScreenState extends State<PlayerShowcaseScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SectionTitle(title: 'Career Timeline'),
+          SectionTitle(
+              title: MasarenLocalizations.of(context, 'player.careerTimeline')),
           ...List.generate(_timeline.length, (i) {
             final t = _timeline[i] as Map<String, dynamic>;
             final kind = (t['kind'] ?? t['type'] ?? 'milestone').toString();
-            final title = _str(t['title'], 'Milestone');
+            final title = _str(t['title'],
+                MasarenLocalizations.of(context, 'player.milestone'));
             final detail = _str(t['detail'] ?? t['description']);
             final date = _str(t['date'] ?? t['happened_at']);
             final isLast = i == _timeline.length - 1;
@@ -691,7 +669,10 @@ class _PlayerShowcaseScreenState extends State<PlayerShowcaseScreen> {
                           ],
                           if (date.isNotEmpty) ...[
                             const SizedBox(height: 4),
-                            Text(date.length >= 10 ? date.substring(0, 10) : date,
+                            Text(
+                                date.length >= 10
+                                    ? date.substring(0, 10)
+                                    : date,
                                 style: const TextStyle(
                                     color: AppColors.muted, fontSize: 11)),
                           ],
@@ -720,53 +701,54 @@ class _PlayerShowcaseScreenState extends State<PlayerShowcaseScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SectionTitle(title: 'Achievements & Trophies'),
-          SizedBox(
-            height: 100,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: _achievements.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
-              itemBuilder: (_, i) {
-                final a = _achievements[i] as Map<String, dynamic>;
-                final title = _str(a['title'] ?? a['name']);
-                final year = _str(a['year']);
+            SectionTitle(
+                title: MasarenLocalizations.of(context, 'player.achievements')),
+            SizedBox(
+              height: 100,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: _achievements.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                itemBuilder: (_, i) {
+                  final a = _achievements[i] as Map<String, dynamic>;
+                  final title = _str(a['title'] ?? a['name']);
+                  final year = _str(a['year']);
 
-                return Container(
-                  width: 100,
-                  padding: const EdgeInsets.all(10),
-                  decoration: glassDecoration(dark),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        _achIcon(a['type'] ?? a['kind']),
-                        color: _gold,
-                        size: 26,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
+                  return Container(
+                    width: 100,
+                    padding: const EdgeInsets.all(10),
+                    decoration: glassDecoration(dark),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          _achIcon(a['type'] ?? a['kind']),
+                          color: _gold,
+                          size: 26,
                         ),
-                      ),
-                      if (year.isNotEmpty)
-                        Text(year,
-                            style: const TextStyle(
-                                fontSize: 9, color: AppColors.muted)),
-                    ],
-                  ),
-                );
-              },
+                        const SizedBox(height: 4),
+                        Text(
+                          title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        if (year.isNotEmpty)
+                          Text(year,
+                              style: const TextStyle(
+                                  fontSize: 9, color: AppColors.muted)),
+                      ],
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
       ),
     );
   }
@@ -799,7 +781,8 @@ class _PlayerShowcaseScreenState extends State<PlayerShowcaseScreen> {
                           : Icons.person_add_outlined,
                       size: 18,
                     ),
-                    label: Text(_following ? 'Following' : 'Follow'),
+                    label: Text(MasarenLocalizations.of(context,
+                        _following ? 'action.following' : 'action.follow')),
                     style: FilledButton.styleFrom(
                       backgroundColor: _following ? AppColors.accent : _redTone,
                       shape: RoundedRectangleBorder(
@@ -813,10 +796,10 @@ class _PlayerShowcaseScreenState extends State<PlayerShowcaseScreen> {
                 child: SizedBox(
                   height: 44,
                   child: OutlinedButton.icon(
-                    onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Message feature coming soon'))),
+                    onPressed: _messagePlayer,
                     icon: const Icon(Icons.chat_bubble_outline, size: 18),
-                    label: const Text('Send Message'),
+                    label: Text(
+                        MasarenLocalizations.of(context, 'player.sendMessage')),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: cs.onSurface,
                       side: BorderSide(color: cs.outline),
@@ -835,7 +818,8 @@ class _PlayerShowcaseScreenState extends State<PlayerShowcaseScreen> {
             child: OutlinedButton.icon(
               onPressed: _requestInterview,
               icon: const Icon(Icons.videocam_outlined, size: 18),
-              label: const Text('Request Interview'),
+              label: Text(
+                  MasarenLocalizations.of(context, 'player.requestInterview')),
               style: OutlinedButton.styleFrom(
                 foregroundColor: _redTone,
                 side: const BorderSide(color: _redTone),
@@ -857,7 +841,8 @@ class _PlayerShowcaseScreenState extends State<PlayerShowcaseScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SectionTitle(title: 'Related Egyptian Players'),
+        SectionTitle(
+            title: MasarenLocalizations.of(context, 'player.relatedPlayers')),
         SizedBox(
           height: 120,
           child: ListView.separated(
@@ -867,7 +852,8 @@ class _PlayerShowcaseScreenState extends State<PlayerShowcaseScreen> {
             separatorBuilder: (_, __) => const SizedBox(width: 8),
             itemBuilder: (_, i) {
               final rp = _related[i] as Map<String, dynamic>;
-              final name = _str(rp['name'] ?? rp['full_name'], 'Player');
+              final name = _str(rp['name'] ?? rp['full_name'],
+                  MasarenLocalizations.of(context, 'player.fallback'));
               final photo = rp['photo_url'] ?? rp['avatar_url'];
               final jersey = rp['jersey_number'] ?? rp['number'] ?? '';
 
@@ -891,14 +877,10 @@ class _PlayerShowcaseScreenState extends State<PlayerShowcaseScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       // Avatar
-                      CircleAvatar(
-                        radius: 24,
-                        backgroundImage:
-                            photo != null ? NetworkImage(photo.toString()) : null,
-                        backgroundColor: cs.surfaceContainerLow,
-                        child: photo == null
-                            ? Icon(Icons.person, size: 20, color: cs.onSurfaceVariant)
-                            : null,
+                      AppAvatar(
+                        name: name,
+                        url: photo?.toString(),
+                        size: 48,
                       ),
                       const SizedBox(height: 6),
                       Text(
@@ -938,7 +920,8 @@ class _AnimStat {
   final IconData icon;
   final Color color;
   final double numericTarget;
-  _AnimStat(this.label, this.value, this.icon, this.color, {this.numericTarget = 0});
+  _AnimStat(this.label, this.value, this.icon, this.color,
+      {this.numericTarget = 0});
 }
 
 class _HeaderAction extends StatelessWidget {
@@ -955,40 +938,6 @@ class _HeaderAction extends StatelessWidget {
         child: IconButton(
             icon: Icon(icon, color: Colors.white, size: 20), onPressed: onTap),
       );
-}
-
-// ── Egyptian Flag Painter ───────────────────────────────────────────────
-
-class _EgyptFlagPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final stripeH = size.height / 3;
-
-    // Red stripe
-    final redPaint = Paint()..color = _redTone;
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, stripeH), redPaint);
-
-    // White stripe
-    final whitePaint = Paint()..color = _whiteTone;
-    canvas.drawRect(
-        Rect.fromLTWH(0, stripeH, size.width, stripeH), whitePaint);
-
-    // Black stripe
-    final blackPaint = Paint()..color = _blackTone;
-    canvas.drawRect(
-        Rect.fromLTWH(0, stripeH * 2, size.width, stripeH), blackPaint);
-
-    // Eagle of Saladin (simplified golden emblem in center)
-    final eaglePaint = Paint()..color = _gold;
-    final cx = size.width / 2;
-    final cy = size.height / 2;
-    canvas.drawCircle(Offset(cx, cy), stripeH * 0.35, eaglePaint);
-    final innerPaint = Paint()..color = _redTone;
-    canvas.drawCircle(Offset(cx, cy), stripeH * 0.18, innerPaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 const Color _gold = Color(0xFFFFD54F);

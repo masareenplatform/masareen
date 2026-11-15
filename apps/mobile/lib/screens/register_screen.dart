@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:masaren/api_client.dart';
+import 'package:masaren/l10n.dart';
 import 'package:masaren/theme.dart';
 import 'package:masaren/widgets.dart';
 import 'package:masaren/models.dart';
@@ -55,17 +56,43 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
+  String _roleLabel(String value) {
+    switch (value) {
+      case 'INDIVIDUAL':
+        return MasarenLocalizations.of(context, 'profile.individual');
+      case 'ORGANIZATION':
+        return MasarenLocalizations.of(context, 'profile.organization');
+      case 'CLUB':
+        return MasarenLocalizations.of(context, 'register.role.club');
+      case 'FEDERATION':
+        return MasarenLocalizations.of(context, 'register.role.federation');
+      case 'INSTITUTION':
+        return MasarenLocalizations.of(context, 'register.role.institution');
+      case 'UNIVERSITY':
+        return MasarenLocalizations.of(context, 'register.role.university');
+      case 'RESEARCHER':
+        return MasarenLocalizations.of(context, 'register.role.researcher');
+      default:
+        return value;
+    }
+  }
+
+  String _audienceLabel(String value) => MasarenLocalizations.of(
+      context, 'register.audience.${value.toLowerCase()}');
+
   Future<void> _google() async {
     setState(() {
       _googleBusy = true;
       _error = null;
     });
-    final url = Uri.parse('${api.baseUrl}/mobile-auth.html${_isTester ? "?tester=1" : ""}');
+    final url = Uri.parse(
+        '${api.baseUrl}/mobile-auth.html${_isTester ? "?tester=1" : ""}');
     try {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     } catch (_) {
       if (mounted) {
-        setState(() => _error = 'Could not open Google sign up. Check your connection and try again.');
+        setState(() =>
+            _error = MasarenLocalizations.of(context, 'register.googleError'));
       }
     } finally {
       if (mounted) setState(() => _googleBusy = false);
@@ -73,36 +100,57 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   String? _validateEmail(String? v) {
-    if (v == null || v.trim().isEmpty) return 'Email is required';
+    if (v == null || v.trim().isEmpty) {
+      return MasarenLocalizations.of(context, 'register.emailRequired');
+    }
     final emailRe = RegExp(r'^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,}$');
-    if (!emailRe.hasMatch(v.trim())) return 'Enter a valid email address';
+    if (!emailRe.hasMatch(v.trim())) {
+      return MasarenLocalizations.of(context, 'register.emailInvalid');
+    }
     return null;
   }
 
   String? _validateName(String? v) {
-    if (v == null || v.trim().isEmpty) return 'Full name is required';
-    if (v.trim().length < 2) return 'Name must be at least 2 characters';
+    if (v == null || v.trim().isEmpty) {
+      return MasarenLocalizations.of(context, 'register.nameRequired');
+    }
+    if (v.trim().length < 2) {
+      return MasarenLocalizations.of(context, 'register.nameShort');
+    }
     return null;
   }
 
   String? _validatePassword(String? v) {
-    if (v == null || v.isEmpty) return 'Password is required';
-    if (v.length < 8) return 'Password must be at least 8 characters';
-    if (!RegExp(r'[A-Za-z]').hasMatch(v)) return 'Include at least one letter';
-    if (!RegExp(r'[0-9]').hasMatch(v)) return 'Include at least one number';
+    if (v == null || v.isEmpty) {
+      return MasarenLocalizations.of(context, 'register.passwordRequired');
+    }
+    if (v.length < 8) {
+      return MasarenLocalizations.of(context, 'register.passwordShort');
+    }
+    if (!RegExp(r'[A-Za-z]').hasMatch(v)) {
+      return MasarenLocalizations.of(context, 'register.passwordLetter');
+    }
+    if (!RegExp(r'[0-9]').hasMatch(v)) {
+      return MasarenLocalizations.of(context, 'register.passwordNumber');
+    }
     return null;
   }
 
   String? _validateConfirm(String? v) {
-    if (v == null || v.isEmpty) return 'Confirm your password';
-    if (v != _password.text) return 'Passwords do not match';
+    if (v == null || v.isEmpty) {
+      return MasarenLocalizations.of(context, 'register.confirmRequired');
+    }
+    if (v != _password.text) {
+      return MasarenLocalizations.of(context, 'register.passwordMismatch');
+    }
     return null;
   }
 
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
     if (!_consent) {
-      setState(() => _error = 'Please accept the terms to continue.');
+      setState(() =>
+          _error = MasarenLocalizations.of(context, 'register.termsRequired'));
       return;
     }
     setState(() {
@@ -124,6 +172,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
         'university_id': _universityId.text.trim(),
       };
       final registered = await AuthApi.register(body);
+      if (registered['email_verification_required'] == true && mounted) {
+        await _showVerificationDialog(
+            registered['verification_email_sent'] == true);
+      }
       try {
         var token = registered['access_token'] as String? ?? '';
         if (token.isEmpty) {
@@ -136,21 +188,47 @@ class _RegisterScreenState extends State<RegisterScreen> {
         widget.onRegistered(token, user);
       } catch (e) {
         if (mounted) {
-          setState(() => _error = 'Account created but auto-login failed. Please sign in manually.');
+          setState(() => _error =
+              MasarenLocalizations.of(context, 'register.autoLoginFailed'));
         }
       }
     } on ApiException catch (e) {
       final msg = e.message ?? '';
-      if (msg.toLowerCase().contains('already') || msg.toLowerCase().contains('exists')) {
-        setState(() => _error = 'An account with this email already exists. Please sign in.');
+      if (msg.toLowerCase().contains('already') ||
+          msg.toLowerCase().contains('exists')) {
+        setState(
+            () => _error = MasarenLocalizations.of(context, 'register.exists'));
       } else {
-        setState(() => _error = msg.isNotEmpty ? msg : 'Registration failed. Please try again.');
+        setState(() => _error = msg.isNotEmpty
+            ? msg
+            : MasarenLocalizations.of(context, 'register.failed'));
       }
     } catch (e) {
-      setState(() => _error = 'Network error. Check your connection and try again.');
+      setState(() =>
+          _error = MasarenLocalizations.of(context, 'register.networkError'));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  Future<void> _showVerificationDialog(bool sent) async {
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: Text(MasarenLocalizations.of(ctx, 'verify.title')),
+        content: Text(sent
+            ? MasarenLocalizations.of(ctx, 'verify.registerSentBody')
+                .replaceAll('{email}', _email.text.trim())
+            : MasarenLocalizations.of(ctx, 'verify.registerUnsentBody')),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(MasarenLocalizations.of(ctx, 'verify.continue')),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -158,7 +236,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final dark = Theme.of(context).brightness == Brightness.dark;
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('Create account')),
+      appBar: AppBar(
+          title:
+              Text(MasarenLocalizations.of(context, 'register.appBarTitle'))),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -179,19 +259,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   children: [
                     BrandLogo(height: 130, forceWhite: dark),
                     const SizedBox(height: 8),
-                    Text('Join the alpha stage',
-                        style: TextStyle(color: cs.onSurfaceVariant, fontSize: 14)),
+                    Text(MasarenLocalizations.of(context, 'register.subtitle'),
+                        style: TextStyle(
+                            color: cs.onSurfaceVariant, fontSize: 14)),
                     const SizedBox(height: 20),
                     TextFormField(
                       controller: _fullName,
-                      decoration: const InputDecoration(labelText: 'Full Name *'),
+                      decoration: InputDecoration(
+                          labelText:
+                              '${MasarenLocalizations.of(context, 'register.name')} *'),
                       validator: _validateName,
                       textCapitalization: TextCapitalization.words,
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: _email,
-                      decoration: const InputDecoration(labelText: 'Email *'),
+                      decoration: InputDecoration(
+                          labelText:
+                              '${MasarenLocalizations.of(context, 'register.email')} *'),
                       keyboardType: TextInputType.emailAddress,
                       validator: _validateEmail,
                     ),
@@ -199,13 +284,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     TextFormField(
                       controller: _password,
                       decoration: InputDecoration(
-                        labelText: 'Password *',
+                        labelText:
+                            '${MasarenLocalizations.of(context, 'register.password')} *',
                         suffixIcon: IconButton(
                           icon: Icon(
-                            _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                            _obscurePassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
                             color: AppColors.muted,
                           ),
-                          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                          onPressed: () => setState(
+                              () => _obscurePassword = !_obscurePassword),
                         ),
                       ),
                       obscureText: _obscurePassword,
@@ -214,42 +303,56 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: _confirm,
-                      decoration: const InputDecoration(labelText: 'Confirm Password *'),
+                      decoration: InputDecoration(
+                          labelText:
+                              '${MasarenLocalizations.of(context, 'register.confirmPassword')} *'),
                       obscureText: true,
                       validator: _validateConfirm,
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: _phone,
-                      decoration: const InputDecoration(labelText: 'Phone Number (optional)'),
+                      decoration: InputDecoration(
+                          labelText: MasarenLocalizations.of(
+                              context, 'register.phone')),
                       keyboardType: TextInputType.phone,
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: _nationalId,
-                      decoration: const InputDecoration(labelText: 'National ID (optional)'),
+                      decoration: InputDecoration(
+                          labelText: MasarenLocalizations.of(
+                              context, 'register.nationalId')),
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
-                      value: _role,
-                      decoration: const InputDecoration(labelText: 'I am a'),
+                      initialValue: _role,
+                      decoration: InputDecoration(
+                          labelText: MasarenLocalizations.of(
+                              context, 'register.role')),
                       items: const [
-                        DropdownMenuItem(value: 'INDIVIDUAL', child: Text('Individual')),
-                        DropdownMenuItem(value: 'ORGANIZATION', child: Text('Organization')),
-                        DropdownMenuItem(value: 'CLUB', child: Text('Sports club')),
-                        DropdownMenuItem(value: 'FEDERATION', child: Text('Federation')),
-                        DropdownMenuItem(value: 'INSTITUTION', child: Text('Institution')),
-                      ],
+                        'INDIVIDUAL',
+                        'ORGANIZATION',
+                        'CLUB',
+                        'FEDERATION',
+                        'INSTITUTION',
+                        'UNIVERSITY',
+                        'RESEARCHER',
+                      ]
+                          .map((value) => DropdownMenuItem(
+                              value: value, child: Text(_roleLabel(value))))
+                          .toList(),
                       onChanged: (v) => setState(() => _role = v!),
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
-                      value: _audience,
-                      decoration: const InputDecoration(labelText: 'I am a'),
+                      initialValue: _audience,
+                      decoration: InputDecoration(
+                          labelText: MasarenLocalizations.of(
+                              context, 'register.audience')),
                       items: _audiences
                           .map((a) => DropdownMenuItem(
-                              value: a,
-                              child: Text(a[0] + a.substring(1).toLowerCase())))
+                              value: a, child: Text(_audienceLabel(a))))
                           .toList(),
                       onChanged: (v) => setState(() => _audience = v!),
                     ),
@@ -257,12 +360,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     if (_audience == 'STUDENT') ...[
                       TextFormField(
                         controller: _university,
-                        decoration: const InputDecoration(labelText: 'University (optional)'),
+                        decoration: InputDecoration(
+                            labelText: MasarenLocalizations.of(
+                                context, 'register.university')),
                       ),
                       const SizedBox(height: 12),
                       TextFormField(
                         controller: _universityId,
-                        decoration: const InputDecoration(labelText: 'University ID (optional)'),
+                        decoration: InputDecoration(
+                            labelText: MasarenLocalizations.of(
+                                context, 'register.universityId')),
                       ),
                     ],
                     const SizedBox(height: 8),
@@ -271,8 +378,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       onChanged: (v) => setState(() => _consent = v ?? false),
                       contentPadding: EdgeInsets.zero,
                       title: Text(
-                          'I agree to the terms and verify my impact.',
-                          style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
+                          MasarenLocalizations.of(context, 'register.consent'),
+                          style: TextStyle(
+                              color: cs.onSurfaceVariant, fontSize: 13)),
                       activeColor: cs.primary,
                     ),
                     CheckboxListTile(
@@ -280,11 +388,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       onChanged: (v) => setState(() => _isTester = v ?? false),
                       contentPadding: EdgeInsets.zero,
                       title: Text(
-                          'I want to join the MASAREEN beta tester program.',
-                          style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
+                          MasarenLocalizations.of(context, 'register.tester'),
+                          style: TextStyle(
+                              color: cs.onSurfaceVariant, fontSize: 13)),
                       subtitle: Text(
-                          'Testers help shape the app before the public launch.',
-                          style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11)),
+                          MasarenLocalizations.of(
+                              context, 'register.testerHint'),
+                          style: TextStyle(
+                              color: cs.onSurfaceVariant, fontSize: 11)),
                       activeColor: cs.primary,
                     ),
                     if (_error != null)
@@ -298,11 +409,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.error_outline, color: Colors.redAccent, size: 18),
+                              const Icon(Icons.error_outline,
+                                  color: Colors.redAccent, size: 18),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(_error!,
-                                    style: const TextStyle(color: Colors.redAccent, fontSize: 13)),
+                                    style: const TextStyle(
+                                        color: Colors.redAccent, fontSize: 13)),
                               ),
                             ],
                           ),
@@ -311,26 +424,37 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(height: 14),
                     _busy
                         ? const CircularProgressIndicator()
-                        : gradientButton(label: 'Create account', onPressed: _register),
+                        : gradientButton(
+                            label: MasarenLocalizations.of(
+                                context, 'register.create'),
+                            onPressed: _register),
                     const SizedBox(height: 12),
                     OutlinedButton.icon(
                       onPressed: _googleBusy ? null : _google,
                       icon: _googleBusy
-                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2))
                           : const Icon(Icons.g_mobiledata, size: 22),
-                      label: const Text('Sign up with Google'),
+                      label: Text(
+                          MasarenLocalizations.of(context, 'register.google')),
                       style: OutlinedButton.styleFrom(
                         minimumSize: const Size.fromHeight(50),
                         foregroundColor: cs.onSurface,
-                        backgroundColor: dark ? Colors.white.withValues(alpha: 0.06) : Colors.white,
+                        backgroundColor: dark
+                            ? Colors.white.withValues(alpha: 0.06)
+                            : Colors.white,
                         side: BorderSide(color: cs.outlineVariant),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14)),
                       ),
                     ),
                     const SizedBox(height: 12),
                     TextButton(
                       onPressed: () => Navigator.pop(context),
-                      child: const Text('Back to sign in'),
+                      child: Text(MasarenLocalizations.of(
+                          context, 'register.backToSignIn')),
                     ),
                   ],
                 ),

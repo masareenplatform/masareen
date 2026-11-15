@@ -141,7 +141,7 @@ class _FloatingShapesState extends State<FloatingShapes>
   }
 
   Widget _buildShape(int type, double size, Color color) {
-    final c = color.withOpacity(1);
+    final c = color.withValues(alpha: 1);
 
     switch (type) {
       case 0:
@@ -380,7 +380,7 @@ class _CountUpNumberState extends State<CountUpNumber>
       animation: _animation,
       builder: (context, _) {
         return Text(
-          '$widget.prefix${_formatNumber(_animation.value)}$widget.suffix',
+          '${widget.prefix}${_formatNumber(_animation.value)}${widget.suffix}',
           style: widget.style,
         );
       },
@@ -593,6 +593,135 @@ class _PulsingWidgetState extends State<PulsingWidget>
         );
       },
       child: widget.child,
+    );
+  }
+}
+
+class FadeSlideIn extends StatefulWidget {
+  final Widget child;
+  final Duration delay;
+  final Duration duration;
+  final Offset offset;
+  const FadeSlideIn({
+    super.key,
+    required this.child,
+    this.delay = Duration.zero,
+    this.duration = const Duration(milliseconds: 520),
+    this.offset = const Offset(0, 0.08),
+  });
+
+  @override
+  State<FadeSlideIn> createState() => _FadeSlideInState();
+}
+
+class _FadeSlideInState extends State<FadeSlideIn>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _fade;
+  late final Animation<Offset> _slide;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: widget.duration);
+    final curve = CurvedAnimation(
+        parent: _controller, curve: Curves.easeOutCubic);
+    _fade = Tween<double>(begin: 0, end: 1).animate(curve);
+    _slide = Tween<Offset>(begin: widget.offset, end: Offset.zero)
+        .animate(curve);
+    if (widget.delay == Duration.zero) {
+      _controller.forward();
+    } else {
+      Future.delayed(widget.delay, () {
+        if (mounted) _controller.forward();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _fade,
+      child: SlideTransition(position: _slide, child: widget.child),
+    );
+  }
+}
+
+class PressScale extends StatefulWidget {
+  final Widget child;
+  final VoidCallback? onTap;
+  final BorderRadius borderRadius;
+  const PressScale({
+    super.key,
+    required this.child,
+    this.onTap,
+    this.borderRadius = const BorderRadius.all(Radius.circular(14)),
+  });
+
+  @override
+  State<PressScale> createState() => _PressScaleState();
+}
+
+class _PressScaleState extends State<PressScale> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTapDown: widget.onTap == null ? null : (_) => setState(() => _pressed = true),
+      onTapCancel: widget.onTap == null ? null : () => setState(() => _pressed = false),
+      onTapUp: widget.onTap == null
+          ? null
+          : (_) {
+              setState(() => _pressed = false);
+              widget.onTap!();
+            },
+      child: AnimatedScale(
+        scale: _pressed ? 0.972 : 1,
+        duration: const Duration(milliseconds: 130),
+        curve: Curves.easeOut,
+        child: widget.child,
+      ),
+    );
+  }
+}
+
+class AnimatedProgressBar extends StatelessWidget {
+  final double value;
+  final double height;
+  final Color? color;
+  final Color? background;
+  const AnimatedProgressBar({
+    super.key,
+    required this.value,
+    this.height = 6,
+    this.color,
+    this.background,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(999),
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0, end: value.clamp(0.0, 1.0)),
+        duration: const Duration(milliseconds: 900),
+        curve: Curves.easeOutCubic,
+        builder: (context, animated, _) => LinearProgressIndicator(
+          value: animated,
+          minHeight: height,
+          color: color ?? cs.primary,
+          backgroundColor: background ?? cs.surfaceContainerHighest,
+        ),
+      ),
     );
   }
 }

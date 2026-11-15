@@ -1,5 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:masaren/l10n.dart';
 import 'package:masaren/theme.dart';
+
+IconData directionalBackIcon(BuildContext context) =>
+    Directionality.of(context) == TextDirection.rtl
+        ? Icons.arrow_forward_ios_rounded
+        : Icons.arrow_back_ios_new_rounded;
+
+IconData directionalChevronIcon(BuildContext context) =>
+    Directionality.of(context) == TextDirection.rtl
+        ? Icons.chevron_left
+        : Icons.chevron_right;
 
 class BrandLogo extends StatelessWidget {
   final double height;
@@ -10,7 +21,9 @@ class BrandLogo extends StatelessWidget {
   Widget build(BuildContext context) {
     final dark = forceWhite || Theme.of(context).brightness == Brightness.dark;
     return Image.asset(
-      dark ? 'assets/images/masaren_logo_white.png' : 'assets/images/masaren_logo_navy.png',
+      dark
+          ? 'assets/images/masaren_logo_white.png'
+          : 'assets/images/masaren_logo_navy.png',
       height: height,
       fit: BoxFit.contain,
       errorBuilder: (_, __, ___) => Text(
@@ -36,32 +49,36 @@ class AppAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     final initials = name.isNotEmpty ? name[0].toUpperCase() : '?';
+    final fallback = Container(
+      width: size,
+      height: size,
+      decoration: const BoxDecoration(
+        gradient: brandGradient,
+        shape: BoxShape.circle,
+      ),
+      child: Center(
+        child: Text(
+          initials,
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+            fontSize: size * 0.4,
+          ),
+        ),
+      ),
+    );
     final child = url != null && url!.isNotEmpty
-        ? CircleAvatar(
-            radius: size / 2,
-            backgroundImage: NetworkImage(url!),
-            backgroundColor: cs.surfaceContainerHighest,
+        ? ClipOval(
+            child: Image.network(
+              url!,
+              width: size,
+              height: size,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => fallback,
+            ),
           )
-        : Container(
-            width: size,
-            height: size,
-            decoration: BoxDecoration(
-              gradient: brandGradient,
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Text(
-                initials,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  fontSize: size * 0.4,
-                ),
-              ),
-            ),
-          );
+        : fallback;
     if (onTap == null) return child;
     return GestureDetector(onTap: onTap, child: child);
   }
@@ -70,7 +87,8 @@ class AppAvatar extends StatelessWidget {
 class ImpactChip extends StatelessWidget {
   final String label;
   final Color color;
-  const ImpactChip({super.key, required this.label, this.color = AppColors.azure});
+  const ImpactChip(
+      {super.key, required this.label, this.color = AppColors.azure});
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -86,7 +104,8 @@ class SectionTitle extends StatelessWidget {
   final String title;
   final String? action;
   final VoidCallback? onAction;
-  const SectionTitle({super.key, required this.title, this.action, this.onAction});
+  const SectionTitle(
+      {super.key, required this.title, this.action, this.onAction});
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -96,12 +115,15 @@ class SectionTitle extends StatelessWidget {
         children: [
           Text(title,
               style: TextStyle(
-                  fontSize: 18, fontWeight: FontWeight.w600, color: cs.onSurface)),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: cs.onSurface)),
           const Spacer(),
           if (action != null)
             TextButton(
               onPressed: onAction,
-              child: Text(action!, style: TextStyle(color: cs.primary, fontSize: 13)),
+              child: Text(action!,
+                  style: TextStyle(color: cs.primary, fontSize: 13)),
             ),
         ],
       ),
@@ -150,24 +172,53 @@ void showEnlargedImage(BuildContext context, String url) {
       fullscreenDialog: true,
       builder: (_) => Scaffold(
         backgroundColor: Colors.black,
-        appBar: AppBar(backgroundColor: Colors.black, foregroundColor: Colors.white),
+        appBar: AppBar(
+            backgroundColor: Colors.black, foregroundColor: Colors.white),
         body: InteractiveViewer(
-          child: Center(child: Image.network(url, fit: BoxFit.contain)),
+          child: Center(
+            child: Image.network(
+              url,
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) => const Icon(
+                Icons.broken_image_outlined,
+                color: Colors.white54,
+                size: 64,
+              ),
+            ),
+          ),
         ),
       ),
     ),
   );
 }
 
-String timeAgo(String? iso) {
+String timeAgo(String? iso, {BuildContext? context}) {
   if (iso == null) return '';
   try {
     final t = DateTime.parse(iso).toLocal();
     final diff = DateTime.now().difference(t);
-    if (diff.inMinutes < 1) return 'just now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m';
-    if (diff.inHours < 24) return '${diff.inHours}h';
-    if (diff.inDays < 7) return '${diff.inDays}d';
+    if (context == null) {
+      if (diff.inMinutes < 1) return 'just now';
+      if (diff.inMinutes < 60) return '${diff.inMinutes}m';
+      if (diff.inHours < 24) return '${diff.inHours}h';
+      if (diff.inDays < 7) return '${diff.inDays}d';
+      return '${t.day}/${t.month}/${t.year}';
+    }
+    if (diff.inMinutes < 1) {
+      return MasarenLocalizations.of(context, 'time.justNow');
+    }
+    if (diff.inMinutes < 60) {
+      return MasarenLocalizations.of(context, 'time.minutesShort')
+          .replaceAll('{count}', '${diff.inMinutes}');
+    }
+    if (diff.inHours < 24) {
+      return MasarenLocalizations.of(context, 'time.hoursShort')
+          .replaceAll('{count}', '${diff.inHours}');
+    }
+    if (diff.inDays < 7) {
+      return MasarenLocalizations.of(context, 'time.daysShort')
+          .replaceAll('{count}', '${diff.inDays}');
+    }
     return '${t.day}/${t.month}/${t.year}';
   } catch (_) {
     return '';
@@ -188,14 +239,14 @@ class StatTile extends StatelessWidget {
         Text(value,
             style: TextStyle(
                 color: color ?? cs.onSurface,
-                 fontWeight: FontWeight.w600,
-                 fontSize: 18)),
-         const SizedBox(height: 2),
-         Text(label, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
-       ],
-     );
-   }
- }
+                fontWeight: FontWeight.w600,
+                fontSize: 18)),
+        const SizedBox(height: 2),
+        Text(label, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
+      ],
+    );
+  }
+}
 
 class ErrorView extends StatelessWidget {
   final String? message;
@@ -213,7 +264,7 @@ class ErrorView extends StatelessWidget {
           children: [
             Icon(Icons.cloud_off, size: 48, color: cs.outline),
             const SizedBox(height: 16),
-            Text('Something went wrong',
+            Text(MasarenLocalizations.of(context, 'common.error'),
                 style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
             if (message != null && message!.isNotEmpty)
@@ -227,7 +278,7 @@ class ErrorView extends StatelessWidget {
               FilledButton.icon(
                 onPressed: onRetry,
                 icon: const Icon(Icons.refresh),
-                label: const Text('Retry'),
+                label: Text(MasarenLocalizations.of(context, 'common.retry')),
               ),
           ],
         ),

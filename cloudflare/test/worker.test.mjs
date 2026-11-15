@@ -27,6 +27,18 @@ test('health and config', async () => {
   assert.ok(cfg.orgTypes.includes('University'));
 });
 
+test('app update manifest exposes the latest Android build and OTA settings', async () => {
+  const env = mkEnv();
+  const r = await call(env, 'GET', '/api/app/version');
+  assert.equal(r.status, 200);
+  const j = await r.json();
+  assert.equal(j.android.version, '0.4.3');
+  assert.equal(j.android.build, 8);
+  assert.match(j.android.url, /downloads\/masareen\.apk$/);
+  assert.equal(j.minimumBuild, 7);
+  assert.equal(j.ota.provider, 'shorebird');
+});
+
 test('google sign up creates user, logs login, sets session; profile completes registration', async () => {
   const env = mkEnv();
   const r = await call(env, 'POST', '/api/auth/google', { credential: await idToken(), locale: 'ar' });
@@ -66,10 +78,34 @@ test('rejects forged, wrong-audience and expired tokens', async () => {
   assert.equal(env.DB.raw.prepare('SELECT COUNT(*) c FROM users').get().c, 0);
 });
 
+test('a member-uploaded avatar survives a later Google sign-in', async () => {
+  const env = mkEnv();
+  const first = await call(env, 'POST', '/api/auth/google', { credential: await idToken() });
+  assert.equal(first.status, 200);
+  env.DB.raw.prepare("UPDATE users SET picture='https://masareen.com/media/avatars/1-x.jpg' WHERE email='nour@example.com'").run();
+  const again = await call(env, 'POST', '/api/auth/google', {
+    credential: await idToken({ picture: 'https://lh3.googleusercontent.com/new.png' }),
+  });
+  assert.equal(again.status, 200);
+  const row = env.DB.raw.prepare('SELECT picture FROM users').get();
+  assert.equal(row.picture, 'https://masareen.com/media/avatars/1-x.jpg');
+
+  const fresh = mkEnv();
+  await call(fresh, 'POST', '/api/auth/google', { credential: await idToken() });
+  await call(fresh, 'POST', '/api/auth/google', {
+    credential: await idToken({ picture: 'https://lh3.googleusercontent.com/new.png' }),
+  });
+  assert.equal(fresh.DB.raw.prepare('SELECT picture FROM users').get().picture,
+      'https://lh3.googleusercontent.com/new.png');
+});
+
 test('tampered session cookie is rejected', async () => {
   const env = mkEnv();
   const cookie = sess(await call(env, 'POST', '/api/auth/google', { credential: await idToken() }));
-  const bad = cookie.replace(/.$/, (c) => (c === 'A' ? 'B' : 'A'));
+  const [body, sig] = cookie.split('.');
+  // Flip a signature byte. Changing the final base64 character can be a
+  // no-op when it only carries padding bits, so tamper the first one.
+  const bad = `${body}.${sig[0] === 'A' ? 'B' : 'A'}${sig.slice(1)}`;
   assert.equal((await (await call(env, 'GET', '/api/me', null, bad)).json()).user, null);
 });
 
@@ -149,4 +185,58 @@ test('CORS allows the configured R2 site, handles preflight, blocks other origin
 test('google not configured returns 503', async () => {
   const env = mkEnv({ GOOGLE_CLIENT_ID: '' });
   assert.equal((await call(env, 'POST', '/api/auth/google', { credential: 'x' })).status, 503);
+});
+
+test('web magic-link signs in email-registered users once and marks email verified', async () => {
+  const sent = [];
+  const env = mkEnv({
+    RESEND_API_KEY: 're_test_key',
+    __fetch: async (url, init) => {
+      if (String(url).includes('resend.com')) {
+        sent.push(JSON.parse(init.body));
+        return new Response(JSON.stringify({ id: 'mail_1' }), { status: 200 });
+      }
+      return new Response(JSON.stringify({ keys: [jwk] }));
+    },
+  });
+  const reg = { name: 'Salma', email: 'salma@example.org', role: 'Professional', employer: 'Nile Lab', jobTitle: 'Lead', country: 'Egypt', consent: true };
+  assert.equal((await call(env, 'POST', '/api/auth/register', reg)).status, 200);
+  sent.length = 0;
+
+  const reqLink = await call(env, 'POST', '/api/auth/magic-link', { email: 'salma@example.org' });
+  assert.equal(reqLink.status, 200);
+  assert.equal(sent.length, 1);
+  const match = /\/api\/auth\/magic-link\?token=([A-Za-z0-9_-]+)/.exec(sent[0].html);
+  assert.ok(match, 'magic link token must be present in email HTML');
+
+  const verify = await call(env, 'GET', `/api/auth/magic-link?token=${match[1]}`);
+  assert.equal(verify.status, 302);
+  const cookie = sess(verify);
+  assert.match(cookie, /^masareen_session=/);
+
+  const me = await (await call(env, 'GET', '/api/me', null, cookie)).json();
+  assert.equal(me.user.email, 'salma@example.org');
+  const dbUser = env.DB.raw.prepare('SELECT email_verified FROM users WHERE email=?').get('salma@example.org');
+  assert.equal(dbUser.email_verified, 1);
+
+  // Replay of single-use magic link must fail
+  const replay = await call(env, 'GET', `/api/auth/magic-link?token=${match[1]}`);
+  assert.equal(replay.status, 400);
+});
+
+test('email signup rate limiting is scoped per IP rather than blocking an entire country', async () => {
+  const env = mkEnv();
+  const base = { name: 'User', role: 'Professional', employer: 'Lab', jobTitle: 'Researcher', country: 'Egypt', consent: true };
+  const postFromIp = (ip, email) => handle(new Request('https://masareen.test/api/auth/register', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'cf-connecting-ip': ip },
+    body: JSON.stringify({ ...base, email }),
+  }), env, {});
+
+  for (let i = 0; i < 10; i++) {
+    assert.equal((await postFromIp('203.0.113.10', `ip1-${i}@example.org`)).status, 200);
+  }
+  assert.equal((await postFromIp('203.0.113.10', 'ip1-over@example.org')).status, 429);
+  // Another IP in the same country must still succeed
+  assert.equal((await postFromIp('203.0.113.11', 'ip2-ok@example.org')).status, 200);
 });

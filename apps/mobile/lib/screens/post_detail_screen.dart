@@ -4,8 +4,11 @@ import 'package:masaren/l10n.dart';
 import 'package:masaren/models.dart';
 import 'package:masaren/screens/messages_screen.dart';
 import 'package:masaren/screens/profile_view_screen.dart';
+import 'package:masaren/services/live_sync_service.dart';
 import 'package:masaren/widgets.dart';
+import 'package:masaren/widgets/animations.dart';
 import 'package:masaren/widgets/post_media_gallery.dart';
+import 'package:masaren/widgets/role_badge.dart';
 
 class PostDetailScreen extends StatefulWidget {
   final Post post;
@@ -29,6 +32,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   Comment? _replyTo;
   bool _busy = false;
   bool _loadingComments = true;
+  String? _lastCommentId;
 
   String _loc(String key) => MasarenLocalizations.of(context, key);
 
@@ -39,14 +43,41 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     super.initState();
     _post = widget.post;
     _comments = widget.post.commentList;
+    _lastCommentId = _comments.isEmpty ? null : _comments.last.id;
+    LiveSyncService.instance.addListener(_onLiveSync);
+    LiveSyncService.instance.watch(this, [_post.id]);
     _loadComments();
   }
 
   @override
   void dispose() {
+    LiveSyncService.instance.removeListener(_onLiveSync);
+    LiveSyncService.instance.unwatch(this);
     _commentCtl.dispose();
     _scroll.dispose();
     super.dispose();
+  }
+
+  void _onLiveSync() {
+    if (!mounted) return;
+    final stats = LiveSyncService.instance.statsFor(_post.id);
+    if (stats == null) return;
+    final shouldReload = stats.comments != _post.comments ||
+        (stats.latestCommentId != null &&
+            stats.latestCommentId != _lastCommentId);
+    setState(() {
+      _post = _post.copyWith(
+        likes: stats.likes,
+        comments: stats.comments,
+        shares: stats.shares,
+        likedByMe: stats.likedByMe,
+        bookmarkedByMe: stats.bookmarkedByMe,
+        impactValue: stats.impactValue ?? _post.impactValue,
+        confidenceScore: stats.confidenceScore ?? _post.confidenceScore,
+      );
+    });
+    widget.onChanged(_post);
+    if (shouldReload) _loadComments();
   }
 
   Future<void> _loadComments() async {
@@ -55,6 +86,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       if (!mounted) return;
       setState(() {
         _comments = list;
+        _lastCommentId = list.isEmpty ? null : list.last.id;
         _post = _post.copyWith(commentList: list, comments: list.length);
         _loadingComments = false;
       });
@@ -65,6 +97,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   }
 
   void _changed() {
+    _lastCommentId = _comments.isEmpty ? null : _comments.last.id;
     _post = _post.copyWith(commentList: _comments, comments: _comments.length);
     widget.onChanged(_post);
     if (mounted) setState(() {});
@@ -250,8 +283,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(_loc('post.delete')),
-        content: const Text(
-            'This removes the post and its comments. This cannot be undone.'),
+        content: Text(_loc('post.deleteConfirm')),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
@@ -275,12 +307,12 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   }
 
   Future<void> _report() async {
-    const reasons = [
-      ('misinformation', 'Misleading or false information'),
-      ('spam', 'Spam or repetitive content'),
-      ('harassment', 'Harassment or hate'),
-      ('violence', 'Violence or dangerous content'),
-      ('other', 'Something else'),
+    final reasons = [
+      ('misinformation', _loc('post.report.misinformation')),
+      ('spam', _loc('post.report.spam')),
+      ('harassment', _loc('post.report.harassment')),
+      ('violence', _loc('post.report.violence')),
+      ('other', _loc('post.report.other')),
     ];
     String reason = reasons.first.$1;
     final details = TextEditingController();
@@ -289,23 +321,25 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setLocal) => AlertDialog(
           title: Text(_loc('post.report')),
-          content: Column(mainAxisSize: MainAxisSize.min, children: [
-            ...reasons.map((r) => RadioListTile<String>(
-                  value: r.$1,
-                  groupValue: reason,
-                  title: Text(r.$2),
-                  contentPadding: EdgeInsets.zero,
-                  dense: true,
-                  onChanged: (v) => setLocal(() => reason = v ?? reason),
-                )),
-            TextField(
-              controller: details,
-              maxLines: 2,
-              decoration: const InputDecoration(
-                  hintText: 'Add context (optional)',
-                  border: OutlineInputBorder()),
-            ),
-          ]),
+          content: RadioGroup<String>(
+            groupValue: reason,
+            onChanged: (v) => setLocal(() => reason = v ?? reason),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              ...reasons.map((r) => RadioListTile<String>(
+                    value: r.$1,
+                    title: Text(r.$2),
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                  )),
+              TextField(
+                controller: details,
+                maxLines: 2,
+                decoration: InputDecoration(
+                    hintText: _loc('post.reportContext'),
+                    border: const OutlineInputBorder()),
+              ),
+            ]),
+          ),
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
@@ -322,8 +356,8 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         await AuthApi.report('post', _post.id,
             reason: reason, details: details.text);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Report sent for review.')));
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text(_loc('post.reportSent'))));
         }
       } catch (e) {
         if (mounted) {
@@ -341,7 +375,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       builder: (ctx) => AlertDialog(
         title: Text(_loc('post.block')),
         content: Text(
-            'Posts and messages from ${_post.author.name} will be hidden from you.'),
+            _loc('post.blockConfirm').replaceAll('{name}', _post.author.name)),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
@@ -358,9 +392,8 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       if (!mounted) return;
       final blocked = res['blocked'] == true;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(blocked
-              ? '${_post.author.name} is blocked.'
-              : '${_post.author.name} is unblocked.')));
+          content: Text(_loc(blocked ? 'post.blocked' : 'post.unblocked')
+              .replaceAll('{name}', _post.author.name))));
       if (blocked) Navigator.of(context).pop('deleted');
     } catch (e) {
       if (mounted) {
@@ -389,6 +422,72 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     Navigator.of(context).push(MaterialPageRoute(
         builder: (_) => ProfileViewScreen(
             userId: _post.author.id, currentUser: widget.currentUser)));
+  }
+
+  void _showImpactInfo() {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('How ISA v2 works'),
+        content: const Text(
+            'The Impact Score is non-linear: each domain saturates with diminishing returns, decays over time at a domain-specific rate, and is combined with evidence coverage, GPS location confidence, actor history and a consistency penalty. Community ratings use a Bayesian prior, so one vote cannot dominate. The final 0-1000 score is mapped to the 0-10 impact value.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Close')),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _boostPost() async {
+    final amount = TextEditingController(text: '25');
+    final value = await showDialog<double>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Boost post with MRC'),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          const Text('Promoted posts are reserved a share of home-feed slots.',
+              style: TextStyle(fontSize: 12)),
+          const SizedBox(height: 10),
+          TextField(
+            controller: amount,
+            autofocus: true,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: const InputDecoration(
+                labelText: 'Amount (MRC, min 5)', suffixText: 'MRC'),
+          ),
+        ]),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(_loc('action.cancel'))),
+          FilledButton(
+            onPressed: () {
+              final parsed = double.tryParse(amount.text.trim());
+              if (parsed != null && parsed >= 5) {
+                Navigator.pop(dialogContext, parsed);
+              }
+            },
+            child: const Text('Boost'),
+          ),
+        ],
+      ),
+    );
+    amount.dispose();
+    if (value == null) return;
+    try {
+      await AuthApi.boostPost(_post.id, value);
+      final updated = await AuthApi.postById(_post.id);
+      if (!mounted) return;
+      setState(() => _post = updated);
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Post boosted and promoted in the home feed.')));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(e.toString())));
+    }
   }
 
   @override
@@ -421,6 +520,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                 case 'delete':
                   _deletePost();
                   break;
+                case 'boost':
+                  _boostPost();
+                  break;
                 case 'report':
                   _report();
                   break;
@@ -437,6 +539,8 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                 PopupMenuItem(value: 'edit', child: Text(_loc('post.edit'))),
                 PopupMenuItem(
                     value: 'delete', child: Text(_loc('post.delete'))),
+                const PopupMenuItem(
+                    value: 'boost', child: Text('Boost with MRC')),
               ] else ...[
                 PopupMenuItem(
                     value: 'message', child: Text(_loc('post.message'))),
@@ -481,6 +585,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                         child: Icon(Icons.verified,
                                             size: 16, color: Colors.blue),
                                       ),
+                                    RoleBadge(role: _post.author.role),
                                   ]),
                                   if (_post.programTag != null)
                                     Text(_post.programTag!,
@@ -498,6 +603,32 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                       const SizedBox(height: 14),
                       Text(_post.text,
                           style: const TextStyle(fontSize: 16, height: 1.55)),
+                      if (_post.deepfakeVerdict != 'UNSCANNED' &&
+                          _post.deepfakeVerdict != 'LIKELY_AUTHENTIC')
+                        Padding(
+                          padding: const EdgeInsets.only(top: 10),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 9, vertical: 6),
+                            decoration: BoxDecoration(
+                                color: Colors.amber.withValues(alpha: .14),
+                                borderRadius: BorderRadius.circular(9)),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.auto_awesome,
+                                    size: 15, color: Colors.amber),
+                                const SizedBox(width: 5),
+                                Text(
+                                    'AI content: ${_post.deepfakeVerdict} (${_post.deepfakeScore.toStringAsFixed(2)})',
+                                    style: const TextStyle(
+                                        fontSize: 10.5,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.amber)),
+                              ],
+                            ),
+                          ),
+                        ),
                       if (_post.media.isNotEmpty || _post.videoHlsUrl != null)
                         Padding(
                           padding: const EdgeInsets.only(top: 12),
@@ -505,6 +636,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                             borderRadius: BorderRadius.circular(14),
                             child: PostMediaGallery(
                               media: _post.media,
+                              videoId: _post.id,
                               videoHlsUrl: _post.videoHlsUrl,
                               videoPosterUrl: _post.videoPosterUrl,
                               onImageTap: (url) =>
@@ -526,6 +658,13 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                             ),
                           ),
                         ),
+                      if (_post.files.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 12),
+                          child: PostFilesList(files: _post.files),
+                        ),
+                      if (_post.linkUrl != null && _post.linkUrl!.isNotEmpty)
+                        PostLinkCard(url: _post.linkUrl!),
                       if (_post.impactValue != null)
                         Padding(
                           padding: const EdgeInsets.only(top: 12),
@@ -533,8 +672,14 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                             avatar:
                                 const Icon(Icons.fact_check_outlined, size: 16),
                             label: Text(
-                                '${_post.impactValue!.toStringAsFixed(1)} ${_post.impactLabel ?? "impact"}'),
+                                '${_post.impactValue!.toStringAsFixed(1)} ${_post.impactLabel ?? _loc('post.impact')}'),
                           ),
+                        ),
+                      if (_post.isaScore != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 10),
+                          child:
+                              _IsaCard(post: _post, onExplain: _showImpactInfo),
                         ),
                       const SizedBox(height: 8),
                       Row(children: [
@@ -575,7 +720,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
               else if (roots.isEmpty)
                 Padding(
                   padding: const EdgeInsets.all(20),
-                  child: Text('No comments yet. Start the conversation.',
+                  child: Text(_loc('post.noComments'),
                       style: TextStyle(color: cs.onSurfaceVariant)),
                 )
               else
@@ -616,7 +761,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
             child: Row(children: [
               Expanded(
                 child: Text(
-                    '${_loc('post.replyTo')} ${_replyTo!.authorName ?? 'User'}',
+                    '${_loc('post.replyTo')} ${_replyTo!.authorName ?? _loc('post.userFallback')}',
                     style: const TextStyle(fontSize: 12)),
               ),
               IconButton(
@@ -686,7 +831,8 @@ class _CommentTile extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
         AppAvatar(
-            name: comment.authorName ?? 'User',
+            name: comment.authorName ??
+                MasarenLocalizations.of(context, 'post.userFallback'),
             url: comment.authorPicture,
             size: 34),
         const SizedBox(width: 10),
@@ -695,7 +841,9 @@ class _CommentTile extends StatelessWidget {
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
               Flexible(
-                child: Text(comment.authorName ?? 'User',
+                child: Text(
+                    comment.authorName ??
+                        MasarenLocalizations.of(context, 'post.userFallback'),
                     style: const TextStyle(
                         fontWeight: FontWeight.w700, fontSize: 13)),
               ),
@@ -705,7 +853,7 @@ class _CommentTile extends StatelessWidget {
                   child: Icon(Icons.verified, size: 14, color: Colors.blue),
                 ),
               const SizedBox(width: 6),
-              Text(timeAgo(comment.createdAt),
+              Text(timeAgo(comment.createdAt, context: context),
                   style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
             ]),
             const SizedBox(height: 3),
@@ -764,6 +912,93 @@ class _CommentTile extends StatelessWidget {
           ]),
         ),
       ]),
+    );
+  }
+}
+
+class _IsaCard extends StatelessWidget {
+  final Post post;
+  final VoidCallback onExplain;
+  const _IsaCard({required this.post, required this.onExplain});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final domains = post.impactDomains ?? const <String, dynamic>{};
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: cs.primary.withValues(alpha: .05),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: cs.primary.withValues(alpha: .18)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.insights_outlined, size: 18, color: cs.primary),
+              const SizedBox(width: 7),
+              Expanded(
+                child: Text(
+                    'ISA v2 · ${post.isaScore!.toInt()}/1000 · ${post.impactLabel ?? 'Impact'}',
+                    style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w800,
+                        color: cs.onSurface)),
+              ),
+              if (post.geoLevel > 0)
+                Tooltip(
+                  message: post.geoLevel == 2
+                      ? 'GPS + claimed location recorded'
+                      : 'GPS location recorded',
+                  child: Icon(Icons.location_on, size: 17, color: cs.primary),
+                ),
+              IconButton(
+                  visualDensity: VisualDensity.compact,
+                  onPressed: onExplain,
+                  icon: const Icon(Icons.info_outline, size: 17)),
+            ],
+          ),
+          if (domains.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            ...domains.entries.map((entry) {
+              final value = entry.value is Map
+                  ? Map<String, dynamic>.from(entry.value as Map)
+                  : const <String, dynamic>{};
+              final score = (value['score'] as num?)?.toDouble() ?? 0;
+              return Padding(
+                padding: const EdgeInsets.only(top: 5),
+                child: Row(
+                  children: [
+                    SizedBox(
+                        width: 38,
+                        child: Text(
+                            (value['code'] ??
+                                    entry.key.toString().substring(0, 3))
+                                .toString()
+                                .toUpperCase(),
+                            style: TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w800,
+                                color: cs.primary))),
+                    Expanded(
+                        child: AnimatedProgressBar(
+                            value: (score / 100).clamp(0.0, 1.0), height: 4)),
+                    const SizedBox(width: 6),
+                    SizedBox(
+                        width: 30,
+                        child: Text('${score.toInt()}',
+                            textAlign: TextAlign.end,
+                            style: TextStyle(
+                                fontSize: 9.5, color: cs.onSurfaceVariant))),
+                  ],
+                ),
+              );
+            }),
+          ],
+        ],
+      ),
     );
   }
 }

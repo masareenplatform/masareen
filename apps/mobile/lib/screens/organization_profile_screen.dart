@@ -1,9 +1,16 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:masaren/api_client.dart';
+import 'package:masaren/l10n.dart';
 import 'package:masaren/theme.dart';
 import 'package:masaren/widgets.dart';
 import 'package:masaren/models.dart';
+import 'package:masaren/screens/event_hub_screen.dart';
 import 'package:masaren/screens/interview_screen.dart';
+import 'package:masaren/screens/program_detail_screen.dart';
+import 'package:masaren/widgets/post_media_gallery.dart';
+import 'package:masaren/widgets/smart_image.dart';
+import 'package:masaren/profile_ui.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class OrganizationProfileScreen extends StatefulWidget {
   final String orgId;
@@ -26,21 +33,25 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen>
   String _name = 'Organization';
   String _orgType = 'NGO';
   String _handle = '';
+  String _email = '';
   String _mission = '';
   String _about = '';
   String? _avatarUrl;
   String? _coverUrl;
-  String _logoUrl = '';
-  int _membersCount = 0;
-  int _projectsCount = 0;
   int _impactScore = 0;
-  int _partnersCount = 0;
+  int _avgImpactPercent = 0;
+  bool _autoSelectedEvents = false;
   bool _following = false;
-  bool _isDonatable = true;
+  bool _verified = false;
+  Map<String, String> _socialLinks = {};
+  bool get _isDonatable => widget.orgId != widget.currentUser.id;
+  bool get _isSelf => widget.orgId == widget.currentUser.id;
 
   List<Post> _feed = [];
   List<Map<String, dynamic>> _team = [];
   List<Project> _projects = [];
+  List<Event> _events = [];
+  List<Program> _programs = [];
 
   Map<String, dynamic> _impactMetrics = {
     'beneficiaries': '0',
@@ -54,7 +65,7 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
+    _tabController = TabController(length: 7, vsync: this);
     _load();
   }
 
@@ -74,26 +85,80 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen>
         AuthApi.getUser(widget.orgId),
         AuthApi.feed(authorId: widget.orgId),
         AuthApi.projects(),
+        AuthApi.events(includePast: true),
+        AuthApi.programs(),
       ]);
       final user = results[0] as User;
       final posts = results[1] as List<Post>;
       final allProjects = results[2] as List<Project>;
+      final allEvents = results[3] as List<Event>;
+      final allPrograms = results[4] as List<Program>;
+      Map<String, dynamic> institution = const {};
+      try {
+        institution = await api.get('/api/v1/users/${widget.orgId}/institution')
+            as Map<String, dynamic>;
+      } catch (_) {}
+      final metrics = institution['metrics'] is Map
+          ? institution['metrics'] as Map
+          : const {};
+      final socialLinks = institution['social_links'] is Map
+          ? (institution['social_links'] as Map)
+              .map((k, v) => MapEntry(k.toString(), v.toString()))
+          : <String, String>{};
+      final website = (institution['website'])?.toString() ?? '';
+      final orgProjects = allProjects
+          .where((p) =>
+              p.author?.id == widget.orgId ||
+              (p.ownerName != null && p.ownerName == user.fullName))
+          .toList();
+      final orgEvents = allEvents
+          .where((e) => e.author?.id == widget.orgId)
+          .toList();
+      final linkedProgramIds = orgEvents
+          .map((e) => e.programId)
+          .whereType<String>()
+          .toSet();
+      final orgPrograms = allPrograms
+          .where((p) =>
+              p.author?.id == widget.orgId || linkedProgramIds.contains(p.id))
+          .toList();
 
       if (mounted) {
         setState(() {
           _name = user.fullName;
-          _handle = user.email.split('@').first;
+          _handle = user.handle ?? user.email.split('@').first;
+          _email = user.email;
           _avatarUrl = user.avatarUrl;
           _coverUrl = user.coverUrl;
+          _socialLinks = socialLinks;
+          if (website.isNotEmpty) _socialLinks['website'] = website;
           if (user.bio != null && user.bio!.isNotEmpty) {
             _about = user.bio!;
           }
+          if (_mission.isEmpty) _mission = _about;
           _orgType = user.role.toUpperCase();
-          _following = false;
+          _following = user.isFollowing;
+          _verified = user.emailVerified || institution['verified'] == true;
 
           _feed = posts;
-          _projectsCount = allProjects.length;
-          _projects = allProjects;
+          _projects = orgProjects;
+          _events = orgEvents;
+          _programs = orgPrograms;
+          final impactValues = posts
+              .map((p) => p.isaScore != null
+                  ? p.isaScore! / 10
+                  : (p.impactValue ?? 0) * 10)
+              .where((v) => v > 0)
+              .map((v) => v.clamp(0, 100))
+              .toList();
+          _avgImpactPercent = impactValues.isEmpty
+              ? 0
+              : (impactValues.reduce((a, b) => a + b) / impactValues.length)
+                  .round();
+          if (!_autoSelectedEvents && orgEvents.isNotEmpty) {
+            _autoSelectedEvents = true;
+            _tabController.index = 1;
+          }
 
           final authorNames = <String>{};
           for (final p in posts) {
@@ -101,14 +166,32 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen>
               authorNames.add(p.author.name);
             }
           }
-          _team = authorNames.map((name) => {
-            'name': name,
-            'role': 'Contributor',
-            'avatar': null,
-          }).toList();
-          _membersCount = authorNames.isEmpty ? 0 : authorNames.length;
-          _impactScore = posts.length;
-          _partnersCount = 0;
+          _team = authorNames
+              .map((name) => {
+                    'name': name,
+                    'role': '',
+                    'avatar': null,
+                  })
+              .toList();
+          _impactScore = (metrics['impact_score'] as num?)?.toInt() ?? 0;
+
+          final sdgs = metrics['sdgs_contributed'] is List
+              ? (metrics['sdgs_contributed'] as List)
+                  .whereType<num>()
+                  .map((e) => e.toInt())
+                  .toList()
+              : <int>{
+                  for (final p in orgProjects)
+                    if (p.sdg != null) p.sdg!
+                }.toList();
+          _impactMetrics = {
+            'beneficiaries': (metrics['beneficiaries'] ?? 0).toString(),
+            'programs': (metrics['programs'] ?? 0).toString(),
+            'sdgsContributed': sdgs,
+            'countries': (metrics['countries'] ?? 0).toString(),
+            'volunteers': (metrics['volunteers'] ?? 0).toString(),
+            'fundsRaised': (metrics['funds_raised'] ?? '\$0').toString(),
+          };
         });
       }
     } on ApiException catch (e) {
@@ -121,23 +204,153 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen>
   }
 
   Future<void> _follow() async {
-    if (_busy) return;
+    if (_busy || _isSelf) return;
     setState(() => _busy = true);
     try {
-      await AuthApi.followPersonnel(widget.orgId);
+      final res = await AuthApi.followPersonnel(widget.orgId);
       if (mounted) {
-        setState(() => _following = !_following);
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(_following ? 'Following' : 'Unfollowed')));
+        setState(
+            () => _following = res['following'] == true ? true : !_following);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(MasarenLocalizations.of(context,
+                _following ? 'action.following' : 'organization.unfollowed'))));
       }
     } catch (e) {
       if (mounted) {
+        final message = MasarenLocalizations.of(context, 'common.failed')
+            .replaceAll('{error}', '$e');
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Failed: $e')));
+            .showSnackBar(SnackBar(content: Text(message)));
       }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  Future<void> _openDonation() async {
+    final amountCtl = TextEditingController();
+    var busy = false;
+    final cs = Theme.of(context).colorScheme;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheet) => Container(
+          decoration: BoxDecoration(
+            color: cs.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 12,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: cs.outlineVariant,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  const Icon(Icons.favorite_outline, color: AppColors.accent),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      MasarenLocalizations.of(
+                              context, 'organization.donationTitle')
+                          .replaceAll('{name}', _name),
+                      style: const TextStyle(
+                          fontSize: 17, fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+              Text(
+                MasarenLocalizations.of(context, 'organization.donationBody'),
+                style: TextStyle(
+                    fontSize: 13, height: 1.5, color: cs.onSurfaceVariant),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: amountCtl,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(
+                  labelText: MasarenLocalizations.of(
+                      context, 'organization.donationAmount'),
+                  prefixIcon: const Icon(Icons.paid_outlined),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                height: 46,
+                child: FilledButton(
+                  onPressed: busy
+                      ? null
+                      : () async {
+                          final amount =
+                              double.tryParse(amountCtl.text.trim()) ?? 0;
+                          if (amount <= 0) {
+                            ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
+                                content: Text(MasarenLocalizations.of(
+                                    context, 'organization.donationInvalid'))));
+                            return;
+                          }
+                          setSheet(() => busy = true);
+                          try {
+                            await AuthApi.transferCoins(widget.orgId, amount,
+                                reference: 'Donation to $_name');
+                            if (ctx.mounted) Navigator.pop(ctx);
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                      content: Text(MasarenLocalizations.of(
+                                          context,
+                                          'organization.donationSent'))));
+                            }
+                          } catch (e) {
+                            if (ctx.mounted) {
+                              ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
+                                  content: Text(MasarenLocalizations.of(
+                                          ctx, 'common.failed')
+                                      .replaceAll('{error}', '$e'))));
+                            }
+                          } finally {
+                            if (ctx.mounted) setSheet(() => busy = false);
+                          }
+                        },
+                  child: busy
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2))
+                      : Text(MasarenLocalizations.of(
+                          context, 'organization.donationSend')),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    amountCtl.dispose();
   }
 
   @override
@@ -148,7 +361,7 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen>
     if (_loading) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text('Loading...'),
+          title: Text(MasarenLocalizations.of(context, 'feed.loading')),
           backgroundColor: cs.surface,
         ),
         body: const Center(child: CircularProgressIndicator()),
@@ -158,7 +371,7 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen>
     if (_error != null) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text('Error'),
+          title: Text(MasarenLocalizations.of(context, 'common.error')),
           backgroundColor: cs.surface,
         ),
         body: ErrorView(message: _error, onRetry: () => _load()),
@@ -170,12 +383,44 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen>
       color: cs.primary,
       backgroundColor: cs.surface,
       child: CustomScrollView(
-        physics:
-            const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+        physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics()),
         slivers: [
-          _buildCoverBanner(cs, dark),
-          SliverToBoxAdapter(child: _buildLogoSection(cs, dark)),
-          SliverToBoxAdapter(child: _buildMissionStatement(cs, dark)),
+          SliverToBoxAdapter(
+              child: SizedBox(height: MediaQuery.paddingOf(context).top)),
+          SliverToBoxAdapter(
+            child: ProfileHero(
+              title: _name,
+              subtitle: _handle.isNotEmpty ? '@$_handle' : _email,
+              kind: 'organization',
+              icon: Icons.groups_outlined,
+              imageUrl: _avatarUrl,
+              coverUrl: _coverUrl,
+              badge: ProfilePill(
+                  label: _orgType,
+                  icon: Icons.verified_outlined,
+                  color: ProfileColors.gold),
+              onShare: () => copyProfileLink(context, widget.orgId,
+                  MasarenLocalizations.of(context, 'organization.linkCopied'),
+                  verified: _verified),
+              stats: [
+                ProfileStat(_compact(_events.length),
+                    MasarenLocalizations.of(context, 'nav.events'),
+                    icon: Icons.event_outlined),
+                ProfileStat(_compact(_programs.length),
+                    MasarenLocalizations.of(context, 'nav.programs'),
+                    icon: Icons.hub_outlined),
+                ProfileStat(_compact(_feed.length),
+                    MasarenLocalizations.of(context, 'profile.posts'),
+                    icon: Icons.dynamic_feed_outlined),
+                ProfileStat('$_avgImpactPercent%',
+                    MasarenLocalizations.of(context, 'organization.impact'),
+                    icon: Icons.trending_up_rounded),
+              ],
+            ),
+          ),
+          if (_mission.isNotEmpty)
+            SliverToBoxAdapter(child: _buildMissionStatement(cs, dark)),
           SliverToBoxAdapter(child: _buildStatsRow(cs, dark)),
           SliverToBoxAdapter(child: _buildActionButtons(cs)),
           SliverToBoxAdapter(child: _buildTabBar(cs)),
@@ -186,226 +431,17 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen>
     );
   }
 
-  // ── Cover Banner ───────────────────────────────────────────────────────
-  Widget _buildCoverBanner(ColorScheme cs, bool dark) {
-    return SliverAppBar(
-      expandedHeight: 220,
-      pinned: true,
-      stretch: true,
-      backgroundColor: cs.surface,
-      surfaceTintColor: Colors.transparent,
-      leading: Container(
-        margin: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: cs.surface.withValues(alpha: 0.8),
-          shape: BoxShape.circle,
-        ),
-        child: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded,
-              size: 18, color: cs.onSurface),
-          onPressed: () => Navigator.maybePop(context),
-        ),
-      ),
-      actions: [
-        Container(
-          margin: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: cs.surface.withValues(alpha: 0.8),
-            shape: BoxShape.circle,
-          ),
-          child: IconButton(
-            icon: Icon(Icons.share_outlined, size: 18, color: cs.onSurface),
-            onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Link copied'))),
-          ),
-        ),
-      ],
-      flexibleSpace: FlexibleSpaceBar(
-        background: Stack(
-          fit: StackFit.expand,
-          children: [
-            _coverUrl != null && _coverUrl!.isNotEmpty
-                ? Image.network(_coverUrl!, fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => _coverGradient(cs))
-                : _coverGradient(cs),
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.transparent,
-                    cs.surface.withValues(alpha: 0.85),
-                    cs.surface,
-                  ],
-                  stops: const [0.0, 0.65, 1.0],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-              ),
-            ),
-            Positioned(
-              left: 16,
-              right: 16,
-              bottom: 16,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  _buildOrgAvatar(cs),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(_name,
-                            style: TextStyle(
-                              color: cs.onSurface,
-                              fontSize: 22,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: -0.3,
-                            )),
-                        const SizedBox(height: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: _orgTypeColor.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(
-                                color: _orgTypeColor.withValues(alpha: 0.4)),
-                          ),
-                          child: Text(_orgType,
-                              style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                  color: _orgTypeColor)),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+  String _compact(int n) {
+    if (n >= 1000000) return '${(n / 1000000).toStringAsFixed(1)}M';
+    if (n >= 1000) return '${(n / 1000).toStringAsFixed(1)}K';
+    return '$n';
   }
 
-  Widget _coverGradient(ColorScheme cs) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            _orgTypeColor.withValues(alpha: 0.8),
-            _orgTypeColor.withValues(alpha: 0.5),
-            cs.primaryContainer,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-    );
-  }
-
-  // ── Logo Section ───────────────────────────────────────────────────────
-  Widget _buildLogoSection(ColorScheme cs, bool dark) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(3),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                colors: [_orgTypeColor, _orgTypeColor.withValues(alpha: 0.6)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: _orgTypeColor.withValues(alpha: 0.3),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: cs.surface,
-              ),
-              child: ClipOval(
-                child: _avatarUrl != null && _avatarUrl!.isNotEmpty
-                    ? Image.network(_avatarUrl!, fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _orgFallback(cs))
-                    : _orgFallback(cs),
-              ),
-            ),
-          ),
-          const SizedBox(width: 14),
-          const Icon(Icons.verified, color: AppColors.azure, size: 20),
-          const SizedBox(width: 6),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(_orgType,
-                    style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: _orgTypeColor)),
-                Text('@$_handle',
-                    style: TextStyle(
-                        fontSize: 13, color: cs.onSurfaceVariant)),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _orgFallback(ColorScheme cs) {
-    return Container(
-      width: 60,
-      height: 60,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [_orgTypeColor, _orgTypeColor.withValues(alpha: 0.7)],
-        ),
-        shape: BoxShape.circle,
-      ),
-      child: Center(
-        child: Text(
-          _name.isNotEmpty ? _name[0].toUpperCase() : '?',
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 26,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildOrgAvatar(ColorScheme cs) {
-    return Container(
-      width: 80, height: 80,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: cs.surfaceContainerHighest,
-        border: Border.all(color: cs.surface, width: 4),
-        image: _logoUrl.isNotEmpty
-            ? DecorationImage(image: NetworkImage(_logoUrl), fit: BoxFit.cover)
-            : null,
-      ),
-      child: _logoUrl.isEmpty
-          ? Icon(Icons.apartment, size: 36, color: cs.onSurfaceVariant)
-          : null,
-    );
+  String _postKindLabel(String? kind) {
+    if (kind == null || kind.isEmpty) return '';
+    final key = 'post.${kind.toLowerCase()}';
+    final label = MasarenLocalizations.of(context, key);
+    return label == key ? kind : label;
   }
 
   Color get _orgTypeColor {
@@ -456,14 +492,14 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen>
   // ── Stats Row ──────────────────────────────────────────────────────────
   Widget _buildStatsRow(ColorScheme cs, bool dark) {
     final items = [
-      _OrgStatData(
-          'Members', _membersCount.toString(), Icons.group_outlined),
-      _OrgStatData(
-          'Projects', _projectsCount.toString(), Icons.folder_outlined),
-      _OrgStatData(
-          'Impact', '$_impactScore', Icons.analytics_outlined, AppColors.accent),
-      _OrgStatData(
-          'Partners', _partnersCount.toString(), Icons.handshake_outlined),
+      _OrgStatData(MasarenLocalizations.of(context, 'nav.events'),
+          _events.length.toString(), Icons.event_outlined),
+      _OrgStatData(MasarenLocalizations.of(context, 'nav.programs'),
+          _programs.length.toString(), Icons.hub_outlined),
+      _OrgStatData(MasarenLocalizations.of(context, 'profile.posts'),
+          _feed.length.toString(), Icons.dynamic_feed_outlined),
+      _OrgStatData(MasarenLocalizations.of(context, 'organization.impact'),
+          '$_avgImpactPercent%', Icons.analytics_outlined, AppColors.accent),
     ];
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -476,8 +512,7 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen>
                     decoration: glassDecoration(dark),
                     child: Column(
                       children: [
-                        Icon(e.icon,
-                            size: 18, color: e.color ?? cs.primary),
+                        Icon(e.icon, size: 18, color: e.color ?? cs.primary),
                         const SizedBox(height: 6),
                         Text(e.value,
                             style: const TextStyle(
@@ -502,69 +537,61 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen>
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Expanded(
-            child: SizedBox(
-              height: 44,
-              child: FilledButton.icon(
-                onPressed: _busy ? null : _follow,
-                icon: Icon(
-                    _following ? Icons.check : Icons.person_add_alt_1,
-                    size: 16),
-                label: Text(_following ? 'Following' : 'Follow'),
-                style: FilledButton.styleFrom(
-                  backgroundColor:
-                      _following ? AppColors.azure : cs.primary,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
+          Tooltip(
+            message: MasarenLocalizations.of(
+                context, _following ? 'action.following' : 'action.follow'),
+            child: IconButton.filledTonal(
+              onPressed: _busy ? null : _follow,
+              iconSize: 22,
+              style: IconButton.styleFrom(
+                backgroundColor: _following
+                    ? AppColors.azure.withValues(alpha: .16)
+                    : cs.primary.withValues(alpha: .12),
+                foregroundColor: _following ? AppColors.azure : cs.primary,
+                minimumSize: const Size(52, 52),
               ),
+              icon: Icon(_following ? Icons.check : Icons.person_add_alt_1),
             ),
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: SizedBox(
-              height: 44,
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  Navigator.of(context).push(MaterialPageRoute(
-                    builder: (_) => InterviewScreen(
-                      roomId: 'org_${widget.orgId}',
-                      userName: widget.currentUser.fullName,
-                      isInitiator: true,
-                    ),
-                  ));
-                },
-                icon: const Icon(Icons.handshake_outlined, size: 16),
-                label: const Text('Collaborate'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: cs.onSurface,
-                  side: BorderSide(color: cs.outlineVariant),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
+          const SizedBox(width: 14),
+          Tooltip(
+            message: MasarenLocalizations.of(
+                context, 'organization.collaborate'),
+            child: IconButton.filledTonal(
+              onPressed: () {
+                Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => InterviewScreen(
+                    roomId: 'org_${widget.orgId}',
+                    userName: widget.currentUser.fullName,
+                    isInitiator: true,
+                  ),
+                ));
+              },
+              iconSize: 22,
+              style: IconButton.styleFrom(
+                backgroundColor: cs.surfaceContainerHighest,
+                foregroundColor: cs.onSurface,
+                minimumSize: const Size(52, 52),
               ),
+              icon: const Icon(Icons.handshake_outlined),
             ),
           ),
           if (_isDonatable) ...[
-            const SizedBox(width: 10),
-            Expanded(
-              child: SizedBox(
-                height: 44,
-                child: FilledButton.icon(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('Donation portal opening soon')));
-                  },
-                  icon: const Icon(Icons.favorite_outline, size: 16),
-                  label: const Text('Donate'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.accent,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                  ),
+            const SizedBox(width: 14),
+            Tooltip(
+              message:
+                  MasarenLocalizations.of(context, 'organization.donate'),
+              child: IconButton.filled(
+                onPressed: _openDonation,
+                iconSize: 22,
+                style: IconButton.styleFrom(
+                  backgroundColor: AppColors.accent,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(52, 52),
                 ),
+                icon: const Icon(Icons.favorite_outline),
               ),
             ),
           ],
@@ -572,7 +599,6 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen>
       ),
     );
   }
-
   // ── Tab Bar ────────────────────────────────────────────────────────────
   Widget _buildTabBar(ColorScheme cs) {
     return Container(
@@ -583,9 +609,14 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen>
       ),
       child: TabBar(
         controller: _tabController,
-        isScrollable: true,
+        isScrollable: false,
+        labelPadding: EdgeInsets.zero,
         labelColor: Colors.white,
         unselectedLabelColor: cs.onSurfaceVariant,
+        indicator: BoxDecoration(
+          color: cs.primary,
+          borderRadius: BorderRadius.circular(9),
+        ),
         labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
         unselectedLabelStyle:
             const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
@@ -593,12 +624,14 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen>
         indicatorPadding: const EdgeInsets.all(4),
         dividerHeight: 0,
         splashBorderRadius: BorderRadius.circular(10),
-        tabs: const [
-          Tab(text: 'Feed'),
-          Tab(text: 'Team'),
-          Tab(text: 'Projects'),
-          Tab(text: 'Impact'),
-          Tab(text: 'About'),
+        tabs: [
+          Tab(icon: Tooltip(message: MasarenLocalizations.of(context, 'nav.feed'), child: const Icon(Icons.dynamic_feed_outlined))),
+          Tab(icon: Tooltip(message: MasarenLocalizations.of(context, 'nav.events'), child: const Icon(Icons.event_outlined))),
+          Tab(icon: Tooltip(message: MasarenLocalizations.of(context, 'nav.programs'), child: const Icon(Icons.hub_outlined))),
+          Tab(icon: Tooltip(message: MasarenLocalizations.of(context, 'organization.tab.team'), child: const Icon(Icons.groups_outlined))),
+          Tab(icon: Tooltip(message: MasarenLocalizations.of(context, 'projects.title'), child: const Icon(Icons.folder_outlined))),
+          Tab(icon: Tooltip(message: MasarenLocalizations.of(context, 'organization.tab.impact'), child: const Icon(Icons.insights_outlined))),
+          Tab(icon: Tooltip(message: MasarenLocalizations.of(context, 'institution.about'), child: const Icon(Icons.info_outline))),
         ],
       ),
     );
@@ -613,12 +646,16 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen>
           case 0:
             return _buildFeedTab(dark);
           case 1:
-            return _buildTeamTab(dark);
+            return _buildEventsTab(dark);
           case 2:
-            return _buildProjectsTab(dark);
+            return _buildProgramsTab(dark);
           case 3:
-            return _buildImpactTab(dark);
+            return _buildTeamTab(dark);
           case 4:
+            return _buildProjectsTab(dark);
+          case 5:
+            return _buildImpactTab(dark);
+          case 6:
             return _buildAboutTab(dark);
           default:
             return const SizedBox.shrink();
@@ -631,13 +668,15 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen>
   Widget _buildFeedTab(bool dark) {
     final cs = Theme.of(context).colorScheme;
     if (_feed.isEmpty) {
-      return _emptyState(cs, Icons.dynamic_feed_outlined, 'No posts yet');
+      return _emptyState(cs, Icons.dynamic_feed_outlined,
+          MasarenLocalizations.of(context, 'organization.noPosts'));
     }
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Column(
         children: _feed.map((post) {
-          final isAnnouncement = post.kind == 'announcement';
+          final isAnnouncement =
+              (post.kind ?? '').toUpperCase() == 'ANNOUNCEMENT';
           return Container(
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(16),
@@ -655,8 +694,10 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen>
                           color: AppColors.azure.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: const Text('ANNOUNCEMENT',
-                            style: TextStyle(
+                        child: Text(
+                            MasarenLocalizations.of(
+                                context, 'organization.announcement'),
+                            style: const TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w800,
                                 color: AppColors.azure)),
@@ -669,14 +710,14 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen>
                           color: _orgTypeColor.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: Text(post.kind!.toUpperCase(),
+                        child: Text(_postKindLabel(post.kind),
                             style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w800,
                                 color: _orgTypeColor)),
                       ),
                     const Spacer(),
-                    Text(post.createdAt ?? '',
+                    Text(post.createdAt != null ? timeAgo(post.createdAt!) : '',
                         style: TextStyle(
                             fontSize: 11, color: cs.onSurfaceVariant)),
                   ],
@@ -685,6 +726,18 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen>
                 Text(post.text,
                     style: TextStyle(
                         fontSize: 14, color: cs.onSurface, height: 1.5)),
+                if (post.media.isNotEmpty || post.videoHlsUrl != null) ...[
+                  const SizedBox(height: 12),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: PostMediaGallery(
+                      media: post.media,
+                      videoHlsUrl: post.videoHlsUrl,
+                      videoPosterUrl: post.videoPosterUrl,
+                      videoId: post.id,
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 12),
                 Row(
                   children: [
@@ -712,10 +765,176 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen>
   }
 
   // ── Team Tab ───────────────────────────────────────────────────────────
+  String _label(String key, String fallback) {
+    final value = MasarenLocalizations.of(context, key);
+    return value == key ? fallback : value;
+  }
+
+  Widget _buildEventsTab(bool dark) {
+    final cs = Theme.of(context).colorScheme;
+    if (_events.isEmpty) {
+      return _emptyState(cs, Icons.event_outlined,
+          _label('organization.noEvents', 'No events published yet.'));
+    }
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: Column(
+        children: _events.map((e) {
+          return Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: glassDecoration(dark),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => EventHubScreen(
+                      eventId: e.id, user: widget.currentUser))),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SmartImage(
+                    url: e.coverUrl,
+                    height: 150,
+                    width: double.infinity,
+                    fallbackIcon: Icons.event_outlined,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(e.title,
+                                  style: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w800)),
+                            ),
+                            if (e.activityVerified)
+                              const Icon(Icons.verified,
+                                  size: 18, color: AppColors.brand),
+                          ],
+                        ),
+                        const SizedBox(height: 7),
+                        Text(
+                            '${e.startsAt.length >= 10 ? e.startsAt.substring(0, 10) : e.startsAt}${e.location?.isNotEmpty == true ? ' - ${e.location}' : ''}',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                                fontSize: 12,
+                                height: 1.35,
+                                color: cs.onSurfaceVariant)),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 6,
+                          children: [
+                            _orgPill(e.eventType, AppColors.azure),
+                            if (e.sdg != null)
+                              _orgPill('SDG ${e.sdg}', AppColors.brand),
+                            _orgPill(
+                                '${e.participantsCount} ${_label('events.participants', 'participants')}',
+                                AppColors.accent),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildProgramsTab(bool dark) {
+    final cs = Theme.of(context).colorScheme;
+    if (_programs.isEmpty) {
+      return _emptyState(cs, Icons.hub_outlined,
+          _label('organization.noPrograms', 'No programmes published yet.'));
+    }
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: Column(
+        children: _programs.map((p) {
+          return Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: glassDecoration(dark),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => ProgramDetailScreen(programId: p.id))),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SmartImage(
+                    url: p.coverUrl,
+                    height: 130,
+                    width: double.infinity,
+                    fallbackIcon: Icons.hub_outlined,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(p.title,
+                            style: const TextStyle(
+                                fontSize: 15, fontWeight: FontWeight.w800)),
+                        if (p.description?.isNotEmpty == true) ...[
+                          const SizedBox(height: 6),
+                          Text(p.description!,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  height: 1.4,
+                                  color: cs.onSurfaceVariant)),
+                        ],
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 6,
+                          children: [
+                            _orgPill(p.status ?? 'ACTIVE', AppColors.brand),
+                            _orgPill(
+                                '${p.members ?? 0} ${_label('organization.members', 'members')}',
+                                AppColors.azure),
+                            if (p.sdg != null)
+                              _orgPill('SDG ${p.sdg}', AppColors.accent),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _orgPill(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(text,
+          style: TextStyle(
+              fontSize: 10, fontWeight: FontWeight.w800, color: color)),
+    );
+  }
   Widget _buildTeamTab(bool dark) {
     final cs = Theme.of(context).colorScheme;
     if (_team.isEmpty) {
-      return _emptyState(cs, Icons.group_outlined, 'No team members listed');
+      return _emptyState(cs, Icons.group_outlined,
+          MasarenLocalizations.of(context, 'organization.noTeam'));
     }
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -753,11 +972,14 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen>
                     style: const TextStyle(
                         fontSize: 13, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 2),
-                Text(m['role'],
+                Text(
+                    (m['role']?.toString().isNotEmpty ?? false)
+                        ? m['role'].toString()
+                        : MasarenLocalizations.of(
+                            context, 'organization.contributor'),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                        fontSize: 11, color: cs.onSurfaceVariant)),
+                    style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
               ],
             ),
           );
@@ -770,7 +992,8 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen>
   Widget _buildProjectsTab(bool dark) {
     final cs = Theme.of(context).colorScheme;
     if (_projects.isEmpty) {
-      return _emptyState(cs, Icons.folder_outlined, 'No active projects');
+      return _emptyState(cs, Icons.folder_outlined,
+          MasarenLocalizations.of(context, 'organization.noProjects'));
     }
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -809,7 +1032,9 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen>
                       color: AppColors.azure.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(6),
                     ),
-                    child: Text('SDG ${p.sdg}',
+                    child: Text(
+                        MasarenLocalizations.of(context, 'government.sdg')
+                            .replaceAll('{sdg}', '${p.sdg}'),
                         style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
@@ -835,7 +1060,9 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SectionTitle(title: 'Impact Metrics'),
+          SectionTitle(
+              title: MasarenLocalizations.of(
+                  context, 'organization.impactMetrics')),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Container(
@@ -845,10 +1072,16 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen>
                 children: [
                   Row(
                     children: [
-                      _impactItem(cs, 'Beneficiaries',
+                      _impactItem(
+                          cs,
+                          MasarenLocalizations.of(
+                              context, 'organization.beneficiaries'),
                           _impactMetrics['beneficiaries'].toString(),
                           Icons.people_outline),
-                      _impactItem(cs, 'Programs',
+                      _impactItem(
+                          cs,
+                          MasarenLocalizations.of(
+                              context, 'organization.programs'),
                           _impactMetrics['programs'].toString(),
                           Icons.dashboard_outlined),
                     ],
@@ -856,10 +1089,16 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen>
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      _impactItem(cs, 'Volunteers',
+                      _impactItem(
+                          cs,
+                          MasarenLocalizations.of(
+                              context, 'organization.volunteers'),
                           _impactMetrics['volunteers'].toString(),
                           Icons.volunteer_activism_outlined),
-                      _impactItem(cs, 'Funds Raised',
+                      _impactItem(
+                          cs,
+                          MasarenLocalizations.of(
+                              context, 'organization.fundsRaised'),
                           _impactMetrics['fundsRaised'].toString(),
                           Icons.payments_outlined),
                     ],
@@ -867,12 +1106,19 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen>
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      _impactItem(cs, 'Countries',
+                      _impactItem(
+                          cs,
+                          MasarenLocalizations.of(
+                              context, 'organization.countries'),
                           _impactMetrics['countries'].toString(),
                           Icons.public_outlined),
-                      _impactItem(cs, 'Impact Score',
+                      _impactItem(
+                          cs,
+                          MasarenLocalizations.of(
+                              context, 'organization.impactScore'),
                           '$_impactScore/100',
-                          Icons.analytics_outlined, AppColors.accent),
+                          Icons.analytics_outlined,
+                          AppColors.accent),
                     ],
                   ),
                 ],
@@ -880,7 +1126,9 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen>
             ),
           ),
           const SizedBox(height: 8),
-          SectionTitle(title: 'SDG Contributions'),
+          SectionTitle(
+              title: MasarenLocalizations.of(
+                  context, 'organization.sdgContributions')),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Wrap(
@@ -897,7 +1145,10 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen>
                               color: _sdgColor(sdg).withValues(alpha: 0.4)),
                         ),
                         alignment: Alignment.center,
-                        child: Text('SDG\n$sdg',
+                        child: Text(
+                            MasarenLocalizations.of(
+                                    context, 'organization.sdgShort')
+                                .replaceAll('{sdg}', '$sdg'),
                             textAlign: TextAlign.center,
                             style: TextStyle(
                                 fontSize: 11,
@@ -949,37 +1200,97 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SectionTitle(title: 'About'),
-          _aboutCard(cs, dark, 'Organization Type', _orgType,
+          SectionTitle(
+              title: MasarenLocalizations.of(context, 'institution.about')),
+          _aboutCard(
+              cs,
+              dark,
+              MasarenLocalizations.of(context, 'organization.organizationType'),
+              _orgType,
               Icons.business_outlined),
-          _aboutCard(cs, dark, 'Description', _about, Icons.info_outline),
-          _aboutCard(cs, dark, 'Email', '${_handle}@organization.org',
+          _aboutCard(
+              cs,
+              dark,
+              MasarenLocalizations.of(context, 'organization.description'),
+              _about,
+              Icons.info_outline),
+          _aboutCard(
+              cs,
+              dark,
+              MasarenLocalizations.of(context, 'organization.email'),
+              _email,
               Icons.email_outlined),
           const SizedBox(height: 8),
-          SectionTitle(title: 'Social Links'),
+          SectionTitle(
+              title:
+                  MasarenLocalizations.of(context, 'organization.socialLinks')),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: glassDecoration(dark),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _socialIcon(Icons.language, 'Website', cs),
-                  _socialIcon(Icons.facebook, 'Facebook', cs),
-                  _socialIcon(Icons.code, 'GitHub', cs),
-                  _socialIcon(Icons.alternate_email, 'X', cs),
-                ],
-              ),
-            ),
+            child: _socialLinks.isEmpty
+                ? Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: glassDecoration(dark),
+                    child: Center(
+                      child: Text(
+                        MasarenLocalizations.of(
+                            context, 'organization.noLinks'),
+                        style: const TextStyle(color: AppColors.muted),
+                      ),
+                    ),
+                  )
+                : Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: glassDecoration(dark),
+                    child: Wrap(
+                      spacing: 14,
+                      runSpacing: 14,
+                      alignment: WrapAlignment.center,
+                      children: _socialLinks.entries
+                          .map((entry) =>
+                              _socialLink(entry.key, entry.value, cs, dark))
+                          .toList(),
+                    ),
+                  ),
           ),
         ],
       ),
     );
   }
 
-  Widget _aboutCard(ColorScheme cs, bool dark, String title, String text,
-      IconData icon) {
+  Widget _socialLink(String key, String value, ColorScheme cs, bool dark) {
+    final icon = switch (key.toLowerCase()) {
+      'facebook' => Icons.facebook,
+      'twitter' || 'x' => Icons.alternate_email,
+      'linkedin' => Icons.business_center,
+      'instagram' => Icons.photo_camera,
+      'youtube' => Icons.play_circle_outline,
+      _ => Icons.language,
+    };
+    final uri =
+        Uri.tryParse(value.startsWith('http') ? value : 'https://$value');
+    return InkWell(
+      borderRadius: BorderRadius.circular(10),
+      onTap: uri == null
+          ? null
+          : () async {
+              await launchUrl(uri, mode: LaunchMode.externalApplication);
+            },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+        child: Column(
+          children: [
+            Icon(icon, size: 24, color: _orgTypeColor),
+            const SizedBox(height: 4),
+            Text(key,
+                style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _aboutCard(
+      ColorScheme cs, bool dark, String title, String text, IconData icon) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(16),
@@ -991,12 +1302,11 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen>
             children: [
               Icon(icon, size: 16, color: _orgTypeColor),
               const SizedBox(width: 8),
-              Text(title.toUpperCase(),
+              Text(title,
                   style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 12,
                       fontWeight: FontWeight.w800,
-                      color: _orgTypeColor,
-                      letterSpacing: 1)),
+                      color: _orgTypeColor)),
             ],
           ),
           const SizedBox(height: 8),
@@ -1005,17 +1315,6 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen>
                   fontSize: 14, color: cs.onSurfaceVariant, height: 1.5)),
         ],
       ),
-    );
-  }
-
-  Widget _socialIcon(IconData icon, String label, ColorScheme cs) {
-    return Column(
-      children: [
-        Icon(icon, size: 24, color: cs.onSurfaceVariant),
-        const SizedBox(height: 4),
-        Text(label,
-            style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
-      ],
     );
   }
 

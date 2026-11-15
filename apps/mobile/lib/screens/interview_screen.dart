@@ -2,8 +2,18 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:masaren/l10n.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+
+const String _defaultSignalingUrl =
+    String.fromEnvironment('WEBRTC_SIGNALING_URL', defaultValue: '');
+const String _defaultTurnUrl =
+    String.fromEnvironment('WEBRTC_TURN_URL', defaultValue: '');
+const String _defaultTurnUser =
+    String.fromEnvironment('WEBRTC_TURN_USER', defaultValue: '');
+const String _defaultTurnPass =
+    String.fromEnvironment('WEBRTC_TURN_PASS', defaultValue: '');
 
 enum _CallState { connecting, waiting, connected, error, ended }
 
@@ -13,6 +23,7 @@ class InterviewScreen extends StatefulWidget {
   final bool isInitiator;
 
   final String signalingUrl;
+  final String? turnUrl;
   final String? turnUsername;
   final String? turnCredential;
 
@@ -21,7 +32,8 @@ class InterviewScreen extends StatefulWidget {
     required this.roomId,
     required this.userName,
     required this.isInitiator,
-    this.signalingUrl = 'wss://turn.mediahubnetwork.net/ws',
+    this.signalingUrl = _defaultSignalingUrl,
+    this.turnUrl,
     this.turnUsername,
     this.turnCredential,
   });
@@ -45,6 +57,8 @@ class _InterviewScreenState extends State<InterviewScreen>
   // ── State ───────────────────────────────────────────────────────────
   _CallState _state = _CallState.connecting;
   String? _errorMsg;
+  String? _errorKey;
+  String? _errorDetail;
   bool _muted = false;
   bool _videoOff = false;
   bool _frontCamera = true;
@@ -135,17 +149,22 @@ class _InterviewScreenState extends State<InterviewScreen>
   //  Peer Connection
   // ============================================================================
 
-  Map<String, dynamic> get _iceServers => {
-        'iceServers': [
-          {'urls': 'stun:stun.mediahubnetwork.net:3478'},
-          {
-            'urls': 'turn:turn.mediahubnetwork.net:3478',
-            'username': widget.turnUsername ?? 'masaren',
-            'credential':
-                widget.turnCredential ?? 'masaren_turn_secret',
-          },
-        ],
-      };
+  Map<String, dynamic> get _iceServers {
+    final turnUrl = (widget.turnUrl ?? _defaultTurnUrl).trim();
+    final turnUser = (widget.turnUsername ?? _defaultTurnUser).trim();
+    final turnCred = (widget.turnCredential ?? _defaultTurnPass).trim();
+    final servers = <Map<String, dynamic>>[
+      {'urls': 'stun:stun.l.google.com:19302'},
+    ];
+    if (turnUrl.isNotEmpty && turnUser.isNotEmpty && turnCred.isNotEmpty) {
+      servers.add({
+        'urls': turnUrl,
+        'username': turnUser,
+        'credential': turnCred,
+      });
+    }
+    return {'iceServers': servers};
+  }
 
   Future<void> _createPeerConnection() async {
     final pc = await createPeerConnection(_iceServers);
@@ -174,7 +193,7 @@ class _InterviewScreenState extends State<InterviewScreen>
       if (state == RTCPeerConnectionState.RTCPeerConnectionStateFailed) {
         setState(() {
           _state = _CallState.error;
-          _errorMsg = 'Peer connection failed';
+          _errorKey = 'interview.peerFailed';
         });
       } else if (state ==
           RTCPeerConnectionState.RTCPeerConnectionStateConnected) {
@@ -192,7 +211,7 @@ class _InterviewScreenState extends State<InterviewScreen>
         if (_state == _CallState.connected) {
           setState(() {
             _state = _CallState.error;
-            _errorMsg = 'Connection lost';
+            _errorKey = 'interview.connectionLost';
           });
         }
       }
@@ -237,7 +256,17 @@ class _InterviewScreenState extends State<InterviewScreen>
   // ============================================================================
 
   void _connectSignaling() {
-    final uri = Uri.parse(widget.signalingUrl);
+    final rawUrl = widget.signalingUrl.trim();
+    if (rawUrl.isEmpty) {
+      if (mounted) {
+        setState(() {
+          _state = _CallState.error;
+          _errorMsg = 'Live video signaling is not configured for this build.';
+        });
+      }
+      return;
+    }
+    final uri = Uri.parse(rawUrl);
     final channel = WebSocketChannel.connect(uri);
     _ws = channel;
     _wsSub = channel.stream.listen(
@@ -251,7 +280,8 @@ class _InterviewScreenState extends State<InterviewScreen>
         if (!mounted) return;
         setState(() {
           _state = _CallState.error;
-          _errorMsg = 'Signaling error: $error';
+          _errorKey = 'interview.signalingError';
+          _errorDetail = '$error';
         });
       },
       onDone: () {
@@ -259,7 +289,7 @@ class _InterviewScreenState extends State<InterviewScreen>
         if (_state == _CallState.connected) {
           setState(() {
             _state = _CallState.error;
-            _errorMsg = 'Disconnected from server';
+            _errorKey = 'interview.disconnected';
           });
         }
       },
@@ -280,8 +310,8 @@ class _InterviewScreenState extends State<InterviewScreen>
     }
 
     if (mounted) {
-      setState(() =>
-          _state = widget.isInitiator ? _CallState.connecting : _CallState.waiting);
+      setState(() => _state =
+          widget.isInitiator ? _CallState.connecting : _CallState.waiting);
     }
   }
 
@@ -436,7 +466,7 @@ class _InterviewScreenState extends State<InterviewScreen>
                   ),
                 const SizedBox(height: 24),
                 Text(
-                  _stateLabel,
+                  _stateLabel(context),
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
@@ -448,7 +478,7 @@ class _InterviewScreenState extends State<InterviewScreen>
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 40),
                     child: Text(
-                      _errorMsg!,
+                      _errorDisplay(context),
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 13,
@@ -461,7 +491,7 @@ class _InterviewScreenState extends State<InterviewScreen>
                   const SizedBox(height: 24),
                   FilledButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Go Back'),
+                    child: Text(_loc('interview.goBack')),
                   ),
                 ],
               ],
@@ -472,18 +502,29 @@ class _InterviewScreenState extends State<InterviewScreen>
     );
   }
 
-  String get _stateLabel {
+  String _loc(String key) => MasarenLocalizations.of(context, key);
+
+  String _errorDisplay(BuildContext context) {
+    if (_errorKey != null) {
+      return MasarenLocalizations.of(context, _errorKey!)
+          .replaceAll('{error}', _errorDetail ?? '');
+    }
+    return _errorMsg ??
+        MasarenLocalizations.of(context, 'interview.somethingWrong');
+  }
+
+  String _stateLabel(BuildContext context) {
     switch (_state) {
       case _CallState.connecting:
-        return 'Connecting\u2026';
+        return _loc('interview.connecting');
       case _CallState.waiting:
-        return 'Waiting for other participant\u2026';
+        return _loc('interview.waiting');
       case _CallState.connected:
         return '';
       case _CallState.error:
-        return _errorMsg ?? 'Something went wrong';
+        return _errorDisplay(context);
       case _CallState.ended:
-        return 'Call Ended';
+        return _loc('interview.ended');
     }
   }
 
@@ -567,8 +608,7 @@ class _InterviewScreenState extends State<InterviewScreen>
           RTCVideoView(
             _localRenderer,
             mirror: _frontCamera,
-            objectFit:
-                RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+            objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
           ),
           if (_videoOff)
             Positioned.fill(
@@ -594,13 +634,13 @@ class _InterviewScreenState extends State<InterviewScreen>
       children: [
         _circleBtn(
           icon: _muted ? Icons.mic_off_rounded : Icons.mic_rounded,
-          label: _muted ? 'Unmute' : 'Mute',
+          label: _muted ? _loc('interview.unmute') : _loc('interview.mute'),
           onTap: _toggleMute,
           cs: cs,
         ),
         _circleBtn(
           icon: Icons.call_end_rounded,
-          label: 'End',
+          label: _loc('interview.end'),
           onTap: _hangUp,
           cs: cs,
           bg: cs.error,
@@ -608,13 +648,15 @@ class _InterviewScreenState extends State<InterviewScreen>
         ),
         _circleBtn(
           icon: Icons.videocam_off_rounded,
-          label: _videoOff ? 'Camera On' : 'Camera Off',
+          label: _videoOff
+              ? _loc('interview.cameraOn')
+              : _loc('interview.cameraOff'),
           onTap: _toggleVideo,
           cs: cs,
         ),
         _circleBtn(
           icon: Icons.cameraswitch_rounded,
-          label: 'Flip',
+          label: _loc('interview.flip'),
           onTap: _switchCamera,
           cs: cs,
         ),

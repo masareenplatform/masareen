@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:masaren/api_client.dart';
+import 'package:masaren/l10n.dart';
 import 'package:masaren/models.dart';
 import 'package:masaren/theme.dart';
 import 'package:masaren/widgets.dart';
 import 'package:masaren/screens/interview_screen.dart';
+import 'package:masaren/screens/messages_screen.dart';
+import 'package:masaren/screens/personnel_profile_screen.dart';
 import 'package:masaren/screens/post_detail_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:masaren/widgets/animations.dart';
+import 'package:masaren/profile_ui.dart';
 
 class NewsMediaProfileScreen extends StatefulWidget {
   final String userId;
@@ -22,6 +27,7 @@ class _NewsMediaProfileScreenState extends State<NewsMediaProfileScreen>
   User? _org;
   List<Post> _posts = [];
   List<Personnel> _journalists = [];
+  Map<String, String> _socialLinks = {};
   bool _loading = true;
   bool _busy = false;
   bool _following = false;
@@ -29,12 +35,18 @@ class _NewsMediaProfileScreenState extends State<NewsMediaProfileScreen>
   int _tabIdx = 0;
   late final TabController _tabCtrl;
 
-  static const _tabs = ['Feed', 'Live', 'Packages', 'Journalists', 'About'];
+  static const _tabKeys = [
+    'nav.feed',
+    'news.live',
+    'news.packages',
+    'news.journalists',
+    'institution.about',
+  ];
 
   @override
   void initState() {
     super.initState();
-    _tabCtrl = TabController(length: _tabs.length, vsync: this)
+    _tabCtrl = TabController(length: _tabKeys.length, vsync: this)
       ..addListener(() {
         if (!_tabCtrl.indexIsChanging) setState(() => _tabIdx = _tabCtrl.index);
       });
@@ -54,8 +66,8 @@ class _NewsMediaProfileScreenState extends State<NewsMediaProfileScreen>
       final posts = await AuthApi.feed(authorId: widget.userId);
       List<Personnel> journalists = [];
       try {
-        final data = await api.get('/api/v1/personnel',
-            {'org_id': widget.userId, 'limit': 50});
+        final data = await api
+            .get('/api/v1/personnel', {'org_id': widget.userId, 'limit': 50});
         final list = data is List ? data : <dynamic>[];
         journalists = list
             .map((e) => Personnel.fromJson(e as Map<String, dynamic>))
@@ -63,11 +75,27 @@ class _NewsMediaProfileScreenState extends State<NewsMediaProfileScreen>
       } catch (_) {
         journalists = [];
       }
+      Map<String, String> socialLinks = {};
+      try {
+        final institution =
+            await api.get('/api/v1/users/${widget.userId}/institution')
+                as Map<String, dynamic>;
+        if (institution['social_links'] is Map) {
+          socialLinks = (institution['social_links'] as Map)
+              .map((k, v) => MapEntry(k.toString(), v.toString()));
+        }
+        final website = institution['website']?.toString();
+        if (website != null && website.isNotEmpty) {
+          socialLinks['website'] = website;
+        }
+      } catch (_) {}
       if (mounted) {
         setState(() {
           _org = org;
           _posts = posts;
           _journalists = journalists;
+          _socialLinks = socialLinks;
+          _following = org.isFollowing;
         });
       }
     } on ApiException catch (e) {
@@ -88,16 +116,34 @@ class _NewsMediaProfileScreenState extends State<NewsMediaProfileScreen>
       await AuthApi.followPersonnel(widget.userId);
       if (mounted) {
         setState(() => _following = !_following);
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(_following ? 'Following' : 'Unfollowed')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(MasarenLocalizations.of(context,
+                _following ? 'action.following' : 'profile.unfollowed'))));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Failed: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(MasarenLocalizations.of(context, 'common.failed')
+                .replaceAll('{error}', '$e'))));
       }
     } finally {
       if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _message() async {
+    try {
+      final conversation = await AuthApi.openConversation(widget.userId);
+      if (!mounted) return;
+      await Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => ChatScreen(
+              conversation: conversation, user: widget.currentUser)));
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(MasarenLocalizations.of(context, 'common.failed')
+                .replaceAll('{error}', '$e'))));
+      }
     }
   }
 
@@ -111,7 +157,10 @@ class _NewsMediaProfileScreenState extends State<NewsMediaProfileScreen>
     if (_error != null || _org == null) {
       return Scaffold(
         appBar: AppBar(),
-        body: ErrorView(message: _error ?? 'Organization not found', onRetry: () => _load()),
+        body: ErrorView(
+            message: _error ??
+                MasarenLocalizations.of(context, 'institution.notFound'),
+            onRetry: () => _load()),
       );
     }
     final u = _org!;
@@ -121,197 +170,58 @@ class _NewsMediaProfileScreenState extends State<NewsMediaProfileScreen>
     return Scaffold(
       body: Stack(
         children: [
-          Positioned.fill(child: FloatingShapes(shapeCount: 4, baseColor: cs.primary)),
+          Positioned.fill(
+              child: FloatingShapes(shapeCount: 4, baseColor: cs.primary)),
           RefreshIndicator(
-          onRefresh: _load,
-          child: CustomScrollView(
-          slivers: [
-            _buildCover(u, cs, dark),
-            SliverToBoxAdapter(child: _buildIdentity(u, cs, dark)),
-            SliverToBoxAdapter(child: _buildBrandColors(cs)),
-            SliverToBoxAdapter(child: _buildStats(u, cs, dark)),
-            SliverToBoxAdapter(child: _buildActions(cs, dark)),
-            SliverToBoxAdapter(child: _buildTabBar(cs, dark)),
-            SliverToBoxAdapter(child: _buildTabContent()),
-            const SliverToBoxAdapter(child: SizedBox(height: 32)),
-          ],
-        ),
+            onRefresh: _load,
+            child: CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(
+                    child: SizedBox(
+                        height: MediaQuery.paddingOf(context).top)),
+                _buildCover(u, cs, dark),
+                SliverToBoxAdapter(child: _buildBrandColors(cs)),
+                SliverToBoxAdapter(child: _buildActions(cs, dark)),
+                SliverToBoxAdapter(child: _buildTabBar(cs, dark)),
+                SliverToBoxAdapter(child: _buildTabContent()),
+                const SliverToBoxAdapter(child: SizedBox(height: 32)),
+              ],
+            ),
+          ),
+        ],
       ),
-    ],
-  ),
     );
   }
 
   // ── 1. Brand header / cover ────────────────────────────────────────────────
 
   Widget _buildCover(User u, ColorScheme cs, bool dark) {
-    return SliverAppBar(
-      expandedHeight: 220,
-      pinned: true,
-      stretch: true,
-      backgroundColor: cs.surface,
-      flexibleSpace: FlexibleSpaceBar(
-        background: Stack(
-          fit: StackFit.expand,
-          children: [
-            if (u.coverUrl != null && u.coverUrl!.isNotEmpty)
-              Image.network(u.coverUrl!, fit: BoxFit.cover)
-            else
-              Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      cs.primary,
-                      cs.primary.withValues(alpha: 0.7),
-                      cs.secondary.withValues(alpha: 0.5),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
-              ),
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.black.withValues(alpha: 0.6),
-                    Colors.transparent,
-                    Colors.black.withValues(alpha: 0.3),
-                  ],
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                ),
-              ),
-            ),
-            Positioned(
-              left: 16,
-              right: 16,
-              bottom: 16,
-              child: Text(
-                u.fullName,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w900,
-                  shadows: [
-                    Shadow(blurRadius: 8, color: Colors.black54),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        if (!_isMe)
-          _HeaderAction(
-            icon: Icons.share_outlined,
-            onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Profile link copied'))),
-          ),
-      ],
-    );
-  }
-
-  // ── 2. Logo / avatar section ───────────────────────────────────────────────
-
-  Widget _buildIdentity(User u, ColorScheme cs, bool dark) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 8),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: cs.surface, width: 4),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.15),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: AppAvatar(name: u.fullName, url: u.avatarUrl, size: 88),
-              ),
-              const SizedBox(width: 4),
-              if (u.emailVerified)
-                Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: cs.primary,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Icons.verified, color: cs.onPrimary, size: 18),
-                ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              Flexible(
-                child: Text(u.fullName,
-                    style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                        color: cs.onSurface)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              Text('@${u.email.split('@').first}',
-                  style: TextStyle(
-                      fontSize: 14,
-                      color: cs.onSurfaceVariant.withValues(alpha: 0.7))),
-              const SizedBox(width: 8),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                decoration: BoxDecoration(
-                  color: cs.primary.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text('News Media',
-                    style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: cs.primary)),
-              ),
-              if (u.emailVerified) ...[
-                const SizedBox(width: 6),
-                Icon(Icons.verified, color: cs.primary, size: 16),
-              ],
-            ],
-          ),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              if (u.followersCount != null) ...[
-                Icon(Icons.people_outline,
-                    size: 14, color: cs.onSurfaceVariant),
-                const SizedBox(width: 4),
-                Text('${u.followersCount} followers',
-                    style:
-                        TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
-                const SizedBox(width: 16),
-              ],
-              if (u.country != null || u.city != null) ...[
-                Icon(Icons.location_on_outlined,
-                    size: 14, color: cs.onSurfaceVariant),
-                const SizedBox(width: 4),
-                Text([u.city, u.country].where((e) => e != null).join(', '),
-                    style:
-                        TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
-              ],
-            ],
-          ),
+    return SliverToBoxAdapter(
+      child: ProfileHero(
+        title: u.fullName,
+        subtitle:
+            '@${u.email.split('@').first}  ·  ${u.city ?? u.country ?? 'Egypt'}',
+        kind: 'media',
+        icon: Icons.newspaper_outlined,
+        imageUrl: u.avatarUrl,
+        coverUrl: u.coverUrl,
+        badge: ProfilePill(
+            label: MasarenLocalizations.of(context, 'news.typeLabel'),
+            icon: Icons.verified_outlined,
+            color: ProfileColors.gold),
+        onShare: () => copyProfileLink(context, widget.userId,
+            MasarenLocalizations.of(context, 'profile.linkCopied'),
+            verified: _org?.emailVerified == true),
+        stats: [
+          ProfileStat('${u.followersCount ?? 0}',
+              MasarenLocalizations.of(context, 'profile.followers'),
+              icon: Icons.people_outline),
+          ProfileStat('${_posts.length}',
+              MasarenLocalizations.of(context, 'profile.posts'),
+              icon: Icons.article_outlined),
+          ProfileStat('${_journalists.length}',
+              MasarenLocalizations.of(context, 'news.journalists'),
+              icon: Icons.badge_outlined),
         ],
       ),
     );
@@ -325,7 +235,7 @@ class _NewsMediaProfileScreenState extends State<NewsMediaProfileScreen>
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
       child: Row(
         children: [
-          Text('Brand Identity',
+          Text(MasarenLocalizations.of(context, 'news.brandIdentity'),
               style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -349,62 +259,6 @@ class _NewsMediaProfileScreenState extends State<NewsMediaProfileScreen>
     );
   }
 
-  // ── 5. Stats bar ───────────────────────────────────────────────────────────
-
-  Widget _buildStats(User u, ColorScheme cs, bool dark) {
-    final stats = [
-      _StatItem('Posts', '${_posts.length}', Icons.article_outlined, numericValue: _posts.length.toDouble()),
-      _StatItem('Followers', '${u.followersCount ?? 0}', Icons.people_outline, numericValue: (u.followersCount ?? 0).toDouble()),
-      _StatItem('Reports', '${_posts.where((p) => p.type == 'report').length}',
-          Icons.assessment_outlined, numericValue: _posts.where((p) => p.type == 'report').length.toDouble()),
-      _StatItem('Live', '0', Icons.wifi_tethering, numericValue: 0),
-    ];
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 16, 14, 0),
-      child: Row(
-        children: List.generate(stats.length, (i) {
-          final s = stats[i];
-          return Expanded(
-            child: SlideInWidget(
-              delay: Duration(milliseconds: i * 100),
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 3),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                decoration: glassDecoration(dark),
-                child: Column(
-                  children: [
-                    Icon(s.icon, size: 18, color: cs.primary),
-                    const SizedBox(height: 6),
-                    if (s.numericValue != null)
-                      CountUpNumber(
-                        target: s.numericValue!,
-                        style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                            color: cs.onSurface),
-                      )
-                    else
-                      Text(s.value,
-                          style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                              color: cs.onSurface)),
-                    const SizedBox(height: 2),
-                    Text(s.label,
-                        style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w500,
-                            color: cs.onSurfaceVariant)),
-                  ],
-                ),
-              ),
-            ),
-          );
-        }),
-      ),
-    );
-  }
-
   // ── 6. Action buttons ──────────────────────────────────────────────────────
 
   Widget _buildActions(ColorScheme cs, bool dark) {
@@ -412,53 +266,57 @@ class _NewsMediaProfileScreenState extends State<NewsMediaProfileScreen>
       padding: const EdgeInsets.fromLTRB(14, 16, 14, 0),
       child: Row(
         children: [
-          Expanded(
-            child: SizedBox(
-              height: 44,
-              child: FilledButton(
-                onPressed: _isMe ? null : (_busy ? null : _follow),
-                style: FilledButton.styleFrom(
-                  backgroundColor:
-                      _following ? cs.tertiary : cs.primary,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+          if (!_isMe)
+            Expanded(
+              child: SizedBox(
+                height: 44,
+                child: FilledButton(
+                  onPressed: _busy ? null : _follow,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: _following ? cs.tertiary : cs.primary,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: _busy
+                      ? SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: cs.onPrimary))
+                      : Text(
+                          MasarenLocalizations.of(
+                              context,
+                              _following
+                                  ? 'action.following'
+                                  : 'action.follow'),
+                          style: TextStyle(
+                              fontWeight: FontWeight.w700, color: cs.onPrimary),
+                        ),
                 ),
-                child: _busy
-                    ? SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: cs.onPrimary))
-                    : Text(
-                        _following ? 'Following' : 'Follow',
-                        style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            color: cs.onPrimary),
-                      ),
               ),
             ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: SizedBox(
-              height: 44,
-              child: OutlinedButton(
-                onPressed: () {},
-                style: OutlinedButton.styleFrom(
-                  side: BorderSide(
-                      color: dark
-                          ? cs.outlineVariant.withValues(alpha: 0.4)
-                          : cs.outline),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+          if (!_isMe) const SizedBox(width: 10),
+          if (!_isMe)
+            Expanded(
+              child: SizedBox(
+                height: 44,
+                child: OutlinedButton(
+                  onPressed: _message,
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(
+                        color: dark
+                            ? cs.outlineVariant.withValues(alpha: 0.4)
+                            : cs.outline),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: Text(
+                      MasarenLocalizations.of(context, 'profile.message'),
+                      style: TextStyle(
+                          fontWeight: FontWeight.w700, color: cs.onSurface)),
                 ),
-                child: Text('Message',
-                    style: TextStyle(
-                        fontWeight: FontWeight.w700, color: cs.onSurface)),
               ),
             ),
-          ),
           const SizedBox(width: 10),
           Expanded(
             child: SizedBox(
@@ -474,7 +332,7 @@ class _NewsMediaProfileScreenState extends State<NewsMediaProfileScreen>
                   ));
                 },
                 icon: Icon(Icons.videocam, size: 18, color: cs.onSurface),
-                label: Text('Interview',
+                label: Text(MasarenLocalizations.of(context, 'post.interview'),
                     style: TextStyle(
                         fontWeight: FontWeight.w700, color: cs.onSurface)),
                 style: OutlinedButton.styleFrom(
@@ -524,7 +382,9 @@ class _NewsMediaProfileScreenState extends State<NewsMediaProfileScreen>
         unselectedLabelStyle:
             const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
         tabAlignment: TabAlignment.start,
-        tabs: _tabs.map((t) => Tab(text: t)).toList(),
+        tabs: _tabKeys
+            .map((k) => Tab(text: MasarenLocalizations.of(context, k)))
+            .toList(),
       ),
     );
   }
@@ -537,13 +397,16 @@ class _NewsMediaProfileScreenState extends State<NewsMediaProfileScreen>
         return _FeedTab(posts: _posts, currentUser: widget.currentUser);
       case 1:
         return _LiveTab(
-            orgName: _org?.fullName ?? '', isOwner: _isMe, orgId: widget.userId);
+            orgName: _org?.fullName ?? '',
+            isOwner: _isMe,
+            orgId: widget.userId);
       case 2:
         return _PackagesTab(posts: _posts, currentUser: widget.currentUser);
       case 3:
-        return _JournalistsTab(journalists: _journalists);
+        return _JournalistsTab(
+            journalists: _journalists, currentUser: widget.currentUser);
       case 4:
-        return _AboutTab(org: _org!);
+        return _AboutTab(org: _org!, socialLinks: _socialLinks);
       default:
         return const SizedBox.shrink();
     }
@@ -553,30 +416,6 @@ class _NewsMediaProfileScreenState extends State<NewsMediaProfileScreen>
 // ═══════════════════════════════════════════════════════════════════════════════
 //  Private helpers & sub-widgets
 // ═══════════════════════════════════════════════════════════════════════════════
-
-class _StatItem {
-  final String label;
-  final String value;
-  final IconData icon;
-  final double? numericValue;
-  _StatItem(this.label, this.value, this.icon, {this.numericValue});
-}
-
-class _HeaderAction extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  const _HeaderAction({required this.icon, required this.onTap});
-  @override
-  Widget build(BuildContext context) => Container(
-        margin: const EdgeInsets.only(right: 8),
-        decoration: const BoxDecoration(
-          color: Colors.black38,
-          shape: BoxShape.circle,
-        ),
-        child: IconButton(
-            icon: Icon(icon, color: Colors.white, size: 20), onPressed: onTap),
-      );
-}
 
 // ── Tab: Feed ─────────────────────────────────────────────────────────────────
 
@@ -595,17 +434,17 @@ class _FeedTab extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.article_outlined, size: 48, color: cs.onSurfaceVariant),
+              Icon(Icons.article_outlined,
+                  size: 48, color: cs.onSurfaceVariant),
               const SizedBox(height: 12),
-              Text('No posts yet',
+              Text(MasarenLocalizations.of(context, 'organization.noPosts'),
                   style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                       color: cs.onSurface)),
               const SizedBox(height: 4),
-              Text('Posts from this organization will appear here.',
-                  style:
-                      TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+              Text(MasarenLocalizations.of(context, 'news.postsEmptyBody'),
+                  style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
             ],
           ),
         ),
@@ -617,7 +456,8 @@ class _FeedTab extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
       itemCount: posts.length,
       separatorBuilder: (_, __) => const SizedBox(height: 4),
-      itemBuilder: (_, i) => _PostCard(post: posts[i], currentUser: currentUser),
+      itemBuilder: (_, i) =>
+          _PostCard(post: posts[i], currentUser: currentUser),
     );
   }
 }
@@ -637,19 +477,14 @@ class _PostCard extends StatelessWidget {
       child: InkWell(
         onTap: () => Navigator.of(context).push(MaterialPageRoute(
             builder: (_) => PostDetailScreen(
-                post: post,
-                currentUser: currentUser,
-                onChanged: (_) {}))),
+                post: post, currentUser: currentUser, onChanged: (_) {}))),
         borderRadius: BorderRadius.circular(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                AppAvatar(
-                    name: post.author.name,
-                    url: null,
-                    size: 32),
+                AppAvatar(name: post.author.name, url: null, size: 32),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Column(
@@ -664,16 +499,14 @@ class _PostCard extends StatelessWidget {
                                   color: cs.onSurface)),
                           if (post.author.verified) ...[
                             const SizedBox(width: 4),
-                            Icon(Icons.verified,
-                                size: 14, color: cs.primary),
+                            Icon(Icons.verified, size: 14, color: cs.primary),
                           ],
                         ],
                       ),
                       if (post.createdAt != null)
-                        Text(timeAgo(post.createdAt),
+                        Text(timeAgo(post.createdAt, context: context),
                             style: TextStyle(
-                                fontSize: 11,
-                                color: cs.onSurfaceVariant)),
+                                fontSize: 11, color: cs.onSurfaceVariant)),
                     ],
                   ),
                 ),
@@ -685,7 +518,13 @@ class _PostCard extends StatelessWidget {
                       color: cs.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(6),
                     ),
-                    child: Text(post.kind!.toUpperCase(),
+                    child: Text(
+                        MasarenLocalizations.of(
+                                    context, 'post.${post.kind!.toLowerCase()}')
+                                .startsWith('post.')
+                            ? post.kind!.toUpperCase()
+                            : MasarenLocalizations.of(
+                                context, 'post.${post.kind!.toLowerCase()}'),
                         style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
@@ -697,23 +536,23 @@ class _PostCard extends StatelessWidget {
             Text(post.text,
                 maxLines: 4,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                    fontSize: 14, height: 1.45, color: cs.onSurface)),
+                style:
+                    TextStyle(fontSize: 14, height: 1.45, color: cs.onSurface)),
             if (post.contentUrl != null) ...[
               const SizedBox(height: 10),
               ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: Image.network(post.contentUrl!,
-                    height: 160,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
-                          height: 160,
-                          color: cs.surfaceContainerHighest,
-                          child: Center(
-                              child: Icon(Icons.broken_image,
-                                  color: cs.onSurfaceVariant)),
-                        ))),
+                  borderRadius: BorderRadius.circular(10),
+                  child: Image.network(post.contentUrl!,
+                      height: 160,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                            height: 160,
+                            color: cs.surfaceContainerHighest,
+                            child: Center(
+                                child: Icon(Icons.broken_image,
+                                    color: cs.onSurfaceVariant)),
+                          ))),
             ],
             const SizedBox(height: 10),
             Row(
@@ -722,22 +561,19 @@ class _PostCard extends StatelessWidget {
                     size: 16, color: cs.onSurfaceVariant),
                 const SizedBox(width: 4),
                 Text('${post.likes}',
-                    style: TextStyle(
-                        fontSize: 12, color: cs.onSurfaceVariant)),
+                    style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
                 const SizedBox(width: 16),
                 Icon(Icons.mode_comment_outlined,
                     size: 16, color: cs.onSurfaceVariant),
                 const SizedBox(width: 4),
                 Text('${post.comments}',
-                    style: TextStyle(
-                        fontSize: 12, color: cs.onSurfaceVariant)),
+                    style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
                 const SizedBox(width: 16),
                 Icon(Icons.share_outlined,
                     size: 16, color: cs.onSurfaceVariant),
                 const SizedBox(width: 4),
                 Text('${post.shares}',
-                    style: TextStyle(
-                        fontSize: 12, color: cs.onSurfaceVariant)),
+                    style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
               ],
             ),
           ],
@@ -778,25 +614,23 @@ class _LiveTab extends StatelessWidget {
                       color: cs.error.withValues(alpha: 0.12),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(Icons.wifi_tethering,
-                        size: 32, color: cs.error),
+                    child:
+                        Icon(Icons.wifi_tethering, size: 32, color: cs.error),
                   ),
                 ),
                 const SizedBox(height: 14),
-                Text('Live Streams',
+                Text(MasarenLocalizations.of(context, 'news.liveStreams'),
                     style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
                         color: cs.onSurface)),
                 const SizedBox(height: 6),
-                Text('No active streams right now',
-                    style:
-                        TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+                Text(MasarenLocalizations.of(context, 'news.noActiveStreams'),
+                    style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
                 const SizedBox(height: 4),
-                Text('Upcoming and past broadcasts will appear here.',
+                Text(MasarenLocalizations.of(context, 'news.liveEmptyBody'),
                     textAlign: TextAlign.center,
-                    style:
-                        TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                    style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
               ],
             ),
           ),
@@ -820,12 +654,16 @@ class _LiveTab extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Scheduled Streams',
+                      Text(
+                          MasarenLocalizations.of(
+                              context, 'news.scheduledStreams'),
                           style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
                               color: cs.onSurface)),
-                      Text('No upcoming streams scheduled',
+                      Text(
+                          MasarenLocalizations.of(
+                              context, 'news.noScheduledStreams'),
                           style: TextStyle(
                               fontSize: 12, color: cs.onSurfaceVariant)),
                     ],
@@ -850,9 +688,9 @@ class _LiveTab extends StatelessWidget {
                   ));
                 },
                 icon: const Icon(Icons.videocam, size: 20),
-                label: const Text('Go Live',
-                    style:
-                        TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                label: Text(MasarenLocalizations.of(context, 'news.goLive'),
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w700, fontSize: 15)),
                 style: FilledButton.styleFrom(
                   backgroundColor: cs.error,
                   shape: RoundedRectangleBorder(
@@ -891,15 +729,14 @@ class _PackagesTab extends StatelessWidget {
               Icon(Icons.collections_bookmark_outlined,
                   size: 48, color: cs.onSurfaceVariant),
               const SizedBox(height: 12),
-              Text('No packages yet',
+              Text(MasarenLocalizations.of(context, 'news.noPackages'),
                   style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                       color: cs.onSurface)),
               const SizedBox(height: 4),
-              Text('News packages with media will appear here.',
-                  style:
-                      TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+              Text(MasarenLocalizations.of(context, 'news.packagesEmptyBody'),
+                  style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
             ],
           ),
         ),
@@ -925,9 +762,7 @@ class _PackagesTab extends StatelessWidget {
             child: InkWell(
               onTap: () => Navigator.of(context).push(MaterialPageRoute(
                   builder: (_) => PostDetailScreen(
-                      post: p,
-                      currentUser: currentUser,
-                      onChanged: (_) {}))),
+                      post: p, currentUser: currentUser, onChanged: (_) {}))),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -940,8 +775,8 @@ class _PackagesTab extends StatelessWidget {
                               child: Center(
                                   child: Icon(Icons.broken_image,
                                       color: cs.onSurfaceVariant)),
-                        )),
-                    ),
+                            )),
+                  ),
                   Padding(
                     padding: const EdgeInsets.all(10),
                     child: Column(
@@ -989,7 +824,8 @@ class _PackagesTab extends StatelessWidget {
 
 class _JournalistsTab extends StatelessWidget {
   final List<Personnel> journalists;
-  const _JournalistsTab({required this.journalists});
+  final User currentUser;
+  const _JournalistsTab({required this.journalists, required this.currentUser});
 
   @override
   Widget build(BuildContext context) {
@@ -1003,18 +839,17 @@ class _JournalistsTab extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.group_outlined,
-                  size: 48, color: cs.onSurfaceVariant),
+              Icon(Icons.group_outlined, size: 48, color: cs.onSurfaceVariant),
               const SizedBox(height: 12),
-              Text('No journalists listed',
+              Text(MasarenLocalizations.of(context, 'news.noJournalists'),
                   style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                       color: cs.onSurface)),
               const SizedBox(height: 4),
-              Text('Affiliated journalists will appear here.',
-                  style:
-                      TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+              Text(
+                  MasarenLocalizations.of(context, 'news.journalistsEmptyBody'),
+                  style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
             ],
           ),
         ),
@@ -1028,46 +863,52 @@ class _JournalistsTab extends StatelessWidget {
       separatorBuilder: (_, __) => const SizedBox(height: 4),
       itemBuilder: (_, i) {
         final j = journalists[i];
-        return Container(
-          padding: const EdgeInsets.all(14),
-          decoration: glassDecoration(dark),
-          child: Row(
-            children: [
-              AppAvatar(name: j.name, url: j.avatarUrl, size: 44),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(j.name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                  color: cs.onSurface)),
-                        ),
-                        if (j.emailVerified) ...[
-                          const SizedBox(width: 4),
-                          Icon(Icons.verified,
-                              size: 14, color: cs.primary),
+        return InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: () => Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => PersonnelProfileScreen(
+                  userId: j.userId, currentUser: currentUser))),
+          child: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: glassDecoration(dark),
+            child: Row(
+              children: [
+                AppAvatar(name: j.name, url: j.avatarUrl, size: 44),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(j.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: cs.onSurface)),
+                          ),
+                          if (j.emailVerified) ...[
+                            const SizedBox(width: 4),
+                            Icon(Icons.verified, size: 14, color: cs.primary),
+                          ],
                         ],
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Text(j.headline.isNotEmpty ? j.headline : j.role,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                            fontSize: 12, color: cs.onSurfaceVariant)),
-                  ],
+                      ),
+                      const SizedBox(height: 2),
+                      Text(j.headline.isNotEmpty ? j.headline : j.role,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                              fontSize: 12, color: cs.onSurfaceVariant)),
+                    ],
+                  ),
                 ),
-              ),
-              Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
-            ],
+                Icon(directionalChevronIcon(context),
+                    color: cs.onSurfaceVariant),
+              ],
+            ),
           ),
         );
       },
@@ -1079,14 +920,13 @@ class _JournalistsTab extends StatelessWidget {
 
 class _AboutTab extends StatelessWidget {
   final User org;
-  const _AboutTab({required this.org});
+  final Map<String, String> socialLinks;
+  const _AboutTab({required this.org, this.socialLinks = const {}});
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final location =
-        [org.city, org.country].where((e) => e != null).join(', ');
-    final socialLinks = <String, String>{};
+    final location = [org.city, org.country].where((e) => e != null).join(', ');
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
@@ -1096,7 +936,8 @@ class _AboutTab extends StatelessWidget {
           if (org.bio != null && org.bio!.isNotEmpty) ...[
             _AboutSection(
               icon: Icons.info_outline,
-              title: 'Description',
+              title:
+                  MasarenLocalizations.of(context, 'organization.description'),
               child: Text(org.bio!,
                   style: TextStyle(
                       fontSize: 14, height: 1.6, color: cs.onSurface)),
@@ -1104,55 +945,61 @@ class _AboutTab extends StatelessWidget {
           ],
           _AboutSection(
             icon: Icons.public,
-            title: 'Distribution Channels',
+            title:
+                MasarenLocalizations.of(context, 'news.distributionChannels'),
             child: Wrap(
               spacing: 8,
               runSpacing: 8,
               children: [
                 _ChannelChip(
-                    icon: Icons.phone_android, label: 'Mobile App', cs: cs),
+                    icon: Icons.phone_android,
+                    label: MasarenLocalizations.of(context, 'news.mobileApp'),
+                    cs: cs),
                 _ChannelChip(
-                    icon: Icons.language, label: 'Web Platform', cs: cs),
+                    icon: Icons.language,
+                    label: MasarenLocalizations.of(context, 'news.webPlatform'),
+                    cs: cs),
                 _ChannelChip(
-                    icon: Icons.podcasts, label: 'Broadcast', cs: cs),
+                    icon: Icons.podcasts,
+                    label: MasarenLocalizations.of(context, 'news.broadcast'),
+                    cs: cs),
               ],
             ),
           ),
           _AboutSection(
             icon: Icons.verified_user_outlined,
-            title: 'Verification Level',
+            title: MasarenLocalizations.of(context, 'news.verificationLevel'),
             child: Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: cs.primary.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                    color: cs.primary.withValues(alpha: 0.2)),
+                border: Border.all(color: cs.primary.withValues(alpha: 0.2)),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.shield_outlined,
-                      size: 22, color: cs.primary),
+                  Icon(Icons.shield_outlined, size: 22, color: cs.primary),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Verified News Organization',
+                        Text(
+                            MasarenLocalizations.of(
+                                context, 'news.verifiedOrg'),
                             style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
                                 color: cs.onSurface)),
                         Text(
-                            'Identity and editorial standards verified by MASAREEN',
+                            MasarenLocalizations.of(
+                                context, 'news.verifiedOrgBody'),
                             style: TextStyle(
-                                fontSize: 12,
-                                color: cs.onSurfaceVariant)),
+                                fontSize: 12, color: cs.onSurfaceVariant)),
                       ],
                     ),
                   ),
-                  Icon(Icons.check_circle,
-                      size: 20, color: cs.tertiary),
+                  Icon(Icons.check_circle, size: 20, color: cs.tertiary),
                 ],
               ),
             ),
@@ -1160,22 +1007,20 @@ class _AboutTab extends StatelessWidget {
           if (location.isNotEmpty)
             _AboutSection(
               icon: Icons.location_on_outlined,
-              title: 'Headquarters',
+              title: MasarenLocalizations.of(context, 'news.headquarters'),
               child: Text(location,
-                  style: TextStyle(
-                      fontSize: 14, color: cs.onSurface)),
+                  style: TextStyle(fontSize: 14, color: cs.onSurface)),
             ),
           if (org.skills.isNotEmpty) ...[
             _AboutSection(
               icon: Icons.category_outlined,
-              title: 'Coverage Areas',
+              title: MasarenLocalizations.of(context, 'news.coverageAreas'),
               child: Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 children: org.skills
                     .map((s) => Chip(
-                        label:
-                            Text(s, style: const TextStyle(fontSize: 12))))
+                        label: Text(s, style: const TextStyle(fontSize: 12))))
                     .toList(),
               ),
             ),
@@ -1183,18 +1028,31 @@ class _AboutTab extends StatelessWidget {
           if (socialLinks.isNotEmpty) ...[
             _AboutSection(
               icon: Icons.link,
-              title: 'Social Links',
+              title:
+                  MasarenLocalizations.of(context, 'organization.socialLinks'),
               child: Wrap(
                 spacing: 10,
                 runSpacing: 8,
                 children: socialLinks.entries
                     .map((e) => TextButton.icon(
-                          onPressed: () {},
+                          onPressed: () async {
+                            final uri = Uri.tryParse(e.value);
+                            if (uri == null) return;
+                            final ok = await launchUrl(uri,
+                                mode: LaunchMode.externalApplication);
+                            if (!ok && context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                      content: Text(MasarenLocalizations.of(
+                                              context, 'common.failed')
+                                          .replaceAll('{error}', e.value))));
+                            }
+                          },
                           icon: Icon(Icons.open_in_new,
                               size: 14, color: cs.primary),
                           label: Text(e.value,
-                              style: TextStyle(
-                                  fontSize: 13, color: cs.primary)),
+                              style:
+                                  TextStyle(fontSize: 13, color: cs.primary)),
                         ))
                     .toList(),
               ),

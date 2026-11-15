@@ -6,6 +6,7 @@ import 'package:masaren/theme.dart';
 import 'package:masaren/l10n.dart';
 import 'package:masaren/widgets.dart';
 import 'package:masaren/widgets/animations.dart';
+import 'package:masaren/screens/forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   final void Function(String token, User user) onAuthenticated;
@@ -28,13 +29,16 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() {
       _googleBusy = true;
       _error = null;
-      _notice = 'Complete sign in in your browser, then return to the app.';
+      _notice = MasarenLocalizations.of(context, 'login.googleNotice');
     });
     final url = Uri.parse('${api.baseUrl}/mobile-auth.html');
     try {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     } catch (_) {
-      if (mounted) setState(() => _error = 'Could not open Google sign in. Check your connection and try again.');
+      if (mounted) {
+        setState(() =>
+            _error = MasarenLocalizations.of(context, 'login.googleError'));
+      }
     } finally {
       if (mounted) setState(() => _googleBusy = false);
     }
@@ -42,11 +46,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
   String? _validate() {
     final email = _email.text.trim();
-    if (email.isEmpty) return 'Email is required';
-    if (!RegExp(r'^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,}$').hasMatch(email)) {
-      return 'Enter a valid email address';
+    if (email.isEmpty) {
+      return MasarenLocalizations.of(context, 'login.emailRequired');
     }
-    if (_password.text.isEmpty) return 'Password is required';
+    if (!RegExp(r'^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,}$')
+        .hasMatch(email)) {
+      return MasarenLocalizations.of(context, 'login.emailInvalid');
+    }
+    if (_password.text.isEmpty) {
+      return MasarenLocalizations.of(context, 'login.passwordRequired');
+    }
     return null;
   }
 
@@ -66,14 +75,65 @@ class _LoginScreenState extends State<LoginScreen> {
       final token = data['access_token'] as String? ?? '';
       api.setToken(token);
       final user = await AuthApi.me();
+      final needsVerification = data['email_verification_required'] == true;
+      if (needsVerification && mounted) {
+        await _showVerificationDialog();
+      }
       widget.onAuthenticated(token, user);
     } on ApiException catch (e) {
-      setState(() => _error = e.message);
+      setState(() => _error = e.statusCode == 0
+          ? MasarenLocalizations.of(context, 'common.networkError')
+          : e.message);
     } catch (e) {
-      setState(() => _error = e.toString());
+      final text = e.toString();
+      setState(() => _error =
+          text.contains('SocketException') || text.contains('ClientException')
+              ? MasarenLocalizations.of(context, 'common.networkError')
+              : text);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  Future<void> _showVerificationDialog() async {
+    final resend = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(MasarenLocalizations.of(ctx, 'verify.title')),
+        content: Text(MasarenLocalizations.of(ctx, 'verify.body')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(MasarenLocalizations.of(ctx, 'verify.resend')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(MasarenLocalizations.of(ctx, 'verify.continue')),
+          ),
+        ],
+      ),
+    );
+    if (resend != true) return;
+    try {
+      final result = await AuthApi.resendVerification();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(result['sent'] == false
+            ? MasarenLocalizations.of(context, 'verify.unavailable')
+            : MasarenLocalizations.of(context, 'verify.sent')),
+      ));
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(e.message ??
+              MasarenLocalizations.of(context, 'verify.couldNotResend'))));
+    } catch (_) {}
+  }
+
+  void _openForgot() {
+    Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) =>
+            ForgotPasswordScreen(initialEmail: _email.text.trim())));
   }
 
   @override
@@ -113,7 +173,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     SlideInWidget(
                       delay: const Duration(milliseconds: 350),
                       slideOffset: const Offset(0, 0.1),
-                      child: Text('Prove impact. Scale change.',
+                      child: Text(
+                          MasarenLocalizations.of(context, 'login.subtitle'),
                           style: TextStyle(
                               color: dark ? AppColors.azure : AppColors.muted,
                               fontSize: 15)),
@@ -136,7 +197,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _buildForm(bool dark) {
     final cs = Theme.of(context).colorScheme;
-    final fill = dark ? Colors.white.withOpacity(0.08) : Colors.white;
+    final fill = dark ? Colors.white.withValues(alpha: 0.08) : Colors.white;
     final border = dark ? AppColors.darkLine : cs.outlineVariant;
     return Column(
       children: [
@@ -144,7 +205,8 @@ class _LoginScreenState extends State<LoginScreen> {
           controller: _email,
           decoration: InputDecoration(
             labelText: MasarenLocalizations.of(context, 'login.email'),
-            prefixIcon: Icon(Icons.email_outlined, color: cs.primary.withOpacity(0.8)),
+            prefixIcon:
+                Icon(Icons.email_outlined, color: cs.primary.withValues(alpha: 0.8)),
             filled: true,
             fillColor: fill,
             border: OutlineInputBorder(
@@ -170,7 +232,8 @@ class _LoginScreenState extends State<LoginScreen> {
           controller: _password,
           decoration: InputDecoration(
             labelText: MasarenLocalizations.of(context, 'login.password'),
-            prefixIcon: Icon(Icons.lock_outline, color: cs.primary.withOpacity(0.8)),
+            prefixIcon:
+                Icon(Icons.lock_outline, color: cs.primary.withValues(alpha: 0.8)),
             filled: true,
             fillColor: fill,
             border: OutlineInputBorder(
@@ -193,18 +256,26 @@ class _LoginScreenState extends State<LoginScreen> {
                 color: cs.onSurfaceVariant,
                 size: 20,
               ),
-              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+              onPressed: () =>
+                  setState(() => _obscurePassword = !_obscurePassword),
             ),
           ),
           obscureText: _obscurePassword,
           style: TextStyle(color: cs.onSurface),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 4),
+        Align(
+          alignment: AlignmentDirectional.centerEnd,
+          child: TextButton(
+            onPressed: _busy ? null : _openForgot,
+            child: Text(MasarenLocalizations.of(context, 'login.forgot')),
+          ),
+        ),
         if (_error != null)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Text(_error!,
-                style: TextStyle(color: cs.error, fontSize: 13)),
+            child:
+                Text(_error!, style: TextStyle(color: cs.error, fontSize: 13)),
           ),
         if (_notice != null)
           Padding(
@@ -216,8 +287,10 @@ class _LoginScreenState extends State<LoginScreen> {
         const SizedBox(height: 4),
         _busy
             ? const SizedBox(
-                width: 48, height: 48,
-                child: Center(child: CircularProgressIndicator(color: AppColors.azure)),
+                width: 48,
+                height: 48,
+                child: Center(
+                    child: CircularProgressIndicator(color: AppColors.azure)),
               )
             : gradientButton(
                 label: MasarenLocalizations.of(context, 'login.signIn'),
@@ -226,15 +299,20 @@ class _LoginScreenState extends State<LoginScreen> {
         OutlinedButton.icon(
           onPressed: _googleBusy ? null : _google,
           icon: _googleBusy
-              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2))
               : const Icon(Icons.g_mobiledata, size: 22),
-          label: const Text('Continue with Google'),
+          label: Text(MasarenLocalizations.of(context, 'login.google')),
           style: OutlinedButton.styleFrom(
             minimumSize: const Size.fromHeight(50),
             foregroundColor: cs.onSurface,
-            backgroundColor: dark ? Colors.white.withOpacity(0.08) : Colors.white,
+            backgroundColor:
+                dark ? Colors.white.withValues(alpha: 0.08) : Colors.white,
             side: BorderSide(color: border),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           ),
         ),
         const SizedBox(height: 14),

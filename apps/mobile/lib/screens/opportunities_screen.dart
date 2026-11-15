@@ -1,12 +1,35 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:masaren/api_client.dart';
 import 'package:masaren/theme.dart';
 import 'package:masaren/models.dart';
 import 'package:masaren/widgets.dart';
+import 'package:masaren/l10n.dart';
+import 'package:masaren/profile_router.dart';
+import 'package:masaren/screens/create_opportunity_screen.dart';
+import 'package:masaren/screens/opportunity_detail_screen.dart';
+import 'package:masaren/widgets/entity_status.dart';
+import 'package:masaren/widgets/smart_image.dart';
+
+const _opportunityTypes = [
+  'JOB',
+  'INTERNSHIP',
+  'GRANT',
+  'VOLUNTEER',
+  'TRAINING',
+  'CSR',
+];
+
+String _opportunityTypeLabel(BuildContext context, String? type) {
+  if (type == null || type.isEmpty) return '';
+  final key = 'opportunities.type.${type.toLowerCase()}';
+  final label = MasarenLocalizations.of(context, key);
+  return label == key ? type : label;
+}
 
 class OpportunitiesScreen extends StatefulWidget {
   final User user;
-  const OpportunitiesScreen({super.key, required this.user});
+  final VoidCallback? onMenu;
+  const OpportunitiesScreen({super.key, required this.user, this.onMenu});
 
   @override
   State<OpportunitiesScreen> createState() => _OpportunitiesScreenState();
@@ -46,23 +69,29 @@ class _OpportunitiesScreenState extends State<OpportunitiesScreen> {
     final note = TextEditingController();
     final ok = await showDialog<bool>(
       context: context,
-      builder: (c) => AlertDialog(
-        title: Text('Apply: ${o.title}'),
-        content: TextField(
-          controller: note,
-          maxLines: 3,
-          decoration: const InputDecoration(
-            labelText: 'Short note (optional)',
-            hintText: 'Why are you a good fit?',
+      builder: (c) {
+        String t(String key) => MasarenLocalizations.of(c, key);
+        return AlertDialog(
+          title: Text(
+              t('opportunities.applyTitle').replaceAll('{title}', o.title)),
+          content: TextField(
+            controller: note,
+            maxLines: 3,
+            decoration: InputDecoration(
+              labelText: t('opportunities.note'),
+              hintText: t('opportunities.noteHint'),
+            ),
           ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(c), child: const Text('Cancel')),
-          FilledButton(
-              onPressed: () => Navigator.pop(c, true),
-              child: const Text('Send application')),
-        ],
-      ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(c),
+                child: Text(t('action.cancel'))),
+            FilledButton(
+                onPressed: () => Navigator.pop(c, true),
+                child: Text(t('opportunities.send'))),
+          ],
+        );
+      },
     );
     if (ok != true) return;
     try {
@@ -71,125 +100,49 @@ class _OpportunitiesScreenState extends State<OpportunitiesScreen> {
       if (i != -1) _items[i] = updated;
       if (mounted) {
         setState(() {});
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Application sent to the publisher')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content:
+                Text(MasarenLocalizations.of(context, 'opportunities.sent'))));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Failed: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(MasarenLocalizations.of(context, 'common.failed')
+                .replaceAll('{error}', e.toString()))));
       }
     }
+  }
+
+  Future<void> _openDetail(Opportunity o) async {
+    await Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => OpportunityDetailScreen(
+            opportunity: o, user: widget.user)));
+    if (mounted) await _load();
   }
 
   Future<void> _create() async {
-    final title = TextEditingController();
-    final desc = TextEditingController();
-    final skills = TextEditingController();
-    final location = TextEditingController();
-    final sdg = TextEditingController();
-    final minPms = TextEditingController();
-    String type = 'VOLUNTEER';
-    bool remote = false;
-    final created = await showDialog<Map<String, dynamic>>(
-      context: context,
-      builder: (c) => StatefulBuilder(
-        builder: (c, setDialogState) => AlertDialog(
-          title: const Text('Publish an opportunity'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                    controller: title,
-                    decoration: const InputDecoration(labelText: 'Title')),
-                TextField(
-                    controller: desc,
-                    maxLines: 3,
-                    decoration: const InputDecoration(labelText: 'Description')),
-                DropdownButtonFormField<String>(
-                  initialValue: type,
-                  decoration: const InputDecoration(labelText: 'Type'),
-                  items: const ['JOB', 'INTERNSHIP', 'GRANT', 'VOLUNTEER', 'TRAINING', 'CSR']
-                      .map((t) => DropdownMenuItem(value: t, child: Text(t)))
-                      .toList(),
-                  onChanged: (v) => setDialogState(() => type = v ?? 'VOLUNTEER'),
-                ),
-                TextField(
-                    controller: location,
-                    decoration: const InputDecoration(labelText: 'Location')),
-                TextField(
-                    controller: skills,
-                    decoration: const InputDecoration(
-                        labelText: 'Skills (comma separated)')),
-                TextField(
-                    controller: sdg,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'SDG (1-17)')),
-                TextField(
-                    controller: minPms,
-                    keyboardType: TextInputType.number,
-                    decoration:
-                        const InputDecoration(labelText: 'Minimum PMS (optional)')),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Remote'),
-                  value: remote,
-                  onChanged: (v) => setDialogState(() => remote = v),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(c), child: const Text('Cancel')),
-            FilledButton(
-              onPressed: () {
-                if (title.text.trim().isEmpty) return;
-                Navigator.pop(c, {
-                  'title': title.text.trim(),
-                  'description': desc.text.trim().isNotEmpty ? desc.text.trim() : null,
-                  'type': type,
-                  'location': location.text.trim().isNotEmpty ? location.text.trim() : null,
-                  'is_remote': remote,
-                  'skills': skills.text
-                      .split(',')
-                      .map((s) => s.trim())
-                      .where((s) => s.isNotEmpty)
-                      .toList(),
-                  'sdg': int.tryParse(sdg.text.trim()),
-                  'min_pms': double.tryParse(minPms.text.trim()),
-                });
-              },
-              child: const Text('Publish'),
-            ),
-          ],
-        ),
-      ),
-    );
-    if (created == null) return;
-    try {
-      final o = await AuthApi.createOpportunity(created);
-      setState(() {
-        _items.insert(0, o);
-        _filter = 'ALL';
-      });
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Opportunity published')));
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Failed: $e')));
-      }
+    final created = await Navigator.of(context).push<Opportunity>(
+        MaterialPageRoute(
+            builder: (_) => CreateOpportunityScreen(user: widget.user)));
+    if (created != null) {
+      setState(() => _items.insert(0, created));
     }
   }
-
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('Opportunities')),
+      appBar: AppBar(
+        title: Text(MasarenLocalizations.of(context, 'opportunities.title')),
+        actions: [
+          if (widget.onMenu != null)
+            IconButton(
+              tooltip: MasarenLocalizations.of(context, 'nav.more'),
+              icon: const Icon(Icons.menu_open),
+              onPressed: widget.onMenu,
+            ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: _create,
         backgroundColor: AppColors.azure,
@@ -203,21 +156,30 @@ class _OpportunitiesScreenState extends State<OpportunitiesScreen> {
                   onRefresh: _load,
                   child: ListView(
                     children: [
-                      const SectionTitle(title: 'Find your next impact'),
+                      SectionTitle(
+                          title: MasarenLocalizations.of(
+                              context, 'opportunities.findImpact')),
                       SizedBox(
                         height: 42,
                         child: ListView(
                           scrollDirection: Axis.horizontal,
                           padding: const EdgeInsets.symmetric(horizontal: 12),
                           children: [
-                            'ALL', 'JOB', 'INTERNSHIP', 'GRANT', 'VOLUNTEER', 'TRAINING', 'CSR'
+                            'ALL',
+                            ..._opportunityTypes,
                           ]
-                              .map((t) => Padding(
-                                    padding: const EdgeInsets.only(right: 6),
+                              .map((type) => Padding(
+                                    padding: const EdgeInsetsDirectional.only(
+                                        end: 6),
                                     child: ChoiceChip(
-                                      label: Text(t),
-                                      selected: _filter == t,
-                                      onSelected: (_) => setState(() => _filter = t),
+                                      label: Text(type == 'ALL'
+                                          ? MasarenLocalizations.of(
+                                              context, 'opportunities.all')
+                                          : _opportunityTypeLabel(
+                                              context, type)),
+                                      selected: _filter == type,
+                                      onSelected: (_) =>
+                                          setState(() => _filter = type),
                                     ),
                                   ))
                               .toList(),
@@ -229,12 +191,22 @@ class _OpportunitiesScreenState extends State<OpportunitiesScreen> {
                           padding: const EdgeInsets.all(24),
                           child: Text(
                             _items.isEmpty
-                                ? 'No opportunities right now.'
-                                : 'No $_filter opportunities right now.',
+                                ? MasarenLocalizations.of(
+                                    context, 'opportunities.empty')
+                                : MasarenLocalizations.of(
+                                        context, 'opportunities.emptyFilter')
+                                    .replaceAll(
+                                        '{type}',
+                                        _opportunityTypeLabel(
+                                            context, _filter)),
                             style: TextStyle(color: cs.onSurfaceVariant),
                           ),
                         ),
-                      ..._visible.map((o) => _OpportunityCard(o: o, onApply: _apply)),
+                      ..._visible.map((o) => _OpportunityCard(
+                          o: o,
+                          onApply: _apply,
+                          onOpen: () => _openDetail(o),
+                          currentUser: widget.user)),
                       const SizedBox(height: 24),
                     ],
                   ),
@@ -246,25 +218,45 @@ class _OpportunitiesScreenState extends State<OpportunitiesScreen> {
 class _OpportunityCard extends StatelessWidget {
   final Opportunity o;
   final ValueChanged<Opportunity> onApply;
-  const _OpportunityCard({required this.o, required this.onApply});
+  final VoidCallback onOpen;
+  final User currentUser;
+  const _OpportunityCard(
+      {required this.o,
+      required this.onApply,
+      required this.onOpen,
+      required this.currentUser});
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Card(
-      child: Padding(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onOpen,
+        child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (o.coverUrl != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: SmartImage(
+                  url: o.coverUrl,
+                  height: 120,
+                  borderRadius: BorderRadius.circular(14),
+                  fallbackIcon: Icons.work_outline,
+                ),
+              ),
             Row(
               children: [
-                const Icon(Icons.explore, color: AppColors.azure),
+                Icon(Icons.explore_rounded, color: cs.primary),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(o.title,
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontWeight: FontWeight.w800,
-                          color: Colors.white,
+                          color: cs.onSurface,
                           fontSize: 16)),
                 ),
                 if (o.sdg != null)
@@ -272,30 +264,72 @@ class _OpportunityCard extends StatelessWidget {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
-                      color: AppColors.accent.withValues(alpha: 0.15),
+                      color: cs.secondaryContainer,
                       borderRadius: BorderRadius.circular(999),
                     ),
-                    child: Text('SDG ${o.sdg}',
-                        style: const TextStyle(
-                            color: AppColors.accent, fontSize: 12)),
+                    child: Text(
+                        '${MasarenLocalizations.of(context, "opportunities.sdg")} ${o.sdg}',
+                        style: TextStyle(
+                            color: cs.onSecondaryContainer, fontSize: 12)),
                   ),
+                if (o.applied)
+                  Padding(
+                    padding: const EdgeInsetsDirectional.only(start: 6),
+                    child: Icon(Icons.verified_rounded,
+                        size: 16, color: cs.secondary),
+                  ),
+                EntityStatusChip(
+                    status: o.verificationStatus, reason: o.rejectionReason),
+                Icon(Icons.chevron_right,
+                    size: 18, color: cs.onSurfaceVariant),
               ],
             ),
-            if (o.type != null) ...[
+            if (o.type?.isNotEmpty == true) ...[
               const SizedBox(height: 6),
-              Text(o.type!,
-                  style: const TextStyle(
-                      color: AppColors.azure,
+              Text(_opportunityTypeLabel(context, o.type),
+                  style: TextStyle(
+                      color: cs.primary,
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.6)),
+            ],
+            if (o.author != null) ...[
+              const SizedBox(height: 4),
+              InkWell(
+                borderRadius: BorderRadius.circular(6),
+                onTap: () => openEntityAuthor(context,
+                    author: o.author, currentUser: currentUser),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 3),
+                  child: Row(
+                    children: [
+                      AppAvatar(
+                          name: o.author!.name,
+                          url: o.author!.avatarUrl,
+                          size: 18),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          o.author!.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                              color: cs.primary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ],
             if (o.description != null) ...[
               const SizedBox(height: 8),
               Text(o.description!,
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: AppColors.muted, height: 1.4)),
+                  style: TextStyle(color: cs.onSurfaceVariant, height: 1.4)),
             ],
             const SizedBox(height: 10),
             Wrap(
@@ -304,19 +338,33 @@ class _OpportunityCard extends StatelessWidget {
               children: [
                 if (o.minPms != null)
                   Chip(
-                    label: Text('Min PMS ${o.minPms!.toInt()}',
+                    label: Text(
+                        MasarenLocalizations.of(
+                                context, 'opportunities.minPmsValue')
+                            .replaceAll('{value}', '${o.minPms!.toInt()}'),
                         style: const TextStyle(fontSize: 12)),
                     visualDensity: VisualDensity.compact,
                   ),
                 if (o.location != null)
                   Chip(
-                    label: Text(o.location!,
+                    label:
+                        Text(o.location!, style: const TextStyle(fontSize: 12)),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                if (o.isRemote)
+                  Chip(
+                    label: Text(
+                        MasarenLocalizations.of(
+                            context, 'opportunities.remote'),
                         style: const TextStyle(fontSize: 12)),
                     visualDensity: VisualDensity.compact,
                   ),
                 if (o.deadline != null)
                   Chip(
-                    label: Text('Apply by ${o.deadline!.split('T').first}',
+                    label: Text(
+                        MasarenLocalizations.of(
+                                context, 'opportunities.applyBy')
+                            .replaceAll('{date}', o.deadline!.split('T').first),
                         style: const TextStyle(fontSize: 12)),
                     visualDensity: VisualDensity.compact,
                   ),
@@ -334,23 +382,28 @@ class _OpportunityCard extends StatelessWidget {
                   child: OutlinedButton(
                     onPressed: o.applied ? null : () => onApply(o),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.azure,
-                      side: const BorderSide(color: AppColors.azure),
+                      foregroundColor: cs.primary,
+                      side: BorderSide(color: cs.primary),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                     ),
-                    child: Text(o.applied ? 'Applied' : 'Apply'),
+                    child: Text(MasarenLocalizations.of(context,
+                        o.applied ? 'action.applied' : 'action.apply')),
                   ),
                 ),
                 if (o.applicationsCount > 0) ...[
                   const SizedBox(width: 10),
-                  Text('${o.applicationsCount} applied',
+                  Text(
+                      MasarenLocalizations.of(
+                              context, 'opportunities.appliedCount')
+                          .replaceAll('{count}', '${o.applicationsCount}'),
                       style:
-                          const TextStyle(color: AppColors.muted, fontSize: 12)),
+                          TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
                 ],
               ],
             ),
           ],
+        ),
         ),
       ),
     );

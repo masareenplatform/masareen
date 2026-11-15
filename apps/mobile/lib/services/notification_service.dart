@@ -43,6 +43,7 @@ class NotificationService {
   int? quietEnd;
   String? initialPayload;
   String? _fcmToken;
+  final Map<String, DateTime> _recentShown = {};
   void Function(String? payload)? _onTap;
   StreamSubscription<String>? _tokenRefreshSub;
   StreamSubscription<RemoteMessage>? _onMessageSub;
@@ -194,6 +195,8 @@ class NotificationService {
   }
 
   String _payloadFromRemoteMessage(RemoteMessage msg) {
+    final link = msg.data['link']?.toString();
+    if (link != null && link.isNotEmpty) return link;
     final explicit = msg.data['payload']?.toString();
     if (explicit != null && explicit.isNotEmpty) return explicit;
     final type = msg.data['type']?.toString() ?? '';
@@ -279,6 +282,17 @@ class NotificationService {
     bool message = false,
   }) async {
     if (!enabled || isQuietNow) return;
+    final dedupeKey = '$title|$body';
+    final last = _recentShown[dedupeKey];
+    if (last != null &&
+        DateTime.now().difference(last) < const Duration(seconds: 45)) {
+      return;
+    }
+    _recentShown[dedupeKey] = DateTime.now();
+    if (_recentShown.length > 120) {
+      _recentShown.removeWhere((_, when) =>
+          DateTime.now().difference(when) > const Duration(minutes: 10));
+    }
     final channelId = message ? _messageChannelId : _channelId;
     final channelName = message ? _messageChannelName : _channelName;
     final details = NotificationDetails(

@@ -1,9 +1,11 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:masaren/api_client.dart';
+import 'package:masaren/l10n.dart';
 import 'package:masaren/theme.dart';
 import 'package:masaren/widgets.dart';
 import 'package:masaren/models.dart';
 import 'package:masaren/screens/payments_screen.dart';
+import 'package:masaren/screens/pro_screen.dart';
 
 class WalletScreen extends StatefulWidget {
   final User user;
@@ -40,7 +42,8 @@ class _WalletScreenState extends State<WalletScreen> {
 
   void _showClaimSheet() {
     final cs = Theme.of(context).colorScheme;
-    final ctl = TextEditingController();
+    final reward = _wallet?.dailyReward ?? 10;
+    final alreadyClaimed = _wallet?.claimedToday ?? false;
     bool busy = false;
 
     showModalBottomSheet(
@@ -58,7 +61,8 @@ class _WalletScreenState extends State<WalletScreen> {
             children: [
               Container(
                 margin: const EdgeInsets.only(top: 12),
-                width: 36, height: 4,
+                width: 36,
+                height: 4,
                 decoration: BoxDecoration(
                   color: cs.outlineVariant,
                   borderRadius: BorderRadius.circular(2),
@@ -70,47 +74,76 @@ class _WalletScreenState extends State<WalletScreen> {
                   children: [
                     Icon(Icons.token, color: cs.primary, size: 22),
                     const SizedBox(width: 10),
-                    Text('Claim reward',
-                        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16, color: cs.onSurface)),
+                    Text(MasarenLocalizations.of(context, 'wallet.claimReward'),
+                        style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                            color: cs.onSurface)),
                     const Spacer(),
                     TextButton(
-                      onPressed: busy ? null : () async {
-                        final amount = double.tryParse(ctl.text) ?? 0;
-                        if (amount <= 0) return;
-                        setSheetState(() => busy = true);
-                        try {
-                          await AuthApi.earn(widget.user.id, amount, 'Reward claim');
-                          if (ctx.mounted) Navigator.pop(ctx);
-                          await _load();
-                        } catch (e) {
-                          if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text('Failed: $e')));
-                        } finally {
-                          if (ctx.mounted) setSheetState(() => busy = false);
-                        }
-                      },
+                      onPressed: busy || alreadyClaimed
+                          ? null
+                          : () async {
+                              setSheetState(() => busy = true);
+                              try {
+                                final res = await AuthApi.claimDailyReward();
+                                if (res.isNotEmpty) {
+                                  _wallet = Wallet.fromJson(res);
+                                }
+                                if (ctx.mounted) Navigator.pop(ctx);
+                                await _load();
+                              } catch (e) {
+                                if (ctx.mounted) {
+                                  ScaffoldMessenger.of(ctx).showSnackBar(
+                                      SnackBar(
+                                          content: Text(MasarenLocalizations.of(
+                                                  ctx, 'common.failed')
+                                              .replaceAll('{error}', '$e'))));
+                                }
+                              } finally {
+                                if (ctx.mounted) {
+                                  setSheetState(() => busy = false);
+                                }
+                              }
+                            },
                       child: busy
-                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Text('Claim'),
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2))
+                          : Text(MasarenLocalizations.of(context,
+                              alreadyClaimed
+                                  ? 'wallet.claimedToday'
+                                  : 'wallet.claim')),
                     ),
                   ],
                 ),
               ),
               Divider(height: 1, color: cs.outlineVariant),
               Expanded(
-                child: ListView(
+                child: Padding(
                   padding: const EdgeInsets.all(20),
-                  children: [
-                    TextField(
-                      controller: ctl,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      style: TextStyle(color: cs.onSurface),
-                      decoration: InputDecoration(
-                        hintText: 'Amount (MRC)',
-                        prefixIcon: const Icon(Icons.token, size: 20),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.celebration, size: 44, color: cs.primary),
+                      const SizedBox(height: 12),
+                      Text(
+                          '${reward.toStringAsFixed(reward % 1 == 0 ? 0 : 2)} MRC',
+                          style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.w800,
+                              color: cs.onSurface)),
+                      const SizedBox(height: 8),
+                      Text(
+                        MasarenLocalizations.of(
+                            context, 'wallet.dailyRewardNote'),
+                        textAlign: TextAlign.center,
+                        style:
+                            TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -141,7 +174,8 @@ class _WalletScreenState extends State<WalletScreen> {
             children: [
               Container(
                 margin: const EdgeInsets.only(top: 12),
-                width: 36, height: 4,
+                width: 36,
+                height: 4,
                 decoration: BoxDecoration(
                   color: cs.outlineVariant,
                   borderRadius: BorderRadius.circular(2),
@@ -153,31 +187,58 @@ class _WalletScreenState extends State<WalletScreen> {
                   children: [
                     Icon(Icons.swap_horiz, color: cs.primary, size: 22),
                     const SizedBox(width: 10),
-                    Text('Transfer MRC',
-                        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16, color: cs.onSurface)),
+                    Text(
+                        MasarenLocalizations.of(
+                            context, 'wallet.transferTitle'),
+                        style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                            color: cs.onSurface)),
                     const Spacer(),
                     TextButton(
-                      onPressed: busy ? null : () async {
-                        final amount = double.tryParse(amountCtl.text) ?? 0;
-                        if (amount <= 0 || recipientCtl.text.trim().isEmpty) return;
-                        setSheetState(() => busy = true);
-                        try {
-                          await AuthApi.transferCoins(recipientCtl.text.trim(), amount);
-                          if (ctx.mounted) Navigator.pop(ctx);
-                          await _load();
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Transfer successful')));
-                          }
-                        } catch (e) {
-                          if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text('Failed: $e')));
-                        } finally {
-                          if (ctx.mounted) setSheetState(() => busy = false);
-                        }
-                      },
+                      onPressed: busy
+                          ? null
+                          : () async {
+                              final amount =
+                                  double.tryParse(amountCtl.text) ?? 0;
+                              if (amount <= 0 ||
+                                  recipientCtl.text.trim().isEmpty) {
+                                return;
+                              }
+                              setSheetState(() => busy = true);
+                              try {
+                                await AuthApi.transferCoins(
+                                    recipientCtl.text.trim(), amount);
+                                if (ctx.mounted) Navigator.pop(ctx);
+                                await _load();
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                          content: Text(MasarenLocalizations.of(
+                                              context,
+                                              'wallet.transferSuccess'))));
+                                }
+                              } catch (e) {
+                                if (ctx.mounted) {
+                                  ScaffoldMessenger.of(ctx).showSnackBar(
+                                      SnackBar(
+                                          content: Text(MasarenLocalizations.of(
+                                                  ctx, 'common.failed')
+                                              .replaceAll('{error}', '$e'))));
+                                }
+                              } finally {
+                                if (ctx.mounted) {
+                                  setSheetState(() => busy = false);
+                                }
+                              }
+                            },
                       child: busy
-                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Text('Transfer'),
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2))
+                          : Text(MasarenLocalizations.of(
+                              context, 'wallet.transfer')),
                     ),
                   ],
                 ),
@@ -190,21 +251,26 @@ class _WalletScreenState extends State<WalletScreen> {
                     TextField(
                       controller: recipientCtl,
                       style: TextStyle(color: cs.onSurface),
-                      decoration: const InputDecoration(
-                        hintText: 'Recipient user ID',
-                        prefixIcon: Icon(Icons.person_outline, size: 20),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: InputDecoration(
+                        hintText: MasarenLocalizations.of(
+                            context, 'wallet.recipientId'),
+                        prefixIcon: const Icon(Icons.person_outline, size: 20),
+                        contentPadding:
+                            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       ),
                     ),
                     const SizedBox(height: 16),
                     TextField(
                       controller: amountCtl,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
                       style: TextStyle(color: cs.onSurface),
-                      decoration: const InputDecoration(
-                        hintText: 'Amount (MRC)',
-                        prefixIcon: Icon(Icons.token, size: 20),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: InputDecoration(
+                        hintText: MasarenLocalizations.of(
+                            context, 'wallet.amountMrc'),
+                        prefixIcon: const Icon(Icons.token, size: 20),
+                        contentPadding:
+                            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       ),
                     ),
                   ],
@@ -231,7 +297,10 @@ class _WalletScreenState extends State<WalletScreen> {
         builder: (ctx, setSheetState) {
           if (rate == null && !busy) {
             AuthApi.getExchangeRate().then((r) {
-              if (ctx.mounted) setSheetState(() => rate = (r['rate_to_mrc'] as num?)?.toDouble() ?? 1.0);
+              if (ctx.mounted) {
+                setSheetState(
+                    () => rate = (r['rate_to_mrc'] as num?)?.toDouble() ?? 1.0);
+              }
             }).catchError((_) {
               if (ctx.mounted) setSheetState(() => rate = 1.0);
             });
@@ -240,13 +309,15 @@ class _WalletScreenState extends State<WalletScreen> {
             height: MediaQuery.of(ctx).size.height * 0.45,
             decoration: BoxDecoration(
               color: cs.surface,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(20)),
             ),
             child: Column(
               children: [
                 Container(
                   margin: const EdgeInsets.only(top: 12),
-                  width: 36, height: 4,
+                  width: 36,
+                  height: 4,
                   decoration: BoxDecoration(
                     color: cs.outlineVariant,
                     borderRadius: BorderRadius.circular(2),
@@ -256,33 +327,58 @@ class _WalletScreenState extends State<WalletScreen> {
                   padding: const EdgeInsets.fromLTRB(20, 16, 12, 0),
                   child: Row(
                     children: [
-                      Icon(Icons.currency_exchange, color: cs.primary, size: 22),
+                      Icon(Icons.currency_exchange,
+                          color: cs.primary, size: 22),
                       const SizedBox(width: 10),
-                      Text('Convert MRC to EGP',
-                          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16, color: cs.onSurface)),
+                      Text(
+                          MasarenLocalizations.of(
+                              context, 'wallet.convertTitle'),
+                          style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
+                              color: cs.onSurface)),
                       const Spacer(),
                       TextButton(
-                        onPressed: busy ? null : () async {
-                          final amount = double.tryParse(amountCtl.text) ?? 0;
-                          if (amount <= 0) return;
-                          setSheetState(() => busy = true);
-                          try {
-                            await AuthApi.convertCoins(amount, 'EGP');
-                            if (ctx.mounted) Navigator.pop(ctx);
-                            await _load();
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Conversion successful')));
-                            }
-                          } catch (e) {
-                            if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text('Failed: $e')));
-                          } finally {
-                            if (ctx.mounted) setSheetState(() => busy = false);
-                          }
-                        },
+                        onPressed: busy
+                            ? null
+                            : () async {
+                                final amount =
+                                    double.tryParse(amountCtl.text) ?? 0;
+                                if (amount <= 0) return;
+                                setSheetState(() => busy = true);
+                                try {
+                                  await AuthApi.convertCoins(amount, 'EGP');
+                                  if (ctx.mounted) Navigator.pop(ctx);
+                                  await _load();
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                            content: Text(
+                                                MasarenLocalizations.of(context,
+                                                    'wallet.convertSuccess'))));
+                                  }
+                                } catch (e) {
+                                  if (ctx.mounted) {
+                                    ScaffoldMessenger.of(ctx).showSnackBar(
+                                        SnackBar(
+                                            content: Text(MasarenLocalizations
+                                                    .of(ctx, 'common.failed')
+                                                .replaceAll('{error}', '$e'))));
+                                  }
+                                } finally {
+                                  if (ctx.mounted) {
+                                    setSheetState(() => busy = false);
+                                  }
+                                }
+                              },
                         child: busy
-                            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                            : const Text('Convert'),
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2))
+                            : Text(MasarenLocalizations.of(
+                                context, 'wallet.convert')),
                       ),
                     ],
                   ),
@@ -301,9 +397,14 @@ class _WalletScreenState extends State<WalletScreen> {
                           ),
                           child: Row(
                             children: [
-                              Icon(Icons.info_outline, size: 18, color: cs.primary),
+                              Icon(Icons.info_outline,
+                                  size: 18, color: cs.primary),
                               const SizedBox(width: 10),
-                              Text('Exchange rate: 1 MRC = ${rate!.toStringAsFixed(2)} EGP',
+                              Text(
+                                  MasarenLocalizations.of(
+                                          context, 'wallet.exchangeRate')
+                                      .replaceAll(
+                                          '{rate}', rate!.toStringAsFixed(2)),
                                   style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w600,
@@ -319,18 +420,29 @@ class _WalletScreenState extends State<WalletScreen> {
                       const SizedBox(height: 16),
                       TextField(
                         controller: amountCtl,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
                         style: TextStyle(color: cs.onSurface),
-                        decoration: const InputDecoration(
-                          hintText: 'Amount (MRC)',
-                          prefixIcon: Icon(Icons.token, size: 20),
-                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: InputDecoration(
+                          hintText: MasarenLocalizations.of(
+                              context, 'wallet.amountMrc'),
+                          prefixIcon: const Icon(Icons.token, size: 20),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
                         ),
                       ),
                       const SizedBox(height: 12),
                       if (rate != null)
                         Text(
-                          'You will receive ≈ ${(rate != null ? (double.tryParse(amountCtl.text) ?? 0) * rate! : 0).toStringAsFixed(2)} EGP',
+                          MasarenLocalizations.of(context, 'wallet.receive')
+                              .replaceAll(
+                                  '{amount}',
+                                  (rate != null
+                                          ? (double.tryParse(amountCtl.text) ??
+                                                  0) *
+                                              rate!
+                                          : 0)
+                                      .toStringAsFixed(2)),
                           style: TextStyle(
                               fontSize: 13, color: cs.onSurfaceVariant),
                         ),
@@ -350,12 +462,12 @@ class _WalletScreenState extends State<WalletScreen> {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('MASAREEN Coin'),
+        title: Text(MasarenLocalizations.of(context, 'wallet.coinTitle')),
         actions: [
           IconButton(
             icon: Icon(Icons.add_circle_outline, color: cs.primary),
             onPressed: _showClaimSheet,
-            tooltip: 'Claim reward',
+            tooltip: MasarenLocalizations.of(context, 'wallet.claimReward'),
           ),
         ],
       ),
@@ -373,7 +485,10 @@ class _WalletScreenState extends State<WalletScreen> {
                         padding: const EdgeInsets.all(28),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
-                            colors: [cs.primary, cs.primary.withValues(alpha: 0.7)],
+                            colors: [
+                              cs.primary,
+                              cs.primary.withValues(alpha: 0.7)
+                            ],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
@@ -382,24 +497,36 @@ class _WalletScreenState extends State<WalletScreen> {
                         child: Column(
                           children: [
                             Container(
-                              width: 64, height: 64,
+                              width: 64,
+                              height: 64,
                               decoration: BoxDecoration(
                                 color: Colors.white.withValues(alpha: 0.2),
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(Icons.token, size: 32, color: Colors.white),
+                              child: const Icon(Icons.token,
+                                  size: 32, color: Colors.white),
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              _wallet != null ? _wallet!.balance.toStringAsFixed(2) : '0',
+                              _wallet != null
+                                  ? _wallet!.balance.toStringAsFixed(2)
+                                  : '0',
                               style: const TextStyle(
-                                  color: Colors.white, fontSize: 42, fontWeight: FontWeight.w700),
+                                  color: Colors.white,
+                                  fontSize: 42,
+                                  fontWeight: FontWeight.w700),
                             ),
                             const Text('MRC',
-                                style: TextStyle(color: Colors.white70, fontSize: 16, letterSpacing: 2)),
+                                style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 16,
+                                    letterSpacing: 2)),
                             const SizedBox(height: 4),
-                            const Text('MASAREEN Coin',
-                                style: TextStyle(color: Colors.white60, fontSize: 12)),
+                            Text(
+                                MasarenLocalizations.of(
+                                    context, 'wallet.coinTitle'),
+                                style: const TextStyle(
+                                    color: Colors.white60, fontSize: 12)),
                           ],
                         ),
                       ),
@@ -408,36 +535,107 @@ class _WalletScreenState extends State<WalletScreen> {
                       // Quick actions
                       Row(
                         children: [
-                          Expanded(child: _QuickAction(
-                            icon: Icons.arrow_downward, label: 'Earn',
-                            onTap: _showClaimSheet, cs: cs,
+                          Expanded(
+                              child: _QuickAction(
+                            icon: Icons.arrow_downward,
+                            label:
+                                MasarenLocalizations.of(context, 'wallet.earn'),
+                            onTap: _showClaimSheet,
+                            cs: cs,
                           )),
                           const SizedBox(width: 12),
-                          Expanded(child: _QuickAction(
-                            icon: Icons.add_circle_outline, label: 'Top Up',
-                            onTap: () {
-                              Navigator.of(context).push(MaterialPageRoute(
-                                builder: (_) => PaymentsScreen(user: widget.user),
+                          Expanded(
+                              child: _QuickAction(
+                            icon: Icons.add_circle_outline,
+                            label: MasarenLocalizations.of(
+                                context, 'wallet.topUp'),
+                            onTap: () async {
+                              await Navigator.of(context)
+                                  .push(MaterialPageRoute(
+                                builder: (_) =>
+                                    PaymentsScreen(user: widget.user),
                               ));
-                            }, cs: cs,
+                              await _load();
+                            },
+                            cs: cs,
                           )),
                           const SizedBox(width: 12),
-                          Expanded(child: _QuickAction(
-                            icon: Icons.swap_horiz, label: 'Transfer',
-                            onTap: _showTransferSheet, cs: cs,
+                          Expanded(
+                              child: _QuickAction(
+                            icon: Icons.swap_horiz,
+                            label: MasarenLocalizations.of(
+                                context, 'wallet.transfer'),
+                            onTap: _showTransferSheet,
+                            cs: cs,
                           )),
                           const SizedBox(width: 12),
-                          Expanded(child: _QuickAction(
-                            icon: Icons.currency_exchange, label: 'Convert',
-                            onTap: _showConvertSheet, cs: cs,
+                          Expanded(
+                              child: _QuickAction(
+                            icon: Icons.currency_exchange,
+                            label: MasarenLocalizations.of(
+                                context, 'wallet.convert'),
+                            onTap: _showConvertSheet,
+                            cs: cs,
                           )),
                         ],
                       ),
+                      const SizedBox(height: 20),
+                      InkWell(
+                        borderRadius: BorderRadius.circular(16),
+                        onTap: () async {
+                          await Navigator.of(context).push(MaterialPageRoute(
+                              builder: (_) => ProScreen(user: widget.user)));
+                          await _load();
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(colors: [
+                              cs.primary.withValues(alpha: 0.18),
+                              cs.primary.withValues(alpha: 0.05),
+                            ]),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                                color: cs.primary.withValues(alpha: 0.35)),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.workspace_premium,
+                                  color: cs.primary, size: 26),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                        MasarenLocalizations.of(
+                                            context, 'pro.title'),
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.w800,
+                                            color: cs.onSurface)),
+                                    Text(
+                                        MasarenLocalizations.of(
+                                            context, 'pro.subtitle'),
+                                        style: TextStyle(
+                                            fontSize: 12,
+                                            color: cs.onSurfaceVariant)),
+                                  ],
+                                ),
+                              ),
+                              Icon(directionalChevronIcon(context),
+                                  color: cs.primary, size: 20),
+                            ],
+                          ),
+                        ),
+                      ),
                       const SizedBox(height: 24),
 
-                      Text('Transaction history',
+                      Text(
+                          MasarenLocalizations.of(
+                              context, 'wallet.transactionHistory'),
                           style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
                             color: cs.onSurface,
                           )),
                       const SizedBox(height: 12),
@@ -446,7 +644,9 @@ class _WalletScreenState extends State<WalletScreen> {
                         Padding(
                           padding: const EdgeInsets.all(24),
                           child: Center(
-                            child: Text('No transactions yet.',
+                            child: Text(
+                                MasarenLocalizations.of(
+                                    context, 'wallet.noTransactions'),
                                 style: TextStyle(color: cs.onSurfaceVariant)),
                           ),
                         )
@@ -465,7 +665,11 @@ class _QuickAction extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
   final ColorScheme cs;
-  const _QuickAction({required this.icon, required this.label, required this.onTap, required this.cs});
+  const _QuickAction(
+      {required this.icon,
+      required this.label,
+      required this.onTap,
+      required this.cs});
 
   @override
   Widget build(BuildContext context) {
@@ -481,7 +685,11 @@ class _QuickAction extends StatelessWidget {
           children: [
             Icon(icon, color: cs.primary, size: 22),
             const SizedBox(height: 4),
-            Text(label, style: TextStyle(fontSize: 12, color: cs.onSurface, fontWeight: FontWeight.w500)),
+            Text(label,
+                style: TextStyle(
+                    fontSize: 12,
+                    color: cs.onSurface,
+                    fontWeight: FontWeight.w500)),
           ],
         ),
       ),
@@ -496,7 +704,11 @@ class _TxTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final credit = tx.type == 'EARN' || tx.type == 'TRANSFER_IN' || tx.type == 'DEPOSIT';
+    final credit =
+        tx.type == 'EARN' || tx.type == 'TRANSFER_IN' || tx.type == 'DEPOSIT';
+    final typeKey = 'wallet.tx.${tx.type.toLowerCase()}';
+    final typeLabel = MasarenLocalizations.of(context, typeKey);
+    final title = tx.reference ?? (typeLabel == typeKey ? tx.type : typeLabel);
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(14),
@@ -507,7 +719,8 @@ class _TxTile extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 40, height: 40,
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
               color: credit
                   ? AppColors.accent.withValues(alpha: 0.15)
@@ -525,9 +738,12 @@ class _TxTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(tx.reference ?? tx.type,
-                    style: TextStyle(color: cs.onSurface, fontSize: 14, fontWeight: FontWeight.w500)),
-                Text(timeAgo(tx.createdAt),
+                Text(title,
+                    style: TextStyle(
+                        color: cs.onSurface,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500)),
+                Text(timeAgo(tx.createdAt, context: context),
                     style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
               ],
             ),
@@ -536,10 +752,12 @@ class _TxTile extends StatelessWidget {
             '${credit ? '+' : ''}${tx.amount.toStringAsFixed(2)}',
             style: TextStyle(
                 color: credit ? AppColors.accent : Colors.redAccent,
-                fontWeight: FontWeight.w600, fontSize: 15),
+                fontWeight: FontWeight.w600,
+                fontSize: 15),
           ),
         ],
       ),
     );
   }
 }
+

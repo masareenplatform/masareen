@@ -1,3 +1,20 @@
+﻿const String _defaultMediaBase = String.fromEnvironment(
+  'API_BASE_URL',
+  defaultValue: 'https://masareen.com',
+);
+
+String? resolveMediaUrl(dynamic raw) {
+  if (raw == null) return null;
+  final s = raw.toString().trim();
+  if (s.isEmpty) return null;
+  if (s.startsWith('http://') || s.startsWith('https://')) return s;
+  if (s.startsWith('/')) {
+    final base = _defaultMediaBase.replaceAll(RegExp(r'/+$'), '');
+    return '$base$s';
+  }
+  return s;
+}
+
 class User {
   final String id;
   final String email;
@@ -14,6 +31,11 @@ class User {
   final int? followersCount;
   final String? coverUrl;
   final bool isTester;
+  final bool profilePrivate;
+  final bool canMessage;
+  final String? handle;
+  final bool isFollowing;
+  final bool isAdmin;
 
   User({
     required this.id,
@@ -31,6 +53,11 @@ class User {
     this.followersCount,
     this.coverUrl,
     this.isTester = false,
+    this.profilePrivate = false,
+    this.canMessage = true,
+    this.handle,
+    this.isFollowing = false,
+    this.isAdmin = false,
   });
 
   User copyWith({
@@ -43,6 +70,12 @@ class User {
     int? followersCount,
     bool? emailVerified,
     String? coverUrl,
+    bool? isTester,
+    bool? profilePrivate,
+    bool? canMessage,
+    String? handle,
+    bool? isFollowing,
+    bool? isAdmin,
   }) =>
       User(
         id: id,
@@ -59,6 +92,12 @@ class User {
         city: city ?? this.city,
         followersCount: followersCount ?? this.followersCount,
         coverUrl: coverUrl ?? this.coverUrl,
+        isTester: isTester ?? this.isTester,
+        profilePrivate: profilePrivate ?? this.profilePrivate,
+        canMessage: canMessage ?? this.canMessage,
+        handle: handle ?? this.handle,
+        isFollowing: isFollowing ?? this.isFollowing,
+        isAdmin: isAdmin ?? this.isAdmin,
       );
 
   factory User.fromJson(Map<String, dynamic> j) => User(
@@ -74,15 +113,23 @@ class User {
             ? List<String>.from(j['skills'].map((s) =>
                 s is Map ? (s['skill_name'] ?? s['name'] ?? '') : s.toString()))
             : const [],
-        bio: j['profile']?['bio'],
-        avatarUrl: j['profile']?['avatar_url'],
-        country: j['profile']?['country'],
-        city: j['profile']?['city'],
+        bio: j['profile']?['bio'] ?? j['bio'],
+        avatarUrl:
+            resolveMediaUrl(j['profile']?['avatar_url'] ?? j['avatar_url']),
+        country: j['profile']?['country'] ?? j['country'],
+        city: j['profile']?['city'] ?? j['city'],
         followersCount: j['profile']?['followers_count'] is num
             ? (j['profile']?['followers_count'] as num).toInt()
-            : null,
-        coverUrl: j['profile']?['cover_url'],
+            : (j['followers_count'] is num
+                ? (j['followers_count'] as num).toInt()
+                : null),
+        coverUrl: resolveMediaUrl(j['profile']?['cover_url'] ?? j['cover_url']),
         isTester: j['is_tester'] ?? false,
+        profilePrivate: j['profile_private'] == true,
+        canMessage: j['can_message'] != false,
+        handle: j['handle']?.toString(),
+        isFollowing: j['is_following'] == true,
+        isAdmin: j['is_admin'] == true,
       );
 
   /// Classifies the account into one of the platform's profile archetypes so the
@@ -110,6 +157,108 @@ class User {
   }
 }
 
+class UserSettings {
+  final bool pushEnabled;
+  final bool emailEnabled;
+  final bool opportunityAlerts;
+  final bool socialAlerts;
+  final bool messageAlerts;
+  final String digestFrequency;
+  final int? quietStart;
+  final int? quietEnd;
+  final String profileVisibility;
+  final String messagePrivacy;
+  final bool showEmail;
+
+  UserSettings({
+    this.pushEnabled = true,
+    this.emailEnabled = true,
+    this.opportunityAlerts = true,
+    this.socialAlerts = true,
+    this.messageAlerts = true,
+    this.digestFrequency = 'instant',
+    this.quietStart,
+    this.quietEnd,
+    this.profileVisibility = 'public',
+    this.messagePrivacy = 'everyone',
+    this.showEmail = false,
+  });
+
+  factory UserSettings.fromJson(Map<String, dynamic> j) => UserSettings(
+        pushEnabled: j['push_enabled'] != false,
+        emailEnabled: j['email_enabled'] != false,
+        opportunityAlerts: j['opportunity_alerts'] != false,
+        socialAlerts: j['social_alerts'] != false,
+        messageAlerts: j['message_alerts'] != false,
+        digestFrequency: (j['digest_frequency'] ?? 'instant').toString(),
+        quietStart:
+            j['quiet_start'] is num ? (j['quiet_start'] as num).toInt() : null,
+        quietEnd:
+            j['quiet_end'] is num ? (j['quiet_end'] as num).toInt() : null,
+        profileVisibility: (j['profile_visibility'] ?? 'public').toString(),
+        messagePrivacy: (j['message_privacy'] ?? 'everyone').toString(),
+        showEmail: j['show_email'] == true,
+      );
+
+  UserSettings copyWith({
+    bool? pushEnabled,
+    bool? emailEnabled,
+    bool? opportunityAlerts,
+    bool? socialAlerts,
+    bool? messageAlerts,
+    String? digestFrequency,
+    int? quietStart,
+    int? quietEnd,
+    bool clearQuietHours = false,
+    String? profileVisibility,
+    String? messagePrivacy,
+    bool? showEmail,
+  }) =>
+      UserSettings(
+        pushEnabled: pushEnabled ?? this.pushEnabled,
+        emailEnabled: emailEnabled ?? this.emailEnabled,
+        opportunityAlerts: opportunityAlerts ?? this.opportunityAlerts,
+        socialAlerts: socialAlerts ?? this.socialAlerts,
+        messageAlerts: messageAlerts ?? this.messageAlerts,
+        digestFrequency: digestFrequency ?? this.digestFrequency,
+        quietStart: clearQuietHours ? null : (quietStart ?? this.quietStart),
+        quietEnd: clearQuietHours ? null : (quietEnd ?? this.quietEnd),
+        profileVisibility: profileVisibility ?? this.profileVisibility,
+        messagePrivacy: messagePrivacy ?? this.messagePrivacy,
+        showEmail: showEmail ?? this.showEmail,
+      );
+}
+
+class DiscoveryItem {
+  final String type;
+  final String id;
+  final String title;
+  final String subtitle;
+  final String? imageUrl;
+  final int impactPercent;
+  final bool verified;
+
+  const DiscoveryItem({
+    required this.type,
+    required this.id,
+    required this.title,
+    this.subtitle = '',
+    this.imageUrl,
+    this.impactPercent = 0,
+    this.verified = false,
+  });
+
+  factory DiscoveryItem.fromJson(Map<String, dynamic> j) => DiscoveryItem(
+        type: (j['entity_type'] ?? 'ENTITY').toString(),
+        id: (j['entity_id'] ?? '').toString(),
+        title: (j['title'] ?? 'Untitled').toString(),
+        subtitle: (j['subtitle'] ?? '').toString(),
+        imageUrl: resolveMediaUrl(j['image_url']?.toString()),
+        impactPercent:
+            j['impact_percent'] is num ? (j['impact_percent'] as num).round() : 0,
+        verified: j['verified'] == true,
+      );
+}
 class PostMedia {
   final String url;
   final String type;
@@ -128,16 +277,50 @@ class PostMedia {
   });
 
   bool get isVideo => type.toUpperCase() == 'VIDEO';
+  bool get isAudio => type.toUpperCase() == 'AUDIO';
 
   factory PostMedia.fromJson(Map<String, dynamic> j) => PostMedia(
-        url: (j['url'] ?? j['content_url'] ?? '').toString(),
+        url: resolveMediaUrl(j['url'] ?? j['content_url']) ?? '',
         type: (j['type'] ?? 'IMAGE').toString().toUpperCase(),
         caption: j['caption']?.toString(),
-        hlsUrl: j['hls_url']?.toString(),
-        posterUrl: j['poster_url']?.toString(),
+        hlsUrl: resolveMediaUrl(j['hls_url']),
+        posterUrl: resolveMediaUrl(j['poster_url']),
         durationSeconds: j['duration_seconds'] is num
             ? (j['duration_seconds'] as num).toDouble()
             : null,
+      );
+}
+
+class PostFile {
+  final String url;
+  final String name;
+  final int? size;
+  final String? contentType;
+
+  PostFile({
+    required this.url,
+    this.name = 'Attachment',
+    this.size,
+    this.contentType,
+  });
+
+  bool get isPdf =>
+      (contentType ?? '').contains('pdf') || url.toLowerCase().contains('.pdf');
+
+  String get sizeLabel {
+    final bytes = size ?? 0;
+    if (bytes <= 0) return '';
+    if (bytes >= 1024 * 1024) {
+      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    }
+    return '${(bytes / 1024).ceil()} KB';
+  }
+
+  factory PostFile.fromJson(Map<String, dynamic> j) => PostFile(
+        url: resolveMediaUrl(j['url']) ?? '',
+        name: (j['name'] ?? 'Attachment').toString(),
+        size: j['size'] is num ? (j['size'] as num).toInt() : null,
+        contentType: j['content_type']?.toString(),
       );
 }
 
@@ -152,19 +335,29 @@ class Post {
   final String? impactLabel;
   final String? type;
   final String? contentUrl;
+  final String? linkUrl;
   final List<PostMedia> media;
+  final List<PostFile> files;
   final String? mediaType;
   final String? videoHlsUrl;
   final String? videoPosterUrl;
   final double? latitude;
   final double? longitude;
   final bool verifiedContent;
+  final double? isaScore;
+  final Map<String, dynamic>? impactDomains;
+  final int geoLevel;
+  final String? impactMethod;
+  final bool promoted;
+  final String? boostedUntil;
+  final double paidMrc;
   final int likes;
   final int comments;
   final int shares;
   final bool likedByMe;
   final bool bookmarkedByMe;
   final List<Comment> commentList;
+  final List<Comment> topComments;
   final String? createdAt;
   final String? editedAt;
   final double? confidenceScore;
@@ -172,6 +365,10 @@ class Post {
   final Map<String, dynamic>? confidenceFactors;
   final double? rankingScore;
   final String? rankingReason;
+  final Map<String, dynamic>? structured;
+  final String moderationStatus;
+  final String deepfakeVerdict;
+  final double deepfakeScore;
 
   Post({
     required this.id,
@@ -184,19 +381,29 @@ class Post {
     this.impactLabel,
     this.type,
     this.contentUrl,
+    this.linkUrl,
     this.media = const [],
+    this.files = const [],
     this.mediaType,
     this.videoHlsUrl,
     this.videoPosterUrl,
     this.latitude,
     this.longitude,
     this.verifiedContent = false,
+    this.isaScore,
+    this.impactDomains,
+    this.geoLevel = 0,
+    this.impactMethod,
+    this.promoted = false,
+    this.boostedUntil,
+    this.paidMrc = 0,
     this.likes = 0,
     this.comments = 0,
     this.shares = 0,
     this.likedByMe = false,
     this.bookmarkedByMe = false,
     this.commentList = const [],
+    this.topComments = const [],
     this.createdAt,
     this.editedAt,
     this.confidenceScore,
@@ -204,6 +411,10 @@ class Post {
     this.confidenceFactors,
     this.rankingScore,
     this.rankingReason,
+    this.structured,
+    this.moderationStatus = 'APPROVED',
+    this.deepfakeVerdict = 'UNSCANNED',
+    this.deepfakeScore = 0,
   });
 
   factory Post.fromJson(Map<String, dynamic> j) => Post(
@@ -218,7 +429,8 @@ class Post {
             : null,
         impactLabel: j['impactLabel'],
         type: j['type'],
-        contentUrl: j['content_url'] ?? j['url'],
+        contentUrl: resolveMediaUrl(j['content_url'] ?? j['url']),
+        linkUrl: j['link_url'] ?? j['linkUrl'],
         media: (j['media'] is List)
             ? (j['media'] as List)
                 .whereType<Map>()
@@ -226,14 +438,31 @@ class Post {
                 .where((m) => m.url.isNotEmpty)
                 .toList()
             : const [],
+        files: (j['files'] is List)
+            ? (j['files'] as List)
+                .whereType<Map>()
+                .map((f) => PostFile.fromJson(Map<String, dynamic>.from(f)))
+                .where((f) => f.url.isNotEmpty)
+                .toList()
+            : const [],
         mediaType: j['media_type'],
-        videoHlsUrl: j['video_hls_url'],
-        videoPosterUrl: j['video_poster_url'],
+        videoHlsUrl: resolveMediaUrl(j['video_hls_url']),
+        videoPosterUrl: resolveMediaUrl(j['video_poster_url']),
         latitude:
             j['latitude'] is num ? (j['latitude'] as num).toDouble() : null,
         longitude:
             j['longitude'] is num ? (j['longitude'] as num).toDouble() : null,
         verifiedContent: j['verified_content'] ?? false,
+        isaScore:
+            j['isa_score'] is num ? (j['isa_score'] as num).toDouble() : null,
+        impactDomains: j['impact_domains'] is Map
+            ? Map<String, dynamic>.from(j['impact_domains'] as Map)
+            : null,
+        geoLevel: j['geo_level'] is num ? (j['geo_level'] as num).toInt() : 0,
+        impactMethod: j['impact_method'],
+        promoted: j['promoted'] == true,
+        boostedUntil: j['boosted_until'],
+        paidMrc: j['paid_mrc'] is num ? (j['paid_mrc'] as num).toDouble() : 0,
         likes: j['likes'] is num ? (j['likes'] as num).toInt() : 0,
         comments: (j['comments'] is List)
             ? (j['comments'] as List).length
@@ -244,6 +473,12 @@ class Post {
         commentList: (j['comments'] is List)
             ? (j['comments'] as List)
                 .map((c) => Comment.fromJson(c as Map<String, dynamic>))
+                .toList()
+            : const [],
+        topComments: (j['top_comments'] is List)
+            ? (j['top_comments'] as List)
+                .whereType<Map>()
+                .map((c) => Comment.fromJson(Map<String, dynamic>.from(c)))
                 .toList()
             : const [],
         createdAt: j['createdAt'] ?? j['created_at'],
@@ -259,9 +494,18 @@ class Post {
             ? (j['ranking_score'] as num).toDouble()
             : null,
         rankingReason: j['ranking_reason'],
+        structured: j['structured'] is Map
+            ? Map<String, dynamic>.from(j['structured'] as Map)
+            : null,
+        moderationStatus: j['moderation_status']?.toString() ?? 'APPROVED',
+        deepfakeVerdict: j['deepfake_verdict']?.toString() ?? 'UNSCANNED',
+        deepfakeScore: j['deepfake_score'] is num
+            ? (j['deepfake_score'] as num).toDouble()
+            : 0,
       );
 
   Post copyWith({
+    Author? author,
     String? text,
     int? likes,
     bool? likedByMe,
@@ -277,10 +521,12 @@ class Post {
     String? rankingReason,
     double? impactValue,
     String? impactLabel,
+    String? deepfakeVerdict,
+    double? deepfakeScore,
   }) =>
       Post(
         id: id,
-        author: author,
+        author: author ?? this.author,
         text: text ?? this.text,
         kind: kind,
         programTag: programTag,
@@ -289,7 +535,9 @@ class Post {
         impactLabel: impactLabel ?? this.impactLabel,
         type: type,
         contentUrl: contentUrl,
+        linkUrl: linkUrl,
         media: media,
+        files: files,
         mediaType: mediaType,
         videoHlsUrl: videoHlsUrl,
         videoPosterUrl: videoPosterUrl,
@@ -309,6 +557,8 @@ class Post {
         confidenceFactors: confidenceFactors ?? this.confidenceFactors,
         rankingScore: rankingScore ?? this.rankingScore,
         rankingReason: rankingReason ?? this.rankingReason,
+        deepfakeVerdict: deepfakeVerdict ?? this.deepfakeVerdict,
+        deepfakeScore: deepfakeScore ?? this.deepfakeScore,
       );
 }
 
@@ -319,21 +569,50 @@ class Author {
   final bool verified;
   final String? role;
   final String? avatarUrl;
+  final bool isFollowing;
   Author(
       {required this.id,
       required this.name,
       this.handle,
       this.verified = false,
       this.role,
-      this.avatarUrl});
+      this.avatarUrl,
+      this.isFollowing = false});
+  Author copyWith({
+    String? name,
+    String? handle,
+    bool? verified,
+    String? role,
+    String? avatarUrl,
+    bool? isFollowing,
+  }) =>
+      Author(
+        id: id,
+        name: name ?? this.name,
+        handle: handle ?? this.handle,
+        verified: verified ?? this.verified,
+        role: role ?? this.role,
+        avatarUrl: avatarUrl ?? this.avatarUrl,
+        isFollowing: isFollowing ?? this.isFollowing,
+      );
+
   factory Author.fromJson(Map<String, dynamic> j) => Author(
         id: j['id'] ?? '',
         name: j['name'] ?? 'Unknown',
         handle: j['handle'],
         verified: j['verified'] ?? false,
         role: j['role'],
-        avatarUrl: j['avatar_url'] ?? j['picture'],
+        avatarUrl: resolveMediaUrl(j['avatar_url'] ?? j['picture']),
+        isFollowing: j['is_following'] == true,
       );
+}
+
+List<Author> authorsFromJson(dynamic value) {
+  if (value is! List) return const [];
+  return value
+      .whereType<Map>()
+      .map((e) => Author.fromJson(Map<String, dynamic>.from(e)))
+      .toList();
 }
 
 class Comment {
@@ -510,16 +789,68 @@ class Wallet {
   final String ownerId;
   final double balance;
   final String currency;
+  final double dailyReward;
+  final bool claimedToday;
+  final String? lastClaimAt;
   Wallet({
     required this.ownerId,
     required this.balance,
     this.currency = 'MRC',
+    this.dailyReward = 10,
+    this.claimedToday = false,
+    this.lastClaimAt,
   });
   factory Wallet.fromJson(Map<String, dynamic> j) => Wallet(
         ownerId: j['owner_id']?.toString() ?? '',
         balance: (j['balance'] is num) ? (j['balance'] as num).toDouble() : 0,
         currency: j['currency']?.toString() ?? 'MRC',
+        dailyReward: (j['daily_reward'] is num)
+            ? (j['daily_reward'] as num).toDouble()
+            : 10,
+        claimedToday: j['claimed_today'] == true,
+        lastClaimAt: j['last_claim_at']?.toString(),
       );
+}
+
+class GpsRecord {
+  final String id;
+  final double latitude;
+  final double longitude;
+  final double? accuracy;
+  final double? altitude;
+  final double? speed;
+  final double? heading;
+  final String? capturedAt;
+  final String? createdAt;
+  GpsRecord({
+    required this.id,
+    required this.latitude,
+    required this.longitude,
+    this.accuracy,
+    this.altitude,
+    this.speed,
+    this.heading,
+    this.capturedAt,
+    this.createdAt,
+  });
+  factory GpsRecord.fromJson(Map<String, dynamic> j) => GpsRecord(
+        id: j['id']?.toString() ?? '',
+        latitude:
+            (j['latitude'] is num) ? (j['latitude'] as num).toDouble() : 0,
+        longitude:
+            (j['longitude'] is num) ? (j['longitude'] as num).toDouble() : 0,
+        accuracy:
+            (j['accuracy'] is num) ? (j['accuracy'] as num).toDouble() : null,
+        altitude:
+            (j['altitude'] is num) ? (j['altitude'] as num).toDouble() : null,
+        speed: (j['speed'] is num) ? (j['speed'] as num).toDouble() : null,
+        heading:
+            (j['heading'] is num) ? (j['heading'] as num).toDouble() : null,
+        capturedAt: j['captured_at']?.toString(),
+        createdAt: j['created_at']?.toString(),
+      );
+  String get mapsUrl =>
+      'https://www.google.com/maps/search/?api=1&query=$latitude,$longitude';
 }
 
 class CoinTx {
@@ -551,65 +882,163 @@ class CoinTx {
 
 class Creative {
   final String? id;
+  final String? campaignId;
   final String title;
   final String? body;
   final String? mediaUrl;
   final String? ctaUrl;
+  final String? ctaLabel;
+  final String mediaType;
+  final int sortOrder;
+
   Creative({
     this.id,
+    this.campaignId,
     required this.title,
     this.body,
     this.mediaUrl,
     this.ctaUrl,
+    this.ctaLabel,
+    this.mediaType = 'image',
+    this.sortOrder = 0,
   });
+
+  bool get isVideo => mediaType == 'video';
+  bool get isText => mediaType == 'text';
+
   factory Creative.fromJson(Map<String, dynamic> j) => Creative(
         id: j['id']?.toString(),
+        campaignId: j['campaign_id']?.toString(),
         title: j['title'] ?? '',
         body: j['body'] ?? j['text'],
-        mediaUrl: j['media_url'] ?? j['mediaUrl'],
+        mediaUrl: resolveMediaUrl(j['media_url'] ?? j['mediaUrl']),
         ctaUrl: j['cta_url'] ?? j['ctaUrl'],
+        ctaLabel: j['cta_label'] ?? j['ctaLabel'],
+        mediaType: (j['media_type'] ?? j['mediaType'] ?? 'image').toString(),
+        sortOrder:
+            (j['sort_order'] is num) ? (j['sort_order'] as num).toInt() : 0,
       );
 }
 
 class Campaign {
   final String id;
+  final String userId;
   final String name;
   final String status;
+  final String objective;
+  final String placement;
   final double budget;
+  final double funded;
+  final double spent;
+  final double remaining;
   final String currency;
   final List<Creative> creatives;
+  final Map<String, dynamic> targeting;
+  final String? startAt;
+  final String? endAt;
+  final String? ownerName;
+  final int impressions;
+  final int clicks;
+  final double ctr;
+  final double ctrPercent;
+  final double cpc;
   final Map<String, dynamic>? stats;
+
   Campaign({
     required this.id,
+    this.userId = '',
     required this.name,
     required this.status,
     required this.budget,
+    this.funded = 0,
+    this.spent = 0,
+    this.remaining = 0,
     this.currency = 'MRC',
+    this.objective = 'awareness',
+    this.placement = 'feed',
     this.creatives = const [],
+    this.targeting = const {},
+    this.startAt,
+    this.endAt,
+    this.ownerName,
+    this.impressions = 0,
+    this.clicks = 0,
+    this.ctr = 0,
+    this.ctrPercent = 0,
+    this.cpc = 0,
     this.stats,
   });
+
+  Creative? get primaryCreative => creatives.isEmpty ? null : creatives.first;
+
+  double get budgetProgress {
+    if (budget <= 0) return 0;
+    return (spent / budget).clamp(0.0, 1.0);
+  }
+
   factory Campaign.fromJson(Map<String, dynamic> j) => Campaign(
         id: j['id']?.toString() ?? '',
+        userId: j['user_id']?.toString() ?? '',
         name: j['name'] ?? 'Campaign',
-        status: j['status']?.toString() ?? 'DRAFT',
+        status: (j['status']?.toString() ?? 'DRAFT').toUpperCase(),
+        objective: j['objective']?.toString() ?? 'awareness',
+        placement: j['placement']?.toString() ?? 'feed',
         budget: (j['budget_coins'] is num)
             ? (j['budget_coins'] as num).toDouble()
             : ((j['budget'] is num) ? (j['budget'] as num).toDouble() : 0),
+        funded: (j['funded_coins'] is num)
+            ? (j['funded_coins'] as num).toDouble()
+            : 0,
+        spent: (j['spent_coins'] is num)
+            ? (j['spent_coins'] as num).toDouble()
+            : 0,
+        remaining: (j['remaining_coins'] is num)
+            ? (j['remaining_coins'] as num).toDouble()
+            : 0,
         currency: j['currency']?.toString() ?? 'MRC',
         creatives: (j['creatives'] is List)
             ? (j['creatives'] as List)
                 .map((c) => Creative.fromJson(c as Map<String, dynamic>))
                 .toList()
             : const [],
-        stats: j['stats'] is Map ? j['stats'] as Map<String, dynamic> : null,
+        targeting: j['targeting'] is Map
+            ? Map<String, dynamic>.from(j['targeting'] as Map)
+            : const {},
+        startAt: j['start_at']?.toString(),
+        endAt: j['end_at']?.toString(),
+        ownerName: j['owner_name']?.toString(),
+        impressions:
+            j['impressions'] is num ? (j['impressions'] as num).toInt() : 0,
+        clicks: j['clicks'] is num ? (j['clicks'] as num).toInt() : 0,
+        ctr: j['ctr'] is num ? (j['ctr'] as num).toDouble() : 0,
+        ctrPercent:
+            j['ctr_percent'] is num ? (j['ctr_percent'] as num).toDouble() : 0,
+        cpc: j['cpc'] is num ? (j['cpc'] as num).toDouble() : 0,
+        stats: j['stats'] is Map ? Map<String, dynamic>.from(j['stats']) : null,
       );
+
   Campaign copyWith({String? status, List<Creative>? creatives}) => Campaign(
         id: id,
+        userId: userId,
         name: name,
         status: status ?? this.status,
+        objective: objective,
+        placement: placement,
         budget: budget,
+        funded: funded,
+        spent: spent,
+        remaining: remaining,
         currency: currency,
         creatives: creatives ?? this.creatives,
+        targeting: targeting,
+        startAt: startAt,
+        endAt: endAt,
+        ownerName: ownerName,
+        impressions: impressions,
+        clicks: clicks,
+        ctr: ctr,
+        ctrPercent: ctrPercent,
+        cpc: cpc,
         stats: stats,
       );
 }
@@ -628,6 +1057,11 @@ class Opportunity {
   final bool isRemote;
   final int applicationsCount;
   final bool applied;
+  final Author? author;
+  final String verificationStatus;
+  final String? rejectionReason;
+  final double creationFeeMrc;
+  final String? coverUrl;
 
   Opportunity({
     required this.id,
@@ -641,8 +1075,13 @@ class Opportunity {
     this.type,
     this.deadline,
     this.isRemote = false,
+    this.author,
     this.applicationsCount = 0,
     this.applied = false,
+    this.verificationStatus = 'APPROVED',
+    this.rejectionReason,
+    this.creationFeeMrc = 0,
+    this.coverUrl,
   });
 
   factory Opportunity.fromJson(Map<String, dynamic> j) => Opportunity(
@@ -664,6 +1103,13 @@ class Opportunity {
             ? (j['applications_count'] as num).toInt()
             : 0,
         applied: j['applied'] == true,
+        author: j['author'] is Map ? Author.fromJson(j['author']) : null,
+        verificationStatus: j['verification_status'] ?? 'APPROVED',
+        rejectionReason: j['rejection_reason'],
+        creationFeeMrc: (j['creation_fee_mrc'] is num)
+            ? (j['creation_fee_mrc'] as num).toDouble()
+            : 0,
+        coverUrl: j['cover_url'],
       );
 }
 
@@ -677,9 +1123,21 @@ class Program {
   final String? category;
   final String? organization;
   final double budget;
+  final String? currency;
+  final String? country;
+  final String? governorate;
+  final String? startDate;
+  final String? endDate;
+  final int targetBeneficiaries;
   final int projectsCount;
   final int tasksCount;
   final bool enrolledByMe;
+  final Author? author;
+  final String verificationStatus;
+  final String? rejectionReason;
+  final double creationFeeMrc;
+  final String? coverUrl;
+  final List<Author> membersPreview;
 
   Program({
     required this.id,
@@ -690,10 +1148,22 @@ class Program {
     this.members,
     this.category,
     this.organization,
+    this.author,
     this.budget = 0,
+    this.currency,
+    this.country,
+    this.governorate,
+    this.startDate,
+    this.endDate,
+    this.targetBeneficiaries = 0,
     this.projectsCount = 0,
     this.tasksCount = 0,
     this.enrolledByMe = false,
+    this.verificationStatus = 'APPROVED',
+    this.rejectionReason,
+    this.creationFeeMrc = 0,
+    this.coverUrl,
+    this.membersPreview = const [],
   });
 
   factory Program.fromJson(Map<String, dynamic> j) => Program(
@@ -708,12 +1178,28 @@ class Program {
         category: j['category']?.toString(),
         organization: j['organization']?.toString(),
         budget: (j['budget'] is num) ? (j['budget'] as num).toDouble() : 0,
+        currency: j['currency']?.toString(),
+        country: j['country']?.toString(),
+        governorate: j['governorate']?.toString(),
+        startDate: j['start_date']?.toString(),
+        endDate: j['end_date']?.toString(),
+        targetBeneficiaries: j['target_beneficiaries'] is num
+            ? (j['target_beneficiaries'] as num).toInt()
+            : 0,
         projectsCount: j['projects_count'] is num
             ? (j['projects_count'] as num).toInt()
             : 0,
         tasksCount:
             j['tasks_count'] is num ? (j['tasks_count'] as num).toInt() : 0,
         enrolledByMe: j['enrolled_by_me'] == true,
+        author: j['author'] is Map ? Author.fromJson(j['author']) : null,
+        verificationStatus: j['verification_status'] ?? 'APPROVED',
+        rejectionReason: j['rejection_reason'],
+        creationFeeMrc: (j['creation_fee_mrc'] is num)
+            ? (j['creation_fee_mrc'] as num).toDouble()
+            : 0,
+        coverUrl: j['cover_url'],
+        membersPreview: authorsFromJson(j['members_preview']),
       );
 }
 
@@ -724,6 +1210,9 @@ class AppNotification {
   final String? body;
   final bool read;
   final String? createdAt;
+  final String? link;
+  final String? entityType;
+  final String? entityId;
   AppNotification({
     required this.id,
     this.type,
@@ -731,6 +1220,9 @@ class AppNotification {
     this.body,
     this.read = false,
     this.createdAt,
+    this.link,
+    this.entityType,
+    this.entityId,
   });
   factory AppNotification.fromJson(Map<String, dynamic> j) => AppNotification(
         id: j['id']?.toString() ?? '',
@@ -739,6 +1231,43 @@ class AppNotification {
         body: j['body'] ?? j['data']?['body'],
         read: j['read'] ?? j['is_read'] ?? false,
         createdAt: j['created_at'] ?? j['createdAt'],
+        link: j['link']?.toString(),
+        entityType: j['entity_type']?.toString(),
+        entityId: j['entity_id']?.toString(),
+      );
+}
+
+class Announcement {
+  final String id;
+  final String title;
+  final String body;
+  final String? imageUrl;
+  final String? linkUrl;
+  final String? ctaLabel;
+  final String? activeUntil;
+  final String? createdAt;
+  final bool dismissed;
+  Announcement({
+    required this.id,
+    required this.title,
+    required this.body,
+    this.imageUrl,
+    this.linkUrl,
+    this.ctaLabel,
+    this.activeUntil,
+    this.createdAt,
+    this.dismissed = false,
+  });
+  factory Announcement.fromJson(Map<String, dynamic> j) => Announcement(
+        id: j['id']?.toString() ?? '',
+        title: j['title']?.toString() ?? 'MASAREEN',
+        body: j['body']?.toString() ?? '',
+        imageUrl: resolveMediaUrl(j['image_url']),
+        linkUrl: j['link_url']?.toString(),
+        ctaLabel: j['cta_label']?.toString(),
+        activeUntil: j['active_until']?.toString(),
+        createdAt: j['created_at']?.toString(),
+        dismissed: j['dismissed'] == true,
       );
 }
 
@@ -747,6 +1276,7 @@ class Course {
   final String title;
   final String? description;
   final String? provider;
+  final Author? author;
   final String level;
   final int? sdg;
   final int lessons;
@@ -755,11 +1285,18 @@ class Course {
   final String status;
   final int enrolledCount;
   final bool enrolledByMe;
+  final String verificationStatus;
+  final String? rejectionReason;
+  final double creationFeeMrc;
+  final bool isFree;
+  final double priceMrc;
+  final List<Author> membersPreview;
   Course({
     required this.id,
     required this.title,
     this.description,
     this.provider,
+    this.author,
     this.level = 'Beginner',
     this.sdg,
     this.lessons = 0,
@@ -768,12 +1305,19 @@ class Course {
     this.status = 'PUBLISHED',
     this.enrolledCount = 0,
     this.enrolledByMe = false,
+    this.verificationStatus = 'APPROVED',
+    this.rejectionReason,
+    this.creationFeeMrc = 0,
+    this.isFree = true,
+    this.priceMrc = 0,
+    this.membersPreview = const [],
   });
   factory Course.fromJson(Map<String, dynamic> j) => Course(
         id: j['id'] ?? '',
         title: j['title'] ?? 'Course',
         description: j['description'],
         provider: j['provider'],
+        author: j['author'] is Map ? Author.fromJson(j['author']) : null,
         level: j['level'] ?? 'Beginner',
         sdg: j['sdg'] is num ? (j['sdg'] as num).toInt() : null,
         lessons: j['lessons'] is num ? (j['lessons'] as num).toInt() : 0,
@@ -785,6 +1329,93 @@ class Course {
             ? (j['enrolled_count'] as num).toInt()
             : 0,
         enrolledByMe: j['enrolled_by_me'] == true,
+        verificationStatus: j['verification_status'] ?? 'APPROVED',
+        rejectionReason: j['rejection_reason'],
+        creationFeeMrc: (j['creation_fee_mrc'] is num)
+            ? (j['creation_fee_mrc'] as num).toDouble()
+            : 0,
+        isFree: j['is_free'] != false,
+        priceMrc:
+            (j['price_mrc'] is num) ? (j['price_mrc'] as num).toDouble() : 0,
+        membersPreview: authorsFromJson(j['members_preview']),
+      );
+}
+
+class LessonLink {
+  final String url;
+  final String label;
+  LessonLink({required this.url, required this.label});
+  factory LessonLink.fromJson(Map<String, dynamic> j) => LessonLink(
+        url: resolveMediaUrl(j['url']) ?? '',
+        label: (j['label'] ?? j['url'] ?? '').toString(),
+      );
+}
+
+List<PostMedia> postMediaFromJson(dynamic value) {
+  if (value is! List) return const [];
+  return value
+      .whereType<Map>()
+      .map((e) => PostMedia.fromJson(Map<String, dynamic>.from(e)))
+      .toList();
+}
+
+List<PostFile> postFilesFromJson(dynamic value) {
+  if (value is! List) return const [];
+  return value
+      .whereType<Map>()
+      .map((e) => PostFile.fromJson(Map<String, dynamic>.from(e)))
+      .toList();
+}
+
+class CourseLesson {
+  final String id;
+  final String courseId;
+  final String title;
+  final String? description;
+  final String? content;
+  final String? videoUrl;
+  final int durationMin;
+  final int position;
+  final bool isPreview;
+  final bool locked;
+  final List<PostMedia> media;
+  final List<PostFile> files;
+  final List<LessonLink> links;
+  CourseLesson({
+    required this.id,
+    required this.courseId,
+    required this.title,
+    this.description,
+    this.content,
+    this.videoUrl,
+    this.durationMin = 0,
+    this.position = 0,
+    this.isPreview = false,
+    this.locked = false,
+    this.media = const [],
+    this.files = const [],
+    this.links = const [],
+  });
+  factory CourseLesson.fromJson(Map<String, dynamic> j) => CourseLesson(
+        id: j['id']?.toString() ?? '',
+        courseId: j['course_id']?.toString() ?? '',
+        title: j['title'] ?? 'Lesson',
+        description: j['description'],
+        content: j['content'],
+        videoUrl: j['video_url'],
+        durationMin:
+            j['duration_min'] is num ? (j['duration_min'] as num).toInt() : 0,
+        position: j['position'] is num ? (j['position'] as num).toInt() : 0,
+        isPreview: j['is_preview'] == true,
+        locked: j['locked'] == true,
+        media: postMediaFromJson(j['media']),
+        files: postFilesFromJson(j['files']),
+        links: (j['links'] is List)
+            ? (j['links'] as List)
+                .whereType<Map>()
+                .map((e) => LessonLink.fromJson(Map<String, dynamic>.from(e)))
+                .toList()
+            : const [],
       );
 }
 
@@ -799,10 +1430,26 @@ class Event {
   final String? linkUrl;
   final int? sdg;
   final int? capacity;
+  final double fundingGoal;
+  final double fundingRaised;
+  final String eventType;
+  final String? programId;
+  final String? sourceUrl;
+  final bool activityVerified;
+  final double ratingAvg;
+  final int ratingCount;
+  final int participantsCount;
+  final int boothsCount;
   final int attendeesCount;
   final bool attending;
   final String? authorName;
+  final Author? author;
   final String? createdAt;
+  final String verificationStatus;
+  final String? rejectionReason;
+  final double creationFeeMrc;
+  final String? coverUrl;
+  final List<Author> membersPreview;
   Event({
     required this.id,
     required this.title,
@@ -814,10 +1461,26 @@ class Event {
     this.linkUrl,
     this.sdg,
     this.capacity,
+    this.fundingGoal = 0,
+    this.fundingRaised = 0,
+    this.eventType = 'EVENT',
+    this.programId,
+    this.sourceUrl,
+    this.activityVerified = false,
+    this.ratingAvg = 0,
+    this.ratingCount = 0,
+    this.participantsCount = 0,
+    this.boothsCount = 0,
     this.attendeesCount = 0,
     this.attending = false,
     this.authorName,
+    this.author,
     this.createdAt,
+    this.verificationStatus = 'APPROVED',
+    this.rejectionReason,
+    this.creationFeeMrc = 0,
+    this.coverUrl,
+    this.membersPreview = const [],
   });
   factory Event.fromJson(Map<String, dynamic> j) => Event(
         id: j['id']?.toString() ?? '',
@@ -830,12 +1493,39 @@ class Event {
         linkUrl: j['link_url'],
         sdg: j['sdg'] is num ? (j['sdg'] as num).toInt() : null,
         capacity: j['capacity'] is num ? (j['capacity'] as num).toInt() : null,
+        fundingGoal: j['funding_goal'] is num
+            ? (j['funding_goal'] as num).toDouble()
+            : 0,
+        fundingRaised: j['funding_raised'] is num
+            ? (j['funding_raised'] as num).toDouble()
+            : 0,
+        eventType: j['event_type'] ?? 'EVENT',
+        programId: j['program_id']?.toString(),
+        sourceUrl: j['source_url'],
+        activityVerified: j['activity_verified'] == true,
+        ratingAvg:
+            j['rating_avg'] is num ? (j['rating_avg'] as num).toDouble() : 0,
+        ratingCount:
+            j['rating_count'] is num ? (j['rating_count'] as num).toInt() : 0,
+        participantsCount: j['participants_count'] is num
+            ? (j['participants_count'] as num).toInt()
+            : 0,
+        boothsCount:
+            j['booths_count'] is num ? (j['booths_count'] as num).toInt() : 0,
         attendeesCount: j['attendees_count'] is num
             ? (j['attendees_count'] as num).toInt()
             : 0,
         attending: j['attending'] == true,
         authorName: j['author']?['name'],
+        author: j['author'] is Map ? Author.fromJson(j['author']) : null,
         createdAt: j['created_at'],
+        verificationStatus: j['verification_status'] ?? 'APPROVED',
+        rejectionReason: j['rejection_reason'],
+        creationFeeMrc: (j['creation_fee_mrc'] is num)
+            ? (j['creation_fee_mrc'] as num).toDouble()
+            : 0,
+        coverUrl: j['cover_url'],
+        membersPreview: authorsFromJson(j['members_preview']),
       );
 }
 
@@ -849,10 +1539,20 @@ class Project {
   final double goal;
   final double raised;
   final int members;
+  final String projectType;
+  final String? institutionId;
+  final String? academicYear;
+  final String? studentNames;
+  final String? supervisor;
   final String status;
   final String? ownerName;
   final String? programId;
   final bool joined;
+  final Author? author;
+  final String verificationStatus;
+  final String? rejectionReason;
+  final double creationFeeMrc;
+  final List<Author> membersPreview;
   Project({
     required this.id,
     required this.title,
@@ -863,10 +1563,20 @@ class Project {
     this.goal = 0,
     this.raised = 0,
     this.members = 0,
+    this.projectType = 'COMMUNITY',
+    this.institutionId,
+    this.academicYear,
+    this.studentNames,
+    this.supervisor,
     this.status = 'ACTIVE',
     this.ownerName,
     this.programId,
     this.joined = false,
+    this.author,
+    this.verificationStatus = 'APPROVED',
+    this.rejectionReason,
+    this.creationFeeMrc = 0,
+    this.membersPreview = const [],
   });
   factory Project.fromJson(Map<String, dynamic> j) => Project(
         id: j['id']?.toString() ?? '',
@@ -878,22 +1588,40 @@ class Project {
         goal: (j['goal'] is num) ? (j['goal'] as num).toDouble() : 0,
         raised: (j['raised'] is num) ? (j['raised'] as num).toDouble() : 0,
         members: j['members'] is num ? (j['members'] as num).toInt() : 0,
+        projectType: j['project_type'] ?? 'COMMUNITY',
+        institutionId: j['institution_id']?.toString(),
+        academicYear: j['academic_year'],
+        studentNames: j['student_names'],
+        supervisor: j['supervisor'],
         status: j['status'] ?? 'ACTIVE',
         ownerName: j['owner_name'],
         programId: j['program_id']?.toString(),
         joined: j['joined'] == true,
+        author: j['author'] is Map ? Author.fromJson(j['author']) : null,
+        verificationStatus: j['verification_status'] ?? 'APPROVED',
+        rejectionReason: j['rejection_reason'],
+        creationFeeMrc: (j['creation_fee_mrc'] is num)
+            ? (j['creation_fee_mrc'] as num).toDouble()
+            : 0,
+        membersPreview: authorsFromJson(j['members_preview']),
       );
 }
 
 class Submission {
   final String id;
   final String? title;
+  final String? claim;
+  final double confidence;
+  final String? evidenceId;
   final String? status;
   final String? pipelineId;
   final String? createdAt;
   Submission({
     required this.id,
     this.title,
+    this.claim,
+    this.confidence = 0,
+    this.evidenceId,
     this.status,
     this.pipelineId,
     this.createdAt,
@@ -901,6 +1629,10 @@ class Submission {
   factory Submission.fromJson(Map<String, dynamic> j) => Submission(
         id: j['id']?.toString() ?? '',
         title: j['title'] ?? j['name'],
+        claim: j['claim']?.toString(),
+        confidence:
+            j['confidence'] is num ? (j['confidence'] as num).toDouble() : 0,
+        evidenceId: j['evidence_id']?.toString(),
         status: j['status'],
         pipelineId: j['pipeline_id']?.toString() ?? j['pipelineId']?.toString(),
         createdAt: j['created_at'] ?? j['createdAt'],
@@ -964,6 +1696,8 @@ class Personnel {
   final Map<String, dynamic> pms;
   final List<dynamic> badges;
   final List<dynamic> coverageRegions;
+  final String visibility;
+  final bool isFollowing;
 
   Personnel({
     required this.userId,
@@ -1021,6 +1755,8 @@ class Personnel {
     this.pms = const {},
     this.badges = const [],
     this.coverageRegions = const [],
+    this.visibility = 'PUBLIC',
+    this.isFollowing = false,
   });
 
   factory Personnel.fromJson(Map<String, dynamic> j) => Personnel(
@@ -1136,6 +1872,8 @@ class Personnel {
         coverageRegions: j['coverage_regions'] is List
             ? List<dynamic>.from(j['coverage_regions'])
             : const [],
+        visibility: (j['profile_visibility'] ?? 'PUBLIC').toString(),
+        isFollowing: j['is_following'] == true,
       );
 }
 
@@ -1198,7 +1936,7 @@ class PersonnelReport {
         impactScore: (j['impact_score'] is num)
             ? (j['impact_score'] as num).toDouble()
             : 0,
-        coverImage: j['cover_image'],
+        coverImage: resolveMediaUrl(j['cover_image']),
         comments: j['comments'] is num ? (j['comments'] as num).toInt() : 0,
         likes: j['likes'] is num ? (j['likes'] as num).toInt() : 0,
       );

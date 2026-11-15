@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:masaren/api_client.dart';
+import 'package:masaren/l10n.dart';
 import 'package:masaren/theme.dart';
 import 'package:masaren/widgets.dart';
 import 'package:masaren/models.dart';
@@ -36,13 +37,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       });
       if (mounted) {
         Navigator.pop(context, updated);
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Profile saved')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(MasarenLocalizations.of(context, 'profile.saved'))));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Save failed: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(MasarenLocalizations.of(context, 'profile.saveFailed')
+                .replaceAll('{error}', '$e'))));
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -53,7 +55,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit profile'),
+        title: Text(MasarenLocalizations.of(context, 'profile.edit')),
         actions: [
           TextButton(
             onPressed: _saving ? null : _save,
@@ -62,7 +64,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     width: 18,
                     height: 18,
                     child: CircularProgressIndicator(strokeWidth: 2))
-                : const Text('Save'),
+                : Text(MasarenLocalizations.of(context, 'action.save')),
           ),
         ],
       ),
@@ -76,17 +78,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 size: 88),
           ),
           const SizedBox(height: 8),
-          const Center(
-            child: Text('Use the camera icon on your profile to change avatar',
-                style: TextStyle(color: AppColors.muted, fontSize: 12)),
+          Center(
+            child: Text(MasarenLocalizations.of(context, 'profile.avatarHint'),
+                style: const TextStyle(color: AppColors.muted, fontSize: 12)),
           ),
           const SizedBox(height: 18),
           TextField(
             controller: _bio,
             maxLines: 4,
             style: const TextStyle(color: Colors.white),
-            decoration: const InputDecoration(
-              labelText: 'Bio',
+            decoration: InputDecoration(
+              labelText: MasarenLocalizations.of(context, 'profile.bio'),
               alignLabelWithHint: true,
             ),
           ),
@@ -94,16 +96,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           TextField(
             controller: _country,
             style: const TextStyle(color: Colors.white),
-            decoration: const InputDecoration(labelText: 'Country'),
+            decoration: InputDecoration(
+                labelText: MasarenLocalizations.of(context, 'profile.country')),
           ),
           const SizedBox(height: 14),
           TextField(
             controller: _city,
             style: const TextStyle(color: Colors.white),
-            decoration: const InputDecoration(labelText: 'City'),
+            decoration: InputDecoration(
+                labelText: MasarenLocalizations.of(context, 'profile.city')),
           ),
           const SizedBox(height: 24),
-          gradientButton(label: 'Save changes', onPressed: _save),
+          gradientButton(
+              label: MasarenLocalizations.of(context, 'profile.saveChanges'),
+              onPressed: _save),
         ],
       ),
     );
