@@ -86,8 +86,8 @@
   </div>
   <div>
     <div>
-      <span class="pill">Version 0.4.11+16</span>
-      <span class="pill">Migrations 001-031</span>
+      <span class="pill">Version 0.4.13+18</span>
+      <span class="pill">Migrations 001-040</span>
       <span class="pill">68 Worker tests</span>
       <span class="pill">9 Flutter tests</span>
     </div>
@@ -202,7 +202,7 @@
 <div class="grid2">
   <div class="card"><b>Mobile client</b><br>Flutter 3.44+/Dart 3.12, Arabic-first RTL/EN, floating shell navigation, deep links, FCM, offline-tolerant media, video/HLS playback, secure token storage.</div>
   <div class="card"><b>Edge API</b><br>Single Cloudflare Worker: auth, social graph, impact engine, events, booths, podcasts, VOD, sports, commerce, admin, AI hooks, live proxy and OTA manifest.</div>
-  <div class="card"><b>Data</b><br>Cloudflare D1 (SQLite), 001-031 forward-only migrations, R2 public media bucket, D1 indexes for feed, graph, events, leads and analytics.</div>
+  <div class="card"><b>Data</b><br>Cloudflare D1 (SQLite), 001-040 forward-only migrations, R2 public media bucket, D1 indexes for feed, graph, events, leads and analytics.</div>
   <div class="card"><b>Media</b><br>R2 for images/VOD, mediaMTX for live HLS, Cloudflare Tunnel from this device, Worker edge cache at /live/*, chewie/video_player clients.</div>
   <div class="card"><b>Notifications</b><br>In-app notifications + FCM push; category preferences; admin alerts bypass member settings; severity and amount thresholds.</div>
   <div class="card"><b>Deployment</b><br>Wrangler for Worker/D1, GitHub Actions workflow, Codemagic for iOS, in-app APK OTA for Android, version manifest at /api/app/version.</div>
@@ -464,7 +464,10 @@ NSFW verdict: BLOCKED at score ?%? 0.80 ?? REVIEW at score ?%? 0.50 ?? SAFE
 </ul>
 <h3>6.2e Data entry is a screen, not a URL box</h3>
 <p>Programme, project, opportunity, podcast show, episode, VOD, booth, event and course creation now use full screens with descriptive fields and device uploads. Users choose a cover photo, audio file or video from their phone; the app uploads it to R2 and stores the returned URL. No image URL is requested from a member. Fields include the context a reviewer needs: lead organisation, category, SDG, dates, location, beneficiaries, budget, skills, guests, duration and success criteria.</p>
-<h3>6.3 Verification states</h3>
+<h3>6.2f Trusted operations: moderators, notifications, documents and help</h3>
+<p>Entities can assign <b>scoped moderators</b> with explicit permissions: remove comments, remove posts, verify contributions, remove the event or manage booths. A moderator acts only inside the assigned entity and never inherits platform-admin rights. Owners and moderators can block accounts, remove comments and posts, and remove an event from public discovery.</p>
+<p>Notifications are high-signal by design. Social likes, follows and low-value activity stay in the in-app inbox; messages, verification decisions, moderation, tasks, event decisions, leads, funding and platform announcements can push. Pushes are deduplicated, capped to four per ten minutes, and suppressed when the member chooses a digest or quiet hours.</p>
+<p>PDF and DOCX attachments open inside the app: PDFs render natively, Word files are parsed as XML text with control characters removed and a size limit. The Help Center explains the loop, verification, impact model, moderators, documents, safety and sharing with diagrams, while four HELP posts introduce the platform directly in the feed.</p><h3>6.3 Verification states</h3>
 <p>Event contributions, submissions and evidence move through: <span class="status pending">SUBMITTED</span> → <span class="status pending">UNDER_REVIEW</span> → <span class="status verified">VERIFIED</span> or <span class="status reserved">REJECTED</span>. Every state change records actor and timestamp. Hosts cannot verify their own contribution. Admin override is audited.</p>
 <h3>6.4 Event-level measures</h3>
 <table>
@@ -659,7 +662,7 @@ trust_score = clamp(<br>
 <p>Local-hash embeddings (128 dimensions), semantic search, AI transcription/ingest hooks, moderation status, duplicate/abuse reports, confidence scoring and admin review. The V2.0 roadmap (vision/fraud/graph agents) is explicitly future; the pilot uses human-in-the-loop host verification.</p>
 
 <h2 id="data">16. Data model and API surface</h2>
-<h3>16.1 Core tables (001-031)</h3>
+<h3>16.1 Core tables (001-040)</h3>
 <div class="two-col">
   <ul>
     <li>users, user_profiles, user_settings, follows, blocks, reports</li>
@@ -709,7 +712,7 @@ trust_score = clamp(<br>
 
 <h2 id="deploy" class="page-break">18. Release, OTA, Android and iOS</h2>
 <h3>18.1 Source version</h3>
-<p>Current source: <b>0.4.11+16</b>. Backend migrations: 001-031. Worker tests: <b>68 passing</b>. Flutter analyzer: clean. Flutter tests: <b>9 passing</b>.</p>
+<p>Current source: <b>0.4.13+18</b>. Backend migrations: 001-040. Worker tests: <b>68 passing</b>. Flutter analyzer: clean. Flutter tests: <b>9 passing</b>.</p>
 <h3>18.2 Android</h3>
 <ol>
   <li>Apply D1 migrations (024, 025, 027, 028, 029, 030) with <code>npm run db:migrate:all</code> or Wrangler.</li>
@@ -784,10 +787,10 @@ trust_score = clamp(<br>
   <li>Seed SQL executed successfully against a fresh SQLite schema: 21 users, 8 events, 31+ participants, 10 booths, 4 leads, 2 podcast shows, 5 episodes, 4 VOD videos, 72 entity links.</li>
   <li>TIYE media URLs and demo audio/video URLs checked with HTTP HEAD (200).</li>
   <li>Live HLS verified locally, through <code>media.masareen.com</code>, and through <code>masareen.com/live/tv/index.m3u8</code>.</li>
-  <li>Remote D1 migrations 030 and 031 applied; Worker deployed as version <code>b08d2705-292b-4c46-9d74-a2c4328ee5de</code>. Android <b>0.4.11+16</b> and unsigned iOS <b>0.4.11+16</b> are published in OTA. The iOS IPA was built on CodeMagic build <code>6af99514ac95ca6634c9fd9f</code> from commit <code>96bca58</code> and is available at <code>https://masareen.com/downloads/masareen.ipa</code> for sideloading.</li>
+  <li>Remote D1 migrations 030 and 031 applied; Worker deployed as version <code>8ac276fa-71c4-4822-b287-b2806fadbe28</code>. Android <b>0.4.13+18</b> and unsigned iOS <b>0.4.13+18</b> are published in OTA. The iOS IPA was built on CodeMagic build <code>6afa090b3bf5092557048012</code> from commit <code>163b02e</code> and is available at <code>https://masareen.com/downloads/masareen.ipa</code> for sideloading.</li>
 </ul>
 <div class="footer-note">
-  MASAREEN Complete Platform Guide · Version 0.4.11+16 · 15 November 2026 · masareen.com<br>
+  MASAREEN Complete Platform Guide · Version 0.4.13+18 · 15 November 2026 · masareen.com<br>
   Confidential pilot documentation prepared for TIYE Solutions and Ahram Canadian University.
 </div>
 </body>

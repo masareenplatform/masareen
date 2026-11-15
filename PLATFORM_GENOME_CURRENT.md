@@ -11,9 +11,9 @@ Working Dir: C:\Users\sherifrashwan\Downloads\masareen-cloudflare-pack
 ## Infrastructure
 - Domain: masareen.com (CF zone 439b8b71f566af540131584d046f2e0d)
 - Routes: masareen.com/api/*, www.masareen.com/api/*
-- Worker: masareen deployed, version e906f290-9544-4a51-9464-29d39e8006e6
+- Worker: masareen deployed, version 8ac276fa-71c4-4822-b287-b2806fadbe28
 - Cron: daily recognition sweep at 06:00 UTC
-- D1: masareen a14a1b7c-a93e-4030-b58a-eaa908e61e37, migrations 001-031 in source
+- D1: masareen a14a1b7c-a93e-4030-b58a-eaa908e61e37, migrations 001-040 in source
   (024�029 must be applied to remote before deploying this Worker)
 - Static site: R2 masareen-landing (index, admin, mobile-auth, privacy, terms)
 - APK: https://masareen.com/downloads/masareen.apk (99,350,022 bytes)
@@ -28,8 +28,8 @@ Working Dir: C:\Users\sherifrashwan\Downloads\masareen-cloudflare-pack
 - Source of truth: this package (`apps/mobile`)
 - API base: https://masareen.com (override with --dart-define=API_BASE_URL=...)
 - Flutter 3.44.5, Dart 3.12.2, Android SDK C:\Android\sdk, Java 17
-- Version 0.4.11+16 (source); published OTA APK 0.4.11+16, SHA-256
-  A848646781192DC158620F09D252CA60B0D6AE0C738C5F880C5E5399C110B5D5
+- Version 0.4.13+18 (source); published OTA APK 0.4.13+18, SHA-256
+  8F7E809BF183DE7257C6094FA9E5DDE38485913EDDA6774DFAC1E178D609746C
 - Persistent floating bottom bar, per-tab nested navigators, sliding drawer
 - Video: autoplay when 60% visible, one active video, global persisted mute
 - Feed: infinite scroll fixed, role badges, calculators, intro cards
@@ -62,7 +62,7 @@ Working Dir: C:\Users\sherifrashwan\Downloads\masareen-cloudflare-pack
   reopened); manifest reset to build 9. /api/app/version reports 0.4.4/9
   and size 99,350,022. Feedback, paid lessons, event announcements and
   voice uploads covered by 57 Worker tests.
-- 2026-11-15: Source at 0.4.11+16. Migrations 001-031 applied remotely (001-023 baselined; 024,025,027,028,029,030,031 applied). Worker deployed version b08d2705-292b-4c46-9d74-a2c4328ee5de with discovery feed, real TIYE galleries, structured evidence targets and free deepfake/NSFW scanning. Android 0.4.11+16 and unsigned iOS 0.4.11+16 published in OTA (CodeMagic build 6af98fb9e5217ff48f0f95e2, IPA at /downloads/masareen.ipa). Worker tests 68, Flutter analyze clean, Flutter tests 9.
+- 2026-11-15: Source at 0.4.13+18. Migrations 001-040 applied remotely (001-023 baselined; 024,025,027,028,029,030,031 applied). Worker deployed version 8ac276fa-71c4-4822-b287-b2806fadbe28 with entity impact market, verified newsroom, camera provenance, discovery feed, real TIYE galleries, structured evidence targets and deepfake/NSFW scanning. Android 0.4.13+18 and unsigned iOS 0.4.13+18 published in OTA (CodeMagic build 6afa090b3bf5092557048012, IPA at /downloads/masareen.ipa). Worker tests 68, Flutter analyze clean, Flutter tests 9.
 - 2026-11-15: Live HLS verified at masareen.com/live/tv/index.m3u8. New 0.4.9+14 APK and OTA publish still pending.
 
 ## Pricing and verification
