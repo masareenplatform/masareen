@@ -7,6 +7,7 @@ import 'package:masaren/models.dart';
 import 'package:masaren/screens/event_hub_screen.dart';
 import 'package:masaren/screens/interview_screen.dart';
 import 'package:masaren/screens/program_detail_screen.dart';
+import 'package:masaren/screens/post_detail_screen.dart';
 import 'package:masaren/widgets/post_media_gallery.dart';
 import 'package:masaren/widgets/smart_image.dart';
 import 'package:masaren/profile_ui.dart';
@@ -490,6 +491,13 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen>
   }
 
   // ── Stats Row ──────────────────────────────────────────────────────────
+  Future<void> _openPost(Post post) async {
+    await Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => PostDetailScreen(
+            post: post,
+            currentUser: widget.currentUser,
+            onChanged: (_) => _load())));
+  }
   Widget _buildStatsRow(ColorScheme cs, bool dark) {
     final items = [
       _OrgStatData(MasarenLocalizations.of(context, 'nav.events'),
@@ -533,6 +541,40 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen>
   }
 
   // ── Action Buttons ─────────────────────────────────────────────────────
+  Future<void> _toggleBlock() async {
+    final name = _name;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Block this account?'),
+        content: Text(
+            'You will no longer see $name in your feed, search or messages. You can unblock from Settings.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel')),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Block')),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      final res = await AuthApi.toggleBlock(widget.orgId);
+      final blocked = res['blocked'] == true;
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(blocked ? '$name is blocked.' : '$name is unblocked.')));
+        if (blocked) Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.toString())));
+      }
+    }
+  }
   Widget _buildActionButtons(ColorScheme cs) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
@@ -578,6 +620,22 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen>
               icon: const Icon(Icons.handshake_outlined),
             ),
           ),
+          if (!_isSelf) ...[
+            const SizedBox(width: 14),
+            Tooltip(
+              message: 'Block or unblock',
+              child: IconButton.filledTonal(
+                onPressed: _toggleBlock,
+                iconSize: 22,
+                style: IconButton.styleFrom(
+                  backgroundColor: cs.errorContainer.withValues(alpha: .5),
+                  foregroundColor: cs.error,
+                  minimumSize: const Size(52, 52),
+                ),
+                icon: const Icon(Icons.block),
+              ),
+            ),
+          ],
           if (_isDonatable) ...[
             const SizedBox(width: 14),
             Tooltip(
@@ -754,6 +812,13 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen>
                     Text('${post.comments}',
                         style: TextStyle(
                             fontSize: 12, color: cs.onSurfaceVariant)),
+                    const Spacer(),
+                    TextButton.icon(
+                      onPressed: () => _openPost(post),
+                      icon: const Icon(Icons.forum_outlined, size: 15),
+                      label: const Text('Discuss',
+                          style: TextStyle(fontSize: 11)),
+                    ),
                   ],
                 ),
               ],

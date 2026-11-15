@@ -10,6 +10,7 @@ import 'package:masaren/profile_router.dart';
 import 'package:masaren/screens/booth_screen.dart';
 import 'package:masaren/screens/create_booth_screen.dart';
 import 'package:masaren/screens/event_manage_screen.dart';
+import 'package:masaren/screens/moderators_screen.dart';
 import 'package:masaren/screens/evidence_capture_screen.dart';
 import 'package:masaren/screens/opportunity_detail_screen.dart';
 import 'package:masaren/screens/podcast_screen.dart';
@@ -540,6 +541,40 @@ class _EventHubScreenState extends State<EventHubScreen> {
     if (mounted) _load();
   }
 
+  Future<void> _openModerators(String title) async {
+    await Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => ModeratorsScreen(
+              entityType: 'EVENT',
+              entityId: widget.eventId,
+              entityTitle: title,
+              currentUser: widget.user,
+            )));
+    if (mounted) _load();
+  }
+
+  Future<void> _deleteEvent(String title) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Remove this event?'),
+        content: Text(
+            '“$title” will be removed from public discovery. The owner and verified participants keep the activity record.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel')),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Remove event')),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await _run(() async {
+      await AuthApi.deleteEvent(widget.eventId);
+    }, success: 'Event removed from public discovery.');
+    if (mounted) Navigator.pop(context);
+  }
   Future<void> _openDashboard() async {
     await Navigator.of(context).push(MaterialPageRoute(
         builder: (_) =>
@@ -641,8 +676,9 @@ class _EventHubScreenState extends State<EventHubScreen> {
         ? Map<String, dynamic>.from(event['host'] as Map)
         : null;
     final attending = event['attending'] == true;
-    final canManage =
-        event['can_manage'] == true || event['can_verify'] == true;
+    final canManage = event['can_manage'] == true;
+    final canModerate = event['can_moderate'] == true;
+    final canRemoveEvent = event['can_remove_event'] == true;
     final canCreateBooth = event['can_create_booth'] == true;
     final title = (event['title'] ?? '').toString();
     final participantGroups = <String, List<Map<String, dynamic>>>{};
@@ -661,6 +697,16 @@ class _EventHubScreenState extends State<EventHubScreen> {
                 tooltip: _t('events.dashboard', 'Event dashboard'),
                 onPressed: _openDashboard,
                 icon: const Icon(Icons.insights_outlined)),
+          if (canManage || canModerate)
+            IconButton(
+                tooltip: 'Moderators',
+                onPressed: () => _openModerators(title),
+                icon: const Icon(Icons.admin_panel_settings_outlined)),
+          if (canRemoveEvent)
+            IconButton(
+                tooltip: 'Remove event',
+                onPressed: () => _deleteEvent(title),
+                icon: const Icon(Icons.delete_outline)),
           IconButton(
               tooltip: _t('events.share', 'Share event'),
               onPressed: _share,

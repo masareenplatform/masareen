@@ -1,4 +1,4 @@
--- MASAREEN registrations database (Cloudflare D1, free tier)
+﻿-- MASAREEN registrations database (Cloudflare D1, free tier)
 CREATE TABLE IF NOT EXISTS users (
   id            INTEGER PRIMARY KEY AUTOINCREMENT,
   google_sub    TEXT UNIQUE,
@@ -651,6 +651,20 @@ CREATE TABLE IF NOT EXISTS device_tokens (
 );
 CREATE INDEX IF NOT EXISTS idx_device_tokens_user ON device_tokens(user_id);
 
+CREATE TABLE IF NOT EXISTS entity_moderators (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  entity_type    TEXT NOT NULL,
+  entity_id      TEXT NOT NULL,
+  user_id        INTEGER NOT NULL,
+  permissions_json TEXT NOT NULL DEFAULT '[]',
+  assigned_by    INTEGER NOT NULL,
+  created_at     TEXT NOT NULL,
+  UNIQUE(entity_type, entity_id, user_id)
+);
+CREATE INDEX IF NOT EXISTS idx_entity_moderators_entity
+  ON entity_moderators(entity_type, entity_id);
+CREATE INDEX IF NOT EXISTS idx_entity_moderators_user
+  ON entity_moderators(user_id);
 CREATE TABLE IF NOT EXISTS notification_log (
   id         INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id    INTEGER NOT NULL,

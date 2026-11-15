@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'package:masaren/models.dart';
 import 'package:masaren/l10n.dart';
+import 'package:masaren/screens/document_viewer_screen.dart';
 import 'package:masaren/widgets/autoplay_video.dart';
 import 'package:masaren/widgets/smart_image.dart';
 
@@ -271,6 +272,15 @@ class PostFilesList extends StatelessWidget {
             child: InkWell(
               borderRadius: BorderRadius.circular(12),
               onTap: () async {
+                final name = file.name.toLowerCase();
+                if (name.endsWith('.pdf') ||
+                    name.endsWith('.docx') ||
+                    name.endsWith('.doc')) {
+                  await Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => DocumentViewerScreen(
+                          url: file.url, name: file.name)));
+                  return;
+                }
                 final uri = Uri.tryParse(file.url);
                 if (uri == null) return;
                 final ok =

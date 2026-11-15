@@ -271,6 +271,33 @@ class AuthApi {
     return list.map((e) => Post.fromJson(e as Map<String, dynamic>)).toList();
   }
 
+  static Future<List<Map<String, dynamic>>> entityModerators(
+      String type, String id) async {
+    final data = await api.get('/api/v1/entities/$type/$id/moderators');
+    final list = data is List ? data : <dynamic>[];
+    return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  }
+
+  static Future<void> assignEntityModerator(
+      String type, String id, String userId,
+      {List<String> permissions = const [
+        'remove_comments',
+        'verify_contributions',
+      ]}) async {
+    await api.post('/api/v1/entities/$type/$id/moderators', {
+      'user_id': int.tryParse(userId) ?? userId,
+      'permissions': permissions,
+    });
+  }
+
+  static Future<void> removeEntityModerator(
+      String type, String id, String userId) async {
+    await api.delete('/api/v1/entities/$type/$id/moderators/$userId');
+  }
+
+  static Future<void> deleteEvent(String id) async {
+    await api.delete('/api/v1/events/$id');
+  }
   static Future<Map<String, dynamic>> discoveryFeed({
     int limit = 12,
     int offset = 0,

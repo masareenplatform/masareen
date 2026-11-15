@@ -259,6 +259,16 @@ async function saveSettings(env, userId, input) {
   return next;
 }
 
+const IMPORTANT_PUSH_TYPES = new Set([
+  'message', 'verification', 'moderation', 'task', 'event', 'booth_lead', 'funding',
+  'announcement', 'entity_review', 'admin_payment', 'admin_inquiry', 'admin_contact',
+  'admin_alert', 'mrc_transaction', 'feedback', 'leaderboard', 'opportunity_match',
+  'opportunity', 'inquiry', 'recognition',
+]);
+const HIGH_PRIORITY_TYPES = new Set([
+  'message', 'verification', 'moderation', 'task', 'event', 'booth_lead', 'funding',
+  'announcement', 'mrc_transaction', 'admin_alert',
+]);
 function notificationCategory(type) {
   if (ADMIN_ALERT_TYPES.has(type)) return null;
   if (type === 'message') return 'message_alerts';
@@ -319,6 +329,98 @@ function isAdminUser(env, u) {
   return !!u.email_verified && list.includes(u.email.toLowerCase());
 }
 
+const MODERATOR_PERMISSIONS = new Set([
+  'remove_comments', 'remove_posts', 'verify_contributions', 'remove_event', 'manage_booths',
+]);
+async function entityOwnerId(env, type, id) {
+  const tables = {
+    POST: ['posts', 'author_id'], EVENT: ['events', 'author_id'],
+    PROGRAM: ['programs', 'author_id'], PROJECT: ['projects', 'author_id'],
+    OPPORTUNITY: ['opportunities', 'author_id'], PODCAST: ['podcast_shows', 'owner_id'],
+    VOD: ['vod_videos', 'owner_id'],
+  };
+  const target = tables[String(type || '').toUpperCase()];
+  if (!target) return null;
+  const row = await env.DB.prepare(`SELECT ${target[1]} owner_id FROM ${target[0]} WHERE id=?`)
+    .bind(Number(id)).first();
+  return row ? Number(row.owner_id) : null;
+}
+async function isEntityModerator(env, user, type, id, permission = null) {
+  if (!user || !type || !id) return false;
+  let row;
+  try {
+    row = await env.DB.prepare(`SELECT permissions_json FROM entity_moderators
+      WHERE entity_type=? AND entity_id=? AND user_id=?`)
+      .bind(String(type).toUpperCase(), String(id), user.id).first();
+  } catch (_) { return false; }
+  if (!row) return false;
+  if (!permission) return true;
+  return parseJsonValue(row.permissions_json, []).includes(permission);
+}
+async function moderatorRoutes(req, env, url) {
+  const path = url.pathname;
+  const method = req.method;
+  const match = /^\/api\/v1\/entities\/([A-Za-z_]+)\/(\d+)\/moderators(?:\/(\d+))?$/.exec(path);
+  if (!match) return null;
+  const viewer = await requireUser(req, env);
+  const type = match[1].toUpperCase();
+  const entityId = match[2];
+  const targetUser = match[3] ? Number(match[3]) : null;
+  const ownerId = await entityOwnerId(env, type, entityId);
+  if (ownerId == null) throw new HttpError(404, 'entity_not_found', 'Entity not found.');
+  const owner = Number(ownerId) === Number(viewer.id) || isAdminUser(env, viewer);
+  if (method === 'GET') {
+    if (!owner && !(await isEntityModerator(env, viewer, type, entityId))) {
+      throw new HttpError(403, 'forbidden', 'Only the owner or moderators can view this team.');
+    }
+    const rows = (await env.DB.prepare(`SELECT m.*,u.name user_name,u.picture user_picture,u.handle
+      FROM entity_moderators m JOIN users u ON u.id=m.user_id
+      WHERE m.entity_type=? AND m.entity_id=? ORDER BY m.created_at ASC`)
+      .bind(type, entityId).all()).results || [];
+    return json(rows.map((r) => ({
+      id: String(r.id), user_id: String(r.user_id), name: r.user_name,
+      avatar_url: r.user_picture || null, handle: r.handle || null,
+      permissions: parseJsonValue(r.permissions_json, []), created_at: r.created_at,
+    })));
+  }
+  if (!owner) throw new HttpError(403, 'forbidden', 'Only the owner can manage moderators.');
+  if (method === 'POST' && !targetUser) {
+    const b = await readJson(req);
+    const userId = Number(b.user_id);
+    if (!Number.isInteger(userId) || userId <= 0) {
+      throw new HttpError(400, 'invalid_user', 'Choose a member to moderate this entity.');
+    }
+    if (userId === Number(ownerId)) {
+      throw new HttpError(400, 'owner_is_moderator', 'The owner already controls this entity.');
+    }
+    const member = await env.DB.prepare('SELECT id,name FROM users WHERE id=?').bind(userId).first();
+    if (!member) throw new HttpError(404, 'user_not_found', 'Member not found.');
+    const requested = Array.isArray(b.permissions) ? b.permissions : [];
+    const permissions = requested.map((p) => String(p).toLowerCase())
+      .filter((p) => MODERATOR_PERMISSIONS.has(p));
+    if (!permissions.length) permissions.push('remove_comments', 'verify_contributions');
+    const at = nowIso();
+    await env.DB.prepare(`INSERT INTO entity_moderators
+      (entity_type,entity_id,user_id,permissions_json,assigned_by,created_at)
+      VALUES (?,?,?,?,?,?)
+      ON CONFLICT(entity_type,entity_id,user_id) DO UPDATE SET
+        permissions_json=excluded.permissions_json, assigned_by=excluded.assigned_by`)
+      .bind(type, entityId, userId, JSON.stringify(permissions), viewer.id, at).run();
+    await notify(env, userId, 'moderation',
+      `You are now a moderator for ${type.toLowerCase()} #${entityId}`,
+      'You can review reports and remove content within this entity only.', viewer.id, null,
+      { link: `${type.toLowerCase()}:${entityId}`, entityType: type.toLowerCase(),
+        entityId, dedupeKey: `moderator:${type}:${entityId}:${userId}` }).catch(() => {});
+    return json({ ok: true, user_id: String(userId), permissions });
+  }
+  if (method === 'DELETE' && targetUser) {
+    await env.DB.prepare(`DELETE FROM entity_moderators
+      WHERE entity_type=? AND entity_id=? AND user_id=?`)
+      .bind(type, entityId, targetUser).run();
+    return json({ ok: true, removed: true });
+  }
+  return null;
+}
 function clientIp(req) {
   const cf = req.headers.get('cf-connecting-ip');
   if (cf) return String(cf).trim().slice(0, 64);
@@ -899,11 +1001,23 @@ async function notify(env, userId, type, title, body, actorId, postId, opts = {}
         postId || null, clean(opts.link, 400) || null,
         clean(opts.entityType, 60) || null, clean(opts.entityId, 80) || null,
         nowIso()).run();
-    if (settings.push_enabled && opts.push !== false) {
-      await sendFcmPushForUser(env, userId, {
-        type, title: cleanTitle, body: cleanBody || '', actorId, postId,
-        link: opts.link, entityType: opts.entityType, entityId: opts.entityId,
-      });
+    const instant = !settings.digest_frequency || settings.digest_frequency === 'instant';
+    const wantsPush = opts.push === true ||
+      (opts.push !== false && IMPORTANT_PUSH_TYPES.has(type));
+    if (settings.push_enabled && instant && wantsPush) {
+      const recent = await env.DB.prepare(`SELECT COUNT(*) c FROM notification_log
+        WHERE user_id=? AND channel='push' AND created_at>?`).bind(userId,
+        new Date(Date.now() - 10 * 60000).toISOString()).first();
+      if (Number(recent?.c || 0) < 4) {
+        await env.DB.prepare(`INSERT OR IGNORE INTO notification_log
+          (user_id,kind,ref_id,channel,created_at) VALUES (?,?,?,?,?)`).bind(
+          userId, 'push', `${type}:${postId || 0}:${Date.now()}`, 'push', nowIso()).run();
+        await sendFcmPushForUser(env, userId, {
+          type, title: cleanTitle, body: cleanBody || '', actorId, postId,
+          link: opts.link, entityType: opts.entityType, entityId: opts.entityId,
+          priority: HIGH_PRIORITY_TYPES.has(type) ? 'high' : 'normal',
+        });
+      }
     }
     return true;
   } catch {
@@ -2054,8 +2168,13 @@ async function deleteComment(req, env, id) {
   const u = await requireUser(req, env);
   const comment = await env.DB.prepare('SELECT * FROM post_comments WHERE id=? AND hidden=0').bind(id).first();
   if (!comment) throw new HttpError(404, 'comment_not_found', 'That comment no longer exists.');
-  if (Number(comment.user_id) !== Number(u.id) && !isAdminUser(env, u))
-    throw new HttpError(403, 'forbidden', 'You can only delete your own comment.');
+  const post = await env.DB.prepare('SELECT author_id FROM posts WHERE id=?')
+    .bind(comment.post_id).first();
+  const allowed = Number(comment.user_id) === Number(u.id) ||
+    Number(post?.author_id) === Number(u.id) || isAdminUser(env, u) ||
+    (await isEntityModerator(env, u, 'POST', comment.post_id, 'remove_comments'));
+  if (!allowed)
+    throw new HttpError(403, 'forbidden', 'Only the author, post owner or a moderator can remove this comment.');
   await env.DB.prepare('UPDATE post_comments SET hidden=1 WHERE id=?').bind(id).run();
   await env.DB.prepare('UPDATE post_comments SET hidden=1 WHERE parent_id=?').bind(id).run();
   await env.DB.prepare(`UPDATE posts SET comment_count=(SELECT COUNT(*) FROM post_comments
@@ -2134,12 +2253,27 @@ async function deletePost(req, env, id) {
   const u = await requireUser(req, env);
   const post = await env.DB.prepare('SELECT * FROM posts WHERE id=? AND hidden=0').bind(id).first();
   if (!post) throw new HttpError(404, 'post_not_found', 'This post no longer exists.');
-  if (Number(post.author_id) !== Number(u.id) && !isAdminUser(env, u))
-    throw new HttpError(403, 'forbidden', 'You can only delete your own post.');
+  const allowed = Number(post.author_id) === Number(u.id) || isAdminUser(env, u) ||
+    (await isEntityModerator(env, u, 'POST', id, 'remove_posts'));
+  if (!allowed)
+    throw new HttpError(403, 'forbidden', 'Only the author or a moderator can remove this post.');
   await env.DB.prepare('UPDATE posts SET hidden=1, updated_at=? WHERE id=?').bind(nowIso(), id).run();
   return json({ ok: true, deleted: true });
 }
 
+async function deleteEvent(req, env, id) {
+  const u = await requireUser(req, env);
+  const event = await env.DB.prepare('SELECT id,author_id,title FROM events WHERE id=?').bind(id).first();
+  if (!event) throw new HttpError(404, 'event_not_found', 'Event not found.');
+  const allowed = Number(event.author_id) === Number(u.id) || isAdminUser(env, u) ||
+    (await isEntityModerator(env, u, 'EVENT', id, 'remove_event'));
+  if (!allowed) throw new HttpError(403, 'forbidden', 'Only the owner or a moderator can remove this event.');
+  await env.DB.prepare("UPDATE events SET status='CANCELLED' WHERE id=?").bind(id).run();
+  await notify(env, event.author_id, 'moderation',
+    `Event removed: ${event.title}`, 'An owner or moderator removed this event from public discovery.',
+    u.id, null, { link: `event:${id}`, dedupeKey: `event_removed:${id}` }).catch(() => {});
+  return json({ ok: true, deleted: true });
+}
 const REPORT_REASONS = new Set(['spam', 'harassment', 'misinformation', 'violence', 'self_harm', 'other']);
 
 async function reportTarget(req, env, targetType, targetId) {
@@ -4741,13 +4875,17 @@ async function eventDetailData(req, env, id) {
     FROM vod_videos v JOIN users u ON u.id=v.owner_id
     WHERE v.event_id=? AND v.status='PUBLISHED'
     ORDER BY v.created_at DESC LIMIT 20`).bind(id).all()).results || [];
-  const canVerify = !!viewer && (isOwner || isAdminUser(env, viewer) ||
+  const isModerator = !!viewer && await isEntityModerator(env, viewer, 'EVENT', id);
+  const canVerify = !!viewer && (isOwner || isAdminUser(env, viewer) || isModerator ||
     participants.some((p) => Number(p.user_id) === Number(viewer.id) &&
       p.role === 'HOST' && ['CONFIRMED', 'VERIFIED'].includes(p.status)));
   return {
     ...eventJson({ ...row, members_preview: [] }, !!attending),
     is_owner: !!isOwner,
     can_manage: !!isOwner || isAdminUser(env, viewer),
+    can_moderate: !!isOwner || isAdminUser(env, viewer) || isModerator,
+    can_remove_event: !!isOwner || isAdminUser(env, viewer) ||
+      (!!viewer && await isEntityModerator(env, viewer, 'EVENT', id, 'remove_event')),
     can_verify: canVerify,
     can_create_booth: !!viewer && (isOwner || isAdminUser(env, viewer) ||
       participants.some((p) => Number(p.user_id) === Number(viewer.id) &&
@@ -9504,6 +9642,8 @@ export async function socialRoutes(req, env, ctx) {
       if (eventMatch[2] === '/join' && req.method === 'POST') return await joinEvent(req, env, Number(eventMatch[1]));
       if (!eventMatch[2] && req.method === 'GET')
         return json(await eventDetailData(req, env, Number(eventMatch[1])));
+      if (!eventMatch[2] && req.method === 'DELETE')
+        return await deleteEvent(req, env, Number(eventMatch[1]));
     }
     const boothMatch = /^\/api\/v1\/booths\/(\d+)(?:\/(activate|leads|interact))?(?:\/(\d+)\/status)?$/.exec(path);
     if (boothMatch) {
@@ -9688,6 +9828,8 @@ export async function socialRoutes(req, env, ctx) {
     if (passportMatch && req.method === 'GET') return await passportFor(env, Number(passportMatch[1]), await currentUser(req, env));
     const sportsHandled = await sportsRoutes(req, env, url, await currentUser(req, env));
     if (sportsHandled) return sportsHandled;
+    const moderatorHandled = await moderatorRoutes(req, env, url);
+    if (moderatorHandled) return moderatorHandled;
     const viewer = await currentUser(req, env);
     const u = await userRoutes(req, env, url, viewer);
     if (u) return u;

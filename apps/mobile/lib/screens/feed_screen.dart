@@ -546,15 +546,22 @@ class FeedScreenState extends State<FeedScreen> {
     final posts = _visiblePosts;
     final items = <Widget>[];
     var adIndex = 0;
+    var discoveryIndex = 0;
+    if (posts.isEmpty) {
+      for (final item in _discoveries) {
+        items.add(_DiscoveryCard(item: item, onTap: () => _openDiscovery(item)));
+      }
+      return items;
+    }
     for (var i = 0; i < posts.length; i++) {
-      if (i > 0 && i % 8 == 0 && _ads.isNotEmpty && adIndex < 3) {
+      if (i > 0 && i % 6 == 0 && _ads.isNotEmpty && adIndex < _ads.length) {
         items.add(SlideInWidget(
           delay: const Duration(milliseconds: 80),
           slideOffset: const Offset(0, 0.08),
           child: AdFeedCard(campaign: _ads[adIndex++]),
         ));
       }
-      if (_filter == 'all' && i > 0 && i % 6 == 0) {
+      if (_filter == 'all' && i > 0 && i % 12 == 0) {
         final section = _introSections[_introIndex++ % _introSections.length];
         items.add(_introCard(context, section));
       }
@@ -581,6 +588,20 @@ class FeedScreenState extends State<FeedScreen> {
             onOpen: () => _openPost(p),
           ),
         ),
+      ));
+      if (i > 0 && i % 2 == 0 && discoveryIndex < _discoveries.length) {
+        final item = _discoveries[discoveryIndex++];
+        items.add(_DiscoveryCard(
+          item: item,
+          onTap: () => _openDiscovery(item),
+        ));
+      }
+    }
+    for (var j = discoveryIndex; j < _discoveries.length; j++) {
+      final item = _discoveries[j];
+      items.add(_DiscoveryCard(
+        item: item,
+        onTap: () => _openDiscovery(item),
       ));
     }
     return items;
@@ -707,19 +728,6 @@ class FeedScreenState extends State<FeedScreen> {
                           ),
                         ),
                       ..._feedItems(context),
-                      if (_discoveries.isNotEmpty) ...[
-                        SectionTitle(
-                            title: MasarenLocalizations.of(
-                                        context, 'feed.discover') ==
-                                    'feed.discover'
-                                ? 'Discover the network'
-                                : MasarenLocalizations.of(
-                                    context, 'feed.discover')),
-                        ..._discoveries.map((item) => _DiscoveryCard(
-                              item: item,
-                              onTap: () => _openDiscovery(item),
-                            )),
-                      ],
                       if (_discoveryLoading)
                         const Padding(
                           padding: EdgeInsets.all(12),

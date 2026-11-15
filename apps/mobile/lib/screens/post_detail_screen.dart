@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:masaren/api_client.dart';
 import 'package:masaren/l10n.dart';
 import 'package:masaren/models.dart';
 import 'package:masaren/screens/messages_screen.dart';
+import 'package:masaren/screens/moderators_screen.dart';
 import 'package:masaren/screens/profile_view_screen.dart';
 import 'package:masaren/services/live_sync_service.dart';
 import 'package:masaren/widgets.dart';
@@ -523,6 +524,15 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                 case 'boost':
                   _boostPost();
                   break;
+                case 'moderators':
+                  Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => ModeratorsScreen(
+                            entityType: 'POST',
+                            entityId: _post.id,
+                            entityTitle: _post.text,
+                            currentUser: widget.currentUser,
+                          )));
+                  break;
                 case 'report':
                   _report();
                   break;
@@ -541,6 +551,8 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                     value: 'delete', child: Text(_loc('post.delete'))),
                 const PopupMenuItem(
                     value: 'boost', child: Text('Boost with MRC')),
+                const PopupMenuItem(
+                    value: 'moderators', child: Text('Moderators')),
               ] else ...[
                 PopupMenuItem(
                     value: 'message', child: Text(_loc('post.message'))),

@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:io';
 
 import 'package:firebase_core/firebase_core.dart';
@@ -32,6 +32,10 @@ class NotificationService {
   static const _channelName = 'MASAREEN Notifications';
   static const _messageChannelId = 'masaren_messages';
   static const _messageChannelName = 'MASAREEN Messages';
+  static const _importantChannelId = 'masaren_important';
+  static const _importantChannelName = 'MASAREEN Important';
+  static const _updateChannelId = 'masaren_updates';
+  static const _updateChannelName = 'MASAREEN Updates';
 
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
@@ -88,11 +92,29 @@ class NotificationService {
           AndroidFlutterLocalNotificationsPlugin>();
       await androidPlugin?.createNotificationChannel(
         const AndroidNotificationChannel(
-          _channelId,
-          _channelName,
-          description: 'Impact, opportunities and account updates',
+          _importantChannelId,
+          _importantChannelName,
+          description: 'Verification, moderation, tasks and event decisions',
           importance: Importance.high,
           showBadge: true,
+        ),
+      );
+      await androidPlugin?.createNotificationChannel(
+        const AndroidNotificationChannel(
+          _channelId,
+          _channelName,
+          description: 'Social and impact updates',
+          importance: Importance.defaultImportance,
+          showBadge: true,
+        ),
+      );
+      await androidPlugin?.createNotificationChannel(
+        const AndroidNotificationChannel(
+          _updateChannelId,
+          _updateChannelName,
+          description: 'Low-priority social activity',
+          importance: Importance.low,
+          showBadge: false,
         ),
       );
       await androidPlugin?.createNotificationChannel(
@@ -171,6 +193,7 @@ class NotificationService {
           body,
           payload: payload,
           message: type == 'message',
+          type: type,
         );
       });
 
@@ -280,6 +303,7 @@ class NotificationService {
     String body, {
     String? payload,
     bool message = false,
+    String type = '',
   }) async {
     if (!enabled || isQuietNow) return;
     final dedupeKey = '$title|$body';
@@ -293,8 +317,29 @@ class NotificationService {
       _recentShown.removeWhere((_, when) =>
           DateTime.now().difference(when) > const Duration(minutes: 10));
     }
-    final channelId = message ? _messageChannelId : _channelId;
-    final channelName = message ? _messageChannelName : _channelName;
+    const importantTypes = {
+      'message',
+      'verification',
+      'moderation',
+      'task',
+      'event',
+      'booth_lead',
+      'funding',
+      'announcement',
+      'mrc_transaction',
+      'admin_alert',
+    };
+    final important = importantTypes.contains(type);
+    final channelId = message
+        ? _messageChannelId
+        : important
+            ? _importantChannelId
+            : _updateChannelId;
+    final channelName = message
+        ? _messageChannelName
+        : important
+            ? _importantChannelName
+            : _updateChannelName;
     final details = NotificationDetails(
       android: AndroidNotificationDetails(
         channelId,
@@ -302,8 +347,12 @@ class NotificationService {
         channelDescription: message
             ? 'New private messages'
             : 'Impact, opportunities and account updates',
-        importance: message ? Importance.high : Importance.defaultImportance,
-        priority: message ? Priority.high : Priority.defaultPriority,
+        importance: important || message
+            ? Importance.high
+            : Importance.low,
+        priority: important || message
+            ? Priority.high
+            : Priority.low,
         showWhen: true,
         styleInformation: BigTextStyleInformation(body),
         category: message

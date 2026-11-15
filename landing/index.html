@@ -436,11 +436,21 @@ textarea.in-ctl{min-height:110px;resize:vertical}
         <button class="btn btn-green" type="submit"><span data-en="Create my account" data-ar="إنشاء حسابي">Create my account</span></button>
       </form>
       <div class="msg" id="regMsg" role="status" aria-live="polite"></div>
+      <div class="or" data-en="already registered? sign in with email" data-ar="مسجّل بالفعل؟ سجّل الدخول بالبريد">already registered? sign in with email</div>
+      <form id="magicForm" novalidate>
+        <label class="f" for="meEmail" data-en="Email" data-ar="البريد الإلكتروني">Email</label>
+        <input class="in-ctl" id="meEmail" name="email" type="email" maxlength="254" autocomplete="email">
+        <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <button class="btn btn-outline" type="submit"><span data-en="Email me a sign-in link" data-ar="أرسل لي رابط تسجيل الدخول">Email me a sign-in link</span></button>
+      </form>
+      <div class="msg" id="magicMsg" role="status" aria-live="polite"></div>
     </div>
     <div class="astep" id="stProfile">
       <h3 data-en="One last step" data-ar="خطوة أخيرة">One last step</h3>
       <p style="color:var(--muted);font-size:.9rem" data-en="Tell us a little about you so the right people can follow up." data-ar="عرّفنا بنفسك قليلًا ليتواصل معك الأشخاص المناسبون.">Tell us a little about you so the right people can follow up.</p>
-      <form id="profForm" novalidate><div id="profFields"></div>
+      <form id="profForm" novalidate>
+        <div style="margin-bottom:.8rem"><label class="f" for="pn" data-en="Full name" data-ar="الاسم الكامل">Full name</label><input class="in-ctl" id="pn" name="name" maxlength="120" autocomplete="name"></div>
+        <div id="profFields"></div>
         <button class="btn btn-green" type="submit"><span data-en="Finish registration" data-ar="إكمال التسجيل">Finish registration</span></button></form>
       <div class="msg" id="profMsg" role="status" aria-live="polite"></div>
     </div>
@@ -656,6 +666,8 @@ textarea.in-ctl{min-height:110px;resize:vertical}
         <h3 data-en="Download for Android" data-ar="تنزيل لأندرويد">Download for Android</h3>
         <p style="color:var(--muted);font-size:.88rem" data-en="Android 7+ · APK file · built from the project's open repository" data-ar="أندرويد 7 فأحدث · ملف APK · مبني من مستودع المشروع">Android 7+ · APK file · built from the project's open repository</p>
         <a class="btn btn-green" id="apkBtn" href="https://masareen.com/downloads/masareen.apk" style="margin-top:1rem"><span data-en="Download APK" data-ar="تنزيل APK">Download APK</span></a>
+        <a class="btn btn-blue" href="https://masareen.com/downloads/masareen.ipa" style="margin-top:.65rem" data-en="Download iOS IPA (unsigned)" data-ar="تحميل iOS IPA (غير موقّع)">Download iOS IPA (unsigned)</a>
+        <p class="note" data-en="iOS build for AltStore or Sideloadly. Unsigned IPA; Apple signing is not included." data-ar="نسخة iOS لـ AltStore أو Sideloadly. ملف IPA غير موقّع.">iOS build for AltStore or Sideloadly. Unsigned IPA; Apple signing is not included.</p>
         <ol style="text-align:start;margin:1.2rem 0 0;padding-inline-start:1.2rem;font-size:.85rem;color:var(--text-2);display:grid;gap:.35rem">
           <li data-en="Open this page on your Android phone and tap Download APK." data-ar="افتح هذه الصفحة على هاتفك وانقر تنزيل APK.">Open this page on your Android phone and tap Download APK.</li>
           <li data-en="If asked, allow “Install unknown apps” for your browser." data-ar="إذا طُلب منك، فعّل «تثبيت التطبيقات غير المعروفة» للمتصفح.">If asked, allow “Install unknown apps” for your browser.</li>
@@ -896,6 +908,8 @@ textarea.in-ctl{min-height:110px;resize:vertical}
       <a href="#trust" data-en="Governance & Trust" data-ar="الحوكمة والثقة">Governance & Trust</a>
       <a href="#outcomes" data-en="Outcomes" data-ar="النتائج">Outcomes</a>
       <a href="#roadmap" data-en="Roadmap" data-ar="خارطة الطريق">Roadmap</a>
+      <a href="/privacy.html" data-en="Privacy Policy" data-ar="سياسة الخصوصية">Privacy Policy</a>
+      <a href="/terms.html" data-en="Terms of Use" data-ar="شروط الاستخدام">Terms of Use</a>
     </div>
     <p class="copy">&copy; <span id="yr">2026</span> MASAREEN · مسارين، <span data-en="Egypt's National Impact Infrastructure. All rights reserved." data-ar="البنية الوطنية للأثر في مصر. جميع الحقوق محفوظة.">Egypt's National Impact Infrastructure. All rights reserved.</span></p>
   </div>
@@ -1214,10 +1228,34 @@ textarea.in-ctl{min-height:110px;resize:vertical}
   var dlg=$('authDlg');
   function step(id){['stStart','stProfile','stDone'].forEach(function(s){$(s).classList.toggle('on',s===id)})}
   function setMsg(el,c,t){el.className='msg '+(c||'');el.textContent=t||''}
+  function snapForm(form){
+    var s={};
+    if(!form)return s;
+    [].forEach.call(form.querySelectorAll('input,select,textarea'),function(el){
+      if(!el.name)return;
+      var k=(el.closest('.pfgroup')?el.closest('.pfgroup').getAttribute('data-role')+'::':'')+el.name;
+      s[k]=el.type==='checkbox'?!!el.checked:el.value;
+    });
+    return s;
+  }
+  function restoreForm(form,s){
+    if(!form||!s)return;
+    [].forEach.call(form.querySelectorAll('input,select,textarea'),function(el){
+      if(!el.name)return;
+      var k=(el.closest('.pfgroup')?el.closest('.pfgroup').getAttribute('data-role')+'::':'')+el.name;
+      if(!(k in s))return;
+      if(el.type==='checkbox')el.checked=!!s[k];
+      else if(el.name==='country'&&(s[k]==='Egypt'||s[k]==='مصر'))el.value=root.lang==='ar'?'مصر':'Egypt';
+      else el.value=s[k];
+    });
+    syncProfile(form);
+  }
   function renderAuth(){
+    var regSnap=snapForm($('regForm')),profSnap=snapForm($('profForm'));
     $('regProfile').innerHTML=profileFields();
     $('profFields').innerHTML=profileFields();
     bindProfile($('regForm'));bindProfile($('profForm'));
+    restoreForm($('regForm'),regSnap);restoreForm($('profForm'),profSnap);
     var b=$('authBtn');
     if(me){var first=(me.name||me.email).split(' ')[0];b.setAttribute('data-en','Hi, '+first);b.setAttribute('data-ar','أهلًا '+first);b.textContent=L('Hi, '+first,'أهلًا '+first)}
     else{b.setAttribute('data-en','Sign up');b.setAttribute('data-ar','إنشاء حساب');b.textContent=L('Sign up','إنشاء حساب')}
@@ -1226,13 +1264,14 @@ textarea.in-ctl{min-height:110px;resize:vertical}
       var im=$('acImg');if(me.picture){im.src=me.picture;im.hidden=false;$('acAv').hidden=true}else{im.hidden=true;$('acAv').hidden=false;$('acAv').textContent=(me.name||'M').charAt(0).toUpperCase()}
       $('doneTxt').textContent=me.profileComplete?L('You are signed in and registered. We will keep you posted about the pilot.','أنت مسجّل الدخول ومسجَّل لدينا. سنوافيك بمستجدات المشروع التجريبي.'):L('Your account is created. Please finish your registration.','تم إنشاء حسابك. يرجى إكمال التسجيل.');
       $('adminLink').hidden=!me.isAdmin;
-      var cf=$('cform');if(cf){if(!cf.name.value)cf.name.value=me.name||'';if(!cf.email.value)cf.email.value=me.email||'';if(!cf.org.value&&me.org)cf.org.value=me.org}
+      var pf=$('profForm');if(pf&&pf.elements.name&&!pf.elements.name.value&&me.name)pf.elements.name.value=me.name;
+      var cf=$('cform');if(cf){if(cf.elements.name&&!cf.elements.name.value)cf.elements.name.value=me.name||'';if(cf.elements.email&&!cf.elements.email.value)cf.elements.email.value=me.email||'';if(cf.elements.org&&!cf.elements.org.value&&me.org)cf.elements.org.value=me.org}
     }
   }
   var prevRerender=window.__rerender;
   function openAuth(){
     if(me){step(me.profileComplete?'stDone':'stProfile');}else step('stStart');
-    renderAuth();setMsg($('regMsg'));setMsg($('profMsg'));
+    renderAuth();setMsg($('regMsg'));setMsg($('magicMsg'));setMsg($('profMsg'));
     if(dlg.showModal){if(!dlg.open)dlg.showModal()}else dlg.setAttribute('open','');
     if(!me)initGoogle();
   }
@@ -1245,7 +1284,7 @@ textarea.in-ctl{min-height:110px;resize:vertical}
   function afterLogin(r){
     if(!r.ok){setMsg($('regMsg'),'err',r.message||L('Sign-in failed. Please try again.','تعذّر تسجيل الدخول. حاول مرة أخرى.'));return}
     me=r.user;renderAuth();step(me.profileComplete?'stDone':'stProfile');
-    var f=$('profForm');if(me.name&&f.name)f.name.value=me.name;
+    var f=$('profForm');if(me.name&&f.elements.name)f.elements.name.value=me.name;
   }
   function initGoogle(){
     if(gReady||!cfg.googleClientId){$('gOff').hidden=!!cfg.googleClientId;return}
@@ -1296,17 +1335,28 @@ textarea.in-ctl{min-height:110px;resize:vertical}
   }
   $('regForm').addEventListener('submit',function(e){
     e.preventDefault();var f=e.target,m=$('regMsg');
-    var d=collectProfile(f);d.name=f.name.value.trim();d.email=f.email.value.trim();d.website=f.website.value;
+    var d=collectProfile(f);d.name=f.elements.name.value.trim();d.email=f.elements.email.value.trim();d.website=f.elements.website.value;
     if(!d.name||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(d.email)){setMsg(m,'err',L('Please add your name and a valid email.','يرجى إدخال الاسم وبريد إلكتروني صحيح.'));return}
     var pe=profileError(d);if(pe){setMsg(m,'err',pe);return}
     setMsg(m,'ok',L('Creating your account…','جارٍ إنشاء حسابك…'));
     api('/api/auth/register','POST',d).then(function(r){
       if(!r.ok){setMsg(m,'err',r.message||L('Could not register. Please try again.','تعذّر التسجيل. حاول مرة أخرى.'));return}
-      f.reset();syncProfile(f);setMsg(m,'ok',r.alreadyRegistered?L('This email is already registered. Thank you!','هذا البريد مسجّل بالفعل. شكرًا لك!'):L('You are registered. We will email you about the pilot. Tip: use Google sign-in to verify your email.','تم تسجيلك. سنراسلك بشأن المشروع التجريبي. نصيحة: استخدم تسجيل جوجل لتوثيق بريدك.'));
+      f.reset();syncProfile(f);setMsg(m,'ok',r.alreadyRegistered?L('This email is already registered. Use the email sign-in link below to sign in!','هذا البريد مسجّل بالفعل. استخدم رابط تسجيل الدخول أدناه!'):L('You are registered! Request a sign-in link below anytime to verify your email and access your account.','تم تسجيلك! اطلب رابط تسجيل الدخول أدناه لتأكيد بريدك والدخول لحسابك.'));
+    }).catch(function(){setMsg(m,'err',L('The server is not reachable right now.','الخادم غير متاح حاليًا.'))});
+  });
+  $('magicForm').addEventListener('submit',function(e){
+    e.preventDefault();var f=e.target,m=$('magicMsg');
+    var email=f.elements.email.value.trim(),website=f.elements.website.value;
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){setMsg(m,'err',L('Please enter a valid email address.','يرجى إدخال بريد إلكتروني صحيح.'));return}
+    setMsg(m,'ok',L('Sending your sign-in link…','جارٍ إرسال رابط الدخول…'));
+    api('/api/auth/magic-link','POST',{email:email,website:website}).then(function(r){
+      if(!r.ok){setMsg(m,'err',r.message||L('Could not send link right now. Please try again.','تعذّر إرسال الرابط حاليًا. حاول مرة أخرى.'));return}
+      f.reset();setMsg(m,'ok',L('If an account exists for that email, a single-use sign-in link is on its way. Check your inbox!','إذا كان هناك حساب مرتبط بهذا البريد، فقد أرسلنا رابط دخول صالحًا لمرة واحدة. تحقّق من بريدك!'));
     }).catch(function(){setMsg(m,'err',L('The server is not reachable right now.','الخادم غير متاح حاليًا.'))});
   });
   $('profForm').addEventListener('submit',function(e){
     e.preventDefault();var f=e.target,m=$('profMsg'),d=collectProfile(f);
+    if(f.elements.name&&f.elements.name.value.trim())d.name=f.elements.name.value.trim();
     var pe=profileError(d);if(pe){setMsg(m,'err',pe);return}
     api('/api/profile','POST',d).then(function(r){
       if(!r.ok){setMsg(m,'err',r.message||L('Could not save. Please try again.','تعذّر الحفظ. حاول مرة أخرى.'));return}
@@ -1316,7 +1366,7 @@ textarea.in-ctl{min-height:110px;resize:vertical}
   $('outBtn').addEventListener('click',function(){api('/api/auth/logout','POST',{}).then(function(){me=null;if(window.google&&google.accounts)try{google.accounts.id.disableAutoSelect()}catch(e){}renderAuth();closeAuth()})});
   window.__rerender=function(){prevRerender();renderAuth()};
   api('/api/config').then(function(c){if(c&&c.ok)cfg=c}).catch(function(){});
-  api('/api/me').then(function(r){if(r&&r.ok&&r.user){me=r.user;renderAuth()}}).catch(function(){});
+  api('/api/me').then(function(r){if(r&&r.ok&&r.user){me=r.user;renderAuth();if(location.hash==='#join')openAuth()}}).catch(function(){});
   renderAuth();
 
   document.getElementById('yr').textContent=new Date().getFullYear();

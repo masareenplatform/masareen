@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:masaren/api_client.dart';
 import 'package:masaren/l10n.dart';
@@ -28,6 +28,7 @@ import 'package:masaren/screens/saved_posts_screen.dart';
 import 'package:masaren/screens/universities_screen.dart';
 import 'package:masaren/screens/search_screen.dart';
 import 'package:masaren/screens/settings_screen.dart';
+import 'package:masaren/screens/help_center_screen.dart';
 import 'package:masaren/screens/verification_screen.dart';
 import 'package:masaren/screens/wallet_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -682,6 +683,11 @@ class _ShellDrawer extends StatelessWidget {
                   cs,
                   _t(context, 'menu.system', 'System'),
                   [
+                    _tile(context,
+                        icon: Icons.help_outline,
+                        label: 'Help center',
+                        onTap: () =>
+                            _open(context, const HelpCenterScreen())),
                     _tile(context,
                         icon: Icons.feedback_outlined,
                         label: _t(context, 'feedback.title', 'Send feedback'),
