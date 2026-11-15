@@ -66,6 +66,50 @@
       if (el) el.classList.add('hidden');
     }, 20000);
   </script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script>
+    (function () {
+      var CLIENT_ID = '336070303963-cksadpqp8d591afvir53vsb86fl41cqj.apps.googleusercontent.com';
+      window.masareenRenderGoogle = function (id, dark) {
+        var tries = 0;
+        function render() {
+          tries += 1;
+          if (!window.google || !google.accounts || !google.accounts.id) {
+            if (tries < 80) setTimeout(render, 150);
+            return;
+          }
+          var el = document.getElementById(id);
+          if (!el) return;
+          window.masareenGoogleTarget = id;
+          google.accounts.id.initialize({
+            client_id: CLIENT_ID,
+            auto_select: false,
+            callback: function (response) {
+              if (!response || !response.credential) return;
+              var target = window.masareenGoogleTarget || id;
+              document.dispatchEvent(new CustomEvent(
+                'masareen-google-credential-' + target,
+                { detail: response.credential }
+              ));
+            }
+          });
+          google.accounts.id.renderButton(el, {
+            type: 'standard',
+            theme: dark ? 'filled_black' : 'outline',
+            size: 'large',
+            shape: 'pill',
+            text: 'continue_with',
+            logo_alignment: 'left',
+            width: 320,
+            click_listener: function () {
+              window.masareenGoogleTarget = id;
+            }
+          });
+        }
+        render();
+      };
+    })();
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

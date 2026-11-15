@@ -158,6 +158,19 @@ class AuthApi {
     return data as Map<String, dynamic>;
   }
 
+  static Future<Map<String, dynamic>> googleLogin(
+    String credential, {
+    bool isTester = false,
+    String locale = 'en',
+  }) async {
+    final data = await api.post('/api/v1/auth/google', {
+      'credential': credential,
+      'is_tester': isTester,
+      'locale': locale,
+    });
+    return data as Map<String, dynamic>;
+  }
+
   static Future<User> me() async {
     final data = await api.get('/api/v1/users/me');
     final user = User.fromJson(data as Map<String, dynamic>);

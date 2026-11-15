@@ -6,6 +6,7 @@ import 'package:masaren/l10n.dart';
 import 'package:masaren/theme.dart';
 import 'package:masaren/widgets.dart';
 import 'package:masaren/models.dart';
+import 'package:masaren/services/google_web_login.dart';
 
 const List<String> _audiences = [
   'STUDENT',
@@ -94,6 +95,40 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (mounted) {
         setState(() =>
             _error = MasarenLocalizations.of(context, 'register.googleError'));
+      }
+    } finally {
+      if (mounted) setState(() => _googleBusy = false);
+    }
+  }
+
+  Future<void> _googleWeb(String credential) async {
+    if (_googleBusy) return;
+    setState(() {
+      _googleBusy = true;
+      _error = null;
+    });
+    try {
+      final data = await AuthApi.googleLogin(
+        credential,
+        isTester: _isTester,
+        locale: Localizations.localeOf(context).languageCode,
+      );
+      final token = data['access_token'] as String? ?? '';
+      if (token.isEmpty) throw Exception('No access token returned.');
+      api.setToken(token);
+      final user = await AuthApi.me();
+      if (mounted) widget.onRegistered(token, user);
+    } on ApiException catch (e) {
+      if (mounted) {
+        setState(() => _error = e.statusCode == 0
+            ? MasarenLocalizations.of(context, 'register.networkError')
+            : (e.message ??
+                MasarenLocalizations.of(context, 'register.failed')));
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _error =
+            MasarenLocalizations.of(context, 'register.networkError'));
       }
     } finally {
       if (mounted) setState(() => _googleBusy = false);
@@ -431,7 +466,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             label: MasarenLocalizations.of(
                                 context, 'register.create'),
                             onPressed: _register),
-                    if (!kIsWeb) ...[
+                    if (kIsWeb) ...[
+                      const SizedBox(height: 12),
+                      GoogleSignInButton(
+                          onCredential: _googleWeb, dark: dark),
+                    ] else ...[
                       const SizedBox(height: 12),
                       OutlinedButton.icon(
                         onPressed: _googleBusy ? null : _google,

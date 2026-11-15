@@ -9,6 +9,7 @@ import 'package:masaren/widgets.dart';
 import 'package:masaren/widgets/animations.dart';
 import 'package:masaren/screens/forgot_password_screen.dart';
 import 'package:masaren/widgets/web_auth_layout.dart';
+import 'package:masaren/services/google_web_login.dart';
 
 class LoginScreen extends StatefulWidget {
   final void Function(String token, User user) onAuthenticated;
@@ -40,6 +41,38 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) {
         setState(() =>
             _error = MasarenLocalizations.of(context, 'login.googleError'));
+      }
+    } finally {
+      if (mounted) setState(() => _googleBusy = false);
+    }
+  }
+
+  Future<void> _googleWeb(String credential) async {
+    if (_googleBusy) return;
+    setState(() {
+      _googleBusy = true;
+      _error = null;
+      _notice = null;
+    });
+    try {
+      final data = await AuthApi.googleLogin(
+        credential,
+        locale: Localizations.localeOf(context).languageCode,
+      );
+      final token = data['access_token'] as String? ?? '';
+      if (token.isEmpty) throw Exception('No access token returned.');
+      api.setToken(token);
+      final user = await AuthApi.me();
+      if (mounted) widget.onAuthenticated(token, user);
+    } on ApiException catch (e) {
+      if (mounted) {
+        setState(() => _error = e.statusCode == 0
+            ? MasarenLocalizations.of(context, 'common.networkError')
+            : e.message);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _error = e.toString());
       }
     } finally {
       if (mounted) setState(() => _googleBusy = false);
@@ -305,7 +338,10 @@ class _LoginScreenState extends State<LoginScreen> {
             : gradientButton(
                 label: MasarenLocalizations.of(context, 'login.signIn'),
                 onPressed: _login),
-        if (!kIsWeb) ...[
+        if (kIsWeb) ...[
+          const SizedBox(height: 14),
+          GoogleSignInButton(onCredential: _googleWeb, dark: dark),
+        ] else ...[
           const SizedBox(height: 14),
           OutlinedButton.icon(
             onPressed: _googleBusy ? null : _google,
