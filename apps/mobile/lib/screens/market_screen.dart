@@ -52,12 +52,12 @@ class _MarketScreenState extends State<MarketScreen> {
     if (_filter == 'ALL') return _markets;
     return _markets.where((m) {
       final type = (m['entity_type'] ?? '').toString();
-      if (_filter == 'PEOPLE') return type == 'USER';
-      if (_filter == 'INSTITUTIONS') {
-        return type == 'USER' &&
-            ['UNIVERSITY', 'INSTITUTION', 'ORGANIZATION', 'MEDIA', 'GOVERNMENT']
-                .contains((m['name'] ?? '').toString().toUpperCase());
-      }
+      final role = (m['entity_role'] ?? '').toString().toUpperCase();
+      final institution = ['UNIVERSITY', 'INSTITUTION', 'ORGANIZATION',
+              'MEDIA', 'GOVERNMENT', 'CORPORATE']
+          .contains(role);
+      if (_filter == 'PEOPLE') return type == 'USER' && !institution;
+      if (_filter == 'INSTITUTIONS') return type == 'USER' && institution;
       return type == _filter;
     }).toList();
   }

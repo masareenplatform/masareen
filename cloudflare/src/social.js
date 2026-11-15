@@ -7565,6 +7565,7 @@ function marketJson(m, viewerId) {
     change_percent: Math.round(change * 100) / 100,
     supply: Number(m.supply), market_cap_mrc: Math.round(Number(m.price_mrc) * Number(m.supply)),
     impact_score: Number(m.impact_score), volume_mrc: Number(m.volume_mrc),
+    entity_role: m.entity_role || null,
     trade_count: Number(m.trade_count), holders: Number(m.holders || 0),
     is_owner: viewerId != null && Number(m.owner_id) === Number(viewerId),
   };
@@ -8083,7 +8084,8 @@ async function marketRoutes(req, env, url, viewer) {
     if (method !== 'GET') return null;
     await seedMarkets(env);
     const rows = (await env.DB.prepare(`SELECT m.*,
-      (SELECT COUNT(*) FROM market_holdings h WHERE h.market_id=m.id AND h.shares>0) holders
+      (SELECT COUNT(*) FROM market_holdings h WHERE h.market_id=m.id AND h.shares>0) holders,
+      (SELECT role FROM users u WHERE m.entity_type='USER' AND u.id=m.entity_id) entity_role
       FROM entity_markets m WHERE m.status='ACTIVE'
       ORDER BY COALESCE(m.impact_score,0) DESC, m.volume_mrc DESC LIMIT 120`).all()).results || [];
     return json(rows.map((r) => marketJson(r, viewer?.id)));
@@ -8092,7 +8094,8 @@ async function marketRoutes(req, env, url, viewer) {
   if (!match) return null;
   const marketId = Number(match[1]);
   const row = await env.DB.prepare(`SELECT m.*,
-    (SELECT COUNT(*) FROM market_holdings h WHERE h.market_id=m.id AND h.shares>0) holders
+    (SELECT COUNT(*) FROM market_holdings h WHERE h.market_id=m.id AND h.shares>0) holders,
+    (SELECT role FROM users u WHERE m.entity_type='USER' AND u.id=m.entity_id) entity_role
     FROM entity_markets m WHERE m.id=?`).bind(marketId).first();
   if (!row) throw new HttpError(404, 'market_not_found', 'Market not found.');
   if (!match[2] && method === 'GET') {
