@@ -1,4 +1,5 @@
 ﻿import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:masaren/api_client.dart';
@@ -40,6 +41,7 @@ import 'package:masaren/services/app_updater.dart';
 import 'package:masaren/services/notification_service.dart';
 import 'package:masaren/services/polling_service.dart';
 import 'package:masaren/shell/shell_navigation.dart';
+import 'package:masaren/shell/web_messenger_dock.dart';
 import 'package:masaren/theme.dart';
 import 'package:masaren/widgets.dart';
 
@@ -502,9 +504,12 @@ class _HomeShellState extends State<HomeShell> {
     final showRail = width >= 1380;
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      body: Stack(
         children: [
+          Positioned.fill(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
           _WebSidebar(
             user: user,
             balance: _balance,
@@ -528,7 +533,21 @@ class _HomeShellState extends State<HomeShell> {
             onLogout: widget.onLogout,
           ),
           Expanded(
-            child: ColoredBox(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return Listener(
+                  onPointerSignal: (event) {
+                    if (event is! PointerScrollEvent || _tab != 0) return;
+                    const feedWidth = 720.0;
+                    final gutter = (constraints.maxWidth - feedWidth) / 2;
+                    if (gutter <= 0) return;
+                    final x = event.localPosition.dx;
+                    if (x >= gutter && x <= constraints.maxWidth - gutter) {
+                      return;
+                    }
+                    _feedKey.currentState?.scrollBy(event.scrollDelta.dy);
+                  },
+                  child: ColoredBox(
               color: Theme.of(context).scaffoldBackgroundColor,
               child: Align(
                 alignment: Alignment.topCenter,
@@ -557,6 +576,9 @@ class _HomeShellState extends State<HomeShell> {
                 ),
               ),
             ),
+                );
+              },
+            ),
           ),
           if (showRail)
             _WebRightRail(
@@ -570,6 +592,14 @@ class _HomeShellState extends State<HomeShell> {
                 _goToProfile();
               },
             ),
+              ],
+            ),
+          ),
+          Positioned(
+            right: 18,
+            bottom: 18,
+            child: WebMessengerDock(user: user),
+          ),
         ],
       ),
     );

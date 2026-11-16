@@ -378,6 +378,14 @@ class FeedScreenState extends State<FeedScreen> {
     _load(reset: true);
   }
 
+  void scrollBy(double delta) {
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    final next = (_scrollController.offset + delta)
+        .clamp(0.0, position.maxScrollExtent);
+    _scrollController.jumpTo(next);
+  }
+
   void _setMode(String mode) {
     if (mode == _mode) return;
     setState(() {

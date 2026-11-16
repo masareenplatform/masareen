@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+﻿// ignore_for_file: use_build_context_synchronously
+import 'package:flutter/material.dart';
 import 'package:masaren/api_client.dart';
 import 'package:masaren/l10n.dart';
 import 'package:masaren/models.dart';
@@ -367,14 +368,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     title: 'MASAREEN is ready',
                                     body:
                                         'Your smart notifications are working.');
-                                if (context.mounted) {
+                                if (mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
                                           content: Text(
                                               'Test notification sent.')));
                                 }
                               } catch (e) {
-                                if (context.mounted) {
+                                if (mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                           content: Text(
@@ -603,6 +604,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: Text(_t('settings.changePassword', 'Change password')),
             trailing: Icon(directionalChevronIcon(context)),
             onTap: _changePassword,
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.android_outlined),
+            title: const Text('Join Android closed testing'),
+            subtitle:
+                const Text('Install the Play test build and help us launch.'),
+            trailing: Icon(directionalChevronIcon(context)),
+            onTap: () async {
+              try {
+                final result = await AuthApi.joinAndroidTesting();
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text(result['message']?.toString() ??
+                        "You're on the Android testing list.")));
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context)
+                      .showSnackBar(SnackBar(content: Text(e.toString())));
+                }
+              }
+            },
           ),
           ListTile(
             contentPadding: EdgeInsets.zero,

@@ -632,6 +632,11 @@ class AuthApi {
     return User.fromJson(data as Map<String, dynamic>);
   }
 
+
+  static Future<Map<String, dynamic>> joinAndroidTesting() async {
+    final data = await api.post('/api/v1/testing/join', {});
+    return Map<String, dynamic>.from(data as Map);
+  }
   static Future<String> uploadAvatar(
       List<int> bytes, String filename, String contentType) async {
     final data = await api.multipart('/api/v1/users/me/avatar',

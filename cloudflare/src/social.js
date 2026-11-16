@@ -5565,12 +5565,23 @@ function podcastShowJson(s) {
   };
 }
 
+function podcastAudioUrl(raw) {
+  if (!raw) return null;
+  try {
+    const u = new URL(raw);
+    if (['www.soundhelix.com', 'soundhelix.com'].includes(u.hostname)) {
+      return 'https://masareen.com/api/media/audio?url=' + encodeURIComponent(raw);
+    }
+  } catch (_) {}
+  return raw;
+}
+
 function podcastEpisodeJson(e) {
   return {
     id: String(e.id), show_id: String(e.show_id),
     show_title: e.show_title || null, event_id: e.event_id == null ? null : String(e.event_id),
     event_title: e.event_title || null, title: e.title,
-    description: e.description || null, audio_url: e.audio_url || null,
+    description: e.description || null, audio_url: podcastAudioUrl(e.audio_url),
     video_url: e.video_url || null, cover_url: e.cover_url || null,
     duration_sec: Number(e.duration_sec || 0),
     season_number: Number(e.season_number || 1),
@@ -10040,7 +10051,22 @@ export async function socialRoutes(req, env, ctx) {
     if (path === '/api/testers' || path === '/api/testers/stats') return await testerRoutes(req, env, url, ctx);
     if (path.startsWith('/api/v1/internal/ai/')) return await aiInternalRoutes(req, env, url);
     if (path.startsWith('/api/v1/internal/')) return await videoJobRoutes(req, env, url);
-    if (path === '/api/v1/users/register' && req.method === 'POST') return await register(req, env);
+    if (path === '/api/v1/testing/join' && req.method === 'POST') {
+      const u = await requireUser(req, env);
+      const email = String(u.email || '').toLowerCase();
+      if (!email) throw new HttpError(400, 'email_required', 'Add an email to your account first.');
+      const existing = await env.DB.prepare('SELECT * FROM testers WHERE email=?').bind(email).first();
+      if (existing) {
+        await env.DB.prepare("UPDATE testers SET name=?, source='app', status=CASE WHEN status='declined' THEN 'pending' ELSE status END WHERE id=?")
+          .bind(u.name || existing.name || 'MASAREEN member', existing.id).run();
+      } else {
+        await env.DB.prepare('INSERT INTO testers (name,email,source,status,created_at) VALUES (?,?,?,?,?)')
+          .bind(u.name || 'MASAREEN member', email, 'app', 'pending', nowIso()).run();
+      }
+      const total = (await env.DB.prepare('SELECT COUNT(*) c FROM testers').first()).c || 0;
+      return json({ ok: true, enrolled: true, count: total,
+        message: "You're on the Android closed-test list. We'll email your Play testing link." });
+    }    if (path === '/api/v1/users/register' && req.method === 'POST') return await register(req, env);
     if (path === '/api/v1/auth/login' && req.method === 'POST') return await login(req, env);
     if (path.startsWith('/api/v1/auth/') || path === '/api/v1/users/me/settings' ||
         path === '/api/v1/users/me/password' || path === '/api/v1/users/me/delete' ||

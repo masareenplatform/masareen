@@ -1,4 +1,4 @@
-// MASAREEN API: Cloudflare Worker + D1. Free tier friendly (no paid services).
+﻿// MASAREEN API: Cloudflare Worker + D1. Free tier friendly (no paid services).
 // The landing page is served from the R2 bucket; this Worker only answers /api/*.
 // It works either same-origin (Worker route masareen.com/api/*) or on a subdomain
 // (api.masareen.com) thanks to the CORS handling below.
@@ -626,7 +626,55 @@ async function adminRoutes(req, env, url) {
     const csv = [cols.join(',')].concat(rows.map((r) => cols.map((c) => csvCell(r[c])).join(','))).join('\n');
     return new Response(csv, { headers: { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': 'attachment; filename="masareen-testers.csv"', 'cache-control': 'no-store' } });
   }
-  const testerStatus = /^\/api\/admin\/testers\/(\d+)\/status$/.exec(path);
+  if (path === '/api/admin/testers/invite' && req.method === 'POST') {
+    const b = await body(req);
+    let testingUrl = clean(b.testing_url, 500);
+    try {
+      const u = new URL(testingUrl);
+      if (u.protocol !== 'https:' || !/(^|\.)play\.google\.com$/.test(u.hostname)) {
+        throw new Error('bad');
+      }
+      testingUrl = u.toString();
+    } catch {
+      throw new HttpError(400, 'invalid_testing_url',
+        'Paste the https://play.google.com/apps/testing/... opt-in link from Play Console.');
+    }
+    const ids = Array.isArray(b.ids)
+      ? b.ids.map((id) => Number(id)).filter((id) => Number.isFinite(id)).slice(0, 500)
+      : [];
+    const rows = ids.length
+      ? (await env.DB.prepare(`SELECT * FROM testers WHERE id IN (${ids.map(() => '?').join(',')})`)
+          .bind(...ids).all()).results
+      : (await env.DB.prepare("SELECT * FROM testers WHERE status IN ('pending','invited') ORDER BY created_at ASC LIMIT 500").all()).results;
+    let sent = 0;
+    let skipped = 0;
+    for (const tester of rows || []) {
+      const first = escapeHtml((tester.name || '').split(/\s+/)[0] || 'there');
+      const safeUrl = escapeHtml(testingUrl);
+      const html = masareenEmailLayout({
+        preheader: 'Your MASAREEN Android closed-test link',
+        title: 'You are invited to test MASAREEN',
+        bodyHtml: `<p class="lead">Assalamu Alaikum ${first}, thank you for joining the MASAREEN pilot.</p><div class="body"><p>Use the button below to open the Google Play closed test, then install MASAREEN with the same Google account that received this email.</p><p><strong>Please keep the app installed for 14 days and use it at least once every few days.</strong> Google Play requires active testers before the public release.</p><p>If you have any issue, reply to this email and our team will help.</p></div>`,
+        ctaText: 'Open the Play closed test',
+        ctaUrl: safeUrl,
+      });
+      const result = await sendEmail(env, {
+        from: env.MAIL_FROM || 'MASAREEN <onboarding@resend.dev>',
+        to: [tester.email],
+        subject: 'You are invited to test MASAREEN on Android',
+        html,
+        reply_to: env.MAIL_REPLY_TO || undefined,
+      });
+      if (result.ok) {
+        sent += 1;
+        await env.DB.prepare("UPDATE testers SET status='invited', invited_at=?, notes=? WHERE id=?")
+          .bind(nowIso(), testingUrl, tester.id).run();
+      } else {
+        skipped += 1;
+      }
+    }
+    return json({ ok: true, sent, skipped, total: (rows || []).length, testing_url: testingUrl });
+  }  const testerStatus = /^\/api\/admin\/testers\/(\d+)\/status$/.exec(path);
   if (testerStatus && req.method === 'POST') {
     const b = await body(req);
     const status = ['pending', 'invited', 'active', 'declined'].includes(b.status) ? b.status : null;
@@ -740,6 +788,32 @@ async function liveProxy(req, env, ctx) {
   return out;
 }
 
+
+/* ---------- podcast audio CORS proxy (seed/external clips) ---------- */
+const AUDIO_PROXY_HOSTS = new Set(['www.soundhelix.com', 'soundhelix.com']);
+
+async function audioProxy(req) {
+  const url = new URL(req.url);
+  const raw = url.searchParams.get('url') || '';
+  let target;
+  try { target = new URL(raw); } catch { throw new HttpError(400, 'bad_url', 'Invalid audio URL.'); }
+  if (target.protocol !== 'https:' || !AUDIO_PROXY_HOSTS.has(target.hostname)) {
+    throw new HttpError(403, 'host_not_allowed', 'This audio host is not proxied.');
+  }
+  const upstreamHeaders = {};
+  const range = req.headers.get('range');
+  if (range) upstreamHeaders.range = range;
+  const upstream = await fetch(target.toString(), { headers: upstreamHeaders });
+  const headers = new Headers();
+  for (const name of ['content-type', 'content-length', 'content-range', 'accept-ranges', 'etag', 'last-modified']) {
+    const value = upstream.headers.get(name);
+    if (value) headers.set(name, value);
+  }
+  if (!headers.has('content-type')) headers.set('content-type', 'audio/mpeg');
+  headers.set('access-control-allow-origin', '*');
+  headers.set('cache-control', 'public, max-age=86400');
+  return new Response(upstream.body, { status: upstream.status, headers });
+}
 async function route(req, env, ctx) {
   const url = new URL(req.url);
   const p = url.pathname, m = req.method;
@@ -750,6 +824,7 @@ async function route(req, env, ctx) {
         throw new HttpError(403, 'bad_origin', 'Cross-site requests are not allowed.');
     }
     if (p === '/api/health') return json({ ok: true, service: 'masareen-api', time: nowIso(), googleConfigured: !!env.GOOGLE_CLIENT_ID });
+    if (p === '/api/media/audio' && m === 'GET') return await audioProxy(req);
     if (p.startsWith('/live/')) return await liveProxy(req, env, ctx);
     if (p === '/api/app/version' && m === 'GET') {
       // Public update manifest. Release values are editable by admins/agents

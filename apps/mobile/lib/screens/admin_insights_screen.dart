@@ -1,6 +1,7 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:masaren/api_client.dart';
@@ -10,6 +11,9 @@ import 'package:masaren/theme.dart';
 import 'package:masaren/widgets.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 
 class AdminInsightsScreen extends StatefulWidget {
   final User user;
@@ -110,6 +114,197 @@ class _AdminInsightsScreenState extends State<AdminInsightsScreen>
     }
   }
 
+
+  Future<void> _exportPdf() async {
+    try {
+      final reports = _reports ?? <String, dynamic>{};
+      final analytics = _analytics ?? <String, dynamic>{};
+      final totals = Map<String, dynamic>.from(
+          reports['totals'] as Map? ?? <String, dynamic>{});
+      final topUsers = (reports['top_users'] as List? ?? const [])
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+      final events = (analytics['events'] as List? ?? const [])
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+      final engaged = (analytics['top_engaged_users'] as List? ?? const [])
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+      final topPosts = (analytics['top_posts'] as List? ?? const [])
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+      final doc = pw.Document();
+      final generated = DateTime.now().toUtc();
+      doc.addPage(pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(30),
+        build: (context) => [
+          pw.Header(
+              level: 0,
+              child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text('MASAREEN Platform Report',
+                        style: pw.TextStyle(
+                            fontSize: 22, fontWeight: pw.FontWeight.bold)),
+                    pw.SizedBox(height: 4),
+                    pw.Text(
+                        'Generated ${generated.toIso8601String()} UTC  |  Window: last $_days days',
+                        style: const pw.TextStyle(
+                            fontSize: 9, color: PdfColors.grey700)),
+                  ])),
+          pw.SizedBox(height: 12),
+          pw.Text('Platform overview',
+              style:
+                  pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 6),
+          pw.Wrap(spacing: 8, runSpacing: 8, children: [
+            _pdfKpi('Users', '${totals['users'] ?? 0}'),
+            _pdfKpi('New users', '${totals['new_users'] ?? 0}'),
+            _pdfKpi('Posts', '${totals['posts'] ?? 0}'),
+            _pdfKpi('New posts', '${totals['new_posts'] ?? 0}'),
+            _pdfKpi('Evidence', '${totals['evidence'] ?? 0}'),
+            _pdfKpi('MRC spent', '${totals['mrc_spend'] ?? 0}'),
+          ]),
+          pw.SizedBox(height: 14),
+          pw.Text('User behaviour',
+              style:
+                  pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 6),
+          pw.Wrap(spacing: 8, runSpacing: 8, children: [
+            _pdfKpi('Post views', '${analytics['post_views'] ?? 0}'),
+            _pdfKpi('Impressions', '${analytics['impressions'] ?? 0}'),
+            _pdfKpi('Avg scroll', '${analytics['avg_scroll_depth'] ?? 0}%'),
+            _pdfKpi('Avg dwell', '${analytics['avg_dwell_ms'] ?? 0} ms'),
+            _pdfKpi('Watch time', '${analytics['watch_seconds'] ?? 0} s'),
+            _pdfKpi('Tracked events', '${analytics['scroll_events'] ?? 0}'),
+          ]),
+          pw.SizedBox(height: 14),
+          pw.Text('Most active users',
+              style:
+                  pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 6),
+          pw.TableHelper.fromTextArray(
+            headers: const ['User', 'Role', 'Events', 'Watch', 'Last event'],
+            data: engaged
+                .take(20)
+                .map((u) => [
+                      '${u['name'] ?? ''}',
+                      '${u['role'] ?? ''}',
+                      '${u['events'] ?? 0}',
+                      '${((u['watch_ms'] as num?)?.toInt() ?? 0) ~/ 1000}s',
+                      '${u['last_event'] ?? ''}',
+                    ])
+                .toList(),
+            headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9),
+            cellStyle: const pw.TextStyle(fontSize: 8),
+          ),
+          pw.SizedBox(height: 14),
+          pw.Text('Top impact users',
+              style:
+                  pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 6),
+          pw.TableHelper.fromTextArray(
+            headers: const ['User', 'Role', 'Posts', 'Impact'],
+            data: topUsers
+                .take(15)
+                .map((u) => [
+                      '${u['name'] ?? ''}',
+                      '${u['role'] ?? ''}',
+                      '${u['posts'] ?? 0}',
+                      '${u['impact_score'] ?? 0}',
+                    ])
+                .toList(),
+            headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9),
+            cellStyle: const pw.TextStyle(fontSize: 8),
+          ),
+          pw.SizedBox(height: 14),
+          pw.Text('Tracked event breakdown',
+              style:
+                  pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 6),
+          pw.TableHelper.fromTextArray(
+            headers: const ['Event', 'Count', 'Users', 'Avg ms', 'Value'],
+            data: events
+                .take(25)
+                .map((e) => [
+                      '${e['event_type'] ?? ''}',
+                      '${e['count'] ?? 0}',
+                      '${e['users'] ?? 0}',
+                      '${e['avg_ms'] ?? ''}',
+                      '${e['total_value'] ?? ''}',
+                    ])
+                .toList(),
+            headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9),
+            cellStyle: const pw.TextStyle(fontSize: 8),
+          ),
+          pw.SizedBox(height: 14),
+          pw.Text('Top posts',
+              style:
+                  pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 6),
+          pw.TableHelper.fromTextArray(
+            headers: const ['Author', 'Kind', 'Likes', 'Comments', 'Shares'],
+            data: topPosts
+                .take(15)
+                .map((p) => [
+                      '${p['author_name'] ?? ''}',
+                      '${p['kind'] ?? ''}',
+                      '${p['likes'] ?? 0}',
+                      '${p['comments'] ?? 0}',
+                      '${p['shares'] ?? 0}',
+                    ])
+                .toList(),
+            headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9),
+            cellStyle: const pw.TextStyle(fontSize: 8),
+          ),
+          pw.SizedBox(height: 18),
+          pw.Text(
+              'Confidential platform analytics generated by MASAREEN. Figures are based on stored platform events and impact records.',
+              style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700)),
+        ],
+      ));
+      final bytes = await doc.save();
+      if (kIsWeb) {
+        await Printing.layoutPdf(onLayout: (_) async => bytes);
+      } else {
+        await Printing.sharePdf(
+            bytes: bytes,
+            filename:
+                'masareen-platform-report-${DateTime.now().millisecondsSinceEpoch}.pdf');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('PDF export failed: $e')));
+      }
+    }
+  }
+
+  pw.Widget _pdfKpi(String label, String value) {
+    return pw.Container(
+      width: 150,
+      padding: const pw.EdgeInsets.all(8),
+      decoration: pw.BoxDecoration(
+          color: PdfColors.grey100,
+          borderRadius: pw.BorderRadius.circular(6)),
+      child: pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            pw.Text(value,
+                style:
+                    pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+            pw.SizedBox(height: 2),
+            pw.Text(label,
+                style: const pw.TextStyle(
+                    fontSize: 8, color: PdfColors.grey700)),
+          ]),
+    );
+  }
   Future<void> _verdict(Map<String, dynamic> item, String status) async {
     try {
       await AuthApi.adminLeaderboardVerdict(item['id'].toString(), status);
@@ -140,6 +335,11 @@ class _AdminInsightsScreenState extends State<AdminInsightsScreen>
               PopupMenuItem(value: 30, child: Text('30 days')),
               PopupMenuItem(value: 90, child: Text('90 days')),
             ],
+          ),
+          IconButton(
+            onPressed: _exportPdf,
+            icon: const Icon(Icons.picture_as_pdf_outlined),
+            tooltip: 'Generate PDF report',
           ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.file_download_outlined),
@@ -244,15 +444,53 @@ class _AdminInsightsScreenState extends State<AdminInsightsScreen>
         .whereType<Map>()
         .map((e) => Map<String, dynamic>.from(e))
         .toList();
+    final engaged = (_analytics?['top_engaged_users'] as List? ?? const [])
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        Wrap(spacing: 10, runSpacing: 10, children: [
+          _kpi('Post views', '${_analytics?['post_views'] ?? 0}',
+              Icons.visibility_outlined, AppColors.azure),
+          _kpi('Impressions', '${_analytics?['impressions'] ?? 0}',
+              Icons.ads_click_outlined, AppColors.accent),
+          _kpi('Scroll depth',
+              '${(_analytics?['avg_scroll_depth'] ?? 0).toStringAsFixed(1)}%',
+              Icons.swipe_vertical_outlined, AppColors.brand),
+          _kpi('Avg dwell',
+              '${(_analytics?['avg_dwell_ms'] as num?)?.toInt() ?? 0} ms',
+              Icons.timer_outlined, AppColors.amber),
+          _kpi('Watch time', '${_analytics?['watch_seconds'] ?? 0} s',
+              Icons.play_circle_outline, AppColors.warm),
+        ]),
+        const SizedBox(height: 12),
         Text(
             '${_t('admin.scrollDepth', 'Avg feed scroll depth')}: '
             '${(_analytics?['avg_scroll_depth'] ?? 0).toStringAsFixed(1)}% · '
             '${_analytics?['scroll_events'] ?? 0} sessions',
             style: TextStyle(color: cs.onSurfaceVariant)),
         const SizedBox(height: 12),
+        SectionTitle(
+            title: _t('admin.engagedUsers', 'Most active users')),
+        ...engaged.take(12).map((u) => ListTile(
+              dense: true,
+              leading: AppAvatar(
+                  name: u['name']?.toString() ?? 'Member',
+                  url: u['avatar_url']?.toString(),
+                  size: 34),
+              title: Text(u['name']?.toString() ?? 'Member',
+                  style: const TextStyle(fontWeight: FontWeight.w700)),
+              subtitle: Text(
+                  '${u['role'] ?? ''} | ${u['events'] ?? 0} events | '
+                  '${((u['watch_ms'] as num?)?.toInt() ?? 0) ~/ 1000}s watched'),
+              trailing: Text(
+                  '${(u['avg_scroll'] as num?)?.toStringAsFixed(1) ?? '-'}%',
+                  style: TextStyle(
+                      color: cs.primary, fontWeight: FontWeight.w800)),
+            )),
+        const SizedBox(height: 8),
         SectionTitle(title: _t('admin.events', 'Tracked events')),
         ...events.take(20).map((e) => ListTile(
               dense: true,
