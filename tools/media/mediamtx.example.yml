@@ -1,0 +1,44 @@
+logLevel: info
+logDestinations: [stdout]
+
+api: yes
+apiAddress: 127.0.0.1:9997
+
+rtmp: yes
+rtmpAddress: :1935
+
+hls: yes
+hlsAddress: :8888
+hlsVariant: mpegts
+hlsSegmentCount: 7
+hlsSegmentDuration: 1s
+hlsAlwaysRemux: yes
+hlsAllowOrigins: ["*"]
+
+webrtc: yes
+webrtcAddress: :8889
+webrtcAllowOrigins: ["*"]
+
+authMethod: internal
+authInternalUsers:
+  - user: masareen
+    pass: CHANGE_ME
+    permissions:
+      - action: publish
+        path: live/masareen
+  - user: any
+    pass:
+    permissions:
+      - action: read
+        path: live/masareen
+  - user: any
+    pass:
+    ips: ["127.0.0.1", "::1"]
+    permissions:
+      - action: api
+      - action: metrics
+      - action: pprof
+
+paths:
+  live/masareen:
+    source: publisher
