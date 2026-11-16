@@ -5,7 +5,9 @@ import 'package:masaren/l10n.dart';
 import 'package:masaren/models.dart';
 import 'package:masaren/screens/create_vod_screen.dart';
 import 'package:masaren/services/share_policy.dart';
+import 'package:masaren/widgets.dart';
 import 'package:masaren/widgets/animations.dart';
+import 'package:masaren/widgets/content_engagement.dart';
 import 'package:masaren/widgets/smart_image.dart';
 import 'package:video_player/video_player.dart';
 
@@ -385,11 +387,29 @@ class _VodPlayerScreenState extends State<VodPlayerScreen> {
                               Padding(
                                 padding: const EdgeInsets.only(top: 10),
                                 child: Text(_video!['description'].toString(),
+                                    textDirection: textDirectionFor(
+                                        _video!['description'].toString()),
                                     style: TextStyle(
                                         fontSize: 13.5,
                                         height: 1.6,
                                         color: cs.onSurface)),
                               ),
+                            const SizedBox(height: 8),
+                            ContentEngagement(
+                              targetType: 'vod',
+                              targetId: widget.videoId,
+                              user: widget.user,
+                              initialReactions:
+                                  (_video?['reaction_count'] as num?)
+                                          ?.toInt() ??
+                                      0,
+                              initialComments:
+                                  (_video?['comment_count'] as num?)
+                                          ?.toInt() ??
+                                      0,
+                              initiallyReacted: _video?['reacted'] == true,
+                              onShare: () async => _share(),
+                            ),
                           ],
                         ),
                       ),

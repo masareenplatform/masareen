@@ -2089,6 +2089,107 @@ async function createPost(req, env) {
   return json(postJson(row, false, null), 201);
 }
 
+
+const CONTENT_TABLES = {
+  VOD: { table: 'vod_videos', owner: 'owner_id' },
+  PODCAST: { table: 'podcast_shows', owner: 'owner_id' },
+  EPISODE: { table: 'podcast_episodes', owner: null },
+};
+
+async function resolveContentTarget(env, type, id) {
+  const def = CONTENT_TABLES[type];
+  if (!def) throw new HttpError(400, 'invalid_content_type', 'Unsupported content type.');
+  if (type === 'EPISODE') {
+    const row = await env.DB.prepare(`SELECT e.id,e.show_id,s.owner_id FROM podcast_episodes e
+      JOIN podcast_shows s ON s.id=e.show_id WHERE e.id=?`).bind(id).first();
+    if (!row) throw new HttpError(404, 'content_not_found', 'Content not found.');
+    return { ownerId: Number(row.owner_id), table: def.table };
+  }
+  const row = await env.DB.prepare(`SELECT id,${def.owner} owner_id FROM ${def.table} WHERE id=?`)
+    .bind(id).first();
+  if (!row) throw new HttpError(404, 'content_not_found', 'Content not found.');
+  return { ownerId: Number(row.owner_id), table: def.table };
+}
+
+async function contentStats(env, type, id, viewerId) {
+  const counts = await env.DB.prepare(`SELECT
+      (SELECT COUNT(*) FROM content_comments WHERE target_type=? AND target_id=?) comment_count,
+      (SELECT COUNT(*) FROM content_reactions WHERE target_type=? AND target_id=?) reaction_count`)
+    .bind(type, id, type, id).first();
+  let reacted = false;
+  if (viewerId != null) {
+    reacted = !!(await env.DB.prepare(`SELECT 1 x FROM content_reactions
+      WHERE target_type=? AND target_id=? AND user_id=?`).bind(type, id, viewerId).first());
+  }
+  return {
+    comment_count: Number(counts?.comment_count || 0),
+    reaction_count: Number(counts?.reaction_count || 0),
+    reacted,
+  };
+}
+
+async function listContentComments(req, env, type, id) {
+  const viewer = await currentUser(req, env);
+  const rows = (await env.DB.prepare(`SELECT c.*,u.name author_name,u.handle author_handle,
+      u.picture author_picture,u.email_verified author_verified
+    FROM content_comments c JOIN users u ON u.id=c.author_id
+    WHERE c.target_type=? AND c.target_id=? ORDER BY c.created_at ASC LIMIT 300`)
+    .bind(type, id).all()).results || [];
+  return json(rows.map((c) => ({
+    id: String(c.id), text: c.text,
+    author_id: String(c.author_id), author_name: c.author_name,
+    author_handle: c.author_handle, author_picture: c.author_picture || null,
+    author_verified: !!c.author_verified, like_count: 0, liked_by_me: false,
+    created_at: c.created_at,
+  })));
+}
+
+async function addContentComment(req, env, type, id) {
+  const u = await requireUser(req, env);
+  const target = await resolveContentTarget(env, type, id);
+  const b = await readJson(req);
+  const text = clean(b.text, 2000);
+  if (text.length < 1) throw new HttpError(400, 'empty_comment', 'Write a comment first.');
+  const at = nowIso();
+  const ins = await env.DB.prepare(`INSERT INTO content_comments
+    (target_type,target_id,author_id,text,created_at) VALUES (?,?,?,?,?)`)
+    .bind(type, id, u.id, text, at).run();
+  if (target.ownerId) {
+    notify(env, target.ownerId, 'comment', `${u.name || 'Someone'} commented`,
+      text, u.id, null, { dedupeKey: `content-comment:${type}:${id}:${u.id}` }).catch(() => {});
+  }
+  const row = await env.DB.prepare(`SELECT c.*,u.name author_name,u.handle author_handle,
+      u.picture author_picture,u.email_verified author_verified
+    FROM content_comments c JOIN users u ON u.id=c.author_id WHERE c.id=?`)
+    .bind(ins.meta.last_row_id).first();
+  return json({
+    id: String(row.id), text: row.text, author_id: String(row.author_id),
+    author_name: row.author_name, author_handle: row.author_handle,
+    author_picture: row.author_picture || null, author_verified: !!row.author_verified,
+    like_count: 0, liked_by_me: false, created_at: row.created_at,
+  }, 201);
+}
+
+async function toggleContentReaction(req, env, type, id) {
+  const u = await requireUser(req, env);
+  const target = await resolveContentTarget(env, type, id);
+  const has = await env.DB.prepare(`SELECT 1 x FROM content_reactions
+    WHERE target_type=? AND target_id=? AND user_id=?`).bind(type, id, u.id).first();
+  if (has) {
+    await env.DB.prepare(`DELETE FROM content_reactions
+      WHERE target_type=? AND target_id=? AND user_id=?`).bind(type, id, u.id).run();
+  } else {
+    await env.DB.prepare(`INSERT INTO content_reactions
+      (target_type,target_id,user_id,created_at) VALUES (?,?,?,?)`)
+      .bind(type, id, u.id, nowIso()).run();
+    if (target.ownerId) {
+      notify(env, target.ownerId, 'like', `${u.name || 'Someone'} reacted to your content`,
+        '', u.id, null, { dedupeKey: `content-like:${type}:${id}:${u.id}` }).catch(() => {});
+    }
+  }
+  const stats = await contentStats(env, type, id, u.id);
+  return json({ ok: true, reacted: stats.reacted, reactions: stats.reaction_count });
+}
 async function toggleLike(req, env, id) {
   const u = await requireUser(req, env);
   const post = await env.DB.prepare('SELECT id, author_id FROM posts WHERE id=? AND hidden=0').bind(id).first();
@@ -5458,6 +5559,8 @@ function podcastShowJson(s) {
     verified: s.verification_status === 'APPROVED',
     episodes_count: Number(s.episodes_count || 0),
     latest_episode_at: s.latest_episode_at || null,
+    comment_count: Number(s.comment_count || 0),
+    reaction_count: Number(s.reaction_count || 0),
     created_at: s.created_at,
   };
 }
@@ -5496,6 +5599,9 @@ function vodJson(v, viewerId) {
     views: Number(v.views || 0), status: v.status || 'PUBLISHED',
     verification_status: v.verification_status || 'PENDING',
     verified: v.verification_status === 'APPROVED',
+    comment_count: Number(v.comment_count || 0),
+    reaction_count: Number(v.reaction_count || 0),
+    reacted: !!v.reacted,
     is_owner: viewerId != null && Number(v.owner_id) === Number(viewerId),
     created_at: v.created_at,
   };
@@ -5528,7 +5634,8 @@ async function getPodcastShow(env, id) {
     LEFT JOIN events ev ON ev.id=e.event_id
     WHERE e.show_id=? AND e.status='PUBLISHED'
     ORDER BY e.season_number DESC,e.episode_number DESC LIMIT 200`).bind(id).all()).results || [];
-  return { ...podcastShowJson(row), episodes: episodes.map(podcastEpisodeJson) };
+  const stats = await contentStats(env, 'PODCAST', id, null);
+  return { ...podcastShowJson(row), ...stats, episodes: episodes.map(podcastEpisodeJson) };
 }
 
 async function createPodcastShow(req, env) {
@@ -5662,7 +5769,8 @@ async function getVodDetail(req, env, id) {
     throw new HttpError(404, 'vod_not_found', 'Video not found.');
   }
   await env.DB.prepare('UPDATE vod_videos SET views=views+1 WHERE id=?').bind(id).run();
-  return json(vodJson({ ...row, views: Number(row.views || 0) + 1 }, viewer?.id));
+  const stats = await contentStats(env, 'VOD', id, viewer?.id);
+  return json(vodJson({ ...row, ...stats, views: Number(row.views || 0) + 1 }, viewer?.id));
 }
 
 /* ---------------- programs, projects and tasks ---------------- */
@@ -10275,6 +10383,20 @@ export async function socialRoutes(req, env, ctx) {
     if (path === '/api/v1/discovery/feed' && req.method === 'GET') return await discoveryFeed(req, env, url);
     if (path === '/api/v1/posts' && req.method === 'GET') return await listPosts(req, env, url);
     if (path === '/api/v1/posts' && req.method === 'POST') return await createPost(req, env);
+    const contentMatch = /^\/api\/v1\/content\/(vod|podcast|episode)\/(\d+)\/(comments|react)$/.exec(path);
+    if (contentMatch) {
+      const type = contentMatch[1].toUpperCase();
+      const contentId = Number(contentMatch[2]);
+      if (contentMatch[3] === 'comments' && req.method === 'GET') {
+        return await listContentComments(req, env, type, contentId);
+      }
+      if (contentMatch[3] === 'comments' && req.method === 'POST') {
+        return await addContentComment(req, env, type, contentId);
+      }
+      if (contentMatch[3] === 'react' && req.method === 'POST') {
+        return await toggleContentReaction(req, env, type, contentId);
+      }
+    }
     const postMatch = /^\/api\/v1\/posts\/(\d+)(\/[a-z]+)?$/.exec(path);
     if (postMatch) {
       const id = Number(postMatch[1]);

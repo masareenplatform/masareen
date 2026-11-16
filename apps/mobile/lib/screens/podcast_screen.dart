@@ -9,7 +9,9 @@ import 'package:masaren/screens/create_episode_screen.dart';
 import 'package:masaren/screens/create_podcast_screen.dart';
 import 'package:masaren/screens/event_hub_screen.dart';
 import 'package:masaren/services/share_policy.dart';
+import 'package:masaren/widgets.dart';
 import 'package:masaren/widgets/animations.dart';
+import 'package:masaren/widgets/content_engagement.dart';
 import 'package:masaren/widgets/smart_image.dart';
 
 class PodcastHubScreen extends StatefulWidget {
@@ -303,6 +305,15 @@ class _PodcastShowScreenState extends State<PodcastShowScreen> {
         confirmation: _t('podcast.linkCopied', 'Podcast link copied.'));
   }
 
+  void _shareEpisode(Map<String, dynamic> episode) {
+    final show = _show;
+    if (show == null) return;
+    SharePolicy.copy(context,
+        allowed: show['verified'] == true,
+        text: ' � https://masareen.com/podcasts/?episode=',
+        confirmation: _t('podcast.episodeLinkCopied', 'Episode link copied.'));
+  }
+
   Future<void> _addEpisode() async {
     final changed = await Navigator.of(context).push<bool>(MaterialPageRoute(
         builder: (_) => CreateEpisodeScreen(
@@ -420,9 +431,25 @@ class _PodcastShowScreenState extends State<PodcastShowScreen> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
                 child: Text(show['description'].toString(),
+                    textDirection:
+                        textDirectionFor(show['description'].toString()),
                     style: TextStyle(
                         fontSize: 13.5, height: 1.6, color: cs.onSurface)),
               ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
+              child: ContentEngagement(
+                targetType: 'podcast',
+                targetId: widget.showId,
+                user: widget.user,
+                initialReactions:
+                    (show['reaction_count'] as num?)?.toInt() ?? 0,
+                initialComments:
+                    (show['comment_count'] as num?)?.toInt() ?? 0,
+                initiallyReacted: show['reacted'] == true,
+                onShare: () async => _share(),
+              ),
+            ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
               child: Text(_t('podcast.episodePlural', 'Episodes'),
@@ -507,6 +534,12 @@ class _PodcastShowScreenState extends State<PodcastShowScreen> {
                                         color: cs.onSurfaceVariant)),
                               ],
                             ),
+                          ),
+                          IconButton(
+                            onPressed: () => _shareEpisode(episode),
+                            tooltip: _t('common.share', 'Share'),
+                            icon: const Icon(Icons.ios_share, size: 18),
+                            visualDensity: VisualDensity.compact,
                           ),
                           if (episode['verified'] == true)
                             Icon(Icons.verified, size: 16, color: cs.primary),

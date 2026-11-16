@@ -1661,6 +1661,8 @@ class _PostCard extends StatelessWidget {
     final highImpact = (post.impactValue ?? 0) >= 6.5;
 
     return Container(
+      margin: const EdgeInsets.fromLTRB(12, 6, 12, 10),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: highImpact ? null : cs.surface,
         gradient: highImpact
@@ -1674,12 +1676,24 @@ class _PostCard extends StatelessWidget {
                 ],
               )
             : null,
-        border: Border(
-          bottom: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.3)),
-          left: highImpact
-              ? BorderSide(color: cs.primary.withValues(alpha: 0.55), width: 3)
-              : BorderSide.none,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: highImpact
+              ? cs.primary.withValues(alpha: 0.38)
+              : cs.outlineVariant.withValues(alpha: 0.55),
         ),
+        boxShadow: highImpact
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(
+                      alpha: Theme.of(context).brightness == Brightness.dark
+                          ? 0.18
+                          : 0.045),
+                  blurRadius: 14,
+                  offset: const Offset(0, 4),
+                ),
+              ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

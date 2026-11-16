@@ -526,13 +526,58 @@ class _VoiceNotePlayerState extends State<_VoiceNotePlayer> {
                     style: TextStyle(
                         fontSize: 12.5, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 6),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: progress,
-                    minHeight: 4,
-                    backgroundColor: cs.primary.withValues(alpha: 0.15),
-                  ),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    const count = 34;
+                    final bars = List.generate(count, (i) {
+                      final pattern = (i * 7 + 5) % 13;
+                      return 7.0 +
+                          pattern * 1.45 +
+                          (i % 4 == 0 ? 5.0 : 0.0);
+                    });
+                    void seek(TapDownDetails d) {
+                      if (_duration.inMilliseconds <= 0) return;
+                      final ratio =
+                          (d.localPosition.dx / constraints.maxWidth)
+                              .clamp(0.0, 1.0);
+                      _player.seek(Duration(
+                          milliseconds:
+                              (ratio * _duration.inMilliseconds).round()));
+                    }
+
+                    return MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      child: GestureDetector(
+                        onTapDown: seek,
+                        behavior: HitTestBehavior.opaque,
+                        child: SizedBox(
+                          height: 28,
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: List.generate(count, (i) {
+                              final played = i / count <= progress;
+                              return Expanded(
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(horizontal: 1),
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 140),
+                                    height: bars[i],
+                                    decoration: BoxDecoration(
+                                      color: played
+                                          ? cs.primary
+                                          : cs.primary.withValues(alpha: 0.18),
+                                      borderRadius: BorderRadius.circular(2),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ],
             ),

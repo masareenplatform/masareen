@@ -410,6 +410,30 @@ class AuthApi {
     return data as Map<String, dynamic>;
   }
 
+
+  static Future<List<Comment>> contentComments(
+      String type, String id) async {
+    final data =
+        await api.get('/api/v1/content/$type/$id/comments');
+    final list = data is List ? data : <dynamic>[];
+    return list
+        .map((e) => Comment.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  static Future<Comment> addContentComment(
+      String type, String id, String text) async {
+    final data = await api.post('/api/v1/content/$type/$id/comments', {
+      'text': text,
+    });
+    return Comment.fromJson(data as Map<String, dynamic>);
+  }
+
+  static Future<Map<String, dynamic>> toggleContentReaction(
+      String type, String id) async {
+    final data = await api.post('/api/v1/content/$type/$id/react', {});
+    return data as Map<String, dynamic>;
+  }
   static Future<List<Comment>> comments(String postId) async {
     final data = await api.get('/api/v1/posts/$postId/comments');
     final list = data is List ? data : <dynamic>[];

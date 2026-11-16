@@ -1621,6 +1621,8 @@ class _WebSidebar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final ar = Localizations.localeOf(context).languageCode == 'ar';
+    String t(String en, String arText) => ar ? arText : en;
     final admin = user.isAdmin || user.role.toUpperCase() == 'ADMIN';
     return Container(
       width: 258,
@@ -1715,17 +1717,17 @@ class _WebSidebar extends StatelessWidget {
                   child: InkWell(
                     borderRadius: BorderRadius.circular(14),
                     onTap: onCreate,
-                    child: const Padding(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 11),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.add_rounded,
+                          const Icon(Icons.add_rounded,
                               color: Colors.white, size: 20),
-                          SizedBox(width: 7),
-                          Text('Create',
-                              style: TextStyle(
+                          const SizedBox(width: 7),
+                          Text(t('Create', 'إنشاء'),
+                              style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w800,
                                   fontSize: 13)),
@@ -1741,77 +1743,79 @@ class _WebSidebar extends StatelessWidget {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(10, 4, 10, 16),
                 children: [
-                  _webSection(context, 'WORKSPACE'),
+                  _webSection(context, t('WORKSPACE', 'مساحة العمل')),
                   _webItem(context, Icons.home_outlined, Icons.home_rounded,
-                      'Home', selected: activeKey == 'home',
+                      t('Home', 'الرئيسية'), selected: activeKey == 'home',
                       onTap: () => onTab(0)),
                   _webItem(context, Icons.explore_outlined, Icons.explore_rounded,
-                      'Explore', selected: activeKey == 'explore',
+                      t('Explore', 'استكشف'), selected: activeKey == 'explore',
                       onTap: () => onTab(1)),
                   _webItem(context, Icons.candlestick_chart_outlined,
-                      Icons.candlestick_chart, 'Impact Market',
+                      Icons.candlestick_chart, t('Impact Market', 'سوق الأثر'),
                       onTap: () => onOpen(MarketScreen(user: user))),
                   _webItem(context, Icons.newspaper_outlined,
-                      Icons.newspaper, 'Newsroom',
+                      Icons.newspaper, t('Newsroom', 'غرفة الأخبار'),
                       onTap: () => onOpen(NewsroomScreen(user: user))),
                   _webItem(context, Icons.event_outlined, Icons.event,
-                      'Events',
+                      t('Events', 'الفعاليات'),
                       onTap: () => onOpen(EventsScreen(user: user))),
                   _webItem(context, Icons.school_outlined, Icons.school,
-                      'Courses', selected: activeKey == 'courses',
+                      t('Courses', 'الدورات'), selected: activeKey == 'courses',
                       onTap: () => onTab(3)),
                   const SizedBox(height: 8),
-                  _webSection(context, 'COMMUNITY'),
+                  _webSection(context, t('COMMUNITY', 'المجتمع')),
                   _webItem(context, Icons.forum_outlined, Icons.forum,
-                      'Messages', badge: unreadMessages, selected: activeKey == 'messages',
+                      t('Messages', 'الرسائل'), badge: unreadMessages, selected: activeKey == 'messages',
                       onTap: () => onOpen(MessagesScreen(user: user))),
                   _webItem(context, Icons.notifications_outlined,
-                      Icons.notifications, 'Notifications',
+                      Icons.notifications, t('Notifications', 'الإشعارات'),
                       badge: unreadNotifications,
                       onTap: () =>
                           onOpen(NotificationsScreen(userId: user.id))),
                   _webItem(context, Icons.bookmark_border, Icons.bookmark,
-                      'Saved posts',
+                      t('Saved posts', 'المحفوظات'),
                       onTap: () => onOpen(SavedPostsScreen(user: user))),
-                  _webItem(context, Icons.search, Icons.search_rounded, 'Search',
+                  _webItem(context, Icons.search, Icons.search_rounded,
+                      t('Search', 'البحث'),
                       onTap: () => onOpen(SearchScreen(user: user))),
                   _webItem(context, Icons.person_outline, Icons.person,
-                      'My profile', selected: activeKey == 'profile',
+                      t('My profile', 'ملفي'), selected: activeKey == 'profile',
                       onTap: onProfile),
                   const SizedBox(height: 8),
-                  _webSection(context, 'GROW'),
-                  _webItem(context, Icons.hub_outlined, Icons.hub, 'Programs',
+                  _webSection(context, t('GROW', 'النمو')),
+                  _webItem(context, Icons.hub_outlined, Icons.hub,
+                      t('Programs', 'البرامج'),
                       onTap: () => onOpen(ProgramsScreen(user: user))),
                   _webItem(context, Icons.handshake_outlined, Icons.handshake,
-                      'Projects',
+                      t('Projects', 'المشاريع'),
                       onTap: () => onOpen(ProjectsScreen(user: user))),
                   _webItem(context, Icons.work_outline, Icons.work,
-                      'Opportunities',
+                      t('Opportunities', 'الفرص'),
                       onTap: () => onOpen(OpportunitiesScreen(user: user))),
                   _webItem(context, Icons.live_tv_outlined, Icons.live_tv,
-                      'Live TV', onTap: () => onOpen(const LiveTvScreen())),
+                      t('Live TV', 'البث المباشر'), onTap: () => onOpen(const LiveTvScreen())),
                   _webItem(context, Icons.podcasts, Icons.podcasts,
-                      'Podcasts', onTap: () => onOpen(PodcastHubScreen(user: user))),
+                      t('Podcasts', 'البودكاست'), onTap: () => onOpen(PodcastHubScreen(user: user))),
                   _webItem(context, Icons.video_library_outlined,
-                      Icons.video_library, 'VOD',
+                      Icons.video_library, t('VOD', 'الفيديو حسب الطلب'),
                       onTap: () => onOpen(VodHubScreen(user: user))),
                   _webItem(context, Icons.account_balance_wallet_outlined,
-                      Icons.account_balance_wallet, 'Wallet',
+                      Icons.account_balance_wallet, t('Wallet', 'المحفظة'),
                       onTap: () => onOpen(WalletScreen(user: user))),
                   _webItem(context, Icons.workspace_premium_outlined,
-                      Icons.workspace_premium, 'MASAREEN Pro',
+                      Icons.workspace_premium, t('MASAREEN Pro', 'مصارين برو'),
                       onTap: () => onOpen(ProScreen(user: user))),
                   _webItem(context, Icons.campaign_outlined, Icons.campaign,
-                      'Ads Manager', onTap: () => onOpen(AdsScreen(user: user))),
+                      t('Ads Manager', 'إدارة الإعلانات'), onTap: () => onOpen(AdsScreen(user: user))),
                   _webItem(context, Icons.badge_outlined, Icons.badge,
-                      'Impact passport',
+                      t('Impact passport', 'جواز الأثر'),
                       onTap: () => onOpen(PassportScreen(user: user))),
                   _webItem(context, Icons.verified_user_outlined,
-                      Icons.verified_user, 'Verification',
+                      Icons.verified_user, t('Verification', 'التوثيق'),
                       onTap: () => onOpen(VerificationScreen(user: user))),
                   if (admin)
                     _webItem(context, Icons.admin_panel_settings_outlined,
-                        Icons.admin_panel_settings, 'Administration',
+                        Icons.admin_panel_settings, t('Administration', 'الإدارة'),
                         onTap: () => onOpen(AdminScreen(user: user))),
                 ],
               ),
@@ -1979,6 +1983,8 @@ class _WebRightRailState extends State<_WebRightRail> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final ar = Localizations.localeOf(context).languageCode == 'ar';
+    String t(String en, String arText) => ar ? arText : en;
     final discount = _advantage?['discount_percent'] ?? 0;
     final pro = _advantage?['pro_yearly_price_mrc'];
     final markets = _markets.take(5).toList();
@@ -2006,7 +2012,7 @@ class _WebRightRailState extends State<_WebRightRail> {
                   children: [
                     Icon(Icons.search, size: 19, color: cs.onSurfaceVariant),
                     const SizedBox(width: 10),
-                    Text('Search MASAREEN',
+                    Text(t('Search MASAREEN', 'ابحث في مصارين'),
                         style: TextStyle(
                             fontSize: 12.5, color: cs.onSurfaceVariant)),
                   ],
@@ -2020,49 +2026,51 @@ class _WebRightRailState extends State<_WebRightRail> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('YOUR IMPACT ADVANTAGE',
+                  Text(t('YOUR IMPACT ADVANTAGE', 'ميزة أثرك'),
                       style: TextStyle(
                           color: Colors.white.withValues(alpha: .7),
                           fontSize: 9.5,
                           letterSpacing: 1,
                           fontWeight: FontWeight.w800)),
                   const SizedBox(height: 6),
-                  Text('$discount% off',
+                  Text(ar ? 'خصم $discount%' : '$discount% off',
                       style: const TextStyle(
                           color: Colors.white,
                           fontSize: 25,
                           fontWeight: FontWeight.w900)),
                   Text(
                       pro == null
-                          ? 'Based on verified impact and holdings'
-                          : 'Pro yearly ${(pro as num).toInt()} MRC',
+                          ? t('Based on verified impact and holdings',
+                              'بناءً على أثرك الموثق وحصصك')
+                          : t('Pro yearly ${pro.toInt()} MRC',
+                              'برو سنوي ${pro.toInt()} م.ر.ص'),
                       style: TextStyle(
                           color: Colors.white.withValues(alpha: .8),
                           fontSize: 11)),
                   const SizedBox(height: 10),
                   Row(
                     children: [
-                      _pill('Balance',
+                      _pill(t('Balance', 'الرصيد'),
                           '${widget.balance?.toStringAsFixed(0) ?? '-'} MRC'),
                       const SizedBox(width: 8),
-                      _pill('Role', widget.user.role.toLowerCase()),
+                      _pill(t('Role', 'الدور'), widget.user.role.toLowerCase()),
                     ],
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 18),
-            _heading(context, 'TRENDING MARKETS', 'See all', widget.onMarket),
+            _heading(context, t('TRENDING MARKETS', 'الأسواق الرائجة'), t('See all', 'عرض الكل'), widget.onMarket),
             const SizedBox(height: 6),
             if (markets.isEmpty)
-              _muted(context, 'Market data is loading...')
+              _muted(context, t('Market data is loading...', 'جارٍ تحميل بيانات السوق...'))
             else
               ...markets.map((m) => _marketRow(context, m)),
             const SizedBox(height: 18),
-            _heading(context, 'VERIFIED NEWSROOM', 'Open', widget.onNews),
+            _heading(context, t('VERIFIED NEWSROOM', 'غرفة أخبار موثقة'), t('Open', 'فتح'), widget.onNews),
             const SizedBox(height: 6),
             if (news.isEmpty)
-              _muted(context, 'No published news yet.')
+              _muted(context, t('No published news yet.', 'لا توجد أخبار منشورة بعد.'))
             else
               ...news.map((n) => _newsRow(context, n)),
             const SizedBox(height: 18),
@@ -2107,7 +2115,7 @@ class _WebRightRailState extends State<_WebRightRail> {
             ),
             const SizedBox(height: 14),
             Text(
-                'MASAREEN Web 0.4.13  |  one engine, every screen',
+                t('MASAREEN Web 0.4.13  |  one engine, every screen', 'مصارين ويب 0.4.13  |  محرك واحد لكل الشاشات'),
                 style: TextStyle(
                     fontSize: 9.5,
                     color: cs.onSurfaceVariant.withValues(alpha: .7))),
