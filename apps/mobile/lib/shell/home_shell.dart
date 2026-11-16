@@ -484,7 +484,7 @@ class _HomeShellState extends State<HomeShell> {
         builder: (_, tab, ___) {
           final maxWidth = tab == 0 ? 720.0 : 980.0;
           return ColoredBox(
-            color: Theme.of(context).colorScheme.surfaceContainerLow,
+            color: Theme.of(context).scaffoldBackgroundColor,
             child: Align(
               alignment: Alignment.topCenter,
               child: ConstrainedBox(
@@ -501,7 +501,7 @@ class _HomeShellState extends State<HomeShell> {
     final width = MediaQuery.sizeOf(context).width;
     final showRail = width >= 1380;
     return Scaffold(
-      backgroundColor: cs.surfaceContainerLow,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -529,7 +529,7 @@ class _HomeShellState extends State<HomeShell> {
           ),
           Expanded(
             child: ColoredBox(
-              color: cs.surfaceContainerLow,
+              color: Theme.of(context).scaffoldBackgroundColor,
               child: Align(
                 alignment: Alignment.topCenter,
                 child: ConstrainedBox(
@@ -537,7 +537,7 @@ class _HomeShellState extends State<HomeShell> {
                   child: SizedBox.expand(
                     child: DecoratedBox(
                       decoration: BoxDecoration(
-                        color: cs.surfaceContainerLow,
+                        color: Theme.of(context).scaffoldBackgroundColor,
                         border: BorderDirectional(
                           start: BorderSide(
                               color:
