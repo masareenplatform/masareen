@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -25,7 +25,7 @@
   #google { display: flex; justify-content: center; min-height: 44px; }
   #status { min-height: 42px; margin-top: 20px; font-size: 13px; color: #b9d6d6; }
   #status.error { color: #ff9b9b; }
-  #open {
+  #open, #openWeb {
     display: none; width: 100%; margin-top: 12px; padding: 14px 18px; border: 0; cursor: pointer;
     border-radius: 999px; font-weight: 700; font-size: 14px; color: #06231f; text-align: center;
     text-decoration: none; background: linear-gradient(90deg, #7fe3d4 0%, #bda36a 100%);
@@ -43,6 +43,7 @@
          data-type="standard" data-shape="pill" data-theme="filled_black"
          data-text="continue_with" data-size="large" data-logo_alignment="left"></div>
     <a id="open" href="#" role="button">Open MASAREEN</a>
+    <a id="openWeb" href="#" role="button">Open MASAREEN Web App</a>
     <div id="status" role="status" aria-live="polite"></div>
     <div class="foot">SECURE SIGN-IN · MASAREEN.COM</div>
   </main>
@@ -55,6 +56,9 @@
     const copyEl = document.getElementById('copy');
     const statusEl = document.getElementById('status');
     const openEl = document.getElementById('open');
+    const openWebEl = document.getElementById('openWeb');
+    const isDesktop = !/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const webMode = isDesktop || new URLSearchParams(location.search).get('web') === '1';
     let tokenLink = '';
 
     if (tester) {
@@ -77,6 +81,11 @@
       openEl.style.display = 'block';
     }
 
+    function showWebOpen(link) {
+      openWebEl.href = link;
+      openWebEl.style.display = 'block';
+    }
+
     async function onCredential(response) {
       if (!response || !response.credential) {
         setStatus('Google did not return a sign-in token. Please try again.', true);
@@ -94,11 +103,20 @@
           setStatus(data.message || 'Sign-in failed. Please return to the app and try again.', true);
           return;
         }
+        const webLink = '/app/#google_token=' + encodeURIComponent(data.access_token);
+        if (webMode) {
+          openEl.textContent = 'Open MASAREEN Web App';
+          showOpen(webLink);
+          setStatus(data.isNew ? 'Account created. Opening MASAREEN Web App.' : 'Welcome back. Opening MASAREEN Web App.');
+          location.href = webLink;
+          return;
+        }
         const link = appLink(data.access_token);
         showOpen(link);
-        setStatus(data.isNew ? 'Account created. Opening MASAREEN…' : 'Welcome back. Opening MASAREEN…');
+        showWebOpen(webLink);
+        setStatus(data.isNew ? 'Account created. Opening MASAREEN.' : 'Welcome back. Opening MASAREEN.');
         location.href = link;
-        setTimeout(() => setStatus('If the app did not open, tap “Open MASAREEN” below.'), 1600);
+        setTimeout(() => setStatus('If the app did not open, use the web app button or the app button below.'), 1600);
       } catch (err) {
         setStatus('Network error. Check your connection and try again.', true);
       }

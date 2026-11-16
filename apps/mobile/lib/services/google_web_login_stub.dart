@@ -1,4 +1,8 @@
-import 'package:flutter/widgets.dart';
+﻿import 'package:flutter/widgets.dart';
+
+void clearWebAuthHash() {}
+
+String? readWebAuthToken() => null;
 
 class GoogleSignInButton extends StatelessWidget {
   final Future<void> Function(String credential) onCredential;

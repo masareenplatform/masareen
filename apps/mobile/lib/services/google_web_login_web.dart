@@ -8,6 +8,33 @@ import 'package:flutter/material.dart';
 
 int _viewCounter = 0;
 
+void clearWebAuthHash() {
+  try {
+    final clear = js.context['masareenClearAuthHash'];
+    if (clear != null) js.context.callMethod('masareenClearAuthHash');
+  } catch (_) {}
+}
+
+String? readWebAuthToken() {
+  String? parse(String? raw) {
+    if (raw == null || raw.isEmpty) return null;
+    final value = raw.startsWith('#') ? raw.substring(1) : raw;
+    final token = Uri.splitQueryString(value)['google_token'];
+    return token == null || token.isEmpty ? null : token;
+  }
+
+  try {
+    final startHash = js.context['masareenStartHash'];
+    final fromStart = parse(startHash is String ? startHash : null);
+    if (fromStart != null) return fromStart;
+    final fromHash = parse(Uri.base.fragment);
+    if (fromHash != null) return fromHash;
+    return Uri.base.queryParameters['google_token'];
+  } catch (_) {
+    return null;
+  }
+}
+
 class GoogleSignInButton extends StatefulWidget {
   final Future<void> Function(String credential) onCredential;
   final bool dark;

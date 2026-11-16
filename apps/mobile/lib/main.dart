@@ -18,6 +18,7 @@ import 'package:masaren/screens/onboarding_screen.dart';
 import 'package:masaren/screens/login_screen.dart';
 import 'package:masaren/screens/register_screen.dart';
 import 'package:masaren/services/app_link_router.dart';
+import 'package:masaren/services/google_web_login.dart';
 import 'package:masaren/l10n.dart';
 
 const _tokenKey = 'masaren_jwt';
@@ -171,7 +172,14 @@ class _MasarenAppState extends State<MasarenApp>
   }
 
   Future<void> _checkAuth() async {
-    final token = await _readToken();
+    var token = await _readToken();
+    if (kIsWeb) {
+      final incoming = readWebAuthToken();
+      if (incoming != null && incoming.isNotEmpty) {
+        token = incoming;
+        clearWebAuthHash();
+      }
+    }
     if (token != null && token.isNotEmpty) {
       api.setToken(token);
       try {

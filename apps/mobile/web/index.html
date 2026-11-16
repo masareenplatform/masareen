@@ -70,6 +70,17 @@
   <script>
     (function () {
       var CLIENT_ID = '336070303963-cksadpqp8d591afvir53vsb86fl41cqj.apps.googleusercontent.com';
+      window.masareenStartHash = location.hash || '';
+      window.masareenClearAuthHash = function () {
+        try {
+          var clean = location.pathname + location.search;
+          if (location.search.indexOf('google_token=') >= 0) {
+            var u = new URL(location.href); u.searchParams.delete('google_token'); clean = u.pathname + u.search;
+          }
+          history.replaceState(null, '', clean);
+          window.masareenStartHash = '';
+        } catch (e) {}
+      };
       window.masareenRenderGoogle = function (id, dark) {
         var tries = 0;
         function render() {
