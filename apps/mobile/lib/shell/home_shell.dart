@@ -481,7 +481,19 @@ class _HomeShellState extends State<HomeShell> {
 
   Widget _webRoot() => ValueListenableBuilder<int>(
         valueListenable: _tabNotifier,
-        builder: (_, __, ___) => _buildBody(),
+        builder: (_, tab, ___) {
+          final maxWidth = tab == 0 ? 720.0 : 980.0;
+          return ColoredBox(
+            color: Theme.of(context).colorScheme.surfaceContainerLow,
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: maxWidth),
+                child: SizedBox.expand(child: _buildBody()),
+              ),
+            ),
+          );
+        },
       );
 
   Widget _buildWebShell(User user) {
@@ -516,20 +528,33 @@ class _HomeShellState extends State<HomeShell> {
             onLogout: widget.onLogout,
           ),
           Expanded(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: cs.surfaceContainerLow,
-                border: BorderDirectional(
-                  start: BorderSide(
-                      color: cs.outlineVariant.withValues(alpha: .45)),
-                  end: BorderSide(
-                      color: cs.outlineVariant.withValues(alpha: .45)),
+            child: ColoredBox(
+              color: cs.surfaceContainerLow,
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1040),
+                  child: SizedBox.expand(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: cs.surfaceContainerLow,
+                        border: BorderDirectional(
+                          start: BorderSide(
+                              color:
+                                  cs.outlineVariant.withValues(alpha: .45)),
+                          end: BorderSide(
+                              color:
+                                  cs.outlineVariant.withValues(alpha: .45)),
+                        ),
+                      ),
+                      child: Navigator(
+                        key: _webNavKey,
+                        onGenerateRoute: (_) => _shellRoute(_webRoot()),
+                        onDidRemovePage: (_) {},
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-              child: Navigator(
-                key: _webNavKey,
-                onGenerateRoute: (_) => _shellRoute(_webRoot()),
-                onDidRemovePage: (_) {},
               ),
             ),
           ),
@@ -1485,7 +1510,7 @@ class _CreatePostSheet extends StatelessWidget {
                   itemCount: types.length,
                   itemBuilder: (_, i) {
                     final t = types[i];
-                return GestureDetector(
+                return Clickable(
                   onTap: () {
                     final nav = navigator ?? Navigator.of(context);
                     Navigator.of(context).pop();
@@ -2181,6 +2206,7 @@ class _WebRightRailState extends State<_WebRightRail> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text((m['name'] ?? '').toString(),
+                      textDirection: textDirectionFor((m['name'] ?? '').toString()),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -2214,6 +2240,7 @@ class _WebRightRailState extends State<_WebRightRail> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text((n['title'] ?? '').toString(),
+                textDirection: textDirectionFor((n['title'] ?? '').toString()),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(

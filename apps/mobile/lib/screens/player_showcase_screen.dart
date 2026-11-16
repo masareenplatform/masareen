@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:masaren/api_client.dart';
 import 'package:masaren/l10n.dart';
 import 'package:masaren/models.dart';
@@ -857,7 +857,7 @@ class _PlayerShowcaseScreenState extends State<PlayerShowcaseScreen> {
               final photo = rp['photo_url'] ?? rp['avatar_url'];
               final jersey = rp['jersey_number'] ?? rp['number'] ?? '';
 
-              return GestureDetector(
+              return Clickable(
                 onTap: () {
                   final pid = rp['id'] ?? rp['user_id'] ?? '';
                   if (pid.toString().isNotEmpty) {

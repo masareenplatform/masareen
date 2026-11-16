@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:masaren/l10n.dart';
 import 'package:masaren/theme.dart';
 
@@ -80,7 +80,8 @@ class AppAvatar extends StatelessWidget {
           )
         : fallback;
     if (onTap == null) return child;
-    return GestureDetector(onTap: onTap, child: child);
+    return Clickable(
+      onTap: onTap, child: child);
   }
 }
 
@@ -285,4 +286,56 @@ class ErrorView extends StatelessWidget {
       ),
     );
   }
+}
+
+class Clickable extends StatelessWidget {
+  final VoidCallback? onTap;
+  final VoidCallback? onDoubleTap;
+  final GestureTapDownCallback? onTapDown;
+  final GestureTapUpCallback? onTapUp;
+  final GestureTapCancelCallback? onTapCancel;
+  final HitTestBehavior? behavior;
+  final bool excludeFromSemantics;
+  final Widget child;
+
+  const Clickable({
+    super.key,
+    this.onTap,
+    this.onDoubleTap,
+    this.onTapDown,
+    this.onTapUp,
+    this.onTapCancel,
+    this.behavior,
+    this.excludeFromSemantics = false,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: onTap,
+        onDoubleTap: onDoubleTap,
+        onTapDown: onTapDown,
+        onTapUp: onTapUp,
+        onTapCancel: onTapCancel,
+        behavior: behavior,
+        excludeFromSemantics: excludeFromSemantics,
+        child: child,
+      ),
+    );
+  }
+}
+
+TextDirection textDirectionFor(String? text) {
+  if (text == null || text.isEmpty) return TextDirection.ltr;
+  final firstArabic = RegExp(r'[\u0590-\u08FF\uFB1D-\uFDFD\uFE70-\uFEFC]')
+      .firstMatch(text);
+  if (firstArabic == null) return TextDirection.ltr;
+  final before = text.substring(0, firstArabic.start);
+  if (RegExp(r'[A-Za-z\u00C0-\u024F]').hasMatch(before)) {
+    return TextDirection.ltr;
+  }
+  return TextDirection.rtl;
 }

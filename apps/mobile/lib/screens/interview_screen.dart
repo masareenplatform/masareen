@@ -1,10 +1,11 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:masaren/l10n.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:masaren/widgets.dart';
 
 const String _defaultSignalingUrl =
     String.fromEnvironment('WEBRTC_SIGNALING_URL', defaultValue: '');
@@ -672,7 +673,7 @@ class _InterviewScreenState extends State<InterviewScreen>
     Color? bg,
     Color? fg,
   }) {
-    return GestureDetector(
+    return Clickable(
       onTap: onTap,
       child: Column(
         mainAxisSize: MainAxisSize.min,

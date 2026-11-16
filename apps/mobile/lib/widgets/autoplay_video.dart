@@ -1,9 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 import 'package:masaren/services/analytics_service.dart';
 import 'package:masaren/services/video_playback.dart';
+import 'package:masaren/widgets.dart';
 
 /// Muted, autoplaying video used in the feed and on post detail.
 ///
@@ -198,7 +199,7 @@ class _AutoplayVideoState extends State<AutoplayVideo>
       onVisibilityChanged: _onVisibility,
       child: AspectRatio(
         aspectRatio: ratio.clamp(0.8, 2.2).toDouble(),
-        child: GestureDetector(
+        child: Clickable(
           onTap: _togglePlay,
           child: Stack(
             fit: StackFit.expand,

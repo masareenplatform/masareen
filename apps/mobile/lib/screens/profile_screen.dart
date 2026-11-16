@@ -272,7 +272,7 @@ class ProfileScreenState extends State<ProfileScreen>
             Positioned(
               top: MediaQuery.of(context).padding.top + 8,
               right: 12,
-              child: GestureDetector(
+              child: Clickable(
                 onTap: () => _upload('cover'),
                 child: Container(
                   padding: const EdgeInsets.all(8),
@@ -401,7 +401,7 @@ class ProfileScreenState extends State<ProfileScreen>
   }
 
   Widget _buildAvatarWithBorder(ColorScheme cs, User u) {
-    return GestureDetector(
+    return Clickable(
       onTap: () => _upload('avatar'),
       child: Stack(
         children: [

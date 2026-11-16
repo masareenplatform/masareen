@@ -4,10 +4,10 @@ class AppColors {
   static const brand = Color(0xFF0E6B5C);
   static const azure = Color(0xFF2C6E8F);
   static const accent = Color(0xFFC19A4B);
-  static const canvas = Color(0xFFF6F5F1);
-  static const ink = Color(0xFF14211D);
-  static const muted = Color(0xFF65746E);
-  static const line = Color(0xFFDFE4DF);
+  static const canvas = Color(0xFFF0F2F5);
+  static const ink = Color(0xFF111827);
+  static const muted = Color(0xFF65676B);
+  static const line = Color(0xFFDADDE1);
   static const warm = Color(0xFFB45345);
   static const amber = Color(0xFFC19A4B);
 
@@ -32,12 +32,22 @@ ThemeData buildTheme({bool dark = false}) {
     secondary: dark ? const Color(0xFFE8C46A) : AppColors.accent,
     surface: surface,
     onSurface: onBg,
+    surfaceTint: Colors.transparent,
   ).copyWith(
     primaryContainer: dark ? const Color(0xFF1B3A5C) : const Color(0xFFD2E3FC),
     onPrimaryContainer: dark ? const Color(0xFFA8C7FA) : const Color(0xFF062E6F),
-    surfaceContainerLow: dark ? const Color(0xFF1A1C1E) : const Color(0xFFF8F9FA),
+    onSurfaceVariant: muted,
+    outline: dark ? const Color(0xFF8A938F) : const Color(0xFF8A8D91),
+    outlineVariant: line,
+    surfaceContainerLowest:
+        dark ? const Color(0xFF101412) : Colors.white,
+    surfaceContainerLow:
+        dark ? const Color(0xFF1A1C1E) : const Color(0xFFF7F8FA),
     surfaceContainer: dark ? const Color(0xFF202225) : Colors.white,
-    surfaceContainerHigh: dark ? const Color(0xFF2A2D31) : const Color(0xFFF1F3F4),
+    surfaceContainerHigh:
+        dark ? const Color(0xFF2A2D31) : const Color(0xFFF0F2F5),
+    surfaceContainerHighest:
+        dark ? const Color(0xFF313539) : const Color(0xFFE4E6EB),
   );
 
   return ThemeData(

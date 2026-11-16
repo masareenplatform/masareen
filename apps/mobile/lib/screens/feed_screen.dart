@@ -982,6 +982,7 @@ class _FeaturedCarouselState extends State<_FeaturedCarousel> {
                               const SizedBox(height: 4),
                               Text(
                                 p.text,
+                                textDirection: textDirectionFor(p.text),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
@@ -1257,7 +1258,7 @@ class _Composer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return GestureDetector(
+    return Clickable(
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.fromLTRB(0, 8, 0, 4),
@@ -1377,7 +1378,7 @@ class _ReactionMediaState extends State<_ReactionMedia>
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return Clickable(
       onDoubleTap: _doubleTap,
       child: Stack(
         alignment: Alignment.center,
@@ -1732,7 +1733,7 @@ class _PostCard extends StatelessWidget {
                     onTap: onAuthor),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: GestureDetector(
+                  child: Clickable(
                     onTap: onAuthor,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1888,12 +1889,13 @@ class _PostCard extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
               child: SdgBadge(sdg: post.sdg!),
             ),
-          GestureDetector(
+          Clickable(
             onTap: onOpen,
             behavior: HitTestBehavior.opaque,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
               child: Text(post.text,
+                  textDirection: textDirectionFor(post.text),
                   style: TextStyle(color: cs.onSurface, height: 1.4)),
             ),
           ),
@@ -2265,7 +2267,7 @@ class _Action extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final color = active ? (activeColor ?? cs.primary) : cs.onSurfaceVariant;
-    final child = GestureDetector(
+    final child = Clickable(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: AnimatedContainer(

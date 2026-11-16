@@ -8,6 +8,7 @@ import 'package:masaren/l10n.dart';
 import 'package:masaren/screens/document_viewer_screen.dart';
 import 'package:masaren/widgets/autoplay_video.dart';
 import 'package:masaren/widgets/smart_image.dart';
+import 'package:masaren/widgets.dart';
 
 /// Full-width media attached to a post: a swipeable image gallery or an
 /// inline video player. Keeps the feed edge-to-edge and caption-aware.
@@ -77,7 +78,7 @@ class _PostMediaGalleryState extends State<PostMediaGallery> {
           PageView.builder(
             itemCount: images.length,
             onPageChanged: (i) => setState(() => _page = i),
-            itemBuilder: (context, i) => GestureDetector(
+            itemBuilder: (context, i) => Clickable(
               onTap: widget.onImageTap == null
                   ? null
                   : () => widget.onImageTap!(images[i].url),
@@ -140,7 +141,8 @@ class _GalleryImage extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          GestureDetector(onTap: onTap, child: _ImageFill(url: image.url)),
+          Clickable(
+            onTap: onTap, child: _ImageFill(url: image.url)),
           if (image.caption != null && image.caption!.trim().isNotEmpty)
             Positioned(
                 left: 0,
@@ -183,6 +185,7 @@ class _Caption extends StatelessWidget {
       ),
       child: Text(
         text,
+        textDirection: textDirectionFor(text),
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
         style: const TextStyle(

@@ -1526,7 +1526,7 @@ class _ParticipantTile extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          GestureDetector(
+          Clickable(
             onTap: onOpen,
             child: AppAvatar(
                 name: (participant['name'] ?? 'Member').toString(),
@@ -1538,7 +1538,7 @@ class _ParticipantTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                GestureDetector(
+                Clickable(
                   onTap: onOpen,
                   child: Row(
                     children: [

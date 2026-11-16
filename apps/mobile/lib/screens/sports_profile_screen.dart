@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:masaren/api_client.dart';
 import 'package:masaren/l10n.dart';
 import 'package:masaren/models.dart';
@@ -459,7 +459,7 @@ class _SquadTab extends StatelessWidget {
 
           return SlideInWidget(
             delay: Duration(milliseconds: i * 80),
-            child: GestureDetector(
+            child: Clickable(
               onTap: () {
                 final playerId = p['id'] ?? p['user_id'] ?? '';
                 if (playerId.toString().isNotEmpty) {

@@ -1,6 +1,7 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:masaren/l10n.dart';
 import 'package:masaren/theme.dart';
+import 'package:masaren/widgets.dart';
 
 String _t(BuildContext context, String key, [String? fallback]) {
   final value = MasarenLocalizations.of(context, key);
@@ -186,6 +187,7 @@ class IntroCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(title,
+              textDirection: textDirectionFor(title),
               style: const TextStyle(
                   color: Colors.white,
                   fontSize: 17,
@@ -193,6 +195,7 @@ class IntroCard extends StatelessWidget {
                   height: 1.25)),
           const SizedBox(height: 4),
           Text(body,
+              textDirection: textDirectionFor(body),
               style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.82),
                   fontSize: 12.5,

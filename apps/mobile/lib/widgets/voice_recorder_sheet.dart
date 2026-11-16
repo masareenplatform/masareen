@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:record/record.dart';
+import 'package:masaren/widgets.dart';
 
 class VoiceRecording {
   final String path;
@@ -279,7 +280,7 @@ class _RoundAction extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        GestureDetector(
+        Clickable(
           onTap: onTap,
           child: Container(
             width: 64,

@@ -686,7 +686,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               itemBuilder: (_, i) {
                 final k = _kinds[i];
                 final sel = _kind == k.value;
-                return GestureDetector(
+                return Clickable(
                   onTap: () => setState(() => _kind = k.value),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
@@ -746,7 +746,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                 separatorBuilder: (_, __) => const SizedBox(width: 8),
                 itemBuilder: (_, i) {
                   final image = _images[i];
-                  return GestureDetector(
+                  return Clickable(
                     onTap: () => _editCaption(i),
                     child: Stack(
                       children: [
@@ -785,7 +785,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                         Positioned(
                           top: 4,
                           right: 4,
-                          child: GestureDetector(
+                          child: Clickable(
                             onTap: () => setState(() => _images.removeAt(i)),
                             child: Container(
                               padding: const EdgeInsets.all(4),
@@ -840,7 +840,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                 Positioned(
                   top: 8,
                   right: 8,
-                  child: GestureDetector(
+                  child: Clickable(
                     onTap: () => setState(() => _video = null),
                     child: Container(
                       padding: const EdgeInsets.all(4),
@@ -974,7 +974,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                 itemBuilder: (_, i) {
                   final sdg = i + 1;
                   final sel = _sdg == sdg;
-                  return GestureDetector(
+                  return Clickable(
                     onTap: () => setState(() => _sdg = sel ? 0 : sdg),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
@@ -1441,7 +1441,7 @@ class _BuildChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return Clickable(
       onTap: loading ? null : onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),

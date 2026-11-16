@@ -1,10 +1,11 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:masaren/api_client.dart';
 import 'package:masaren/l10n.dart';
 import 'package:masaren/models.dart';
 import 'package:masaren/theme.dart';
+import 'package:masaren/widgets.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
@@ -130,6 +131,7 @@ class _AdFeedCardState extends State<AdFeedCard> {
                 children: [
                   Text(
                     creative.title,
+                    textDirection: textDirectionFor(creative.title),
                     style: TextStyle(
                       color: cs.onSurface,
                       fontSize: 16,
@@ -140,6 +142,7 @@ class _AdFeedCardState extends State<AdFeedCard> {
                     const SizedBox(height: 4),
                     Text(
                       creative.body!,
+                      textDirection: textDirectionFor(creative.body),
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(

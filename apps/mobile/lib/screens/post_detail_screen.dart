@@ -614,6 +614,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                       ),
                       const SizedBox(height: 14),
                       Text(_post.text,
+                          textDirection: textDirectionFor(_post.text),
                           style: const TextStyle(fontSize: 16, height: 1.55)),
                       if (_post.captureSource != 'UNKNOWN')
                         Padding(
@@ -892,7 +893,9 @@ class _CommentTile extends StatelessWidget {
                   style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
             ]),
             const SizedBox(height: 3),
-            Text(comment.text, style: const TextStyle(height: 1.4)),
+            Text(comment.text,
+                textDirection: textDirectionFor(comment.text),
+                style: const TextStyle(height: 1.4)),
             const SizedBox(height: 4),
             Row(children: [
               InkWell(

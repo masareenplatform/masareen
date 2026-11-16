@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:masaren/api_client.dart';
 import 'package:masaren/models.dart';
+import 'package:masaren/widgets.dart';
 
 class CreateBoothScreen extends StatefulWidget {
   final String eventId;
@@ -313,7 +314,7 @@ class _CreateBoothScreenState extends State<CreateBoothScreen> {
                       Positioned(
                         top: 2,
                         right: 2,
-                        child: GestureDetector(
+                        child: Clickable(
                           onTap: () => setState(() => _tour.removeAt(i)),
                           child: const CircleAvatar(
                               radius: 9,

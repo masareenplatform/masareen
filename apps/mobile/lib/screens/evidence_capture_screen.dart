@@ -8,6 +8,7 @@ import 'package:masaren/api_client.dart';
 import 'package:masaren/l10n.dart';
 import 'package:masaren/models.dart';
 import 'package:masaren/widgets/animations.dart';
+import 'package:masaren/widgets.dart';
 
 class EvidenceCaptureScreen extends StatefulWidget {
   final User user;
@@ -791,7 +792,7 @@ class _EvidenceCaptureScreenState extends State<EvidenceCaptureScreen> {
                       Positioned(
                         top: 2,
                         right: 2,
-                        child: GestureDetector(
+                        child: Clickable(
                           onTap: () => setState(() => _images.removeAt(index)),
                           child: const CircleAvatar(
                               radius: 10,

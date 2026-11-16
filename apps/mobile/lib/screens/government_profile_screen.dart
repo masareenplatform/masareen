@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:masaren/api_client.dart';
 import 'package:masaren/l10n.dart';
 import 'package:masaren/theme.dart';
@@ -605,7 +605,7 @@ class _GovernmentProfileScreenState extends State<GovernmentProfileScreen>
           final s = entry.value;
           return SlideInWidget(
             delay: Duration(milliseconds: i * 100),
-            child: GestureDetector(
+            child: Clickable(
               onTap: () => _openInquiry(
                   department: s['name']?.toString(), type: 'document'),
               child: Container(
@@ -785,7 +785,7 @@ class _GovernmentProfileScreenState extends State<GovernmentProfileScreen>
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Column(
         children: _departments.map((d) {
-          return GestureDetector(
+          return Clickable(
             onTap: () => _openInquiry(department: d['name']?.toString()),
             child: Container(
               margin: const EdgeInsets.only(bottom: 10),

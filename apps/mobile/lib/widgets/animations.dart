@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:masaren/widgets.dart';
 
 class AnimatedGradientBackground extends StatefulWidget {
   final Widget child;
@@ -673,7 +674,7 @@ class _PressScaleState extends State<PressScale> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return Clickable(
       behavior: HitTestBehavior.opaque,
       onTapDown: widget.onTap == null ? null : (_) => setState(() => _pressed = true),
       onTapCancel: widget.onTap == null ? null : () => setState(() => _pressed = false),

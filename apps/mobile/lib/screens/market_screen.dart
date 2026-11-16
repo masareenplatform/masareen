@@ -1,9 +1,10 @@
-import 'dart:math' as math;
+﻿import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:masaren/api_client.dart';
 import 'package:masaren/models.dart';
 import 'package:masaren/theme.dart';
+import 'package:masaren/widgets.dart';
 
 class MarketScreen extends StatefulWidget {
   final User user;
@@ -222,6 +223,7 @@ class _MarketRow extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text((market['name'] ?? 'Entity').toString(),
+                        textDirection: textDirectionFor((market['name'] ?? '').toString()),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
@@ -401,6 +403,7 @@ class _MarketDetailScreenState extends State<MarketDetailScreen> {
           padding: const EdgeInsets.fromLTRB(16, 10, 16, 28),
           children: [
             Text((m['name'] ?? '').toString(),
+                textDirection: textDirectionFor((m['name'] ?? '').toString()),
                 style: const TextStyle(
                     fontSize: 22, fontWeight: FontWeight.w900)),
             const SizedBox(height: 4),
@@ -489,7 +492,8 @@ class _MarketDetailScreenState extends State<MarketDetailScreen> {
                     leading: CircleAvatar(
                         backgroundColor: cs.primary.withValues(alpha: .12),
                         child: Text((h['name'] ?? 'M').toString().substring(0, 1))),
-                    title: Text((h['name'] ?? 'Holder').toString()),
+                    title: Text((h['name'] ?? 'Holder').toString(),
+                        textDirection: textDirectionFor((h['name'] ?? '').toString())),
                     trailing: Text('${h['shares']} shares'),
                   )),
             ],

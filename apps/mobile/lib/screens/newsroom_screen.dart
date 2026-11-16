@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:masaren/api_client.dart';
 import 'package:masaren/models.dart';
 import 'package:masaren/theme.dart';
+import 'package:masaren/widgets.dart';
 
 class NewsroomScreen extends StatefulWidget {
   final User user;
@@ -217,6 +218,7 @@ class _NewsCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text((article['title'] ?? '').toString(),
+                      textDirection: textDirectionFor((article['title'] ?? '').toString()),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -226,6 +228,7 @@ class _NewsCard extends StatelessWidget {
                   if ((article['summary'] ?? '').toString().isNotEmpty) ...[
                     const SizedBox(height: 4),
                     Text(article['summary'].toString(),
+                        textDirection: textDirectionFor(article['summary'].toString()),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -403,6 +406,7 @@ class _NewsArticleScreenState extends State<NewsArticleScreen> {
           ),
           const SizedBox(height: 8),
           Text((a['title'] ?? '').toString(),
+              textDirection: textDirectionFor((a['title'] ?? '').toString()),
               style:
                   const TextStyle(fontSize: 24, height: 1.2, fontWeight: FontWeight.w900)),
           const SizedBox(height: 6),
@@ -412,6 +416,7 @@ class _NewsArticleScreenState extends State<NewsArticleScreen> {
           const SizedBox(height: 12),
           if ((a['summary'] ?? '').toString().isNotEmpty)
             Text(a['summary'].toString(),
+                textDirection: textDirectionFor(a['summary'].toString()),
                 style: TextStyle(
                     fontSize: 14,
                     height: 1.5,
@@ -449,6 +454,7 @@ class _NewsArticleScreenState extends State<NewsArticleScreen> {
           ],
           const SizedBox(height: 14),
           Text(a['body'].toString(),
+              textDirection: textDirectionFor(a['body'].toString()),
               style: const TextStyle(fontSize: 15, height: 1.65)),
           const SizedBox(height: 18),
           Row(
