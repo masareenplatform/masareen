@@ -748,7 +748,7 @@ function postJson(r, likedByMe, ranking, bookmarkedByMe = false, followingAuthor
 
 const POST_SELECT = `SELECT p.*, u.name author_name, u.handle author_handle, u.picture author_picture,
   u.role author_role, u.email_verified author_verified,
-  (SELECT json_group_array(json_object('id',u2.id,'name',u2.name,'avatar_url',u2.picture))
+  (SELECT json_group_array(json_object('id',CAST(u2.id AS TEXT),'name',u2.name,'avatar_url',u2.picture))
    FROM post_shares ps JOIN users u2 ON u2.id=ps.user_id WHERE ps.post_id=p.id) shared_by_json
   FROM posts p JOIN users u ON u.id=p.author_id`;
 

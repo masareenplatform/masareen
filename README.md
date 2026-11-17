@@ -466,7 +466,7 @@ Static bilingual (EN/AR) site for Cloudflare R2 at `masareen.com`; `./upload-to-
 ## Mobile App (Flutter)
 
 **Package:** `com.masaren.app`
-**Version:** 0.4.14+19
+**Version:** 0.4.15+20
 **Platform:** Android (arm64-v8a only)
 **Size:** 116 MB
 
