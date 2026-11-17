@@ -1585,7 +1585,7 @@ INSERT OR IGNORE INTO feed_sources
   ('enterprise', 'Enterprise', 'https://enterprise.news',
    'https://enterprise.news/feed/', 1, datetime('now')),
   ('youm7', 'Youm7', 'https://www.youm7.com',
-   'https://www.youm7.com/rss/SectionRss?SectionID=65', 1, datetime('now')),
+   'https://www.youm7.com/rss/SectionRss?SectionID=65', 0, datetime('now')),
   ('almasryalyoum', 'Al-Masry Al-Youm', 'https://www.almasryalyoum.com',
    'https://www.almasryalyoum.com/rss/rssfeed', 1, datetime('now'));
 

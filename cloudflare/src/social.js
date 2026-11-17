@@ -8829,9 +8829,17 @@ async function ensureNewsOutlet(env, feed) {
   return row;
 }
 
+const NEWS_NON_PERSON = new Set([
+  'cnn', 'mena', 'reuters', 'ap', 'afp', 'staff', 'editorial team',
+  'daily news egypt', 'egypt independent', 'enterprise', 'youm7',
+  'al-masry al-youm', 'the enterprise company',
+]);
+
 async function ensureJournalist(env, name, outletId, outletName) {
   const cleanName = clean(name, 120);
-  if (cleanName.length < 2 || cleanName.toLowerCase() === outletName.toLowerCase()) {
+  if (cleanName.length < 2 ||
+      cleanName.toLowerCase() === outletName.toLowerCase() ||
+      NEWS_NON_PERSON.has(cleanName.toLowerCase())) {
     return null;
   }
   const at = nowIso();
