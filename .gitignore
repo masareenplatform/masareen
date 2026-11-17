@@ -97,3 +97,7 @@ PLATFORM_GENOME_CURRENT.md
 tools/media/ingest-token.txt
 tools/media/recordings/
 tools/media/out/
+
+# Generated Flutter platform projects for the experimental app
+apps/mobile_next/android/
+apps/mobile_next/ios/

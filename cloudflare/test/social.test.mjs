@@ -2402,3 +2402,30 @@ test('timeline sharing, manual MRC payments and call signaling stay consistent',
   assert.equal((await call(env, 'POST', `/api/v1/calls/${room.id}/end`, {}, guest)).status, 403);
   assert.equal((await call(env, 'POST', `/api/v1/calls/${room.id}/end`, {}, host)).status, 200);
 });
+
+test('pulse surveys are rate limited and reward once', async () => {
+  const env = mkEnv();
+  const token = await signup(env, 'pulse@example.com', 'Pulse Member');
+  const first = await (await call(env, 'GET',
+    '/api/v1/pulse/survey?trigger=home', null, token)).json();
+  assert.ok(first.survey);
+  assert.equal(first.survey.reward_mrc, 5);
+  assert.equal(first.survey.options.length, 4);
+  assert.equal((await call(env, 'POST',
+    `/api/v1/pulse/survey/${first.survey.id}/respond`,
+    { answer: 'Not an option' }, token)).status, 400);
+  const answered = await call(env, 'POST',
+    `/api/v1/pulse/survey/${first.survey.id}/respond`,
+    { answer: first.survey.options[0] }, token);
+  assert.equal(answered.status, 200);
+  assert.equal((await answered.json()).reward_mrc, 5);
+  assert.equal((await call(env, 'POST',
+    `/api/v1/pulse/survey/${first.survey.id}/respond`,
+    { answer: first.survey.options[1] }, token)).status, 409);
+  const wallet = await (await call(env, 'GET', '/api/v1/wallet', null, token)).json();
+  assert.equal(wallet.balance, 5);
+  const next = await (await call(env, 'GET',
+    '/api/v1/pulse/survey?trigger=home', null, token)).json();
+  assert.equal(next.survey, null);
+  assert.ok(next.next_at);
+});

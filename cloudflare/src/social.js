@@ -4263,8 +4263,8 @@ async function adminRoutes(req, env, url) {
       if (value == null) value = '';
       value = String(value).slice(0, 500);
       if ((key === 'app_android_build' || key === 'app_ios_build' ||
-              key === 'app_min_build') && value !== '' &&
-          !/^\d{1,9}$/.test(value)) {
+              key === 'app_next_build' || key === 'app_min_build') &&
+          value !== '' && !/^\d{1,9}$/.test(value)) {
         throw new HttpError(400, 'invalid_build', 'Build numbers must be whole numbers.');
       }
       if (key.endsWith('_url') && value !== '' &&
@@ -7407,6 +7407,79 @@ async function notificationRoutes(req, env, path) {
   return null;
 }
 
+/* ---------------- pulse surveys ---------------- */
+function pulseSurveyJson(row) {
+  return {
+    id: String(row.id),
+    slug: row.slug,
+    trigger: row.trigger,
+    title: row.title,
+    question: row.question,
+    options: parseJsonValue(row.options_json, []),
+    reward_mrc: Number(row.reward_mrc || 0),
+    cooldown_days: Number(row.cooldown_days || 7),
+  };
+}
+
+async function pulseRoutes(req, env, url, viewer) {
+  const path = url.pathname;
+  if (path === '/api/v1/pulse/survey' && req.method === 'GET') {
+    if (!viewer) throw new HttpError(401, 'not_signed_in', 'Please sign in.');
+    const trigger = clean(url.searchParams.get('trigger'), 20) || 'home';
+    const last = await env.DB.prepare(`SELECT created_at FROM pulse_survey_responses
+      WHERE user_id=? ORDER BY created_at DESC LIMIT 1`).bind(viewer.id).first();
+    if (last?.created_at) {
+      const next = Date.parse(last.created_at) + 7 * 86400000;
+      if (next > Date.now()) {
+        return json({ ok: true, survey: null,
+          next_at: new Date(next).toISOString() });
+      }
+    }
+    const row = await env.DB.prepare(`SELECT s.* FROM pulse_surveys s
+      WHERE s.active=1 AND (s.trigger=? OR s.trigger='any')
+        AND NOT EXISTS (SELECT 1 FROM pulse_survey_responses r
+          WHERE r.survey_id=s.id AND r.user_id=?)
+      ORDER BY s.priority DESC, s.id ASC LIMIT 1`)
+      .bind(trigger, viewer.id).first();
+    return json({ ok: true, survey: row ? pulseSurveyJson(row) : null });
+  }
+  const respond = /^\/api\/v1\/pulse\/survey\/(\d+)\/respond$/.exec(path);
+  if (respond && req.method === 'POST') {
+    if (!viewer) throw new HttpError(401, 'not_signed_in', 'Please sign in.');
+    const b = await readJson(req);
+    const survey = await env.DB.prepare(
+      'SELECT * FROM pulse_surveys WHERE id=? AND active=1')
+      .bind(Number(respond[1])).first();
+    if (!survey) throw new HttpError(404, 'survey_not_found', 'Survey not found.');
+    const options = parseJsonValue(survey.options_json, []);
+    const answer = clean(b.answer, 240);
+    if (!answer || (options.length && !options.includes(answer))) {
+      throw new HttpError(400, 'invalid_answer', 'Choose one of the survey options.');
+    }
+    const ins = await env.DB.prepare(`INSERT OR IGNORE INTO pulse_survey_responses
+      (survey_id,user_id,answer,reward_mrc,created_at) VALUES (?,?,?,?,?)`)
+      .bind(survey.id, viewer.id, answer, Number(survey.reward_mrc || 0), nowIso()).run();
+    if (!ins.meta.changes) {
+      throw new HttpError(409, 'already_answered', 'You already answered this survey.');
+    }
+    const reward = Math.max(0, Math.min(100, Number(survey.reward_mrc || 0)));
+    try {
+      if (reward > 0) {
+        await creditCoins(env, viewer.id, reward, `Survey: ${survey.title}`);
+        await notify(env, viewer.id, 'reward', 'Thanks for your feedback',
+          `+${reward} MRC added for completing "${survey.title}".`,
+          null, null, { link: 'wallet' }).catch(() => {});
+      }
+    } catch (e) {
+      await env.DB.prepare('DELETE FROM pulse_survey_responses WHERE id=?')
+        .bind(ins.meta.last_row_id).run().catch(() => {});
+      throw e;
+    }
+    return json({ ok: true, reward_mrc: reward });
+  }
+  return null;
+}
+
 /* ---------------- media uploads (R2) ---------------- */
 const IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
 const VIDEO_TYPES = new Set(['video/mp4', 'video/webm', 'video/quicktime']);
@@ -10092,6 +10165,7 @@ export async function runRecognitionSweep(env, { limit = 50 } = {}) {
 const OTA_SETTING_KEYS = [
   'app_android_version', 'app_android_build', 'app_android_url',
   'app_ios_version', 'app_ios_build', 'app_ios_url',
+  'app_next_version', 'app_next_build', 'app_next_url', 'app_next_notes',
   'app_notes', 'app_min_build', 'app_force', 'app_ota_enabled',
   'live_tv_title', 'live_tv_url', 'live_tv_poster', 'live_tv_enabled',
 ];
@@ -10126,10 +10200,16 @@ export async function appUpdateManifest(env) {
   const s = await readPlatformSettings(env);
   let size = null;
   let etag = null;
+  let nextSize = null;
+  let nextEtag = null;
   try {
     const object = env.MEDIA ? await env.MEDIA.head('downloads/masareen.apk') : null;
     size = object ? object.size : null;
     etag = object ? object.httpEtag : null;
+    const nextObject = env.MEDIA
+      ? await env.MEDIA.head('downloads/masareen-next.apk') : null;
+    nextSize = nextObject ? nextObject.size : null;
+    nextEtag = nextObject ? nextObject.httpEtag : null;
   } catch (_) {}
   const androidVersion =
       s.app_android_version || env.APP_ANDROID_VERSION || '0.4.3';
@@ -10140,13 +10220,20 @@ export async function appUpdateManifest(env) {
   const iosBuild =
       Number(s.app_ios_build || env.APP_IOS_BUILD || androidBuild);
   const notes = s.app_notes ?? env.APP_NOTES ?? '';
+  const androidUrl = s.app_android_url || env.APP_ANDROID_URL ||
+      'https://masareen.com/downloads/masareen.apk';
+  const nextVersion = s.app_next_version || '0.5.0';
+  const nextBuild = Number(s.app_next_build || 20);
+  const nextUrl = s.app_next_url ||
+      'https://masareen.com/downloads/masareen-next.apk';
+  const nextNotes = s.app_next_notes ||
+      'MASAREEN Next experimental visual direction.';
   return {
     ok: true,
     android: {
       version: androidVersion,
       build: androidBuild,
-      url: s.app_android_url || env.APP_ANDROID_URL ||
-          'https://masareen.com/downloads/masareen.apk',
+      url: androidUrl,
       size,
       etag,
       notes,
@@ -10158,6 +10245,13 @@ export async function appUpdateManifest(env) {
           'https://masareen.com/downloads/masareen.ipa',
       notes,
     },
+    channels: [
+      { id: 'stable', name: 'MASAREEN', version: androidVersion,
+        build: androidBuild, url: androidUrl, notes, size, etag },
+      { id: 'next', name: 'MASAREEN Next', version: nextVersion,
+        build: nextBuild, url: nextUrl, notes: nextNotes,
+        size: nextSize, etag: nextEtag },
+    ],
     minimumBuild: Number(s.app_min_build || env.APP_MIN_BUILD || 7),
     force: s.app_force === '1',
     otaEnabled: s.app_ota_enabled !== '0',
@@ -10400,6 +10494,10 @@ export async function socialRoutes(req, env, ctx) {
     const dismissMatch = /^\/api\/v1\/announcements\/(\d+)\/dismiss$/.exec(path);
     if (dismissMatch && req.method === 'POST') {
       return await dismissAnnouncement(req, env, Number(dismissMatch[1]));
+    }
+    if (path.startsWith('/api/v1/pulse/')) {
+      const handled = await pulseRoutes(req, env, url, await currentUser(req, env));
+      if (handled) return handled;
     }
     if (path === '/api/v1/support/conversation' && req.method === 'POST') {
       return await supportConversation(req, env);

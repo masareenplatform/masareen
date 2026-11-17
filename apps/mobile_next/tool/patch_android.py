@@ -1,0 +1,227 @@
+#!/usr/bin/env python3
+"""Re-apply MASAREEN's Android configuration on top of a freshly generated
+`flutter create --platforms=android .` project (apps/mobile/android/ is
+git-ignored, so a clean clone has none).
+
+Run from apps/mobile:  python3 tool/patch_android.py
+Idempotent. Supports the Groovy DSL (android/app/build.gradle, Flutter 3.24.x)
+and the Kotlin DSL (android/app/build.gradle.kts, Flutter 3.29+)."""
+import os, re, sys, shutil
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+A = os.path.join(ROOT, 'android')
+APP_ID = 'com.masaren.next'
+LABEL = 'MASAREEN Next'
+
+def rw(path, fn):
+    with open(path, encoding='utf-8') as f: s = f.read()
+    n = fn(s)
+    if n != s:
+        with open(path, 'w', encoding='utf-8') as f: f.write(n)
+
+def die(m): print('ERROR:', m); sys.exit(1)
+
+GRADLE_GROOVY = os.path.join(A, 'app', 'build.gradle')
+GRADLE_KTS = os.path.join(A, 'app', 'build.gradle.kts')
+use_kts = os.path.exists(GRADLE_KTS)
+gradle = GRADLE_KTS if use_kts else GRADLE_GROOVY
+manifest = os.path.join(A, 'app', 'src', 'main', 'AndroidManifest.xml')
+if not os.path.exists(gradle):
+    die('android/app/build.gradle(.kts) not found. Run `flutter create --platforms=android .` first.')
+
+# ---- discover generated package, then move to APP_ID --------------------
+g = open(gradle, encoding='utf-8').read()
+m = re.search(r'namespace\s*=?\s*["\']([\w.]+)["\']', g)
+old_pkg = m.group(1) if m else None
+if not old_pkg: die('could not find namespace in build file')
+
+def gradle_fix(s):
+    s = re.sub(r'(namespace\s*=?\s*)["\'][\w.]+["\']', r'\1"%s"' % APP_ID, s)
+    s = re.sub(r'(applicationId\s*=?\s*)["\'][\w.]+["\']', r'\1"%s"' % APP_ID, s)
+    s = re.sub(r'minSdk(?:Version)?\s*=?\s*flutter\.minSdkVersion', 'minSdkVersion 24', s)
+    s = re.sub(r'minSdk(?:Version)?\s+\d+', 'minSdkVersion 24', s)
+    if 'coreLibraryDesugaringEnabled' not in s:
+        s = re.sub(r'(compileOptions\s*\{)', r'\1\n        coreLibraryDesugaringEnabled true', s, count=1)
+    if 'desugar_jdk_libs' not in s:
+        s += "\ndependencies {\n    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'\n}\n"
+    # keep the template's debug-key signing for release => installable APK.
+    return s
+
+def kts_fix(s):
+    s = re.sub(r'(namespace\s*=\s*)"[^"]*"', r'\1"%s"' % APP_ID, s)
+    s = re.sub(r'(applicationId\s*=\s*)"[^"]*"', r'\1"%s"' % APP_ID, s)
+    s = re.sub(r'(minSdk\s*)=\s*flutter\.minSdkVersion', r'\1= 24', s)
+    s = re.sub(r'(minSdk\s*)=\s*=\s*(\d+)', r'\1= \2', s)
+    if 'corelibrarydesugaringenabled' not in s.lower():
+        s = re.sub(r'(compileOptions\s*\{)', lambda mm: mm.group(1) + '\n        isCoreLibraryDesugaringEnabled = true', s, count=1)
+    if 'desugar_jdk_libs' not in s:
+        s = s.rstrip() + "\ndependencies {\n    coreLibraryDesugaring(\"com.android.tools:desugar_jdk_libs:2.0.4\")\n}\n"
+    # keep the template's debug-key signing for release => installable APK.
+    return s
+
+rw(gradle, kts_fix if use_kts else gradle_fix)
+
+# ---- Firebase Cloud Messaging requires the google-services Gradle plugin --
+settings_kts = os.path.join(A, 'settings.gradle.kts')
+settings_groovy = os.path.join(A, 'settings.gradle')
+if os.path.exists(settings_kts):
+    def settings_kts_fix(s):
+        if 'com.google.gms.google-services' in s:
+            return s
+        marker = 'plugins {'
+        if marker in s:
+            return s.replace(marker, marker + '\n    id("com.google.gms.google-services") version "4.4.4" apply false', 1)
+        return s
+    rw(settings_kts, settings_kts_fix)
+elif os.path.exists(settings_groovy):
+    def settings_groovy_fix(s):
+        if 'com.google.gms.google-services' in s:
+            return s
+        marker = 'plugins {'
+        if marker in s:
+            return s.replace(marker, marker + "\n    id 'com.google.gms.google-services' version '4.4.4' apply false", 1)
+        return s
+    rw(settings_groovy, settings_groovy_fix)
+
+def add_google_services_plugin(s):
+    if 'com.google.gms.google-services' in s:
+        return s
+    marker = 'plugins {'
+    if marker in s:
+        if 'build.gradle.kts' in gradle:
+            return s.replace(marker, marker + '\n    id("com.google.gms.google-services")', 1)
+        return s.replace(marker, marker + "\n    id 'com.google.gms.google-services'", 1)
+    return s
+rw(gradle, add_google_services_plugin)
+
+# ---- copy Firebase google-services.json if present -----------------------
+gs_src = os.path.join(ROOT, 'firebase', 'google-services.json')
+gs_dst = os.path.join(A, 'app', 'google-services.json')
+if os.path.exists(gs_src):
+    shutil.copyfile(gs_src, gs_dst)
+
+# Kotlin DSL: some plugins (flutter_webrtc) still declare compileSdk 31, which
+# AGP 9 rejects. Force every library module to compile against SDK 36.
+if use_kts:
+    root_gradle = os.path.join(A, 'build.gradle.kts')
+    overrides = '''subprojects {
+    afterEvaluate {
+        val androidExt = extensions.findByName("android") ?: return@afterEvaluate
+        val methods = androidExt.javaClass.methods
+        methods.firstOrNull {
+            it.name == "setCompileSdk" && it.parameterTypes.size == 1
+        }?.let { runCatching { it.invoke(androidExt, 36) } }
+    }
+}
+'''
+    def root_fix(s):
+        if 'setCompileSdk' in s:
+            return s
+        marker = 'subprojects {\n    project.evaluationDependsOn(":app")\n}'
+        if marker in s:
+            return s.replace(marker, overrides + '\n' + marker, 1)
+        return overrides + '\n' + s
+    rw(root_gradle, root_fix)
+
+# move MainActivity to the new package
+for lang in ('kotlin', 'java'):
+    base = os.path.join(A, 'app', 'src', 'main', lang)
+    old_dir = os.path.join(base, *old_pkg.split('.'))
+    new_dir = os.path.join(base, *APP_ID.split('.'))
+    if os.path.isdir(old_dir) and old_dir != new_dir:
+        os.makedirs(new_dir, exist_ok=True)
+        for fn in os.listdir(old_dir):
+            src = os.path.join(old_dir, fn)
+            dst = os.path.join(new_dir, fn)
+            shutil.move(src, dst)
+            rw(dst, lambda s: s.replace('package ' + old_pkg, 'package ' + APP_ID))
+        # prune empty old dirs
+        d = old_dir
+        while d != base and os.path.isdir(d) and not os.listdir(d):
+            os.rmdir(d); d = os.path.dirname(d)
+
+# ---- manifest -------------------------------------------------------------
+PERMS = [
+ 'INTERNET', 'ACCESS_NETWORK_STATE', 'ACCESS_FINE_LOCATION', 'ACCESS_COARSE_LOCATION',
+ 'CAMERA', 'RECORD_AUDIO', 'MODIFY_AUDIO_SETTINGS', 'POST_NOTIFICATIONS', 'VIBRATE',
+ 'WAKE_LOCK', 'READ_MEDIA_IMAGES', 'READ_MEDIA_VIDEO', 'REQUEST_INSTALL_PACKAGES',
+]
+def manifest_fix(s):
+    add = ''.join('    <uses-permission android:name="android.permission.%s"/>\n' % p
+                  for p in PERMS if 'android.permission.%s"' % p not in s)
+    add += '' if 'android.hardware.camera"' in s else '    <uses-feature android:name="android.hardware.camera" android:required="false"/>\n'
+    s = re.sub(r'(<manifest[^>]*>\n)', lambda mm: mm.group(1) + add, s, count=1)
+    s = re.sub(r'android:label="[^"]*"', 'android:label="%s"' % LABEL, s, count=1)
+    if 'usesCleartextTraffic' not in s:
+        # the default API endpoint is plain http://; Android 9+ blocks that otherwise
+        s = s.replace('<application', '<application\n        android:usesCleartextTraffic="true"', 1)
+    if 'com.google.firebase.messaging.default_notification_channel_id' not in s:
+        fcm_meta = '''        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="masaren_notifications" />
+'''
+        s = s.replace('    </application>', fcm_meta + '    </application>', 1)
+    if 'android:scheme="masaren"' not in s:
+        deep_link = '''            <intent-filter android:autoVerify="false">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="masaren" android:host="auth" />
+            </intent-filter>
+'''
+        s = s.replace('        </activity>', deep_link + '        </activity>', 1)
+    if 'android:launchMode="singleTask"' not in s:
+        if 'android:launchMode=' in s:
+            s = re.sub(r'android:launchMode="[^"]*"', 'android:launchMode="singleTask"', s, count=1)
+        else:
+            s = s.replace('android:name=".MainActivity"',
+                          'android:name=".MainActivity"\n            android:launchMode="singleTask"', 1)
+    if 'android:scheme="https"' not in s:
+        view_queries = '''        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <category android:name="android.intent.category.BROWSABLE"/>
+            <data android:scheme="https"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <category android:name="android.intent.category.BROWSABLE"/>
+            <data android:scheme="http"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <category android:name="android.intent.category.BROWSABLE"/>
+            <data android:scheme="masaren"/>
+        </intent>
+'''
+        if '</queries>' in s:
+            s = s.replace('</queries>', view_queries + '    </queries>', 1)
+        else:
+            s = s.replace('</manifest>', '    <queries>\n' + view_queries + '    </queries>\n</manifest>', 1)
+    return s
+rw(manifest, manifest_fix)
+
+# ---- launcher icons from the brand logo -------------------------------------
+try:
+    from PIL import Image
+    logo = Image.open(os.path.join(ROOT, 'assets', 'images', 'masaren_logo_512.png')).convert('RGBA')
+    sizes = {'mdpi': 48, 'hdpi': 72, 'xhdpi': 96, 'xxhdpi': 144, 'xxxhdpi': 192}
+    for d, px in sizes.items():
+        out = os.path.join(A, 'app', 'src', 'main', 'res', 'mipmap-' + d)
+        if not os.path.isdir(out): continue
+        canvas = Image.new('RGBA', (px, px), (255, 255, 255, 255))
+        inner = int(px * 0.78)
+        l = logo.copy(); l.thumbnail((inner, inner))
+        canvas.alpha_composite(l, ((px - l.width) // 2, (px - l.height) // 2))
+        canvas.convert('RGB').save(os.path.join(out, 'ic_launcher.png'))
+except Exception as e:
+    print('icon step skipped:', e)
+
+# ---- flutter create drops a template widget test for the default MyApp -----
+try:
+    t = os.path.join(ROOT, 'test', 'widget_test.dart')
+    if os.path.exists(t) and 'MyApp' in open(t, encoding='utf-8').read():
+        os.remove(t)
+except Exception as e:
+    print('template test cleanup skipped:', e)
+
+print('Android project patched: id=%s label=%s' % (APP_ID, LABEL))
