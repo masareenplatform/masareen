@@ -50,26 +50,26 @@ import 'package:masaren/shell/shell_navigation.dart';
 import 'package:masaren/shell/web_messenger_dock.dart';
 import 'package:masaren/theme.dart';
 import 'package:masaren/widgets.dart';
+import 'package:masaren/widgets/feature_tour.dart';
 import 'package:masaren/widgets/platform_pulse.dart';
 
-const String _appVersion = '0.4.8+13';
+const String _appVersion = '0.5.2+22';
 
 PageRouteBuilder<T> _shellRoute<T>(Widget page) => PageRouteBuilder<T>(
-      pageBuilder: (_, __, ___) => page,
-      transitionsBuilder: (_, animation, __, child) {
-        final tween = Tween(
-          begin: const Offset(0.04, 0),
-          end: Offset.zero,
-        ).chain(CurveTween(curve: Curves.easeOutCubic));
-        return FadeTransition(
-          opacity: animation,
-          child:
-              SlideTransition(position: animation.drive(tween), child: child),
-        );
-      },
-      transitionDuration: const Duration(milliseconds: 240),
-      reverseTransitionDuration: const Duration(milliseconds: 180),
+  pageBuilder: (_, __, ___) => page,
+  transitionsBuilder: (_, animation, __, child) {
+    final tween = Tween(
+      begin: const Offset(0.04, 0),
+      end: Offset.zero,
+    ).chain(CurveTween(curve: Curves.easeOutCubic));
+    return FadeTransition(
+      opacity: animation,
+      child: SlideTransition(position: animation.drive(tween), child: child),
     );
+  },
+  transitionDuration: const Duration(milliseconds: 240),
+  reverseTransitionDuration: const Duration(milliseconds: 180),
+);
 
 class HomeShell extends StatefulWidget {
   final VoidCallback onLogout;
@@ -118,6 +118,42 @@ class _HomeShellState extends State<HomeShell> {
     super.initState();
     shellPush = pushInTab;
     _loadUser();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      showFeatureTourIfNeeded(
+        context,
+        'platform',
+        title: 'One connected platform',
+        subtitle:
+            'People, entities and evidence are linked. Value moves from activity to verified impact to reward.',
+        steps: const [
+          TourStep(
+            icon: Icons.hub_outlined,
+            title: 'People and entities',
+            body:
+                'Profiles, organisations, universities, programs, projects and events are nodes in one graph.',
+          ),
+          TourStep(
+            icon: Icons.fact_check_outlined,
+            title: 'Evidence changes the score',
+            body:
+                'Posts, news, research and field work carry evidence, verification and their own impact indicators.',
+          ),
+          TourStep(
+            icon: Icons.bolt,
+            title: 'Impact becomes opportunity',
+            body:
+                'Strong signals unlock better matches, leaderboards, funding and calls for collaboration.',
+          ),
+          TourStep(
+            icon: Icons.paid_outlined,
+            title: 'Win-win MRC',
+            body:
+                'Verify, review, complete pathways and contribute to rooms to earn MRC and build your passport.',
+          ),
+        ],
+      );
+    });
     _balanceTimer = Timer.periodic(const Duration(seconds: 8), (_) async {
       try {
         final user = _user;
@@ -400,10 +436,10 @@ class _HomeShellState extends State<HomeShell> {
       _webActive = index == 0
           ? 'home'
           : index == 1
-              ? 'explore'
-              : index == 3
-                  ? 'courses'
-                  : 'profile';
+          ? 'explore'
+          : index == 3
+          ? 'courses'
+          : 'profile';
     });
     _switchTab(index);
   }
@@ -522,29 +558,29 @@ class _HomeShellState extends State<HomeShell> {
   }
 
   Widget _webRoot() => ValueListenableBuilder<int>(
-        valueListenable: _tabNotifier,
-        builder: (_, tab, ___) {
-          final maxWidth = tab == 0 ? 720.0 : 980.0;
-          return ColoredBox(
-            color: Theme.of(context).scaffoldBackgroundColor,
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: maxWidth),
-                child: SizedBox.expand(
-                  child: Stack(
-                    children: [
-                      Positioned.fill(child: _buildBody()),
-                      const PlatformPulseBanner(),
-                      const PulseSurveyHost(),
-                    ],
-                  ),
-                ),
+    valueListenable: _tabNotifier,
+    builder: (_, tab, ___) {
+      final maxWidth = tab == 0 ? 720.0 : 980.0;
+      return ColoredBox(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxWidth),
+            child: SizedBox.expand(
+              child: Stack(
+                children: [
+                  Positioned.fill(child: _buildBody()),
+                  const PlatformPulseBanner(),
+                  const PulseSurveyHost(),
+                ],
               ),
             ),
-          );
-        },
+          ),
+        ),
       );
+    },
+  );
 
   Widget _buildWebShell(User user) {
     final cs = Theme.of(context).colorScheme;
@@ -1335,11 +1371,11 @@ class _ShellDrawer extends StatelessWidget {
       trailing: badge > 0
           ? _badge(cs, badge)
           : trailing ??
-              Icon(
-                Icons.chevron_right,
-                size: 18,
-                color: cs.onSurfaceVariant.withValues(alpha: 0.6),
-              ),
+                Icon(
+                  Icons.chevron_right,
+                  size: 18,
+                  color: cs.onSurfaceVariant.withValues(alpha: 0.6),
+                ),
       onTap: onTap,
     );
   }
@@ -1725,8 +1761,8 @@ class _CreatePostSheet extends StatelessWidget {
                 final cols = constraints.maxWidth >= 720
                     ? 4
                     : constraints.maxWidth >= 430
-                        ? 3
-                        : 2;
+                    ? 3
+                    : 2;
                 return GridView.builder(
                   padding: const EdgeInsets.fromLTRB(18, 18, 18, 26),
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -1744,16 +1780,16 @@ class _CreatePostSheet extends StatelessWidget {
                         Navigator.of(context).pop();
                         nav
                             .push<bool>(
-                          _shellRoute(
-                            CreatePostScreen(
-                              user: user,
-                              initialKind: t.kind,
-                            ),
-                          ),
-                        )
+                              _shellRoute(
+                                CreatePostScreen(
+                                  user: user,
+                                  initialKind: t.kind,
+                                ),
+                              ),
+                            )
                             .then((result) {
-                          if (result == true) onPosted?.call();
-                        });
+                              if (result == true) onPosted?.call();
+                            });
                       },
                       child: Container(
                         decoration: BoxDecoration(
@@ -2301,19 +2337,19 @@ class _WebSidebar extends StatelessWidget {
   }
 
   Widget _webSection(BuildContext context, String label) => Padding(
-        padding: const EdgeInsets.fromLTRB(10, 12, 10, 4),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 9.5,
-            letterSpacing: 1.1,
-            fontWeight: FontWeight.w800,
-            color: Theme.of(
-              context,
-            ).colorScheme.onSurfaceVariant.withValues(alpha: .7),
-          ),
-        ),
-      );
+    padding: const EdgeInsets.fromLTRB(10, 12, 10, 4),
+    child: Text(
+      label,
+      style: TextStyle(
+        fontSize: 9.5,
+        letterSpacing: 1.1,
+        fontWeight: FontWeight.w800,
+        color: Theme.of(
+          context,
+        ).colorScheme.onSurfaceVariant.withValues(alpha: .7),
+      ),
+    ),
+  );
 
   Widget _webItem(
     BuildContext context,
@@ -2684,12 +2720,12 @@ class _WebRightRailState extends State<_WebRightRail> {
   }
 
   Widget _muted(BuildContext context, String text) => Text(
-        text,
-        style: TextStyle(
-          fontSize: 11.5,
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-        ),
-      );
+    text,
+    style: TextStyle(
+      fontSize: 11.5,
+      color: Theme.of(context).colorScheme.onSurfaceVariant,
+    ),
+  );
 
   Widget _panel(
     BuildContext context, {
@@ -2714,20 +2750,20 @@ class _WebRightRailState extends State<_WebRightRail> {
   }
 
   Widget _pill(String label, String value) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: .13),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          '$label $value',
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: .9),
-            fontSize: 9.5,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      );
+    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+    decoration: BoxDecoration(
+      color: Colors.white.withValues(alpha: .13),
+      borderRadius: BorderRadius.circular(20),
+    ),
+    child: Text(
+      '$label $value',
+      style: TextStyle(
+        color: Colors.white.withValues(alpha: .9),
+        fontSize: 9.5,
+        fontWeight: FontWeight.w700,
+      ),
+    ),
+  );
 
   Widget _marketRow(BuildContext context, Map<String, dynamic> m) {
     final cs = Theme.of(context).colorScheme;

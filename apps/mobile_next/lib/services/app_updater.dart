@@ -12,6 +12,33 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:masaren/api_client.dart';
 import 'package:masaren/l10n.dart';
 
+class AppUpdateChannel {
+  final String id;
+  final String name;
+  final String version;
+  final int build;
+  final String url;
+  final String notes;
+
+  const AppUpdateChannel({
+    required this.id,
+    required this.name,
+    required this.version,
+    required this.build,
+    required this.url,
+    required this.notes,
+  });
+
+  factory AppUpdateChannel.fromJson(Map<String, dynamic> j) => AppUpdateChannel(
+    id: j['id']?.toString() ?? '',
+    name: j['name']?.toString() ?? 'MASAREEN',
+    version: j['version']?.toString() ?? '',
+    build: (j['build'] as num?)?.toInt() ?? 0,
+    url: j['url']?.toString() ?? '',
+    notes: j['notes']?.toString() ?? '',
+  );
+}
+
 class AppUpdateInfo {
   final String version;
   final int build;
@@ -20,6 +47,7 @@ class AppUpdateInfo {
   final int minimumBuild;
   final String otaAppId;
   final bool force;
+  final List<AppUpdateChannel> channels;
 
   const AppUpdateInfo({
     required this.version,
@@ -29,6 +57,7 @@ class AppUpdateInfo {
     required this.minimumBuild,
     required this.otaAppId,
     this.force = false,
+    this.channels = const [],
   });
 }
 
@@ -40,17 +69,40 @@ class AppUpdateInfo {
 /// open the download/TestFlight page. Dart-only patches are handled by
 /// Shorebird (see shorebird.yaml and the platform guide).
 class AppUpdater {
-  static Future<AppUpdateInfo?> check() async {
+  static Future<AppUpdateInfo?> check({bool includeChannels = false}) async {
     if (!Platform.isAndroid && !Platform.isIOS) return null;
     final info = await PackageInfo.fromPlatform();
-    if (info.packageName == 'com.masaren.next') return null;
     final currentBuild = int.tryParse(info.buildNumber) ?? 0;
     final data = await api.get('/api/app/version');
     if (data is! Map) return null;
-    final platform = data[Platform.isAndroid ? 'android' : 'ios'];
+    var platform = data[Platform.isAndroid ? 'android' : 'ios'];
     if (platform is! Map) return null;
+    final channels = (data['channels'] is List)
+        ? (data['channels'] as List)
+              .whereType<Map>()
+              .map(
+                (e) => AppUpdateChannel.fromJson(Map<String, dynamic>.from(e)),
+              )
+              .where((c) => c.build > 0 && c.url.isNotEmpty)
+              .toList()
+        : const <AppUpdateChannel>[];
+    if (info.packageName == 'com.masaren.next') {
+      for (final channel in channels) {
+        if (channel.id == 'next') {
+          platform = {
+            'version': channel.version,
+            'build': channel.build,
+            'url': channel.url,
+            'notes': channel.notes,
+          };
+          break;
+        }
+      }
+    }
     final build = (platform['build'] as num?)?.toInt() ?? 0;
-    if (build <= currentBuild) return null;
+    if (build <= currentBuild && (!includeChannels || channels.length < 2)) {
+      return null;
+    }
     final ota = data['ota'];
     return AppUpdateInfo(
       version: platform['version']?.toString() ?? '',
@@ -60,6 +112,7 @@ class AppUpdater {
       minimumBuild: (data['minimumBuild'] as num?)?.toInt() ?? 0,
       otaAppId: ota is Map ? (ota['appId']?.toString() ?? '') : '',
       force: data['force'] == true,
+      channels: channels,
     );
   }
 
@@ -73,7 +126,7 @@ class AppUpdater {
     bool silent = true,
   }) async {
     try {
-      final update = await check();
+      final update = await check(includeChannels: !silent);
       if (!context.mounted) return;
       if (update == null) {
         if (!silent) {
@@ -91,26 +144,32 @@ class AppUpdater {
         }
         return;
       }
+      var selected = update;
+      if (Platform.isAndroid && update.channels.length > 1) {
+        final choice = await _chooseChannel(context, update);
+        if (choice == null || !context.mounted) return;
+        selected = choice;
+      }
       final body = [
         _t(
           context,
           'update.body',
           'A new version ({version}) is ready. Updating keeps your data and does not require the app store.',
-        ).replaceAll('{version}', update.version),
-        if (update.notes.isNotEmpty) '\n${update.notes}',
+        ).replaceAll('{version}', selected.version),
+        if (selected.notes.isNotEmpty) '\n${selected.notes}',
         if (Platform.isIOS)
           '\n${_t(context, 'update.iosHint', 'On iOS, open the download page to install the new build; Dart-only patches apply automatically on the next launch.')}',
       ].join('\n');
       final go = await showDialog<bool>(
         context: context,
-        barrierDismissible: !update.force,
+        barrierDismissible: !selected.force,
         builder: (c) => PopScope(
-          canPop: !update.force,
+          canPop: !selected.force,
           child: AlertDialog(
             title: Text(_t(context, 'update.title', 'Update available')),
             content: Text(body),
             actions: [
-              if (!update.force)
+              if (!selected.force)
                 TextButton(
                   onPressed: () => Navigator.pop(c, false),
                   child: Text(_t(context, 'update.later', 'Later')),
@@ -125,9 +184,9 @@ class AppUpdater {
       );
       if (go != true || !context.mounted) return;
       if (Platform.isAndroid) {
-        await _installAndroid(context, update);
+        await _installAndroid(context, selected);
       } else {
-        await _openIos(context, update);
+        await _openIos(context, selected);
       }
     } catch (e) {
       if (!silent && context.mounted) {
@@ -140,6 +199,115 @@ class AppUpdater {
         );
       }
     }
+  }
+
+  static Future<AppUpdateInfo?> _chooseChannel(
+    BuildContext context,
+    AppUpdateInfo update,
+  ) async {
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final chosen = await showDialog<AppUpdateChannel>(
+      context: context,
+      barrierDismissible: !update.force,
+      builder: (c) => SimpleDialog(
+        title: Text(isArabic ? 'اختر إصدار MASAREEN' : 'Choose MASAREEN'),
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 10),
+            child: Text(
+              isArabic
+                  ? 'الإصدار الرسمي أو الإصدار التجريبي بالتصميم الجديد. يمكنك تثبيت الاثنين معاً.'
+                  : 'Install the production app, the experimental visual direction, or both side by side.',
+              style: TextStyle(
+                fontSize: 12,
+                height: 1.5,
+                color: Theme.of(c).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          for (final channel in update.channels)
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(c, channel),
+              padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
+              child: Row(
+                children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: Theme.of(
+                        c,
+                      ).colorScheme.primary.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      channel.id == 'next'
+                          ? Icons.auto_awesome_outlined
+                          : Icons.verified_outlined,
+                      color: Theme.of(c).colorScheme.primary,
+                      size: 21,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          channel.name,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 14,
+                          ),
+                        ),
+                        Text(
+                          '${channel.version} · build ${channel.build}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Theme.of(c).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        if (channel.notes.isNotEmpty)
+                          Text(
+                            channel.notes,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              color: Theme.of(c).colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    Icons.chevron_right,
+                    color: Theme.of(c).colorScheme.onSurfaceVariant,
+                  ),
+                ],
+              ),
+            ),
+          if (!update.force)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: TextButton(
+                onPressed: () => Navigator.pop(c),
+                child: Text(isArabic ? 'لاحقاً' : 'Later'),
+              ),
+            ),
+        ],
+      ),
+    );
+    if (chosen == null) return null;
+    return AppUpdateInfo(
+      version: chosen.version,
+      build: chosen.build,
+      url: chosen.url,
+      notes: chosen.notes,
+      minimumBuild: update.minimumBuild,
+      otaAppId: update.otaAppId,
+      force: update.force,
+    );
   }
 
   static Future<void> _installAndroid(

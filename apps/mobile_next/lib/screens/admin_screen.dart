@@ -1469,6 +1469,14 @@ class _AdminScreenState extends State<AdminScreen> {
               onTap: () => Navigator.pop(ctx, verified ? 'unverify' : 'verify'),
             ),
             ListTile(
+              leading: const Icon(Icons.admin_panel_settings_outlined),
+              title: Text(
+                'Platform role: ${user['platform_role'] ?? 'member'}',
+              ),
+              subtitle: const Text('Admin, moderator, support or analyst'),
+              onTap: () => Navigator.pop(ctx, 'role'),
+            ),
+            ListTile(
               leading: const Icon(Icons.science_outlined),
               title: Text(MasarenLocalizations.of(context, 'admin.makeTester')),
               onTap: () => Navigator.pop(ctx, 'tester'),
@@ -1500,6 +1508,42 @@ class _AdminScreenState extends State<AdminScreen> {
     if (action == null) return;
     if (!mounted) return;
     if (action == 'message') return _messageUser(user);
+    if (action == 'role') {
+      final role = await showDialog<String>(
+        context: context,
+        builder: (ctx) => SimpleDialog(
+          title: const Text('Assign platform role'),
+          children: [
+            for (final entry in const [
+              ('ADMIN', 'Platform admin', Icons.shield_outlined),
+              ('MODERATOR', 'Moderator', Icons.gavel_outlined),
+              ('SUPPORT', 'Support', Icons.support_agent_outlined),
+              ('ANALYST', 'Analyst', Icons.insights_outlined),
+              ('NONE', 'Remove role', Icons.person_outline),
+            ])
+              SimpleDialogOption(
+                onPressed: () => Navigator.pop(ctx, entry.$1),
+                child: ListTile(
+                  leading: Icon(entry.$3),
+                  title: Text(entry.$2),
+                  trailing: user['platform_role'] == entry.$1
+                      ? const Icon(Icons.check)
+                      : null,
+                ),
+              ),
+          ],
+        ),
+      );
+      if (role == null) return;
+      try {
+        await AuthApi.adminSetPlatformRole(id, role);
+        await _loadUsers(force: true);
+        if (mounted) _snack('Platform role updated.');
+      } catch (error) {
+        _snack(_err(error));
+      }
+      return;
+    }
     if (action == 'delete') {
       final confirmed = await showDialog<bool>(
         context: context,

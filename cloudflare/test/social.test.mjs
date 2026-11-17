@@ -2539,3 +2539,15 @@ test('event-driven automation generates opportunities and leaderboard snapshots'
     'SELECT COUNT(*) c FROM leaderboard_snapshots').get();
   assert.ok(Number(snapshots.c) >= 0);
 });
+test('admins can assign platform roles', async () => {
+  const env = mkEnv();
+  const admin = await signup(env, 'ceo@example.com', 'Root Admin');
+  const target = await signup(env, 'future-admin@example.com', 'Future Admin');
+  const me = await (await call(env, 'GET', '/api/v1/users/me', null, target)).json();
+  assert.equal((await call(env, 'GET', '/api/v1/admin/stats', null, target)).status, 403);
+  const assigned = await call(env, 'POST',
+    `/api/v1/admin/users/${me.id}/action`,
+    { action: 'set_role', platform_role: 'ADMIN' }, admin);
+  assert.equal(assigned.status, 200);
+  assert.equal((await call(env, 'GET', '/api/v1/admin/stats', null, target)).status, 200);
+});

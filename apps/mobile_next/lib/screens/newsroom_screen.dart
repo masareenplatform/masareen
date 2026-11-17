@@ -8,6 +8,7 @@ import 'package:masaren/models.dart';
 import 'package:masaren/theme.dart';
 import 'package:masaren/widgets.dart';
 import 'package:masaren/widgets/content_engagement.dart';
+import 'package:masaren/widgets/feature_tour.dart';
 import 'package:masaren/screens/news_journalists_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -39,6 +40,42 @@ class _NewsroomScreenState extends State<NewsroomScreen> {
   void initState() {
     super.initState();
     _load();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      showFeatureTourIfNeeded(
+        context,
+        'newsroom',
+        title: 'The newsroom, connected',
+        subtitle:
+            'Every story links an outlet, a journalist and a measurable impact trail.',
+        steps: const [
+          TourStep(
+            icon: Icons.public,
+            title: 'Real outlets',
+            body:
+                'Live headlines arrive from trusted Egyptian newsrooms, with source and original link attached.',
+          ),
+          TourStep(
+            icon: Icons.person_search,
+            title: 'Real journalists',
+            body:
+                'Bylines become verified profiles. Tap a journalist to see their stories and impact score.',
+          ),
+          TourStep(
+            icon: Icons.fact_check_outlined,
+            title: 'Verify the story',
+            body:
+                'Eligible journalists and academics can verify, dispute or reject a story. Reviews earn MRC.',
+          ),
+          TourStep(
+            icon: Icons.bolt,
+            title: 'Impact and reward',
+            body:
+                'Views, reactions, comments, ratings and verification combine into the story impact score.',
+          ),
+        ],
+      );
+    });
   }
 
   Future<void> _load() async {
@@ -94,86 +131,86 @@ class _NewsroomScreenState extends State<NewsroomScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? Center(child: Text(_error!))
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  child: ListView(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+          ? Center(child: Text(_error!))
+          : RefreshIndicator(
+              onRefresh: _load,
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF2C6E8F), Color(0xFF174B43)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Verified data. Real reporting.',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        SizedBox(height: 5),
+                        Text(
+                          'News outlets publish evidence-backed articles, attach live platform data and earn from funded reporting. The platform keeps 30% of funding as brokerage.',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 11.5,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF2C6E8F), Color(0xFF174B43)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                        child: const Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Verified data. Real reporting.',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                            SizedBox(height: 5),
-                            Text(
-                              'News outlets publish evidence-backed articles, attach live platform data and earn from funded reporting. The platform keeps 30% of funding as brokerage.',
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 11.5,
-                                height: 1.4,
-                              ),
-                            ),
-                          ],
-                        ),
+                      ChoiceChip(
+                        label: const Text('Published'),
+                        selected: !_mine,
+                        onSelected: (_) {
+                          setState(() => _mine = false);
+                          _load();
+                        },
                       ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          ChoiceChip(
-                            label: const Text('Published'),
-                            selected: !_mine,
-                            onSelected: (_) {
-                              setState(() => _mine = false);
-                              _load();
-                            },
-                          ),
-                          const SizedBox(width: 8),
-                          if (_canPublish)
-                            ChoiceChip(
-                              label: const Text('My newsroom'),
-                              selected: _mine,
-                              onSelected: (_) {
-                                setState(() => _mine = true);
-                                _load();
-                              },
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      if (_items.isEmpty)
-                        Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Center(
-                            child: Text(
-                              'No articles yet.',
-                              style: TextStyle(color: cs.onSurfaceVariant),
-                            ),
-                          ),
-                        )
-                      else
-                        ..._items.map(
-                          (a) => _NewsCard(article: a, onTap: () => _open(a)),
+                      const SizedBox(width: 8),
+                      if (_canPublish)
+                        ChoiceChip(
+                          label: const Text('My newsroom'),
+                          selected: _mine,
+                          onSelected: (_) {
+                            setState(() => _mine = true);
+                            _load();
+                          },
                         ),
                     ],
                   ),
-                ),
+                  const SizedBox(height: 10),
+                  if (_items.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Center(
+                        child: Text(
+                          'No articles yet.',
+                          style: TextStyle(color: cs.onSurfaceVariant),
+                        ),
+                      ),
+                    )
+                  else
+                    ..._items.map(
+                      (a) => _NewsCard(article: a, onTap: () => _open(a)),
+                    ),
+                ],
+              ),
+            ),
       floatingActionButton: _canPublish
           ? FloatingActionButton.extended(
               onPressed: _create,
@@ -689,9 +726,9 @@ class _NewsArticleScreenState extends State<NewsArticleScreen> {
                     onTap: url.isEmpty
                         ? null
                         : () => launchUrl(
-                              Uri.parse(url),
-                              mode: LaunchMode.externalApplication,
-                            ),
+                            Uri.parse(url),
+                            mode: LaunchMode.externalApplication,
+                          ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(14),
                       child: Stack(
@@ -763,14 +800,14 @@ class _NewsArticleScreenState extends State<NewsArticleScreen> {
                   ),
                   if (snapshot['metrics'] is Map)
                     ...(snapshot['metrics'] as Map).entries.map(
-                          (e) => Text(
-                            '${e.key.replaceAll('_', ' ')}: ${e.value}',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: cs.onSurfaceVariant,
-                            ),
-                          ),
+                      (e) => Text(
+                        '${e.key.replaceAll('_', ' ')}: ${e.value}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: cs.onSurfaceVariant,
                         ),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -802,7 +839,9 @@ class _NewsArticleScreenState extends State<NewsArticleScreen> {
               ),
             ),
             const SizedBox(height: 6),
-            ..._verifications.take(5).map(
+            ..._verifications
+                .take(5)
+                .map(
                   (v) => Card(
                     margin: const EdgeInsets.only(bottom: 8),
                     child: ListTile(
@@ -815,9 +854,7 @@ class _NewsArticleScreenState extends State<NewsArticleScreen> {
                             ? AppColors.brand
                             : AppColors.warm,
                       ),
-                      title: Text(
-                        v['reviewer_name']?.toString() ?? 'Reviewer',
-                      ),
+                      title: Text(v['reviewer_name']?.toString() ?? 'Reviewer'),
                       subtitle: Text(
                         '${v['verdict']} · ${v['notes'] ?? ''}',
                         maxLines: 2,
@@ -918,8 +955,8 @@ class _NewsEditorScreenState extends State<NewsEditorScreen> {
         ext == 'png'
             ? 'image/png'
             : ext == 'webp'
-                ? 'image/webp'
-                : 'image/jpeg',
+            ? 'image/webp'
+            : 'image/jpeg',
       );
       if (mounted) setState(() => _coverUrl = url);
     } catch (e) {

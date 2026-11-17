@@ -545,8 +545,10 @@ class AuthApi {
     await api.post('/api/v1/news/$id/rate', {'stars': stars});
   }
 
-  static Future<List<Map<String, dynamic>>> newsJournalists(
-      {String? q, String? outletId}) async {
+  static Future<List<Map<String, dynamic>>> newsJournalists({
+    String? q,
+    String? outletId,
+  }) async {
     final data = await api.get('/api/v1/news/journalists', {
       if (q != null && q.trim().isNotEmpty) 'q': q.trim(),
       if (outletId != null && outletId.isNotEmpty) 'outlet_id': outletId,
@@ -562,8 +564,12 @@ class AuthApi {
     return Map<String, dynamic>.from(data as Map);
   }
 
-  static Future<Map<String, dynamic>> verifyNews(String id, String verdict,
-      {String? notes, double confidence = 0.7}) async {
+  static Future<Map<String, dynamic>> verifyNews(
+    String id,
+    String verdict, {
+    String? notes,
+    double confidence = 0.7,
+  }) async {
     final data = await api.post('/api/v1/news/$id/verify', {
       'verdict': verdict,
       if (notes != null && notes.trim().isNotEmpty) 'notes': notes.trim(),
@@ -1824,6 +1830,18 @@ class AuthApi {
     return Post.fromJson(Map<String, dynamic>.from(data as Map));
   }
 
+  static Future<List<Map<String, dynamic>>> impactFrameworks(
+      {String? entityType}) async {
+    final data = await api.get('/api/v1/impact/frameworks', {
+      if (entityType != null && entityType.isNotEmpty)
+        'entity_type': entityType,
+    });
+    return (data is List ? data : <dynamic>[])
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
+  }
+
   static Future<Map<String, dynamic>> liveLeaderboard({
     String scope = 'institutions',
     String period = 'month',
@@ -1870,6 +1888,13 @@ class AuthApi {
     await api.post('/api/v1/admin/users/$id/action', {
       'action': action,
       if (reason != null) 'reason': reason,
+    });
+  }
+
+  static Future<void> adminSetPlatformRole(String id, String role) async {
+    await api.post('/api/v1/admin/users/$id/action', {
+      'action': 'set_role',
+      'platform_role': role,
     });
   }
 

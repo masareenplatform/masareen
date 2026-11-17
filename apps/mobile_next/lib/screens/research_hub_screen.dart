@@ -4,6 +4,7 @@ import 'package:masaren/api_client.dart';
 import 'package:masaren/l10n.dart';
 import 'package:masaren/models.dart';
 import 'package:masaren/screens/research_stage_screen.dart';
+import 'package:masaren/widgets/feature_tour.dart';
 
 class ResearchHubScreen extends StatefulWidget {
   final User user;
@@ -32,6 +33,42 @@ class _ResearchHubScreenState extends State<ResearchHubScreen> {
   void initState() {
     super.initState();
     _load();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      showFeatureTourIfNeeded(
+        context,
+        'research',
+        title: 'Research that moves',
+        subtitle:
+            'A visible pipeline from idea to peer review, funding and measurable impact.',
+        steps: const [
+          TourStep(
+            icon: Icons.route,
+            title: 'The pipeline',
+            body:
+                'Each stage moves from idea and literature to fieldwork, analysis and publication.',
+          ),
+          TourStep(
+            icon: Icons.groups_outlined,
+            title: 'Every role counted',
+            body:
+                'Professors, associate professors, lecturers, assistants, researchers and students are named with their roles and affiliations.',
+          ),
+          TourStep(
+            icon: Icons.rate_review_outlined,
+            title: 'Paid peer review',
+            body:
+                'Verified academics review methods and evidence. A constructive review earns MRC and research impact.',
+          ),
+          TourStep(
+            icon: Icons.volunteer_activism_outlined,
+            title: 'Fund the next step',
+            body:
+                'Supporters fund a stage; 90% reaches the researcher and 10% sustains the review and verification layer.',
+          ),
+        ],
+      );
+    });
   }
 
   Future<void> _load() async {
@@ -90,190 +127,186 @@ class _ResearchHubScreenState extends State<ResearchHubScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(_error!, textAlign: TextAlign.center),
+                    const SizedBox(height: 12),
+                    FilledButton(
+                      onPressed: _load,
+                      child: Text(
+                        MasarenLocalizations.of(context, 'common.retry'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: _load,
+              child: _items.isEmpty
+                  ? ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.all(32),
                       children: [
-                        Text(_error!, textAlign: TextAlign.center),
+                        Icon(
+                          Icons.science_outlined,
+                          size: 42,
+                          color: cs.primary,
+                        ),
                         const SizedBox(height: 12),
-                        FilledButton(
-                          onPressed: _load,
-                          child: Text(
-                            MasarenLocalizations.of(context, 'common.retry'),
+                        Text(
+                          _t(
+                            'research.empty',
+                            'No research stages yet. Share your first one.',
+                          ),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: cs.onSurfaceVariant,
+                            height: 1.5,
                           ),
                         ),
                       ],
-                    ),
-                  ),
-                )
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  child: _items.isEmpty
-                      ? ListView(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          padding: const EdgeInsets.all(32),
-                          children: [
-                            Icon(
-                              Icons.science_outlined,
-                              size: 42,
-                              color: cs.primary,
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              _t(
-                                'research.empty',
-                                'No research stages yet. Share your first one.',
-                              ),
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: cs.onSurfaceVariant,
-                                height: 1.5,
-                              ),
-                            ),
-                          ],
-                        )
-                      : ListView.builder(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          padding: const EdgeInsets.fromLTRB(14, 8, 14, 96),
-                          itemCount: _items.length,
-                          itemBuilder: (_, index) {
-                            final item = _items[index];
-                            final created = DateTime.tryParse(
-                              (item['created_at'] ?? '').toString(),
-                            );
-                            return Card(
-                              margin: const EdgeInsets.only(bottom: 10),
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(14),
-                                onTap: () => _openStage(item['id'].toString()),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(15),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                    )
+                  : ListView.builder(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(14, 8, 14, 96),
+                      itemCount: _items.length,
+                      itemBuilder: (_, index) {
+                        final item = _items[index];
+                        final created = DateTime.tryParse(
+                          (item['created_at'] ?? '').toString(),
+                        );
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(14),
+                            onTap: () => _openStage(item['id'].toString()),
+                            child: Padding(
+                              padding: const EdgeInsets.all(15),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
                                     children: [
-                                      Row(
-                                        children: [
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 9,
-                                              vertical: 4,
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 9,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: cs.primary.withValues(
+                                            alpha: 0.09,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            999,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          (item['stage'] ?? 'IDEA').toString(),
+                                          style: TextStyle(
+                                            fontSize: 10.5,
+                                            fontWeight: FontWeight.w800,
+                                            color: cs.primary,
+                                          ),
+                                        ),
+                                      ),
+                                      const Spacer(),
+                                      if (created != null)
+                                        Text(
+                                          DateFormat.yMMMd().format(
+                                            created.toLocal(),
+                                          ),
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: cs.onSurfaceVariant,
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    (item['title'] ?? '').toString(),
+                                    style: TextStyle(
+                                      fontSize: 15.5,
+                                      fontWeight: FontWeight.w800,
+                                      height: 1.3,
+                                      color: cs.onSurface,
+                                    ),
+                                  ),
+                                  if ((item['summary'] ?? '')
+                                      .toString()
+                                      .isNotEmpty) ...[
+                                    const SizedBox(height: 5),
+                                    Text(
+                                      (item['summary'] ?? '').toString(),
+                                      maxLines: 3,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        height: 1.45,
+                                        color: cs.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ],
+                                  const SizedBox(height: 10),
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.person_outline,
+                                        size: 15,
+                                        color: cs.onSurfaceVariant,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Expanded(
+                                        child: Text(
+                                          (item['researcher_name'] ??
+                                                  _t(
+                                                    'research.researcher',
+                                                    'Researcher',
+                                                  ))
+                                              .toString(),
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: cs.onSurface,
+                                          ),
+                                        ),
+                                      ),
+                                      if ((item['institution_id'] ?? '')
+                                          .toString()
+                                          .isNotEmpty)
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              Icons.school_outlined,
+                                              size: 14,
+                                              color: cs.primary,
                                             ),
-                                            decoration: BoxDecoration(
-                                              color: cs.primary.withValues(
-                                                alpha: 0.09,
-                                              ),
-                                              borderRadius:
-                                                  BorderRadius.circular(
-                                                999,
-                                              ),
-                                            ),
-                                            child: Text(
-                                              (item['stage'] ?? 'IDEA')
-                                                  .toString(),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              _t('research.linked', 'Linked'),
                                               style: TextStyle(
-                                                fontSize: 10.5,
-                                                fontWeight: FontWeight.w800,
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w600,
                                                 color: cs.primary,
                                               ),
                                             ),
-                                          ),
-                                          const Spacer(),
-                                          if (created != null)
-                                            Text(
-                                              DateFormat.yMMMd().format(
-                                                created.toLocal(),
-                                              ),
-                                              style: TextStyle(
-                                                fontSize: 11,
-                                                color: cs.onSurfaceVariant,
-                                              ),
-                                            ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        (item['title'] ?? '').toString(),
-                                        style: TextStyle(
-                                          fontSize: 15.5,
-                                          fontWeight: FontWeight.w800,
-                                          height: 1.3,
-                                          color: cs.onSurface,
+                                          ],
                                         ),
-                                      ),
-                                      if ((item['summary'] ?? '')
-                                          .toString()
-                                          .isNotEmpty) ...[
-                                        const SizedBox(height: 5),
-                                        Text(
-                                          (item['summary'] ?? '').toString(),
-                                          maxLines: 3,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            height: 1.45,
-                                            color: cs.onSurfaceVariant,
-                                          ),
-                                        ),
-                                      ],
-                                      const SizedBox(height: 10),
-                                      Row(
-                                        children: [
-                                          Icon(
-                                            Icons.person_outline,
-                                            size: 15,
-                                            color: cs.onSurfaceVariant,
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Expanded(
-                                            child: Text(
-                                              (item['researcher_name'] ??
-                                                      _t(
-                                                        'research.researcher',
-                                                        'Researcher',
-                                                      ))
-                                                  .toString(),
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w600,
-                                                color: cs.onSurface,
-                                              ),
-                                            ),
-                                          ),
-                                          if ((item['institution_id'] ?? '')
-                                              .toString()
-                                              .isNotEmpty)
-                                            Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.school_outlined,
-                                                  size: 14,
-                                                  color: cs.primary,
-                                                ),
-                                                const SizedBox(width: 4),
-                                                Text(
-                                                  _t('research.linked',
-                                                      'Linked'),
-                                                  style: TextStyle(
-                                                    fontSize: 11,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: cs.primary,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                        ],
-                                      ),
                                     ],
                                   ),
-                                ),
+                                ],
                               ),
-                            );
-                          },
-                        ),
-                ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
     );
   }
 }

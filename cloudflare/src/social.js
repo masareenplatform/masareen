@@ -327,6 +327,9 @@ async function requireUser(req, env) {
 }
 function isAdminUser(env, u) {
   if (!u || !u.email) return false;
+  if (u.email_verified && String(u.platform_role || '').toUpperCase() === 'ADMIN') {
+    return true;
+  }
   const list = (env.ADMIN_EMAILS || '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
   return !!u.email_verified && list.includes(u.email.toLowerCase());
 }
@@ -3894,10 +3897,11 @@ async function adminRoutes(req, env, url) {
     const like = `%${search.replace(/[%_]/g, '')}%`;
     const where = search ? 'WHERE email LIKE ? OR name LIKE ? OR role LIKE ?' : '';
     const args = search ? [like, like, like] : [];
-    const rows = (await env.DB.prepare(`SELECT id,email,email_verified,name,role,country,city,created_at,last_login_at,login_count,handle,is_demo
+    const rows = (await env.DB.prepare(`SELECT id,email,email_verified,name,role,country,city,created_at,last_login_at,login_count,handle,is_demo,platform_role
       FROM users ${where} ORDER BY created_at DESC LIMIT ?`).bind(...args, limit).all()).results || [];
     return json(rows.map((u) => ({ id: String(u.id), email: u.email, name: u.name, full_name: u.name, role: u.role,
-      handle: u.handle, country: u.country, city: u.city, is_demo: !!u.is_demo, created_at: u.created_at,
+      handle: u.handle, country: u.country, city: u.city, is_demo: !!u.is_demo,
+      platform_role: u.platform_role || null, created_at: u.created_at,
       last_login_at: u.last_login_at, login_count: u.login_count, email_verified: !!u.email_verified })));
   }
 
@@ -4382,6 +4386,14 @@ async function adminRoutes(req, env, url) {
         .bind(action === 'suspend' ? 1 : 0,
           action === 'suspend' ? (clean(b.reason, 300) || 'Platform policy review') : null,
           userId).run();
+    } else if (action === 'set_role') {
+      const platformRole = String(b.platform_role || '').toUpperCase();
+      if (!['ADMIN', 'MODERATOR', 'SUPPORT', 'ANALYST', 'NONE'].includes(platformRole)) {
+        throw new HttpError(400, 'invalid_role',
+          'Choose admin, moderator, support, analyst or none.');
+      }
+      await env.DB.prepare('UPDATE users SET platform_role=? WHERE id=?')
+        .bind(platformRole === 'NONE' ? null : platformRole, userId).run();
     } else if (action === 'delete') {
       await env.DB.prepare(`UPDATE users SET email=?,name='Deleted member',handle=?,
         password_hash=NULL,password_salt=NULL,bio=NULL,phone=NULL,national_id=NULL,
@@ -11317,6 +11329,21 @@ export async function socialRoutes(req, env, ctx) {
     }
     if (path === '/api/v1/leaderboards/options' && req.method === 'GET') {
       return await listLeaderboardOptions(req, env);
+    }
+    if (path === '/api/v1/impact/frameworks' && req.method === 'GET') {
+      const entityType = String(url.searchParams.get('entity_type') || '')
+        .toUpperCase();
+      const rows = entityType
+        ? (await env.DB.prepare(`SELECT * FROM impact_frameworks
+            WHERE entity_type=?`).bind(entityType).all()).results || []
+        : (await env.DB.prepare(`SELECT * FROM impact_frameworks
+            ORDER BY entity_type ASC`).all()).results || [];
+      return json(rows.map((row) => ({
+        entity_type: row.entity_type, title: row.title,
+        description: row.description || null,
+        indicators: parseJsonValue(row.indicators_json, []),
+        updated_at: row.updated_at,
+      })));
     }
     if (path === '/api/v1/leaderboards/live' && req.method === 'GET') {
       const scope = String(url.searchParams.get('scope') || 'institutions')

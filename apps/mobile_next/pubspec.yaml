@@ -1,6 +1,6 @@
 name: masaren
 description: MASAREEN Next, experimental visual direction for the Impact Infrastructure Platform
-version: 0.5.1+21
+version: 0.5.2+22
 publish_to: none
 
 environment:

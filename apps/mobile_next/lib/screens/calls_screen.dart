@@ -6,6 +6,7 @@ import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:masaren/api_client.dart';
 import 'package:masaren/models.dart';
 import 'package:masaren/theme.dart';
+import 'package:masaren/widgets/feature_tour.dart';
 
 class CallsScreen extends StatefulWidget {
   final User user;
@@ -23,6 +24,36 @@ class _CallsScreenState extends State<CallsScreen> {
   void initState() {
     super.initState();
     _load();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      showFeatureTourIfNeeded(
+        context,
+        'calls',
+        title: 'Rooms for real work',
+        subtitle:
+            'Calls are not just meetings. They are shared spaces around programs, events and research.',
+        steps: const [
+          TourStep(
+            icon: Icons.video_call_outlined,
+            title: 'Open a room',
+            body:
+                'Create an instant or scheduled room, invite collaborators and keep the agenda attached.',
+          ),
+          TourStep(
+            icon: Icons.groups_2_outlined,
+            title: 'Collaborate live',
+            body:
+                'Camera, microphone and room context make decisions faster and keep the evidence trail visible.',
+          ),
+          TourStep(
+            icon: Icons.bolt,
+            title: 'Reward participation',
+            body:
+                'Linked rooms can carry MRC rewards, so attendance and contribution become measurable impact.',
+          ),
+        ],
+      );
+    });
   }
 
   Future<void> _load() async {
@@ -47,44 +78,60 @@ class _CallsScreenState extends State<CallsScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
-                    controller: title,
-                    decoration: const InputDecoration(labelText: 'Title')),
+                  controller: title,
+                  decoration: const InputDecoration(labelText: 'Title'),
+                ),
                 const SizedBox(height: 14),
                 TextField(
-                    controller: reward,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                        labelText: 'MRC reward per participant')),
+                  controller: reward,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'MRC reward per participant',
+                  ),
+                ),
                 const SizedBox(height: 14),
                 OutlinedButton.icon(
                   onPressed: () async {
                     final d = await showDatePicker(
-                        context: ctx,
-                        firstDate: DateTime.now(),
-                        lastDate:
-                            DateTime.now().add(const Duration(days: 365)));
+                      context: ctx,
+                      firstDate: DateTime.now(),
+                      lastDate: DateTime.now().add(const Duration(days: 365)),
+                    );
                     if (d == null) return;
                     final t = await showTimePicker(
-                        context: ctx, initialTime: TimeOfDay.now());
+                      context: ctx,
+                      initialTime: TimeOfDay.now(),
+                    );
                     if (t == null) return;
-                    setState(() => when =
-                        DateTime(d.year, d.month, d.day, t.hour, t.minute));
+                    setState(
+                      () => when = DateTime(
+                        d.year,
+                        d.month,
+                        d.day,
+                        t.hour,
+                        t.minute,
+                      ),
+                    );
                   },
                   icon: const Icon(Icons.event_outlined),
-                  label: Text(when == null
-                      ? 'Schedule (optional)'
-                      : when.toString().substring(0, 16)),
+                  label: Text(
+                    when == null
+                        ? 'Schedule (optional)'
+                        : when.toString().substring(0, 16),
+                  ),
                 ),
               ],
             ),
           ),
           actions: [
             TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Cancel')),
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel'),
+            ),
             FilledButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Create')),
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Create'),
+            ),
           ],
         ),
       ),
@@ -101,8 +148,9 @@ class _CallsScreenState extends State<CallsScreen> {
       _load();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(e.toString())));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.toString())));
       }
     }
   }
@@ -112,9 +160,12 @@ class _CallsScreenState extends State<CallsScreen> {
       await AuthApi.joinCall(room['id'].toString());
     } catch (_) {}
     if (!mounted) return;
-    await Navigator.of(context).push(MaterialPageRoute(
+    await Navigator.of(context).push(
+      MaterialPageRoute(
         builder: (_) =>
-            CallRoomScreen(roomId: room['id'].toString(), user: widget.user)));
+            CallRoomScreen(roomId: room['id'].toString(), user: widget.user),
+      ),
+    );
     await _load();
   }
 
@@ -137,12 +188,18 @@ class _CallsScreenState extends State<CallsScreen> {
                 children: _rooms.isEmpty
                     ? [
                         const SizedBox(height: 100),
-                        Icon(Icons.video_call_outlined,
-                            size: 54, color: cs.outline),
+                        Icon(
+                          Icons.video_call_outlined,
+                          size: 54,
+                          color: cs.outline,
+                        ),
                         const SizedBox(height: 12),
                         Center(
-                            child: Text('No calls scheduled yet.',
-                                style: TextStyle(color: cs.onSurfaceVariant))),
+                          child: Text(
+                            'No calls scheduled yet.',
+                            style: TextStyle(color: cs.onSurfaceVariant),
+                          ),
+                        ),
                       ]
                     : _rooms.map((r) {
                         final live = r['status'] == 'LIVE';
@@ -154,20 +211,24 @@ class _CallsScreenState extends State<CallsScreen> {
                                   (live ? AppColors.warm : cs.primary)
                                       .withValues(alpha: .12),
                               child: Icon(
-                                  live
-                                      ? Icons.videocam
-                                      : Icons.schedule_outlined,
-                                  color: live ? AppColors.warm : cs.primary),
+                                live ? Icons.videocam : Icons.schedule_outlined,
+                                color: live ? AppColors.warm : cs.primary,
+                              ),
                             ),
-                            title: Text(r['title']?.toString() ?? 'Call',
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.w800)),
+                            title: Text(
+                              r['title']?.toString() ?? 'Call',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
                             subtitle: Text(
-                                '${r['host_name'] ?? ''} | ${live ? 'Live now' : (r['scheduled_at']?.toString() ?? 'Instant room')}'
-                                '${(r['reward_mrc'] ?? 0) > 0 ? ' | ${r['reward_mrc']} MRC reward' : ''}'),
+                              '${r['host_name'] ?? ''} | ${live ? 'Live now' : (r['scheduled_at']?.toString() ?? 'Instant room')}'
+                              '${(r['reward_mrc'] ?? 0) > 0 ? ' | ${r['reward_mrc']} MRC reward' : ''}',
+                            ),
                             trailing: FilledButton(
-                                onPressed: () => _open(r),
-                                child: Text(live ? 'Join' : 'Open')),
+                              onPressed: () => _open(r),
+                              child: Text(live ? 'Join' : 'Open'),
+                            ),
                           ),
                         );
                       }).toList(),
@@ -261,8 +322,11 @@ class _CallRoomScreenState extends State<CallRoomScreen> {
       final parts = (room['participants'] as List? ?? const [])
           .whereType<Map>()
           .map((e) => Map<String, dynamic>.from(e))
-          .where((p) =>
-              p['left_at'] == null && p['user_id'].toString() != widget.user.id)
+          .where(
+            (p) =>
+                p['left_at'] == null &&
+                p['user_id'].toString() != widget.user.id,
+          )
           .toList();
       if (parts.isNotEmpty && _remoteId == null) {
         _remoteId = parts.first['user_id'].toString();
@@ -275,20 +339,27 @@ class _CallRoomScreenState extends State<CallRoomScreen> {
         if (s['type'] == 'offer') {
           _remoteId ??= s['from_user'].toString();
           await _setRemote(
-              RTCSessionDescription(payload['sdp']?.toString() ?? '', 'offer'));
+            RTCSessionDescription(payload['sdp']?.toString() ?? '', 'offer'),
+          );
           final answer = await _pc!.createAnswer();
           await _pc!.setLocalDescription(answer);
-          await AuthApi.sendCallSignal(widget.roomId, s['from_user'].toString(),
-              'answer', {'sdp': answer.sdp, 'type': answer.type});
+          await AuthApi.sendCallSignal(
+            widget.roomId,
+            s['from_user'].toString(),
+            'answer',
+            {'sdp': answer.sdp, 'type': answer.type},
+          );
         } else if (s['type'] == 'answer') {
           _remoteId ??= s['from_user'].toString();
-          await _setRemote(RTCSessionDescription(
-              payload['sdp']?.toString() ?? '', 'answer'));
+          await _setRemote(
+            RTCSessionDescription(payload['sdp']?.toString() ?? '', 'answer'),
+          );
         } else if (s['type'] == 'ice' && payload['candidate'] != null) {
           final candidate = RTCIceCandidate(
-              payload['candidate']?.toString(),
-              payload['sdpMid']?.toString(),
-              (payload['sdpMLineIndex'] as num?)?.toInt());
+            payload['candidate']?.toString(),
+            payload['sdpMid']?.toString(),
+            (payload['sdpMLineIndex'] as num?)?.toInt(),
+          );
           if (_hasRemoteDescription) {
             await _pc?.addCandidate(candidate);
           } else {
@@ -304,8 +375,10 @@ class _CallRoomScreenState extends State<CallRoomScreen> {
     final offer = await _pc!.createOffer();
     await _pc!.setLocalDescription(offer);
     if (_remoteId != null) {
-      await AuthApi.sendCallSignal(widget.roomId, _remoteId!, 'offer',
-          {'sdp': offer.sdp, 'type': offer.type});
+      await AuthApi.sendCallSignal(widget.roomId, _remoteId!, 'offer', {
+        'sdp': offer.sdp,
+        'type': offer.type,
+      });
     }
   }
 
@@ -334,49 +407,55 @@ class _CallRoomScreenState extends State<CallRoomScreen> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-          title: Text(_connected ? 'Call connected' : 'Connecting...'),
-          backgroundColor: Colors.black,
-          foregroundColor: Colors.white),
+        title: Text(_connected ? 'Call connected' : 'Connecting...'),
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+      ),
       body: Column(
         children: [
           Expanded(
-            child: Stack(children: [
-              Positioned.fill(
-                child: RTCVideoView(_remote,
-                    objectFit:
-                        RTCVideoViewObjectFit.RTCVideoViewObjectFitCover),
-              ),
-              Positioned(
-                right: 16,
-                bottom: 16,
-                width: 120,
-                height: 170,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: RTCVideoView(_local,
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: RTCVideoView(
+                    _remote,
+                    objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+                  ),
+                ),
+                Positioned(
+                  right: 16,
+                  bottom: 16,
+                  width: 120,
+                  height: 170,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: RTCVideoView(
+                      _local,
                       mirror: true,
                       objectFit:
-                          RTCVideoViewObjectFit.RTCVideoViewObjectFitCover),
-                ),
-              ),
-              if (_error != null)
-                Positioned(
-                  left: 16,
-                  right: 16,
-                  top: 16,
-                  child: Material(
-                    color: Colors.red.shade900,
-                    borderRadius: BorderRadius.circular(12),
-                    child: const Padding(
-                      padding: EdgeInsets.all(12),
-                      child: Text(
-                        'Camera or microphone could not start. Check browser permissions and HTTPS.',
-                        style: TextStyle(color: Colors.white),
-                      ),
+                          RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
                     ),
                   ),
                 ),
-            ]),
+                if (_error != null)
+                  Positioned(
+                    left: 16,
+                    right: 16,
+                    top: 16,
+                    child: Material(
+                      color: Colors.red.shade900,
+                      borderRadius: BorderRadius.circular(12),
+                      child: const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: Text(
+                          'Camera or microphone could not start. Check browser permissions and HTTPS.',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
           SafeArea(
             top: false,

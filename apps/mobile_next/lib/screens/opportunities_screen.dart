@@ -9,6 +9,7 @@ import 'package:masaren/screens/create_opportunity_screen.dart';
 import 'package:masaren/screens/opportunity_detail_screen.dart';
 import 'package:masaren/widgets/entity_status.dart';
 import 'package:masaren/widgets/smart_image.dart';
+import 'package:masaren/widgets/feature_tour.dart';
 
 const _opportunityTypes = [
   'JOB',
@@ -45,6 +46,36 @@ class _OpportunitiesScreenState extends State<OpportunitiesScreen> {
   void initState() {
     super.initState();
     _load();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      showFeatureTourIfNeeded(
+        context,
+        'opportunities',
+        title: 'Opportunity, matched',
+        subtitle:
+            'The platform turns events, projects and research needs into real openings.',
+        steps: const [
+          TourStep(
+            icon: Icons.auto_awesome,
+            title: 'Generated automatically',
+            body:
+                'New opportunities appear from live events, active projects and open research stages.',
+          ),
+          TourStep(
+            icon: Icons.handshake_outlined,
+            title: 'Apply with context',
+            body:
+                'Your profile, evidence and skills travel with the application, so owners can judge fit fairly.',
+          ),
+          TourStep(
+            icon: Icons.bolt,
+            title: 'Impact and MRC',
+            body:
+                'Completing work builds your impact passport and unlocks rewards, recognition and better matches.',
+          ),
+        ],
+      );
+    });
   }
 
   Future<void> _load() async {
@@ -171,78 +202,76 @@ class _OpportunitiesScreenState extends State<OpportunitiesScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? ErrorView(message: _error, onRetry: _load)
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  child: ListView(
-                    children: [
-                      SectionTitle(
-                        title: MasarenLocalizations.of(
-                          context,
-                          'opportunities.findImpact',
-                        ),
-                      ),
-                      SizedBox(
-                        height: 42,
-                        child: ListView(
-                          scrollDirection: Axis.horizontal,
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          children: ['ALL', ..._opportunityTypes]
-                              .map(
-                                (type) => Padding(
-                                  padding:
-                                      const EdgeInsetsDirectional.only(end: 6),
-                                  child: ChoiceChip(
-                                    label: Text(
-                                      type == 'ALL'
-                                          ? MasarenLocalizations.of(
-                                              context,
-                                              'opportunities.all',
-                                            )
-                                          : _opportunityTypeLabel(
-                                              context, type),
-                                    ),
-                                    selected: _filter == type,
-                                    onSelected: (_) =>
-                                        setState(() => _filter = type),
-                                  ),
-                                ),
-                              )
-                              .toList(),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      if (_visible.isEmpty)
-                        Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Text(
-                            _items.isEmpty
-                                ? MasarenLocalizations.of(
-                                    context,
-                                    'opportunities.empty',
-                                  )
-                                : MasarenLocalizations.of(
-                                    context,
-                                    'opportunities.emptyFilter',
-                                  ).replaceAll(
-                                    '{type}',
-                                    _opportunityTypeLabel(context, _filter),
-                                  ),
-                            style: TextStyle(color: cs.onSurfaceVariant),
-                          ),
-                        ),
-                      ..._visible.map(
-                        (o) => _OpportunityCard(
-                          o: o,
-                          onApply: _apply,
-                          onOpen: () => _openDetail(o),
-                          currentUser: widget.user,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                    ],
+          ? ErrorView(message: _error, onRetry: _load)
+          : RefreshIndicator(
+              onRefresh: _load,
+              child: ListView(
+                children: [
+                  SectionTitle(
+                    title: MasarenLocalizations.of(
+                      context,
+                      'opportunities.findImpact',
+                    ),
                   ),
-                ),
+                  SizedBox(
+                    height: 42,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      children: ['ALL', ..._opportunityTypes]
+                          .map(
+                            (type) => Padding(
+                              padding: const EdgeInsetsDirectional.only(end: 6),
+                              child: ChoiceChip(
+                                label: Text(
+                                  type == 'ALL'
+                                      ? MasarenLocalizations.of(
+                                          context,
+                                          'opportunities.all',
+                                        )
+                                      : _opportunityTypeLabel(context, type),
+                                ),
+                                selected: _filter == type,
+                                onSelected: (_) =>
+                                    setState(() => _filter = type),
+                              ),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  if (_visible.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Text(
+                        _items.isEmpty
+                            ? MasarenLocalizations.of(
+                                context,
+                                'opportunities.empty',
+                              )
+                            : MasarenLocalizations.of(
+                                context,
+                                'opportunities.emptyFilter',
+                              ).replaceAll(
+                                '{type}',
+                                _opportunityTypeLabel(context, _filter),
+                              ),
+                        style: TextStyle(color: cs.onSurfaceVariant),
+                      ),
+                    ),
+                  ..._visible.map(
+                    (o) => _OpportunityCard(
+                      o: o,
+                      onApply: _apply,
+                      onOpen: () => _openDetail(o),
+                      currentUser: widget.user,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+              ),
+            ),
     );
   }
 }
@@ -436,7 +465,9 @@ class _OpportunityCard extends StatelessWidget {
                       ),
                       visualDensity: VisualDensity.compact,
                     ),
-                  ...o.skills.take(3).map(
+                  ...o.skills
+                      .take(3)
+                      .map(
                         (s) => Chip(
                           label: Text(
                             s.toString(),
