@@ -76,63 +76,66 @@ class User {
     String? handle,
     bool? isFollowing,
     bool? isAdmin,
-  }) => User(
-    id: id,
-    email: email,
-    fullName: fullName ?? this.fullName,
-    phone: phone,
-    role: role,
-    pmsScore: pmsScore,
-    emailVerified: emailVerified ?? this.emailVerified,
-    skills: skills ?? this.skills,
-    bio: bio ?? this.bio,
-    avatarUrl: avatarUrl ?? this.avatarUrl,
-    country: country ?? this.country,
-    city: city ?? this.city,
-    followersCount: followersCount ?? this.followersCount,
-    coverUrl: coverUrl ?? this.coverUrl,
-    isTester: isTester ?? this.isTester,
-    profilePrivate: profilePrivate ?? this.profilePrivate,
-    canMessage: canMessage ?? this.canMessage,
-    handle: handle ?? this.handle,
-    isFollowing: isFollowing ?? this.isFollowing,
-    isAdmin: isAdmin ?? this.isAdmin,
-  );
+  }) =>
+      User(
+        id: id,
+        email: email,
+        fullName: fullName ?? this.fullName,
+        phone: phone,
+        role: role,
+        pmsScore: pmsScore,
+        emailVerified: emailVerified ?? this.emailVerified,
+        skills: skills ?? this.skills,
+        bio: bio ?? this.bio,
+        avatarUrl: avatarUrl ?? this.avatarUrl,
+        country: country ?? this.country,
+        city: city ?? this.city,
+        followersCount: followersCount ?? this.followersCount,
+        coverUrl: coverUrl ?? this.coverUrl,
+        isTester: isTester ?? this.isTester,
+        profilePrivate: profilePrivate ?? this.profilePrivate,
+        canMessage: canMessage ?? this.canMessage,
+        handle: handle ?? this.handle,
+        isFollowing: isFollowing ?? this.isFollowing,
+        isAdmin: isAdmin ?? this.isAdmin,
+      );
 
   factory User.fromJson(Map<String, dynamic> j) => User(
-    id: j['id']?.toString() ?? '',
-    email: j['email'] ?? '',
-    fullName: j['full_name'] ?? j['email']?.split('@').first ?? 'User',
-    phone: j['phone'],
-    role: j['role'] ?? 'INDIVIDUAL',
-    pmsScore: (j['pms_score'] is num) ? (j['pms_score'] as num).toDouble() : 0,
-    emailVerified: j['email_verified'] ?? false,
-    skills: (j['skills'] is List)
-        ? List<String>.from(
-            j['skills'].map(
-              (s) => s is Map
-                  ? (s['skill_name'] ?? s['name'] ?? '')
-                  : s.toString(),
-            ),
-          )
-        : const [],
-    bio: j['profile']?['bio'] ?? j['bio'],
-    avatarUrl: resolveMediaUrl(j['profile']?['avatar_url'] ?? j['avatar_url']),
-    country: j['profile']?['country'] ?? j['country'],
-    city: j['profile']?['city'] ?? j['city'],
-    followersCount: j['profile']?['followers_count'] is num
-        ? (j['profile']?['followers_count'] as num).toInt()
-        : (j['followers_count'] is num
-              ? (j['followers_count'] as num).toInt()
-              : null),
-    coverUrl: resolveMediaUrl(j['profile']?['cover_url'] ?? j['cover_url']),
-    isTester: j['is_tester'] ?? false,
-    profilePrivate: j['profile_private'] == true,
-    canMessage: j['can_message'] != false,
-    handle: j['handle']?.toString(),
-    isFollowing: j['is_following'] == true,
-    isAdmin: j['is_admin'] == true,
-  );
+        id: j['id']?.toString() ?? '',
+        email: j['email'] ?? '',
+        fullName: j['full_name'] ?? j['email']?.split('@').first ?? 'User',
+        phone: j['phone'],
+        role: j['role'] ?? 'INDIVIDUAL',
+        pmsScore:
+            (j['pms_score'] is num) ? (j['pms_score'] as num).toDouble() : 0,
+        emailVerified: j['email_verified'] ?? false,
+        skills: (j['skills'] is List)
+            ? List<String>.from(
+                j['skills'].map(
+                  (s) => s is Map
+                      ? (s['skill_name'] ?? s['name'] ?? '')
+                      : s.toString(),
+                ),
+              )
+            : const [],
+        bio: j['profile']?['bio'] ?? j['bio'],
+        avatarUrl:
+            resolveMediaUrl(j['profile']?['avatar_url'] ?? j['avatar_url']),
+        country: j['profile']?['country'] ?? j['country'],
+        city: j['profile']?['city'] ?? j['city'],
+        followersCount: j['profile']?['followers_count'] is num
+            ? (j['profile']?['followers_count'] as num).toInt()
+            : (j['followers_count'] is num
+                ? (j['followers_count'] as num).toInt()
+                : null),
+        coverUrl: resolveMediaUrl(j['profile']?['cover_url'] ?? j['cover_url']),
+        isTester: j['is_tester'] ?? false,
+        profilePrivate: j['profile_private'] == true,
+        canMessage: j['can_message'] != false,
+        handle: j['handle']?.toString(),
+        isFollowing: j['is_following'] == true,
+        isAdmin: j['is_admin'] == true,
+      );
 
   /// Classifies the account into one of the platform's profile archetypes so the
   /// UI can render a tailored profile layout (media / government / sports / org / individual).
@@ -187,20 +190,20 @@ class UserSettings {
   });
 
   factory UserSettings.fromJson(Map<String, dynamic> j) => UserSettings(
-    pushEnabled: j['push_enabled'] != false,
-    emailEnabled: j['email_enabled'] != false,
-    opportunityAlerts: j['opportunity_alerts'] != false,
-    socialAlerts: j['social_alerts'] != false,
-    messageAlerts: j['message_alerts'] != false,
-    digestFrequency: (j['digest_frequency'] ?? 'instant').toString(),
-    quietStart: j['quiet_start'] is num
-        ? (j['quiet_start'] as num).toInt()
-        : null,
-    quietEnd: j['quiet_end'] is num ? (j['quiet_end'] as num).toInt() : null,
-    profileVisibility: (j['profile_visibility'] ?? 'public').toString(),
-    messagePrivacy: (j['message_privacy'] ?? 'everyone').toString(),
-    showEmail: j['show_email'] == true,
-  );
+        pushEnabled: j['push_enabled'] != false,
+        emailEnabled: j['email_enabled'] != false,
+        opportunityAlerts: j['opportunity_alerts'] != false,
+        socialAlerts: j['social_alerts'] != false,
+        messageAlerts: j['message_alerts'] != false,
+        digestFrequency: (j['digest_frequency'] ?? 'instant').toString(),
+        quietStart:
+            j['quiet_start'] is num ? (j['quiet_start'] as num).toInt() : null,
+        quietEnd:
+            j['quiet_end'] is num ? (j['quiet_end'] as num).toInt() : null,
+        profileVisibility: (j['profile_visibility'] ?? 'public').toString(),
+        messagePrivacy: (j['message_privacy'] ?? 'everyone').toString(),
+        showEmail: j['show_email'] == true,
+      );
 
   UserSettings copyWith({
     bool? pushEnabled,
@@ -215,19 +218,20 @@ class UserSettings {
     String? profileVisibility,
     String? messagePrivacy,
     bool? showEmail,
-  }) => UserSettings(
-    pushEnabled: pushEnabled ?? this.pushEnabled,
-    emailEnabled: emailEnabled ?? this.emailEnabled,
-    opportunityAlerts: opportunityAlerts ?? this.opportunityAlerts,
-    socialAlerts: socialAlerts ?? this.socialAlerts,
-    messageAlerts: messageAlerts ?? this.messageAlerts,
-    digestFrequency: digestFrequency ?? this.digestFrequency,
-    quietStart: clearQuietHours ? null : (quietStart ?? this.quietStart),
-    quietEnd: clearQuietHours ? null : (quietEnd ?? this.quietEnd),
-    profileVisibility: profileVisibility ?? this.profileVisibility,
-    messagePrivacy: messagePrivacy ?? this.messagePrivacy,
-    showEmail: showEmail ?? this.showEmail,
-  );
+  }) =>
+      UserSettings(
+        pushEnabled: pushEnabled ?? this.pushEnabled,
+        emailEnabled: emailEnabled ?? this.emailEnabled,
+        opportunityAlerts: opportunityAlerts ?? this.opportunityAlerts,
+        socialAlerts: socialAlerts ?? this.socialAlerts,
+        messageAlerts: messageAlerts ?? this.messageAlerts,
+        digestFrequency: digestFrequency ?? this.digestFrequency,
+        quietStart: clearQuietHours ? null : (quietStart ?? this.quietStart),
+        quietEnd: clearQuietHours ? null : (quietEnd ?? this.quietEnd),
+        profileVisibility: profileVisibility ?? this.profileVisibility,
+        messagePrivacy: messagePrivacy ?? this.messagePrivacy,
+        showEmail: showEmail ?? this.showEmail,
+      );
 }
 
 class DiscoveryItem {
@@ -250,16 +254,16 @@ class DiscoveryItem {
   });
 
   factory DiscoveryItem.fromJson(Map<String, dynamic> j) => DiscoveryItem(
-    type: (j['entity_type'] ?? 'ENTITY').toString(),
-    id: (j['entity_id'] ?? '').toString(),
-    title: (j['title'] ?? 'Untitled').toString(),
-    subtitle: (j['subtitle'] ?? '').toString(),
-    imageUrl: resolveMediaUrl(j['image_url']?.toString()),
-    impactPercent: j['impact_percent'] is num
-        ? (j['impact_percent'] as num).round()
-        : 0,
-    verified: j['verified'] == true,
-  );
+        type: (j['entity_type'] ?? 'ENTITY').toString(),
+        id: (j['entity_id'] ?? '').toString(),
+        title: (j['title'] ?? 'Untitled').toString(),
+        subtitle: (j['subtitle'] ?? '').toString(),
+        imageUrl: resolveMediaUrl(j['image_url']?.toString()),
+        impactPercent: j['impact_percent'] is num
+            ? (j['impact_percent'] as num).round()
+            : 0,
+        verified: j['verified'] == true,
+      );
 }
 
 class PostMedia {
@@ -283,15 +287,15 @@ class PostMedia {
   bool get isAudio => type.toUpperCase() == 'AUDIO';
 
   factory PostMedia.fromJson(Map<String, dynamic> j) => PostMedia(
-    url: resolveMediaUrl(j['url'] ?? j['content_url']) ?? '',
-    type: (j['type'] ?? 'IMAGE').toString().toUpperCase(),
-    caption: j['caption']?.toString(),
-    hlsUrl: resolveMediaUrl(j['hls_url']),
-    posterUrl: resolveMediaUrl(j['poster_url']),
-    durationSeconds: j['duration_seconds'] is num
-        ? (j['duration_seconds'] as num).toDouble()
-        : null,
-  );
+        url: resolveMediaUrl(j['url'] ?? j['content_url']) ?? '',
+        type: (j['type'] ?? 'IMAGE').toString().toUpperCase(),
+        caption: j['caption']?.toString(),
+        hlsUrl: resolveMediaUrl(j['hls_url']),
+        posterUrl: resolveMediaUrl(j['poster_url']),
+        durationSeconds: j['duration_seconds'] is num
+            ? (j['duration_seconds'] as num).toDouble()
+            : null,
+      );
 }
 
 class PostFile {
@@ -320,11 +324,11 @@ class PostFile {
   }
 
   factory PostFile.fromJson(Map<String, dynamic> j) => PostFile(
-    url: resolveMediaUrl(j['url']) ?? '',
-    name: (j['name'] ?? 'Attachment').toString(),
-    size: j['size'] is num ? (j['size'] as num).toInt() : null,
-    contentType: j['content_type']?.toString(),
-  );
+        url: resolveMediaUrl(j['url']) ?? '',
+        name: (j['name'] ?? 'Attachment').toString(),
+        size: j['size'] is num ? (j['size'] as num).toInt() : null,
+        contentType: j['content_type']?.toString(),
+      );
 }
 
 class Post {
@@ -427,100 +431,101 @@ class Post {
   });
 
   factory Post.fromJson(Map<String, dynamic> j) => Post(
-    id: j['id']?.toString() ?? '',
-    author: Author.fromJson(j['author'] ?? {}),
-    text: j['text'] ?? '',
-    kind: j['kind'],
-    programTag: j['programTag'],
-    sdg: j['sdg'] is num ? (j['sdg'] as num).toInt() : null,
-    impactValue: j['impactValue'] is num
-        ? (j['impactValue'] as num).toDouble()
-        : null,
-    impactLabel: j['impactLabel'],
-    type: j['type'],
-    contentUrl: resolveMediaUrl(j['content_url'] ?? j['url']),
-    linkUrl: j['link_url'] ?? j['linkUrl'],
-    media: (j['media'] is List)
-        ? (j['media'] as List)
-              .whereType<Map>()
-              .map((m) => PostMedia.fromJson(Map<String, dynamic>.from(m)))
-              .where((m) => m.url.isNotEmpty)
-              .toList()
-        : const [],
-    files: (j['files'] is List)
-        ? (j['files'] as List)
-              .whereType<Map>()
-              .map((f) => PostFile.fromJson(Map<String, dynamic>.from(f)))
-              .where((f) => f.url.isNotEmpty)
-              .toList()
-        : const [],
-    mediaType: j['media_type'],
-    videoHlsUrl: resolveMediaUrl(j['video_hls_url']),
-    videoPosterUrl: resolveMediaUrl(j['video_poster_url']),
-    latitude: j['latitude'] is num ? (j['latitude'] as num).toDouble() : null,
-    longitude: j['longitude'] is num
-        ? (j['longitude'] as num).toDouble()
-        : null,
-    verifiedContent: j['verified_content'] ?? false,
-    isaScore: j['isa_score'] is num ? (j['isa_score'] as num).toDouble() : null,
-    impactDomains: j['impact_domains'] is Map
-        ? Map<String, dynamic>.from(j['impact_domains'] as Map)
-        : null,
-    geoLevel: j['geo_level'] is num ? (j['geo_level'] as num).toInt() : 0,
-    impactMethod: j['impact_method'],
-    promoted: j['promoted'] == true,
-    boostedUntil: j['boosted_until'],
-    paidMrc: j['paid_mrc'] is num ? (j['paid_mrc'] as num).toDouble() : 0,
-    likes: j['likes'] is num ? (j['likes'] as num).toInt() : 0,
-    comments: (j['comments'] is List)
-        ? (j['comments'] as List).length
-        : (j['comments'] is num ? (j['comments'] as num).toInt() : 0),
-    shares: j['shares'] is num ? (j['shares'] as num).toInt() : 0,
-    sharedBy: (j['shared_by'] is List)
-        ? (j['shared_by'] as List)
-              .whereType<Map>()
-              .map((u) => Author.fromJson(Map<String, dynamic>.from(u)))
-              .toList()
-        : const [],
-    likedByMe: j['likedByMe'] ?? false,
-    bookmarkedByMe: j['bookmarkedByMe'] ?? false,
-    commentList: (j['comments'] is List)
-        ? (j['comments'] as List)
-              .map((c) => Comment.fromJson(c as Map<String, dynamic>))
-              .toList()
-        : const [],
-    topComments: (j['top_comments'] is List)
-        ? (j['top_comments'] as List)
-              .whereType<Map>()
-              .map((c) => Comment.fromJson(Map<String, dynamic>.from(c)))
-              .toList()
-        : const [],
-    createdAt: j['createdAt'] ?? j['created_at'],
-    editedAt: j['edited_at'] ?? j['editedAt'],
-    confidenceScore: j['confidence_score'] is num
-        ? (j['confidence_score'] as num).toDouble()
-        : null,
-    confidenceLabel: j['confidence_label'],
-    confidenceFactors: j['confidence_factors'] is Map
-        ? Map<String, dynamic>.from(j['confidence_factors'] as Map)
-        : null,
-    rankingScore: j['ranking_score'] is num
-        ? (j['ranking_score'] as num).toDouble()
-        : null,
-    rankingReason: j['ranking_reason'],
-    structured: j['structured'] is Map
-        ? Map<String, dynamic>.from(j['structured'] as Map)
-        : null,
-    moderationStatus: j['moderation_status']?.toString() ?? 'APPROVED',
-    deepfakeVerdict: j['deepfake_verdict']?.toString() ?? 'UNSCANNED',
-    deepfakeScore: j['deepfake_score'] is num
-        ? (j['deepfake_score'] as num).toDouble()
-        : 0,
-    captureSource: j['capture_source']?.toString() ?? 'UNKNOWN',
-    captureTrust: j['capture_trust'] is num
-        ? (j['capture_trust'] as num).toDouble()
-        : 0,
-  );
+        id: j['id']?.toString() ?? '',
+        author: Author.fromJson(j['author'] ?? {}),
+        text: j['text'] ?? '',
+        kind: j['kind'],
+        programTag: j['programTag'],
+        sdg: j['sdg'] is num ? (j['sdg'] as num).toInt() : null,
+        impactValue: j['impactValue'] is num
+            ? (j['impactValue'] as num).toDouble()
+            : null,
+        impactLabel: j['impactLabel'],
+        type: j['type'],
+        contentUrl: resolveMediaUrl(j['content_url'] ?? j['url']),
+        linkUrl: j['link_url'] ?? j['linkUrl'],
+        media: (j['media'] is List)
+            ? (j['media'] as List)
+                .whereType<Map>()
+                .map((m) => PostMedia.fromJson(Map<String, dynamic>.from(m)))
+                .where((m) => m.url.isNotEmpty)
+                .toList()
+            : const [],
+        files: (j['files'] is List)
+            ? (j['files'] as List)
+                .whereType<Map>()
+                .map((f) => PostFile.fromJson(Map<String, dynamic>.from(f)))
+                .where((f) => f.url.isNotEmpty)
+                .toList()
+            : const [],
+        mediaType: j['media_type'],
+        videoHlsUrl: resolveMediaUrl(j['video_hls_url']),
+        videoPosterUrl: resolveMediaUrl(j['video_poster_url']),
+        latitude:
+            j['latitude'] is num ? (j['latitude'] as num).toDouble() : null,
+        longitude:
+            j['longitude'] is num ? (j['longitude'] as num).toDouble() : null,
+        verifiedContent: j['verified_content'] ?? false,
+        isaScore:
+            j['isa_score'] is num ? (j['isa_score'] as num).toDouble() : null,
+        impactDomains: j['impact_domains'] is Map
+            ? Map<String, dynamic>.from(j['impact_domains'] as Map)
+            : null,
+        geoLevel: j['geo_level'] is num ? (j['geo_level'] as num).toInt() : 0,
+        impactMethod: j['impact_method'],
+        promoted: j['promoted'] == true,
+        boostedUntil: j['boosted_until'],
+        paidMrc: j['paid_mrc'] is num ? (j['paid_mrc'] as num).toDouble() : 0,
+        likes: j['likes'] is num ? (j['likes'] as num).toInt() : 0,
+        comments: (j['comments'] is List)
+            ? (j['comments'] as List).length
+            : (j['comments'] is num ? (j['comments'] as num).toInt() : 0),
+        shares: j['shares'] is num ? (j['shares'] as num).toInt() : 0,
+        sharedBy: (j['shared_by'] is List)
+            ? (j['shared_by'] as List)
+                .whereType<Map>()
+                .map((u) => Author.fromJson(Map<String, dynamic>.from(u)))
+                .toList()
+            : const [],
+        likedByMe: j['likedByMe'] ?? false,
+        bookmarkedByMe: j['bookmarkedByMe'] ?? false,
+        commentList: (j['comments'] is List)
+            ? (j['comments'] as List)
+                .map((c) => Comment.fromJson(c as Map<String, dynamic>))
+                .toList()
+            : const [],
+        topComments: (j['top_comments'] is List)
+            ? (j['top_comments'] as List)
+                .whereType<Map>()
+                .map((c) => Comment.fromJson(Map<String, dynamic>.from(c)))
+                .toList()
+            : const [],
+        createdAt: j['createdAt'] ?? j['created_at'],
+        editedAt: j['edited_at'] ?? j['editedAt'],
+        confidenceScore: j['confidence_score'] is num
+            ? (j['confidence_score'] as num).toDouble()
+            : null,
+        confidenceLabel: j['confidence_label'],
+        confidenceFactors: j['confidence_factors'] is Map
+            ? Map<String, dynamic>.from(j['confidence_factors'] as Map)
+            : null,
+        rankingScore: j['ranking_score'] is num
+            ? (j['ranking_score'] as num).toDouble()
+            : null,
+        rankingReason: j['ranking_reason'],
+        structured: j['structured'] is Map
+            ? Map<String, dynamic>.from(j['structured'] as Map)
+            : null,
+        moderationStatus: j['moderation_status']?.toString() ?? 'APPROVED',
+        deepfakeVerdict: j['deepfake_verdict']?.toString() ?? 'UNSCANNED',
+        deepfakeScore: j['deepfake_score'] is num
+            ? (j['deepfake_score'] as num).toDouble()
+            : 0,
+        captureSource: j['capture_source']?.toString() ?? 'UNKNOWN',
+        captureTrust: j['capture_trust'] is num
+            ? (j['capture_trust'] as num).toDouble()
+            : 0,
+      );
 
   Post copyWith({
     Author? author,
@@ -544,45 +549,46 @@ class Post {
     double? deepfakeScore,
     String? captureSource,
     double? captureTrust,
-  }) => Post(
-    id: id,
-    author: author ?? this.author,
-    text: text ?? this.text,
-    kind: kind,
-    programTag: programTag,
-    sdg: sdg,
-    impactValue: impactValue ?? this.impactValue,
-    impactLabel: impactLabel ?? this.impactLabel,
-    type: type,
-    contentUrl: contentUrl,
-    linkUrl: linkUrl,
-    media: media,
-    files: files,
-    mediaType: mediaType,
-    videoHlsUrl: videoHlsUrl,
-    videoPosterUrl: videoPosterUrl,
-    latitude: latitude,
-    longitude: longitude,
-    verifiedContent: verifiedContent,
-    likes: likes ?? this.likes,
-    comments: comments ?? this.comments,
-    shares: shares ?? this.shares,
-    sharedBy: sharedBy ?? this.sharedBy,
-    likedByMe: likedByMe ?? this.likedByMe,
-    bookmarkedByMe: bookmarkedByMe ?? this.bookmarkedByMe,
-    commentList: commentList ?? this.commentList,
-    createdAt: createdAt,
-    editedAt: editedAt ?? this.editedAt,
-    confidenceScore: confidenceScore ?? this.confidenceScore,
-    confidenceLabel: confidenceLabel ?? this.confidenceLabel,
-    confidenceFactors: confidenceFactors ?? this.confidenceFactors,
-    rankingScore: rankingScore ?? this.rankingScore,
-    rankingReason: rankingReason ?? this.rankingReason,
-    deepfakeVerdict: deepfakeVerdict ?? this.deepfakeVerdict,
-    deepfakeScore: deepfakeScore ?? this.deepfakeScore,
-    captureSource: captureSource ?? this.captureSource,
-    captureTrust: captureTrust ?? this.captureTrust,
-  );
+  }) =>
+      Post(
+        id: id,
+        author: author ?? this.author,
+        text: text ?? this.text,
+        kind: kind,
+        programTag: programTag,
+        sdg: sdg,
+        impactValue: impactValue ?? this.impactValue,
+        impactLabel: impactLabel ?? this.impactLabel,
+        type: type,
+        contentUrl: contentUrl,
+        linkUrl: linkUrl,
+        media: media,
+        files: files,
+        mediaType: mediaType,
+        videoHlsUrl: videoHlsUrl,
+        videoPosterUrl: videoPosterUrl,
+        latitude: latitude,
+        longitude: longitude,
+        verifiedContent: verifiedContent,
+        likes: likes ?? this.likes,
+        comments: comments ?? this.comments,
+        shares: shares ?? this.shares,
+        sharedBy: sharedBy ?? this.sharedBy,
+        likedByMe: likedByMe ?? this.likedByMe,
+        bookmarkedByMe: bookmarkedByMe ?? this.bookmarkedByMe,
+        commentList: commentList ?? this.commentList,
+        createdAt: createdAt,
+        editedAt: editedAt ?? this.editedAt,
+        confidenceScore: confidenceScore ?? this.confidenceScore,
+        confidenceLabel: confidenceLabel ?? this.confidenceLabel,
+        confidenceFactors: confidenceFactors ?? this.confidenceFactors,
+        rankingScore: rankingScore ?? this.rankingScore,
+        rankingReason: rankingReason ?? this.rankingReason,
+        deepfakeVerdict: deepfakeVerdict ?? this.deepfakeVerdict,
+        deepfakeScore: deepfakeScore ?? this.deepfakeScore,
+        captureSource: captureSource ?? this.captureSource,
+        captureTrust: captureTrust ?? this.captureTrust,
+      );
 }
 
 class Author {
@@ -609,25 +615,26 @@ class Author {
     String? role,
     String? avatarUrl,
     bool? isFollowing,
-  }) => Author(
-    id: id,
-    name: name ?? this.name,
-    handle: handle ?? this.handle,
-    verified: verified ?? this.verified,
-    role: role ?? this.role,
-    avatarUrl: avatarUrl ?? this.avatarUrl,
-    isFollowing: isFollowing ?? this.isFollowing,
-  );
+  }) =>
+      Author(
+        id: id,
+        name: name ?? this.name,
+        handle: handle ?? this.handle,
+        verified: verified ?? this.verified,
+        role: role ?? this.role,
+        avatarUrl: avatarUrl ?? this.avatarUrl,
+        isFollowing: isFollowing ?? this.isFollowing,
+      );
 
   factory Author.fromJson(Map<String, dynamic> j) => Author(
-    id: j['id']?.toString() ?? '',
-    name: j['name'] ?? 'Unknown',
-    handle: j['handle'],
-    verified: j['verified'] ?? false,
-    role: j['role'],
-    avatarUrl: resolveMediaUrl(j['avatar_url'] ?? j['picture']),
-    isFollowing: j['is_following'] == true,
-  );
+        id: j['id']?.toString() ?? '',
+        name: j['name'] ?? 'Unknown',
+        handle: j['handle'],
+        verified: j['verified'] ?? false,
+        role: j['role'],
+        avatarUrl: resolveMediaUrl(j['avatar_url'] ?? j['picture']),
+        isFollowing: j['is_following'] == true,
+      );
 }
 
 List<Author> authorsFromJson(dynamic value) {
@@ -664,32 +671,33 @@ class Comment {
     this.createdAt,
   });
   factory Comment.fromJson(Map<String, dynamic> j) => Comment(
-    id: j['id']?.toString(),
-    text: j['text'] ?? '',
-    authorId: j['author_id']?.toString() ?? j['userId']?.toString(),
-    authorName: j['author_name'] ?? j['authorName'] ?? 'User',
-    authorHandle: j['author_handle'],
-    authorPicture: j['author_picture'] ?? j['avatar_url'],
-    authorVerified: j['author_verified'] ?? false,
-    parentId: j['parent_id']?.toString(),
-    likeCount: j['like_count'] is num ? (j['like_count'] as num).toInt() : 0,
-    likedByMe: j['liked_by_me'] ?? false,
-    createdAt: j['created_at'] ?? j['createdAt'],
-  );
+        id: j['id']?.toString(),
+        text: j['text'] ?? '',
+        authorId: j['author_id']?.toString() ?? j['userId']?.toString(),
+        authorName: j['author_name'] ?? j['authorName'] ?? 'User',
+        authorHandle: j['author_handle'],
+        authorPicture: j['author_picture'] ?? j['avatar_url'],
+        authorVerified: j['author_verified'] ?? false,
+        parentId: j['parent_id']?.toString(),
+        likeCount:
+            j['like_count'] is num ? (j['like_count'] as num).toInt() : 0,
+        likedByMe: j['liked_by_me'] ?? false,
+        createdAt: j['created_at'] ?? j['createdAt'],
+      );
 
   Comment copyWith({int? likeCount, bool? likedByMe}) => Comment(
-    id: id,
-    text: text,
-    authorId: authorId,
-    authorName: authorName,
-    authorHandle: authorHandle,
-    authorPicture: authorPicture,
-    authorVerified: authorVerified,
-    parentId: parentId,
-    likeCount: likeCount ?? this.likeCount,
-    likedByMe: likedByMe ?? this.likedByMe,
-    createdAt: createdAt,
-  );
+        id: id,
+        text: text,
+        authorId: authorId,
+        authorName: authorName,
+        authorHandle: authorHandle,
+        authorPicture: authorPicture,
+        authorVerified: authorVerified,
+        parentId: parentId,
+        likeCount: likeCount ?? this.likeCount,
+        likedByMe: likedByMe ?? this.likedByMe,
+        createdAt: createdAt,
+      );
 }
 
 class Conversation {
@@ -715,9 +723,8 @@ class Conversation {
       lastMessage: j['last_message'],
       lastMessageAt: j['last_message_at'],
       lastSenderId: j['last_sender_id']?.toString(),
-      unreadCount: j['unread_count'] is num
-          ? (j['unread_count'] as num).toInt()
-          : 0,
+      unreadCount:
+          j['unread_count'] is num ? (j['unread_count'] as num).toInt() : 0,
     );
   }
 }
@@ -738,13 +745,13 @@ class ChatMessage {
     this.createdAt,
   });
   factory ChatMessage.fromJson(Map<String, dynamic> j) => ChatMessage(
-    id: j['id']?.toString() ?? '',
-    body: j['body'] ?? j['text'] ?? '',
-    senderId: j['sender_id']?.toString() ?? '',
-    mine: j['mine'] ?? false,
-    read: j['read'] ?? false,
-    createdAt: j['created_at'],
-  );
+        id: j['id']?.toString() ?? '',
+        body: j['body'] ?? j['text'] ?? '',
+        senderId: j['sender_id']?.toString() ?? '',
+        mine: j['mine'] ?? false,
+        read: j['read'] ?? false,
+        createdAt: j['created_at'],
+      );
 }
 
 class ChatThread {
@@ -752,16 +759,16 @@ class ChatThread {
   final List<ChatMessage> messages;
   ChatThread({required this.conversation, required this.messages});
   factory ChatThread.fromJson(Map<String, dynamic> j) => ChatThread(
-    conversation: Conversation.fromJson(
-      Map<String, dynamic>.from(j['conversation'] as Map? ?? {}),
-    ),
-    messages: (j['messages'] is List)
-        ? (j['messages'] as List)
-              .whereType<Map>()
-              .map((m) => ChatMessage.fromJson(Map<String, dynamic>.from(m)))
-              .toList()
-        : const [],
-  );
+        conversation: Conversation.fromJson(
+          Map<String, dynamic>.from(j['conversation'] as Map? ?? {}),
+        ),
+        messages: (j['messages'] is List)
+            ? (j['messages'] as List)
+                .whereType<Map>()
+                .map((m) => ChatMessage.fromJson(Map<String, dynamic>.from(m)))
+                .toList()
+            : const [],
+      );
 }
 
 class HashtagTrend {
@@ -769,9 +776,9 @@ class HashtagTrend {
   final int count;
   HashtagTrend({required this.tag, this.count = 0});
   factory HashtagTrend.fromJson(Map<String, dynamic> j) => HashtagTrend(
-    tag: j['tag']?.toString() ?? '',
-    count: j['count'] is num ? (j['count'] as num).toInt() : 0,
-  );
+        tag: j['tag']?.toString() ?? '',
+        count: j['count'] is num ? (j['count'] as num).toInt() : 0,
+      );
 }
 
 class SocialSearchResult {
@@ -790,23 +797,23 @@ class SocialSearchResult {
         query: j['query']?.toString() ?? '',
         users: (j['users'] is List)
             ? (j['users'] as List)
-                  .whereType<Map>()
-                  .map((u) => Author.fromJson(Map<String, dynamic>.from(u)))
-                  .toList()
+                .whereType<Map>()
+                .map((u) => Author.fromJson(Map<String, dynamic>.from(u)))
+                .toList()
             : const [],
         posts: (j['posts'] is List)
             ? (j['posts'] as List)
-                  .whereType<Map>()
-                  .map((p) => Post.fromJson(Map<String, dynamic>.from(p)))
-                  .toList()
+                .whereType<Map>()
+                .map((p) => Post.fromJson(Map<String, dynamic>.from(p)))
+                .toList()
             : const [],
         hashtags: (j['hashtags'] is List)
             ? (j['hashtags'] as List)
-                  .whereType<Map>()
-                  .map(
-                    (h) => HashtagTrend.fromJson(Map<String, dynamic>.from(h)),
-                  )
-                  .toList()
+                .whereType<Map>()
+                .map(
+                  (h) => HashtagTrend.fromJson(Map<String, dynamic>.from(h)),
+                )
+                .toList()
             : const [],
       );
 }
@@ -827,15 +834,15 @@ class Wallet {
     this.lastClaimAt,
   });
   factory Wallet.fromJson(Map<String, dynamic> j) => Wallet(
-    ownerId: j['owner_id']?.toString() ?? '',
-    balance: (j['balance'] is num) ? (j['balance'] as num).toDouble() : 0,
-    currency: j['currency']?.toString() ?? 'MRC',
-    dailyReward: (j['daily_reward'] is num)
-        ? (j['daily_reward'] as num).toDouble()
-        : 10,
-    claimedToday: j['claimed_today'] == true,
-    lastClaimAt: j['last_claim_at']?.toString(),
-  );
+        ownerId: j['owner_id']?.toString() ?? '',
+        balance: (j['balance'] is num) ? (j['balance'] as num).toDouble() : 0,
+        currency: j['currency']?.toString() ?? 'MRC',
+        dailyReward: (j['daily_reward'] is num)
+            ? (j['daily_reward'] as num).toDouble()
+            : 10,
+        claimedToday: j['claimed_today'] == true,
+        lastClaimAt: j['last_claim_at']?.toString(),
+      );
 }
 
 class GpsRecord {
@@ -860,16 +867,21 @@ class GpsRecord {
     this.createdAt,
   });
   factory GpsRecord.fromJson(Map<String, dynamic> j) => GpsRecord(
-    id: j['id']?.toString() ?? '',
-    latitude: (j['latitude'] is num) ? (j['latitude'] as num).toDouble() : 0,
-    longitude: (j['longitude'] is num) ? (j['longitude'] as num).toDouble() : 0,
-    accuracy: (j['accuracy'] is num) ? (j['accuracy'] as num).toDouble() : null,
-    altitude: (j['altitude'] is num) ? (j['altitude'] as num).toDouble() : null,
-    speed: (j['speed'] is num) ? (j['speed'] as num).toDouble() : null,
-    heading: (j['heading'] is num) ? (j['heading'] as num).toDouble() : null,
-    capturedAt: j['captured_at']?.toString(),
-    createdAt: j['created_at']?.toString(),
-  );
+        id: j['id']?.toString() ?? '',
+        latitude:
+            (j['latitude'] is num) ? (j['latitude'] as num).toDouble() : 0,
+        longitude:
+            (j['longitude'] is num) ? (j['longitude'] as num).toDouble() : 0,
+        accuracy:
+            (j['accuracy'] is num) ? (j['accuracy'] as num).toDouble() : null,
+        altitude:
+            (j['altitude'] is num) ? (j['altitude'] as num).toDouble() : null,
+        speed: (j['speed'] is num) ? (j['speed'] as num).toDouble() : null,
+        heading:
+            (j['heading'] is num) ? (j['heading'] as num).toDouble() : null,
+        capturedAt: j['captured_at']?.toString(),
+        createdAt: j['created_at']?.toString(),
+      );
   String get mapsUrl =>
       'https://www.google.com/maps/search/?api=1&query=$latitude,$longitude';
 }
@@ -890,15 +902,15 @@ class CoinTx {
     this.createdAt,
   });
   factory CoinTx.fromJson(Map<String, dynamic> j) => CoinTx(
-    id: j['id']?.toString(),
-    type: j['type']?.toString() ?? '',
-    amount: (j['amount'] is num) ? (j['amount'] as num).toDouble() : 0,
-    balanceAfter: (j['balance_after'] is num)
-        ? (j['balance_after'] as num).toDouble()
-        : 0,
-    reference: j['reference'],
-    createdAt: j['created_at'] ?? j['createdAt'],
-  );
+        id: j['id']?.toString(),
+        type: j['type']?.toString() ?? '',
+        amount: (j['amount'] is num) ? (j['amount'] as num).toDouble() : 0,
+        balanceAfter: (j['balance_after'] is num)
+            ? (j['balance_after'] as num).toDouble()
+            : 0,
+        reference: j['reference'],
+        createdAt: j['created_at'] ?? j['createdAt'],
+      );
 }
 
 class Creative {
@@ -928,16 +940,17 @@ class Creative {
   bool get isText => mediaType == 'text';
 
   factory Creative.fromJson(Map<String, dynamic> j) => Creative(
-    id: j['id']?.toString(),
-    campaignId: j['campaign_id']?.toString(),
-    title: j['title'] ?? '',
-    body: j['body'] ?? j['text'],
-    mediaUrl: resolveMediaUrl(j['media_url'] ?? j['mediaUrl']),
-    ctaUrl: j['cta_url'] ?? j['ctaUrl'],
-    ctaLabel: j['cta_label'] ?? j['ctaLabel'],
-    mediaType: (j['media_type'] ?? j['mediaType'] ?? 'image').toString(),
-    sortOrder: (j['sort_order'] is num) ? (j['sort_order'] as num).toInt() : 0,
-  );
+        id: j['id']?.toString(),
+        campaignId: j['campaign_id']?.toString(),
+        title: j['title'] ?? '',
+        body: j['body'] ?? j['text'],
+        mediaUrl: resolveMediaUrl(j['media_url'] ?? j['mediaUrl']),
+        ctaUrl: j['cta_url'] ?? j['ctaUrl'],
+        ctaLabel: j['cta_label'] ?? j['ctaLabel'],
+        mediaType: (j['media_type'] ?? j['mediaType'] ?? 'image').toString(),
+        sortOrder:
+            (j['sort_order'] is num) ? (j['sort_order'] as num).toInt() : 0,
+      );
 }
 
 class Campaign {
@@ -997,70 +1010,70 @@ class Campaign {
   }
 
   factory Campaign.fromJson(Map<String, dynamic> j) => Campaign(
-    id: j['id']?.toString() ?? '',
-    userId: j['user_id']?.toString() ?? '',
-    name: j['name'] ?? 'Campaign',
-    status: (j['status']?.toString() ?? 'DRAFT').toUpperCase(),
-    objective: j['objective']?.toString() ?? 'awareness',
-    placement: j['placement']?.toString() ?? 'feed',
-    budget: (j['budget_coins'] is num)
-        ? (j['budget_coins'] as num).toDouble()
-        : ((j['budget'] is num) ? (j['budget'] as num).toDouble() : 0),
-    funded: (j['funded_coins'] is num)
-        ? (j['funded_coins'] as num).toDouble()
-        : 0,
-    spent: (j['spent_coins'] is num) ? (j['spent_coins'] as num).toDouble() : 0,
-    remaining: (j['remaining_coins'] is num)
-        ? (j['remaining_coins'] as num).toDouble()
-        : 0,
-    currency: j['currency']?.toString() ?? 'MRC',
-    creatives: (j['creatives'] is List)
-        ? (j['creatives'] as List)
-              .map((c) => Creative.fromJson(c as Map<String, dynamic>))
-              .toList()
-        : const [],
-    targeting: j['targeting'] is Map
-        ? Map<String, dynamic>.from(j['targeting'] as Map)
-        : const {},
-    startAt: j['start_at']?.toString(),
-    endAt: j['end_at']?.toString(),
-    ownerName: j['owner_name']?.toString(),
-    impressions: j['impressions'] is num
-        ? (j['impressions'] as num).toInt()
-        : 0,
-    clicks: j['clicks'] is num ? (j['clicks'] as num).toInt() : 0,
-    ctr: j['ctr'] is num ? (j['ctr'] as num).toDouble() : 0,
-    ctrPercent: j['ctr_percent'] is num
-        ? (j['ctr_percent'] as num).toDouble()
-        : 0,
-    cpc: j['cpc'] is num ? (j['cpc'] as num).toDouble() : 0,
-    stats: j['stats'] is Map ? Map<String, dynamic>.from(j['stats']) : null,
-  );
+        id: j['id']?.toString() ?? '',
+        userId: j['user_id']?.toString() ?? '',
+        name: j['name'] ?? 'Campaign',
+        status: (j['status']?.toString() ?? 'DRAFT').toUpperCase(),
+        objective: j['objective']?.toString() ?? 'awareness',
+        placement: j['placement']?.toString() ?? 'feed',
+        budget: (j['budget_coins'] is num)
+            ? (j['budget_coins'] as num).toDouble()
+            : ((j['budget'] is num) ? (j['budget'] as num).toDouble() : 0),
+        funded: (j['funded_coins'] is num)
+            ? (j['funded_coins'] as num).toDouble()
+            : 0,
+        spent: (j['spent_coins'] is num)
+            ? (j['spent_coins'] as num).toDouble()
+            : 0,
+        remaining: (j['remaining_coins'] is num)
+            ? (j['remaining_coins'] as num).toDouble()
+            : 0,
+        currency: j['currency']?.toString() ?? 'MRC',
+        creatives: (j['creatives'] is List)
+            ? (j['creatives'] as List)
+                .map((c) => Creative.fromJson(c as Map<String, dynamic>))
+                .toList()
+            : const [],
+        targeting: j['targeting'] is Map
+            ? Map<String, dynamic>.from(j['targeting'] as Map)
+            : const {},
+        startAt: j['start_at']?.toString(),
+        endAt: j['end_at']?.toString(),
+        ownerName: j['owner_name']?.toString(),
+        impressions:
+            j['impressions'] is num ? (j['impressions'] as num).toInt() : 0,
+        clicks: j['clicks'] is num ? (j['clicks'] as num).toInt() : 0,
+        ctr: j['ctr'] is num ? (j['ctr'] as num).toDouble() : 0,
+        ctrPercent:
+            j['ctr_percent'] is num ? (j['ctr_percent'] as num).toDouble() : 0,
+        cpc: j['cpc'] is num ? (j['cpc'] as num).toDouble() : 0,
+        stats: j['stats'] is Map ? Map<String, dynamic>.from(j['stats']) : null,
+      );
 
   Campaign copyWith({String? status, List<Creative>? creatives}) => Campaign(
-    id: id,
-    userId: userId,
-    name: name,
-    status: status ?? this.status,
-    objective: objective,
-    placement: placement,
-    budget: budget,
-    funded: funded,
-    spent: spent,
-    remaining: remaining,
-    currency: currency,
-    creatives: creatives ?? this.creatives,
-    targeting: targeting,
-    startAt: startAt,
-    endAt: endAt,
-    ownerName: ownerName,
-    impressions: impressions,
-    clicks: clicks,
-    ctr: ctr,
-    ctrPercent: ctrPercent,
-    cpc: cpc,
-    stats: stats,
-  );
+        id: id,
+        userId: userId,
+        name: name,
+        status: status ?? this.status,
+        objective: objective,
+        placement: placement,
+        budget: budget,
+        funded: funded,
+        spent: spent,
+        remaining: remaining,
+        currency: currency,
+        creatives: creatives ?? this.creatives,
+        targeting: targeting,
+        startAt: startAt,
+        endAt: endAt,
+        ownerName: ownerName,
+        impressions: impressions,
+        clicks: clicks,
+        ctr: ctr,
+        ctrPercent: ctrPercent,
+        cpc: cpc,
+        stats: stats,
+      );
 }
 
 class Opportunity {
@@ -1105,31 +1118,32 @@ class Opportunity {
   });
 
   factory Opportunity.fromJson(Map<String, dynamic> j) => Opportunity(
-    id: j['id']?.toString() ?? '',
-    title: j['title'] ?? 'Opportunity',
-    description: j['description'],
-    skills: (j['skills'] is List) ? List<dynamic>.from(j['skills']) : const [],
-    sdg: j['sdg'] is num ? (j['sdg'] as num).toInt() : null,
-    minPms: j['min_pms'] is num ? (j['min_pms'] as num).toDouble() : null,
-    location: j['location'] is Map
-        ? j['location']['name']?.toString()
-        : j['location']?.toString(),
-    status: j['status'],
-    type: j['type']?.toString(),
-    deadline: j['deadline']?.toString(),
-    isRemote: j['is_remote'] == true || j['is_remote'] == 1,
-    applicationsCount: j['applications_count'] is num
-        ? (j['applications_count'] as num).toInt()
-        : 0,
-    applied: j['applied'] == true,
-    author: j['author'] is Map ? Author.fromJson(j['author']) : null,
-    verificationStatus: j['verification_status'] ?? 'APPROVED',
-    rejectionReason: j['rejection_reason'],
-    creationFeeMrc: (j['creation_fee_mrc'] is num)
-        ? (j['creation_fee_mrc'] as num).toDouble()
-        : 0,
-    coverUrl: j['cover_url'],
-  );
+        id: j['id']?.toString() ?? '',
+        title: j['title'] ?? 'Opportunity',
+        description: j['description'],
+        skills:
+            (j['skills'] is List) ? List<dynamic>.from(j['skills']) : const [],
+        sdg: j['sdg'] is num ? (j['sdg'] as num).toInt() : null,
+        minPms: j['min_pms'] is num ? (j['min_pms'] as num).toDouble() : null,
+        location: j['location'] is Map
+            ? j['location']['name']?.toString()
+            : j['location']?.toString(),
+        status: j['status'],
+        type: j['type']?.toString(),
+        deadline: j['deadline']?.toString(),
+        isRemote: j['is_remote'] == true || j['is_remote'] == 1,
+        applicationsCount: j['applications_count'] is num
+            ? (j['applications_count'] as num).toInt()
+            : 0,
+        applied: j['applied'] == true,
+        author: j['author'] is Map ? Author.fromJson(j['author']) : null,
+        verificationStatus: j['verification_status'] ?? 'APPROVED',
+        rejectionReason: j['rejection_reason'],
+        creationFeeMrc: (j['creation_fee_mrc'] is num)
+            ? (j['creation_fee_mrc'] as num).toDouble()
+            : 0,
+        coverUrl: j['cover_url'],
+      );
 }
 
 class Program {
@@ -1186,39 +1200,40 @@ class Program {
   });
 
   factory Program.fromJson(Map<String, dynamic> j) => Program(
-    id: j['id']?.toString() ?? '',
-    title: j['title'] ?? 'Program',
-    description: j['description'],
-    status: j['status'],
-    sdg: j['sdg'] is num ? (j['sdg'] as num).toInt() : null,
-    members: j['members_count'] is num
-        ? (j['members_count'] as num).toInt()
-        : (j['members'] is num ? (j['members'] as num).toInt() : null),
-    category: j['category']?.toString(),
-    organization: j['organization']?.toString(),
-    budget: (j['budget'] is num) ? (j['budget'] as num).toDouble() : 0,
-    currency: j['currency']?.toString(),
-    country: j['country']?.toString(),
-    governorate: j['governorate']?.toString(),
-    startDate: j['start_date']?.toString(),
-    endDate: j['end_date']?.toString(),
-    targetBeneficiaries: j['target_beneficiaries'] is num
-        ? (j['target_beneficiaries'] as num).toInt()
-        : 0,
-    projectsCount: j['projects_count'] is num
-        ? (j['projects_count'] as num).toInt()
-        : 0,
-    tasksCount: j['tasks_count'] is num ? (j['tasks_count'] as num).toInt() : 0,
-    enrolledByMe: j['enrolled_by_me'] == true,
-    author: j['author'] is Map ? Author.fromJson(j['author']) : null,
-    verificationStatus: j['verification_status'] ?? 'APPROVED',
-    rejectionReason: j['rejection_reason'],
-    creationFeeMrc: (j['creation_fee_mrc'] is num)
-        ? (j['creation_fee_mrc'] as num).toDouble()
-        : 0,
-    coverUrl: j['cover_url'],
-    membersPreview: authorsFromJson(j['members_preview']),
-  );
+        id: j['id']?.toString() ?? '',
+        title: j['title'] ?? 'Program',
+        description: j['description'],
+        status: j['status'],
+        sdg: j['sdg'] is num ? (j['sdg'] as num).toInt() : null,
+        members: j['members_count'] is num
+            ? (j['members_count'] as num).toInt()
+            : (j['members'] is num ? (j['members'] as num).toInt() : null),
+        category: j['category']?.toString(),
+        organization: j['organization']?.toString(),
+        budget: (j['budget'] is num) ? (j['budget'] as num).toDouble() : 0,
+        currency: j['currency']?.toString(),
+        country: j['country']?.toString(),
+        governorate: j['governorate']?.toString(),
+        startDate: j['start_date']?.toString(),
+        endDate: j['end_date']?.toString(),
+        targetBeneficiaries: j['target_beneficiaries'] is num
+            ? (j['target_beneficiaries'] as num).toInt()
+            : 0,
+        projectsCount: j['projects_count'] is num
+            ? (j['projects_count'] as num).toInt()
+            : 0,
+        tasksCount:
+            j['tasks_count'] is num ? (j['tasks_count'] as num).toInt() : 0,
+        enrolledByMe: j['enrolled_by_me'] == true,
+        author: j['author'] is Map ? Author.fromJson(j['author']) : null,
+        verificationStatus: j['verification_status'] ?? 'APPROVED',
+        rejectionReason: j['rejection_reason'],
+        creationFeeMrc: (j['creation_fee_mrc'] is num)
+            ? (j['creation_fee_mrc'] as num).toDouble()
+            : 0,
+        coverUrl: j['cover_url'],
+        membersPreview: authorsFromJson(j['members_preview']),
+      );
 }
 
 class AppNotification {
@@ -1243,16 +1258,16 @@ class AppNotification {
     this.entityId,
   });
   factory AppNotification.fromJson(Map<String, dynamic> j) => AppNotification(
-    id: j['id']?.toString() ?? '',
-    type: j['type'],
-    title: j['title'] ?? j['data']?['title'] ?? 'Notification',
-    body: j['body'] ?? j['data']?['body'],
-    read: j['read'] ?? j['is_read'] ?? false,
-    createdAt: j['created_at'] ?? j['createdAt'],
-    link: j['link']?.toString(),
-    entityType: j['entity_type']?.toString(),
-    entityId: j['entity_id']?.toString(),
-  );
+        id: j['id']?.toString() ?? '',
+        type: j['type'],
+        title: j['title'] ?? j['data']?['title'] ?? 'Notification',
+        body: j['body'] ?? j['data']?['body'],
+        read: j['read'] ?? j['is_read'] ?? false,
+        createdAt: j['created_at'] ?? j['createdAt'],
+        link: j['link']?.toString(),
+        entityType: j['entity_type']?.toString(),
+        entityId: j['entity_id']?.toString(),
+      );
 }
 
 class Announcement {
@@ -1277,16 +1292,16 @@ class Announcement {
     this.dismissed = false,
   });
   factory Announcement.fromJson(Map<String, dynamic> j) => Announcement(
-    id: j['id']?.toString() ?? '',
-    title: j['title']?.toString() ?? 'MASAREEN',
-    body: j['body']?.toString() ?? '',
-    imageUrl: resolveMediaUrl(j['image_url']),
-    linkUrl: j['link_url']?.toString(),
-    ctaLabel: j['cta_label']?.toString(),
-    activeUntil: j['active_until']?.toString(),
-    createdAt: j['created_at']?.toString(),
-    dismissed: j['dismissed'] == true,
-  );
+        id: j['id']?.toString() ?? '',
+        title: j['title']?.toString() ?? 'MASAREEN',
+        body: j['body']?.toString() ?? '',
+        imageUrl: resolveMediaUrl(j['image_url']),
+        linkUrl: j['link_url']?.toString(),
+        ctaLabel: j['cta_label']?.toString(),
+        activeUntil: j['active_until']?.toString(),
+        createdAt: j['created_at']?.toString(),
+        dismissed: j['dismissed'] == true,
+      );
 }
 
 class Course {
@@ -1331,32 +1346,32 @@ class Course {
     this.membersPreview = const [],
   });
   factory Course.fromJson(Map<String, dynamic> j) => Course(
-    id: j['id']?.toString() ?? '',
-    title: j['title'] ?? 'Course',
-    description: j['description'],
-    provider: j['provider'],
-    author: j['author'] is Map ? Author.fromJson(j['author']) : null,
-    level: j['level'] ?? 'Beginner',
-    sdg: j['sdg'] is num ? (j['sdg'] as num).toInt() : null,
-    lessons: j['lessons'] is num ? (j['lessons'] as num).toInt() : 0,
-    durationMin: j['duration_min'] is num
-        ? (j['duration_min'] as num).toInt()
-        : 0,
-    thumbnail: j['thumbnail'],
-    status: j['status'] ?? 'PUBLISHED',
-    enrolledCount: j['enrolled_count'] is num
-        ? (j['enrolled_count'] as num).toInt()
-        : 0,
-    enrolledByMe: j['enrolled_by_me'] == true,
-    verificationStatus: j['verification_status'] ?? 'APPROVED',
-    rejectionReason: j['rejection_reason'],
-    creationFeeMrc: (j['creation_fee_mrc'] is num)
-        ? (j['creation_fee_mrc'] as num).toDouble()
-        : 0,
-    isFree: j['is_free'] != false,
-    priceMrc: (j['price_mrc'] is num) ? (j['price_mrc'] as num).toDouble() : 0,
-    membersPreview: authorsFromJson(j['members_preview']),
-  );
+        id: j['id']?.toString() ?? '',
+        title: j['title'] ?? 'Course',
+        description: j['description'],
+        provider: j['provider'],
+        author: j['author'] is Map ? Author.fromJson(j['author']) : null,
+        level: j['level'] ?? 'Beginner',
+        sdg: j['sdg'] is num ? (j['sdg'] as num).toInt() : null,
+        lessons: j['lessons'] is num ? (j['lessons'] as num).toInt() : 0,
+        durationMin:
+            j['duration_min'] is num ? (j['duration_min'] as num).toInt() : 0,
+        thumbnail: j['thumbnail'],
+        status: j['status'] ?? 'PUBLISHED',
+        enrolledCount: j['enrolled_count'] is num
+            ? (j['enrolled_count'] as num).toInt()
+            : 0,
+        enrolledByMe: j['enrolled_by_me'] == true,
+        verificationStatus: j['verification_status'] ?? 'APPROVED',
+        rejectionReason: j['rejection_reason'],
+        creationFeeMrc: (j['creation_fee_mrc'] is num)
+            ? (j['creation_fee_mrc'] as num).toDouble()
+            : 0,
+        isFree: j['is_free'] != false,
+        priceMrc:
+            (j['price_mrc'] is num) ? (j['price_mrc'] as num).toDouble() : 0,
+        membersPreview: authorsFromJson(j['members_preview']),
+      );
 }
 
 class LessonLink {
@@ -1364,9 +1379,9 @@ class LessonLink {
   final String label;
   LessonLink({required this.url, required this.label});
   factory LessonLink.fromJson(Map<String, dynamic> j) => LessonLink(
-    url: resolveMediaUrl(j['url']) ?? '',
-    label: (j['label'] ?? j['url'] ?? '').toString(),
-  );
+        url: resolveMediaUrl(j['url']) ?? '',
+        label: (j['label'] ?? j['url'] ?? '').toString(),
+      );
 }
 
 List<PostMedia> postMediaFromJson(dynamic value) {
@@ -1415,27 +1430,26 @@ class CourseLesson {
     this.links = const [],
   });
   factory CourseLesson.fromJson(Map<String, dynamic> j) => CourseLesson(
-    id: j['id']?.toString() ?? '',
-    courseId: j['course_id']?.toString() ?? '',
-    title: j['title'] ?? 'Lesson',
-    description: j['description'],
-    content: j['content'],
-    videoUrl: j['video_url'],
-    durationMin: j['duration_min'] is num
-        ? (j['duration_min'] as num).toInt()
-        : 0,
-    position: j['position'] is num ? (j['position'] as num).toInt() : 0,
-    isPreview: j['is_preview'] == true,
-    locked: j['locked'] == true,
-    media: postMediaFromJson(j['media']),
-    files: postFilesFromJson(j['files']),
-    links: (j['links'] is List)
-        ? (j['links'] as List)
-              .whereType<Map>()
-              .map((e) => LessonLink.fromJson(Map<String, dynamic>.from(e)))
-              .toList()
-        : const [],
-  );
+        id: j['id']?.toString() ?? '',
+        courseId: j['course_id']?.toString() ?? '',
+        title: j['title'] ?? 'Lesson',
+        description: j['description'],
+        content: j['content'],
+        videoUrl: j['video_url'],
+        durationMin:
+            j['duration_min'] is num ? (j['duration_min'] as num).toInt() : 0,
+        position: j['position'] is num ? (j['position'] as num).toInt() : 0,
+        isPreview: j['is_preview'] == true,
+        locked: j['locked'] == true,
+        media: postMediaFromJson(j['media']),
+        files: postFilesFromJson(j['files']),
+        links: (j['links'] is List)
+            ? (j['links'] as List)
+                .whereType<Map>()
+                .map((e) => LessonLink.fromJson(Map<String, dynamic>.from(e)))
+                .toList()
+            : const [],
+      );
 }
 
 class Event {
@@ -1502,51 +1516,50 @@ class Event {
     this.membersPreview = const [],
   });
   factory Event.fromJson(Map<String, dynamic> j) => Event(
-    id: j['id']?.toString() ?? '',
-    title: j['title'] ?? 'Event',
-    description: j['description'],
-    startsAt: j['starts_at'] ?? j['startsAt'] ?? '',
-    endsAt: j['ends_at'] ?? j['endsAt'],
-    location: j['location'],
-    isOnline: j['is_online'] == true || j['is_online'] == 1,
-    linkUrl: j['link_url'],
-    sdg: j['sdg'] is num ? (j['sdg'] as num).toInt() : null,
-    capacity: j['capacity'] is num ? (j['capacity'] as num).toInt() : null,
-    fundingGoal: j['funding_goal'] is num
-        ? (j['funding_goal'] as num).toDouble()
-        : 0,
-    fundingRaised: j['funding_raised'] is num
-        ? (j['funding_raised'] as num).toDouble()
-        : 0,
-    eventType: j['event_type'] ?? 'EVENT',
-    programId: j['program_id']?.toString(),
-    sourceUrl: j['source_url'],
-    activityVerified: j['activity_verified'] == true,
-    ratingAvg: j['rating_avg'] is num ? (j['rating_avg'] as num).toDouble() : 0,
-    ratingCount: j['rating_count'] is num
-        ? (j['rating_count'] as num).toInt()
-        : 0,
-    participantsCount: j['participants_count'] is num
-        ? (j['participants_count'] as num).toInt()
-        : 0,
-    boothsCount: j['booths_count'] is num
-        ? (j['booths_count'] as num).toInt()
-        : 0,
-    attendeesCount: j['attendees_count'] is num
-        ? (j['attendees_count'] as num).toInt()
-        : 0,
-    attending: j['attending'] == true,
-    authorName: j['author']?['name'],
-    author: j['author'] is Map ? Author.fromJson(j['author']) : null,
-    createdAt: j['created_at'],
-    verificationStatus: j['verification_status'] ?? 'APPROVED',
-    rejectionReason: j['rejection_reason'],
-    creationFeeMrc: (j['creation_fee_mrc'] is num)
-        ? (j['creation_fee_mrc'] as num).toDouble()
-        : 0,
-    coverUrl: j['cover_url'],
-    membersPreview: authorsFromJson(j['members_preview']),
-  );
+        id: j['id']?.toString() ?? '',
+        title: j['title'] ?? 'Event',
+        description: j['description'],
+        startsAt: j['starts_at'] ?? j['startsAt'] ?? '',
+        endsAt: j['ends_at'] ?? j['endsAt'],
+        location: j['location'],
+        isOnline: j['is_online'] == true || j['is_online'] == 1,
+        linkUrl: j['link_url'],
+        sdg: j['sdg'] is num ? (j['sdg'] as num).toInt() : null,
+        capacity: j['capacity'] is num ? (j['capacity'] as num).toInt() : null,
+        fundingGoal: j['funding_goal'] is num
+            ? (j['funding_goal'] as num).toDouble()
+            : 0,
+        fundingRaised: j['funding_raised'] is num
+            ? (j['funding_raised'] as num).toDouble()
+            : 0,
+        eventType: j['event_type'] ?? 'EVENT',
+        programId: j['program_id']?.toString(),
+        sourceUrl: j['source_url'],
+        activityVerified: j['activity_verified'] == true,
+        ratingAvg:
+            j['rating_avg'] is num ? (j['rating_avg'] as num).toDouble() : 0,
+        ratingCount:
+            j['rating_count'] is num ? (j['rating_count'] as num).toInt() : 0,
+        participantsCount: j['participants_count'] is num
+            ? (j['participants_count'] as num).toInt()
+            : 0,
+        boothsCount:
+            j['booths_count'] is num ? (j['booths_count'] as num).toInt() : 0,
+        attendeesCount: j['attendees_count'] is num
+            ? (j['attendees_count'] as num).toInt()
+            : 0,
+        attending: j['attending'] == true,
+        authorName: j['author']?['name'],
+        author: j['author'] is Map ? Author.fromJson(j['author']) : null,
+        createdAt: j['created_at'],
+        verificationStatus: j['verification_status'] ?? 'APPROVED',
+        rejectionReason: j['rejection_reason'],
+        creationFeeMrc: (j['creation_fee_mrc'] is num)
+            ? (j['creation_fee_mrc'] as num).toDouble()
+            : 0,
+        coverUrl: j['cover_url'],
+        membersPreview: authorsFromJson(j['members_preview']),
+      );
 }
 
 class Project {
@@ -1599,32 +1612,32 @@ class Project {
     this.membersPreview = const [],
   });
   factory Project.fromJson(Map<String, dynamic> j) => Project(
-    id: j['id']?.toString() ?? '',
-    title: j['title'] ?? 'Project',
-    description: j['description'],
-    category: j['category'] ?? 'Community',
-    sdg: j['sdg'] is num ? (j['sdg'] as num).toInt() : null,
-    cover: j['cover'],
-    goal: (j['goal'] is num) ? (j['goal'] as num).toDouble() : 0,
-    raised: (j['raised'] is num) ? (j['raised'] as num).toDouble() : 0,
-    members: j['members'] is num ? (j['members'] as num).toInt() : 0,
-    projectType: j['project_type'] ?? 'COMMUNITY',
-    institutionId: j['institution_id']?.toString(),
-    academicYear: j['academic_year'],
-    studentNames: j['student_names'],
-    supervisor: j['supervisor'],
-    status: j['status'] ?? 'ACTIVE',
-    ownerName: j['owner_name'],
-    programId: j['program_id']?.toString(),
-    joined: j['joined'] == true,
-    author: j['author'] is Map ? Author.fromJson(j['author']) : null,
-    verificationStatus: j['verification_status'] ?? 'APPROVED',
-    rejectionReason: j['rejection_reason'],
-    creationFeeMrc: (j['creation_fee_mrc'] is num)
-        ? (j['creation_fee_mrc'] as num).toDouble()
-        : 0,
-    membersPreview: authorsFromJson(j['members_preview']),
-  );
+        id: j['id']?.toString() ?? '',
+        title: j['title'] ?? 'Project',
+        description: j['description'],
+        category: j['category'] ?? 'Community',
+        sdg: j['sdg'] is num ? (j['sdg'] as num).toInt() : null,
+        cover: j['cover'],
+        goal: (j['goal'] is num) ? (j['goal'] as num).toDouble() : 0,
+        raised: (j['raised'] is num) ? (j['raised'] as num).toDouble() : 0,
+        members: j['members'] is num ? (j['members'] as num).toInt() : 0,
+        projectType: j['project_type'] ?? 'COMMUNITY',
+        institutionId: j['institution_id']?.toString(),
+        academicYear: j['academic_year'],
+        studentNames: j['student_names'],
+        supervisor: j['supervisor'],
+        status: j['status'] ?? 'ACTIVE',
+        ownerName: j['owner_name'],
+        programId: j['program_id']?.toString(),
+        joined: j['joined'] == true,
+        author: j['author'] is Map ? Author.fromJson(j['author']) : null,
+        verificationStatus: j['verification_status'] ?? 'APPROVED',
+        rejectionReason: j['rejection_reason'],
+        creationFeeMrc: (j['creation_fee_mrc'] is num)
+            ? (j['creation_fee_mrc'] as num).toDouble()
+            : 0,
+        membersPreview: authorsFromJson(j['members_preview']),
+      );
 }
 
 class Submission {
@@ -1647,17 +1660,16 @@ class Submission {
     this.createdAt,
   });
   factory Submission.fromJson(Map<String, dynamic> j) => Submission(
-    id: j['id']?.toString() ?? '',
-    title: j['title'] ?? j['name'],
-    claim: j['claim']?.toString(),
-    confidence: j['confidence'] is num
-        ? (j['confidence'] as num).toDouble()
-        : 0,
-    evidenceId: j['evidence_id']?.toString(),
-    status: j['status'],
-    pipelineId: j['pipeline_id']?.toString() ?? j['pipelineId']?.toString(),
-    createdAt: j['created_at'] ?? j['createdAt'],
-  );
+        id: j['id']?.toString() ?? '',
+        title: j['title'] ?? j['name'],
+        claim: j['claim']?.toString(),
+        confidence:
+            j['confidence'] is num ? (j['confidence'] as num).toDouble() : 0,
+        evidenceId: j['evidence_id']?.toString(),
+        status: j['status'],
+        pipelineId: j['pipeline_id']?.toString() ?? j['pipelineId']?.toString(),
+        createdAt: j['created_at'] ?? j['createdAt'],
+      );
 }
 
 /// Media Personnel professional impact profile (see backend /api/v1/personnel/{id}).
@@ -1781,118 +1793,121 @@ class Personnel {
   });
 
   factory Personnel.fromJson(Map<String, dynamic> j) => Personnel(
-    userId: j['user_id'] ?? '',
-    name: j['name'] ?? '',
-    email: j['email'] ?? '',
-    role: j['role'] ?? 'Individual',
-    roleType: j['role_type'] ?? 'INDIVIDUAL',
-    status: j['status'] ?? 'ACTIVE',
-    emailVerified: j['email_verified'] ?? false,
-    avatarUrl: j['avatar_url'],
-    coverUrl: j['cover_url'],
-    country: j['country'],
-    city: j['city'],
-    website: j['website'],
-    socialLinks: j['social_links'] is Map
-        ? Map<String, dynamic>.from(j['social_links'] as Map)
-        : const {},
-    bio: j['bio'] ?? '',
-    joined: j['joined'] ?? j['member_since'],
-    headline: j['headline'] ?? '',
-    summary: j['summary'] ?? '',
-    mission: j['mission'] ?? '',
-    beat: j['beat'] ?? '',
-    expertise: j['expertise'] is List
-        ? List<dynamic>.from(j['expertise'])
-        : const [],
-    specializations: j['specializations'] is List
-        ? List<dynamic>.from(j['specializations'])
-        : const [],
-    skills: j['skills'] is List ? List<dynamic>.from(j['skills']) : const [],
-    languages: j['languages'] is List
-        ? List<dynamic>.from(j['languages'])
-        : const [],
-    education: j['education'] is List
-        ? List<dynamic>.from(j['education'])
-        : const [],
-    experience: j['experience'] is List
-        ? List<dynamic>.from(j['experience'])
-        : const [],
-    certificates: j['certificates'] is List
-        ? List<dynamic>.from(j['certificates'])
-        : const [],
-    awards: j['awards'] is List ? List<dynamic>.from(j['awards']) : const [],
-    publications: j['publications'] is List
-        ? List<dynamic>.from(j['publications'])
-        : const [],
-    memberships: j['memberships'] is List
-        ? List<dynamic>.from(j['memberships'])
-        : const [],
-    employmentStatus: j['employment_status'] ?? 'Independent',
-    availability: j['availability'] ?? 'Open to opportunities',
-    verificationLevel: j['verification_level'] ?? 'VERIFIED',
-    impactTier: j['impact_tier'] ?? 'Contributor',
-    professionalRank: j['professional_rank'] ?? 'Field Reporter',
-    impactScore: (j['impact_score'] is num)
-        ? (j['impact_score'] as num).toDouble()
-        : 0,
-    trustScore: (j['trust_score'] is num)
-        ? (j['trust_score'] as num).toDouble()
-        : 0,
-    verificationConfidence: (j['verification_confidence'] is num)
-        ? (j['verification_confidence'] as num).toDouble()
-        : 0,
-    communityRating: (j['community_rating'] is num)
-        ? (j['community_rating'] as num).toDouble()
-        : 0,
-    currentReach: (j['current_reach'] is num)
-        ? (j['current_reach'] as num).toDouble()
-        : 0,
-    lifetimeReach: (j['lifetime_reach'] is num)
-        ? (j['lifetime_reach'] as num).toDouble()
-        : 0,
-    averageReach: (j['average_reach'] is num)
-        ? (j['average_reach'] as num).toDouble()
-        : 0,
-    audienceGrowth: (j['audience_growth'] is num)
-        ? (j['audience_growth'] as num).toDouble()
-        : 0,
-    averageEngagement: (j['average_engagement'] is num)
-        ? (j['average_engagement'] as num).toDouble()
-        : 0,
-    mediaValue: (j['media_value'] is num)
-        ? (j['media_value'] as num).toDouble()
-        : 0,
-    contributionScore: (j['contribution_score'] is num)
-        ? (j['contribution_score'] as num).toDouble()
-        : 0,
-    knowledgeScore: (j['knowledge_score'] is num)
-        ? (j['knowledge_score'] as num).toDouble()
-        : 0,
-    fieldActivityScore: (j['field_activity_score'] is num)
-        ? (j['field_activity_score'] as num).toDouble()
-        : 0,
-    professionalConsistency: (j['professional_consistency'] is num)
-        ? (j['professional_consistency'] as num).toDouble()
-        : 0,
-    kpi: j['kpi'] is Map
-        ? Map<String, dynamic>.from(j['kpi'] as Map)
-        : const {},
-    completeness: j['completeness'] is num
-        ? (j['completeness'] as num).toInt()
-        : 0,
-    pmsScore: (j['pms_score'] is num) ? (j['pms_score'] as num).toDouble() : 0,
-    pmsTier: j['pms_tier'] ?? 'BRONZE',
-    pms: j['pms'] is Map
-        ? Map<String, dynamic>.from(j['pms'] as Map)
-        : const {},
-    badges: j['badges'] is List ? List<dynamic>.from(j['badges']) : const [],
-    coverageRegions: j['coverage_regions'] is List
-        ? List<dynamic>.from(j['coverage_regions'])
-        : const [],
-    visibility: (j['profile_visibility'] ?? 'PUBLIC').toString(),
-    isFollowing: j['is_following'] == true,
-  );
+        userId: j['user_id'] ?? '',
+        name: j['name'] ?? '',
+        email: j['email'] ?? '',
+        role: j['role'] ?? 'Individual',
+        roleType: j['role_type'] ?? 'INDIVIDUAL',
+        status: j['status'] ?? 'ACTIVE',
+        emailVerified: j['email_verified'] ?? false,
+        avatarUrl: j['avatar_url'],
+        coverUrl: j['cover_url'],
+        country: j['country'],
+        city: j['city'],
+        website: j['website'],
+        socialLinks: j['social_links'] is Map
+            ? Map<String, dynamic>.from(j['social_links'] as Map)
+            : const {},
+        bio: j['bio'] ?? '',
+        joined: j['joined'] ?? j['member_since'],
+        headline: j['headline'] ?? '',
+        summary: j['summary'] ?? '',
+        mission: j['mission'] ?? '',
+        beat: j['beat'] ?? '',
+        expertise: j['expertise'] is List
+            ? List<dynamic>.from(j['expertise'])
+            : const [],
+        specializations: j['specializations'] is List
+            ? List<dynamic>.from(j['specializations'])
+            : const [],
+        skills:
+            j['skills'] is List ? List<dynamic>.from(j['skills']) : const [],
+        languages: j['languages'] is List
+            ? List<dynamic>.from(j['languages'])
+            : const [],
+        education: j['education'] is List
+            ? List<dynamic>.from(j['education'])
+            : const [],
+        experience: j['experience'] is List
+            ? List<dynamic>.from(j['experience'])
+            : const [],
+        certificates: j['certificates'] is List
+            ? List<dynamic>.from(j['certificates'])
+            : const [],
+        awards:
+            j['awards'] is List ? List<dynamic>.from(j['awards']) : const [],
+        publications: j['publications'] is List
+            ? List<dynamic>.from(j['publications'])
+            : const [],
+        memberships: j['memberships'] is List
+            ? List<dynamic>.from(j['memberships'])
+            : const [],
+        employmentStatus: j['employment_status'] ?? 'Independent',
+        availability: j['availability'] ?? 'Open to opportunities',
+        verificationLevel: j['verification_level'] ?? 'VERIFIED',
+        impactTier: j['impact_tier'] ?? 'Contributor',
+        professionalRank: j['professional_rank'] ?? 'Field Reporter',
+        impactScore: (j['impact_score'] is num)
+            ? (j['impact_score'] as num).toDouble()
+            : 0,
+        trustScore: (j['trust_score'] is num)
+            ? (j['trust_score'] as num).toDouble()
+            : 0,
+        verificationConfidence: (j['verification_confidence'] is num)
+            ? (j['verification_confidence'] as num).toDouble()
+            : 0,
+        communityRating: (j['community_rating'] is num)
+            ? (j['community_rating'] as num).toDouble()
+            : 0,
+        currentReach: (j['current_reach'] is num)
+            ? (j['current_reach'] as num).toDouble()
+            : 0,
+        lifetimeReach: (j['lifetime_reach'] is num)
+            ? (j['lifetime_reach'] as num).toDouble()
+            : 0,
+        averageReach: (j['average_reach'] is num)
+            ? (j['average_reach'] as num).toDouble()
+            : 0,
+        audienceGrowth: (j['audience_growth'] is num)
+            ? (j['audience_growth'] as num).toDouble()
+            : 0,
+        averageEngagement: (j['average_engagement'] is num)
+            ? (j['average_engagement'] as num).toDouble()
+            : 0,
+        mediaValue: (j['media_value'] is num)
+            ? (j['media_value'] as num).toDouble()
+            : 0,
+        contributionScore: (j['contribution_score'] is num)
+            ? (j['contribution_score'] as num).toDouble()
+            : 0,
+        knowledgeScore: (j['knowledge_score'] is num)
+            ? (j['knowledge_score'] as num).toDouble()
+            : 0,
+        fieldActivityScore: (j['field_activity_score'] is num)
+            ? (j['field_activity_score'] as num).toDouble()
+            : 0,
+        professionalConsistency: (j['professional_consistency'] is num)
+            ? (j['professional_consistency'] as num).toDouble()
+            : 0,
+        kpi: j['kpi'] is Map
+            ? Map<String, dynamic>.from(j['kpi'] as Map)
+            : const {},
+        completeness:
+            j['completeness'] is num ? (j['completeness'] as num).toInt() : 0,
+        pmsScore:
+            (j['pms_score'] is num) ? (j['pms_score'] as num).toDouble() : 0,
+        pmsTier: j['pms_tier'] ?? 'BRONZE',
+        pms: j['pms'] is Map
+            ? Map<String, dynamic>.from(j['pms'] as Map)
+            : const {},
+        badges:
+            j['badges'] is List ? List<dynamic>.from(j['badges']) : const [],
+        coverageRegions: j['coverage_regions'] is List
+            ? List<dynamic>.from(j['coverage_regions'])
+            : const [],
+        visibility: (j['profile_visibility'] ?? 'PUBLIC').toString(),
+        isFollowing: j['is_following'] == true,
+      );
 }
 
 class PersonnelReport {
@@ -1933,30 +1948,31 @@ class PersonnelReport {
     required this.likes,
   });
   factory PersonnelReport.fromJson(Map<String, dynamic> j) => PersonnelReport(
-    id: j['id']?.toString() ?? '',
-    headline: j['headline'] ?? '',
-    text: j['text'] ?? '',
-    category: j['category'] ?? 'story',
-    programTag: j['program_tag'],
-    sdg: j['sdg'] is num ? (j['sdg'] as num).toInt() : 0,
-    status: j['status'] ?? 'PUBLISHED',
-    verificationStatus: j['verification_status'] ?? 'REVIEW',
-    publishedAt: j['published_at'],
-    reach: j['reach'] is num ? (j['reach'] as num).toInt() : 0,
-    engagement: j['engagement'] is num ? (j['engagement'] as num).toInt() : 0,
-    evidenceCount: j['evidence_count'] is num
-        ? (j['evidence_count'] as num).toInt()
-        : 0,
-    qualityScore: (j['quality_score'] is num)
-        ? (j['quality_score'] as num).toDouble()
-        : 0,
-    impactScore: (j['impact_score'] is num)
-        ? (j['impact_score'] as num).toDouble()
-        : 0,
-    coverImage: resolveMediaUrl(j['cover_image']),
-    comments: j['comments'] is num ? (j['comments'] as num).toInt() : 0,
-    likes: j['likes'] is num ? (j['likes'] as num).toInt() : 0,
-  );
+        id: j['id']?.toString() ?? '',
+        headline: j['headline'] ?? '',
+        text: j['text'] ?? '',
+        category: j['category'] ?? 'story',
+        programTag: j['program_tag'],
+        sdg: j['sdg'] is num ? (j['sdg'] as num).toInt() : 0,
+        status: j['status'] ?? 'PUBLISHED',
+        verificationStatus: j['verification_status'] ?? 'REVIEW',
+        publishedAt: j['published_at'],
+        reach: j['reach'] is num ? (j['reach'] as num).toInt() : 0,
+        engagement:
+            j['engagement'] is num ? (j['engagement'] as num).toInt() : 0,
+        evidenceCount: j['evidence_count'] is num
+            ? (j['evidence_count'] as num).toInt()
+            : 0,
+        qualityScore: (j['quality_score'] is num)
+            ? (j['quality_score'] as num).toDouble()
+            : 0,
+        impactScore: (j['impact_score'] is num)
+            ? (j['impact_score'] as num).toDouble()
+            : 0,
+        coverImage: resolveMediaUrl(j['cover_image']),
+        comments: j['comments'] is num ? (j['comments'] as num).toInt() : 0,
+        likes: j['likes'] is num ? (j['likes'] as num).toInt() : 0,
+      );
 }
 
 class AnalyticsPoint {
@@ -1981,22 +1997,23 @@ class AnalyticsPoint {
     required this.influence,
   });
   factory AnalyticsPoint.fromJson(Map<String, dynamic> j) => AnalyticsPoint(
-    bucket: j['bucket'] ?? '',
-    impactScore: (j['impact_score'] is num)
-        ? (j['impact_score'] as num).toDouble()
-        : 0,
-    reach: (j['reach'] is num) ? (j['reach'] as num).toDouble() : 0,
-    engagement: (j['engagement'] is num)
-        ? (j['engagement'] as num).toDouble()
-        : 0,
-    verifiedReports: j['verified_reports'] is num
-        ? (j['verified_reports'] as num).toInt()
-        : 0,
-    evidence: j['evidence'] is num ? (j['evidence'] as num).toInt() : 0,
-    trustScore: (j['trust_score'] is num)
-        ? (j['trust_score'] as num).toDouble()
-        : 0,
-    knowledge: (j['knowledge'] is num) ? (j['knowledge'] as num).toDouble() : 0,
-    influence: (j['influence'] is num) ? (j['influence'] as num).toDouble() : 0,
-  );
+        bucket: j['bucket'] ?? '',
+        impactScore: (j['impact_score'] is num)
+            ? (j['impact_score'] as num).toDouble()
+            : 0,
+        reach: (j['reach'] is num) ? (j['reach'] as num).toDouble() : 0,
+        engagement:
+            (j['engagement'] is num) ? (j['engagement'] as num).toDouble() : 0,
+        verifiedReports: j['verified_reports'] is num
+            ? (j['verified_reports'] as num).toInt()
+            : 0,
+        evidence: j['evidence'] is num ? (j['evidence'] as num).toInt() : 0,
+        trustScore: (j['trust_score'] is num)
+            ? (j['trust_score'] as num).toDouble()
+            : 0,
+        knowledge:
+            (j['knowledge'] is num) ? (j['knowledge'] as num).toDouble() : 0,
+        influence:
+            (j['influence'] is num) ? (j['influence'] as num).toDouble() : 0,
+      );
 }

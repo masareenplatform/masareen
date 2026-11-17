@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:masaren/api_client.dart';
 import 'package:masaren/theme.dart';
 import 'package:masaren/models.dart';
@@ -73,7 +73,8 @@ class _OpportunitiesScreenState extends State<OpportunitiesScreen> {
         String t(String key) => MasarenLocalizations.of(c, key);
         return AlertDialog(
           title: Text(
-              t('opportunities.applyTitle').replaceAll('{title}', o.title)),
+            t('opportunities.applyTitle').replaceAll('{title}', o.title),
+          ),
           content: TextField(
             controller: note,
             maxLines: 3,
@@ -84,11 +85,13 @@ class _OpportunitiesScreenState extends State<OpportunitiesScreen> {
           ),
           actions: [
             TextButton(
-                onPressed: () => Navigator.pop(c),
-                child: Text(t('action.cancel'))),
+              onPressed: () => Navigator.pop(c),
+              child: Text(t('action.cancel')),
+            ),
             FilledButton(
-                onPressed: () => Navigator.pop(c, true),
-                child: Text(t('opportunities.send'))),
+              onPressed: () => Navigator.pop(c, true),
+              child: Text(t('opportunities.send')),
+            ),
           ],
         );
       },
@@ -100,34 +103,51 @@ class _OpportunitiesScreenState extends State<OpportunitiesScreen> {
       if (i != -1) _items[i] = updated;
       if (mounted) {
         setState(() {});
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content:
-                Text(MasarenLocalizations.of(context, 'opportunities.sent'))));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              MasarenLocalizations.of(context, 'opportunities.sent'),
+            ),
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(MasarenLocalizations.of(context, 'common.failed')
-                .replaceAll('{error}', e.toString()))));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              MasarenLocalizations.of(
+                context,
+                'common.failed',
+              ).replaceAll('{error}', e.toString()),
+            ),
+          ),
+        );
       }
     }
   }
 
   Future<void> _openDetail(Opportunity o) async {
-    await Navigator.of(context).push(MaterialPageRoute(
-        builder: (_) => OpportunityDetailScreen(
-            opportunity: o, user: widget.user)));
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) =>
+            OpportunityDetailScreen(opportunity: o, user: widget.user),
+      ),
+    );
     if (mounted) await _load();
   }
 
   Future<void> _create() async {
     final created = await Navigator.of(context).push<Opportunity>(
-        MaterialPageRoute(
-            builder: (_) => CreateOpportunityScreen(user: widget.user)));
+      MaterialPageRoute(
+        builder: (_) => CreateOpportunityScreen(user: widget.user),
+      ),
+    );
     if (created != null) {
       setState(() => _items.insert(0, created));
     }
   }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -157,31 +177,37 @@ class _OpportunitiesScreenState extends State<OpportunitiesScreen> {
                   child: ListView(
                     children: [
                       SectionTitle(
-                          title: MasarenLocalizations.of(
-                              context, 'opportunities.findImpact')),
+                        title: MasarenLocalizations.of(
+                          context,
+                          'opportunities.findImpact',
+                        ),
+                      ),
                       SizedBox(
                         height: 42,
                         child: ListView(
                           scrollDirection: Axis.horizontal,
                           padding: const EdgeInsets.symmetric(horizontal: 12),
-                          children: [
-                            'ALL',
-                            ..._opportunityTypes,
-                          ]
-                              .map((type) => Padding(
-                                    padding: const EdgeInsetsDirectional.only(
-                                        end: 6),
-                                    child: ChoiceChip(
-                                      label: Text(type == 'ALL'
+                          children: ['ALL', ..._opportunityTypes]
+                              .map(
+                                (type) => Padding(
+                                  padding:
+                                      const EdgeInsetsDirectional.only(end: 6),
+                                  child: ChoiceChip(
+                                    label: Text(
+                                      type == 'ALL'
                                           ? MasarenLocalizations.of(
-                                              context, 'opportunities.all')
+                                              context,
+                                              'opportunities.all',
+                                            )
                                           : _opportunityTypeLabel(
-                                              context, type)),
-                                      selected: _filter == type,
-                                      onSelected: (_) =>
-                                          setState(() => _filter = type),
+                                              context, type),
                                     ),
-                                  ))
+                                    selected: _filter == type,
+                                    onSelected: (_) =>
+                                        setState(() => _filter = type),
+                                  ),
+                                ),
+                              )
                               .toList(),
                         ),
                       ),
@@ -192,21 +218,27 @@ class _OpportunitiesScreenState extends State<OpportunitiesScreen> {
                           child: Text(
                             _items.isEmpty
                                 ? MasarenLocalizations.of(
-                                    context, 'opportunities.empty')
+                                    context,
+                                    'opportunities.empty',
+                                  )
                                 : MasarenLocalizations.of(
-                                        context, 'opportunities.emptyFilter')
-                                    .replaceAll(
-                                        '{type}',
-                                        _opportunityTypeLabel(
-                                            context, _filter)),
+                                    context,
+                                    'opportunities.emptyFilter',
+                                  ).replaceAll(
+                                    '{type}',
+                                    _opportunityTypeLabel(context, _filter),
+                                  ),
                             style: TextStyle(color: cs.onSurfaceVariant),
                           ),
                         ),
-                      ..._visible.map((o) => _OpportunityCard(
+                      ..._visible.map(
+                        (o) => _OpportunityCard(
                           o: o,
                           onApply: _apply,
                           onOpen: () => _openDetail(o),
-                          currentUser: widget.user)),
+                          currentUser: widget.user,
+                        ),
+                      ),
                       const SizedBox(height: 24),
                     ],
                   ),
@@ -220,11 +252,12 @@ class _OpportunityCard extends StatelessWidget {
   final ValueChanged<Opportunity> onApply;
   final VoidCallback onOpen;
   final User currentUser;
-  const _OpportunityCard(
-      {required this.o,
-      required this.onApply,
-      required this.onOpen,
-      required this.currentUser});
+  const _OpportunityCard({
+    required this.o,
+    required this.onApply,
+    required this.onOpen,
+    required this.currentUser,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -234,176 +267,224 @@ class _OpportunityCard extends StatelessWidget {
       child: InkWell(
         onTap: onOpen,
         child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (o.coverUrl != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: SmartImage(
-                  url: o.coverUrl,
-                  height: 120,
-                  borderRadius: BorderRadius.circular(14),
-                  fallbackIcon: Icons.work_outline,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (o.coverUrl != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: SmartImage(
+                    url: o.coverUrl,
+                    height: 120,
+                    borderRadius: BorderRadius.circular(14),
+                    fallbackIcon: Icons.work_outline,
+                  ),
                 ),
-              ),
-            Row(
-              children: [
-                Icon(Icons.explore_rounded, color: cs.primary),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(o.title,
-                      style: TextStyle(
-                          fontWeight: FontWeight.w800,
-                          color: cs.onSurface,
-                          fontSize: 16)),
-                ),
-                if (o.sdg != null)
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: cs.secondaryContainer,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
+              Row(
+                children: [
+                  Icon(Icons.explore_rounded, color: cs.primary),
+                  const SizedBox(width: 8),
+                  Expanded(
                     child: Text(
+                      o.title,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        color: cs.onSurface,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                  if (o.sdg != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: cs.secondaryContainer,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
                         '${MasarenLocalizations.of(context, "opportunities.sdg")} ${o.sdg}',
                         style: TextStyle(
-                            color: cs.onSecondaryContainer, fontSize: 12)),
-                  ),
-                if (o.applied)
-                  Padding(
-                    padding: const EdgeInsetsDirectional.only(start: 6),
-                    child: Icon(Icons.verified_rounded,
-                        size: 16, color: cs.secondary),
-                  ),
-                EntityStatusChip(
-                    status: o.verificationStatus, reason: o.rejectionReason),
-                Icon(Icons.chevron_right,
-                    size: 18, color: cs.onSurfaceVariant),
-              ],
-            ),
-            if (o.type?.isNotEmpty == true) ...[
-              const SizedBox(height: 6),
-              Text(_opportunityTypeLabel(context, o.type),
-                  style: TextStyle(
-                      color: cs.primary,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.6)),
-            ],
-            if (o.author != null) ...[
-              const SizedBox(height: 4),
-              InkWell(
-                borderRadius: BorderRadius.circular(6),
-                onTap: () => openEntityAuthor(context,
-                    author: o.author, currentUser: currentUser),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 3),
-                  child: Row(
-                    children: [
-                      AppAvatar(
-                          name: o.author!.name,
-                          url: o.author!.avatarUrl,
-                          size: 18),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          o.author!.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                              color: cs.primary,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600),
+                          color: cs.onSecondaryContainer,
+                          fontSize: 12,
                         ),
                       ),
-                    ],
+                    ),
+                  if (o.applied)
+                    Padding(
+                      padding: const EdgeInsetsDirectional.only(start: 6),
+                      child: Icon(
+                        Icons.verified_rounded,
+                        size: 16,
+                        color: cs.secondary,
+                      ),
+                    ),
+                  EntityStatusChip(
+                    status: o.verificationStatus,
+                    reason: o.rejectionReason,
+                  ),
+                  Icon(
+                    Icons.chevron_right,
+                    size: 18,
+                    color: cs.onSurfaceVariant,
+                  ),
+                ],
+              ),
+              if (o.type?.isNotEmpty == true) ...[
+                const SizedBox(height: 6),
+                Text(
+                  _opportunityTypeLabel(context, o.type),
+                  style: TextStyle(
+                    color: cs.primary,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.6,
                   ),
                 ),
-              ),
-            ],
-            if (o.description != null) ...[
-              const SizedBox(height: 8),
-              Text(o.description!,
+              ],
+              if (o.author != null) ...[
+                const SizedBox(height: 4),
+                InkWell(
+                  borderRadius: BorderRadius.circular(6),
+                  onTap: () => openEntityAuthor(
+                    context,
+                    author: o.author,
+                    currentUser: currentUser,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 3),
+                    child: Row(
+                      children: [
+                        AppAvatar(
+                          name: o.author!.name,
+                          url: o.author!.avatarUrl,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            o.author!.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: cs.primary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+              if (o.description != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  o.description!,
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: cs.onSurfaceVariant, height: 1.4)),
-            ],
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: [
-                if (o.minPms != null)
-                  Chip(
-                    label: Text(
-                        MasarenLocalizations.of(
-                                context, 'opportunities.minPmsValue')
-                            .replaceAll('{value}', '${o.minPms!.toInt()}'),
-                        style: const TextStyle(fontSize: 12)),
-                    visualDensity: VisualDensity.compact,
-                  ),
-                if (o.location != null)
-                  Chip(
-                    label:
-                        Text(o.location!, style: const TextStyle(fontSize: 12)),
-                    visualDensity: VisualDensity.compact,
-                  ),
-                if (o.isRemote)
-                  Chip(
-                    label: Text(
-                        MasarenLocalizations.of(
-                            context, 'opportunities.remote'),
-                        style: const TextStyle(fontSize: 12)),
-                    visualDensity: VisualDensity.compact,
-                  ),
-                if (o.deadline != null)
-                  Chip(
-                    label: Text(
-                        MasarenLocalizations.of(
-                                context, 'opportunities.applyBy')
-                            .replaceAll('{date}', o.deadline!.split('T').first),
-                        style: const TextStyle(fontSize: 12)),
-                    visualDensity: VisualDensity.compact,
-                  ),
-                ...o.skills.take(3).map((s) => Chip(
-                      label: Text(s.toString(),
-                          style: const TextStyle(fontSize: 12)),
-                      visualDensity: VisualDensity.compact,
-                    )),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: o.applied ? null : () => onApply(o),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: cs.primary,
-                      side: BorderSide(color: cs.primary),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                    ),
-                    child: Text(MasarenLocalizations.of(context,
-                        o.applied ? 'action.applied' : 'action.apply')),
-                  ),
+                  style: TextStyle(color: cs.onSurfaceVariant, height: 1.4),
                 ),
-                if (o.applicationsCount > 0) ...[
-                  const SizedBox(width: 10),
-                  Text(
-                      MasarenLocalizations.of(
-                              context, 'opportunities.appliedCount')
-                          .replaceAll('{count}', '${o.applicationsCount}'),
-                      style:
-                          TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
-                ],
               ],
-            ),
-          ],
-        ),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  if (o.minPms != null)
+                    Chip(
+                      label: Text(
+                        MasarenLocalizations.of(
+                          context,
+                          'opportunities.minPmsValue',
+                        ).replaceAll('{value}', '${o.minPms!.toInt()}'),
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  if (o.location != null)
+                    Chip(
+                      label: Text(
+                        o.location!,
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  if (o.isRemote)
+                    Chip(
+                      label: Text(
+                        MasarenLocalizations.of(
+                          context,
+                          'opportunities.remote',
+                        ),
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  if (o.deadline != null)
+                    Chip(
+                      label: Text(
+                        MasarenLocalizations.of(
+                          context,
+                          'opportunities.applyBy',
+                        ).replaceAll('{date}', o.deadline!.split('T').first),
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ...o.skills.take(3).map(
+                        (s) => Chip(
+                          label: Text(
+                            s.toString(),
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: o.applied ? null : () => onApply(o),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: cs.primary,
+                        side: BorderSide(color: cs.primary),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        MasarenLocalizations.of(
+                          context,
+                          o.applied ? 'action.applied' : 'action.apply',
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (o.applicationsCount > 0) ...[
+                    const SizedBox(width: 10),
+                    Text(
+                      MasarenLocalizations.of(
+                        context,
+                        'opportunities.appliedCount',
+                      ).replaceAll('{count}', '${o.applicationsCount}'),
+                      style: TextStyle(
+                        color: cs.onSurfaceVariant,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

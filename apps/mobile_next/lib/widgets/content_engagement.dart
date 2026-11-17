@@ -11,6 +11,7 @@ class ContentEngagement extends StatefulWidget {
   final int initialReactions;
   final int initialComments;
   final bool initiallyReacted;
+  final String? initialMyReaction;
   final Future<void> Function()? onShare;
 
   const ContentEngagement({
@@ -21,6 +22,7 @@ class ContentEngagement extends StatefulWidget {
     this.initialReactions = 0,
     this.initialComments = 0,
     this.initiallyReacted = false,
+    this.initialMyReaction,
     this.onShare,
   });
 
@@ -36,7 +38,7 @@ class _ContentEngagementState extends State<ContentEngagement> {
   bool _sending = false;
   bool _busyReaction = false;
   late int _reactions;
-  late bool _reacted;
+  String? _myReaction;
 
   bool get _ar => Localizations.localeOf(context).languageCode == 'ar';
   String _t(String en, String ar) => _ar ? ar : en;
@@ -45,7 +47,8 @@ class _ContentEngagementState extends State<ContentEngagement> {
   void initState() {
     super.initState();
     _reactions = widget.initialReactions;
-    _reacted = widget.initiallyReacted;
+    _myReaction =
+        widget.initialMyReaction ?? (widget.initiallyReacted ? 'like' : null);
     _load();
   }
 
@@ -58,8 +61,10 @@ class _ContentEngagementState extends State<ContentEngagement> {
 
   Future<void> _load() async {
     try {
-      final comments =
-          await AuthApi.contentComments(widget.targetType, widget.targetId);
+      final comments = await AuthApi.contentComments(
+        widget.targetType,
+        widget.targetId,
+      );
       if (!mounted) return;
       setState(() {
         _comments = comments;
@@ -70,16 +75,19 @@ class _ContentEngagementState extends State<ContentEngagement> {
     }
   }
 
-  Future<void> _toggleReaction() async {
+  Future<void> _toggleReaction(String reaction) async {
     if (_busyReaction) return;
     setState(() => _busyReaction = true);
     try {
       final result = await AuthApi.toggleContentReaction(
-          widget.targetType, widget.targetId);
+        widget.targetType,
+        widget.targetId,
+        reaction: reaction,
+      );
       if (!mounted) return;
       setState(() {
         _reactions = (result['reactions'] as num?)?.toInt() ?? _reactions;
-        _reacted = result['reacted'] == true;
+        _myReaction = result['my_reaction']?.toString();
       });
     } catch (_) {
     } finally {
@@ -93,15 +101,20 @@ class _ContentEngagementState extends State<ContentEngagement> {
     setState(() => _sending = true);
     try {
       final comment = await AuthApi.addContentComment(
-          widget.targetType, widget.targetId, text);
+        widget.targetType,
+        widget.targetId,
+        text,
+      );
       if (!mounted) return;
       _controller.clear();
       setState(() => _comments.add(comment));
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_scroll.hasClients) {
-          _scroll.animateTo(_scroll.position.maxScrollExtent,
-              duration: const Duration(milliseconds: 220),
-              curve: Curves.easeOutCubic);
+          _scroll.animateTo(
+            _scroll.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+          );
         }
       });
     } catch (_) {
@@ -122,16 +135,10 @@ class _ContentEngagementState extends State<ContentEngagement> {
           children: [
             Row(
               children: [
-                _Action(
-                  icon: _reacted
-                      ? Icons.favorite_rounded
-                      : Icons.favorite_border_rounded,
-                  label: _reacted
-                      ? _t('Reacted', 'تفاعلت')
-                      : _t('React', 'تفاعل'),
+                _ReactionButton(
+                  reaction: _myReaction,
                   count: _reactions,
-                  active: _reacted,
-                  onTap: _toggleReaction,
+                  onSelect: _toggleReaction,
                 ),
                 const SizedBox(width: 8),
                 _Action(
@@ -153,9 +160,10 @@ class _ContentEngagementState extends State<ContentEngagement> {
             Text(
               _t('Comments', 'التعليقات'),
               style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
-                  color: cs.onSurface),
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                color: cs.onSurface,
+              ),
             ),
             const SizedBox(height: 6),
             if (_loading)
@@ -163,17 +171,20 @@ class _ContentEngagementState extends State<ContentEngagement> {
                 padding: EdgeInsets.all(12),
                 child: Center(
                   child: SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(strokeWidth: 2)),
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
                 ),
               )
             else if (_comments.isEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 child: Text(
-                  _t('No comments yet. Start the conversation.',
-                      'لا توجد تعليقات بعد. ابدأ الحديث.'),
+                  _t(
+                    'No comments yet. Start the conversation.',
+                    'لا توجد تعليقات بعد. ابدأ الحديث.',
+                  ),
                   style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12.5),
                 ),
               )
@@ -192,9 +203,10 @@ class _ContentEngagementState extends State<ContentEngagement> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           AppAvatar(
-                              name: comment.authorName ?? 'User',
-                              url: comment.authorPicture,
-                              size: 30),
+                            name: comment.authorName ?? 'User',
+                            url: comment.authorPicture,
+                            size: 30,
+                          ),
                           const SizedBox(width: 9),
                           Expanded(
                             child: Container(
@@ -206,19 +218,24 @@ class _ContentEngagementState extends State<ContentEngagement> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(comment.authorName ?? 'User',
-                                      style: const TextStyle(
-                                          fontSize: 11.5,
-                                          fontWeight: FontWeight.w800)),
+                                  Text(
+                                    comment.authorName ?? 'User',
+                                    style: const TextStyle(
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
                                   const SizedBox(height: 2),
                                   Text(
                                     comment.text,
-                                    textDirection:
-                                        textDirectionFor(comment.text),
+                                    textDirection: textDirectionFor(
+                                      comment.text,
+                                    ),
                                     style: TextStyle(
-                                        color: cs.onSurface,
-                                        fontSize: 12.5,
-                                        height: 1.4),
+                                      color: cs.onSurface,
+                                      fontSize: 12.5,
+                                      height: 1.4,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -234,9 +251,10 @@ class _ContentEngagementState extends State<ContentEngagement> {
             Row(
               children: [
                 AppAvatar(
-                    name: widget.user.fullName,
-                    url: widget.user.avatarUrl,
-                    size: 30),
+                  name: widget.user.fullName,
+                  url: widget.user.avatarUrl,
+                  size: 30,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: TextField(
@@ -257,7 +275,8 @@ class _ContentEngagementState extends State<ContentEngagement> {
                       ? const SizedBox(
                           width: 17,
                           height: 17,
-                          child: CircularProgressIndicator(strokeWidth: 2))
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
                       : const Icon(Icons.send_rounded, size: 18),
                 ),
               ],
@@ -273,7 +292,6 @@ class _Action extends StatelessWidget {
   final IconData icon;
   final String label;
   final int count;
-  final bool active;
   final VoidCallback onTap;
 
   const _Action({
@@ -281,7 +299,6 @@ class _Action extends StatelessWidget {
     required this.label,
     required this.count,
     required this.onTap,
-    this.active = false,
   });
 
   @override
@@ -290,15 +307,108 @@ class _Action extends StatelessWidget {
     return TextButton.icon(
       onPressed: onTap,
       style: TextButton.styleFrom(
-        foregroundColor: active ? AppColors.warm : cs.onSurfaceVariant,
-        backgroundColor:
-            active ? AppColors.warm.withValues(alpha: .09) : null,
+        foregroundColor: cs.onSurfaceVariant,
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
       icon: Icon(icon, size: 17),
-      label: Text('$label $count',
-          style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
+      label: Text(
+        '$label $count',
+        style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700),
+      ),
+    );
+  }
+}
+
+class _ReactionButton extends StatelessWidget {
+  final String? reaction;
+  final int count;
+  final ValueChanged<String> onSelect;
+  const _ReactionButton({
+    required this.reaction,
+    required this.count,
+    required this.onSelect,
+  });
+
+  static const _reactions = [
+    'like',
+    'support',
+    'insightful',
+    'celebrate',
+    'question',
+  ];
+
+  IconData _icon(String? value) => switch (value) {
+        'support' => Icons.volunteer_activism_rounded,
+        'insightful' => Icons.lightbulb_rounded,
+        'celebrate' => Icons.celebration_rounded,
+        'question' => Icons.help_outline_rounded,
+        'like' => Icons.favorite_rounded,
+        _ => Icons.favorite_border_rounded,
+      };
+
+  String _label(String value) => switch (value) {
+        'support' => 'Support',
+        'insightful' => 'Insightful',
+        'celebrate' => 'Celebrate',
+        'question' => 'Question',
+        _ => 'Like',
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final active = reaction != null;
+    return PopupMenuButton<String>(
+      tooltip: 'React',
+      onSelected: onSelect,
+      itemBuilder: (_) => [
+        for (final r in _reactions)
+          PopupMenuItem(
+            value: r,
+            child: Row(
+              children: [
+                Icon(
+                  _icon(r),
+                  size: 18,
+                  color: r == reaction ? cs.primary : cs.onSurfaceVariant,
+                ),
+                const SizedBox(width: 10),
+                Text(_label(r)),
+                if (r == reaction) ...[
+                  const Spacer(),
+                  Icon(Icons.check, size: 16, color: cs.primary),
+                ],
+              ],
+            ),
+          ),
+      ],
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+        decoration: BoxDecoration(
+          color: active ? AppColors.warm.withValues(alpha: .09) : null,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              _icon(reaction),
+              size: 17,
+              color: active ? AppColors.warm : cs.onSurfaceVariant,
+            ),
+            const SizedBox(width: 5),
+            Text(
+              '${reaction == null ? 'React' : _label(reaction!)} $count',
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w700,
+                color: active ? AppColors.warm : cs.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

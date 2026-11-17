@@ -1,4 +1,4 @@
-﻿// MASAREEN social + impact API (v1), served by the same Worker as the landing API.
+// MASAREEN social + impact API (v1), served by the same Worker as the landing API.
 // Auth here is email+password with PBKDF2 hashing and HMAC bearer tokens, so the
 // mobile app never depends on an external server. All data lives in D1.
 
@@ -18,7 +18,9 @@ const TOKEN_DAYS = 30;
 const PBKDF2_ITERATIONS = 100000;
 const ROLES = new Set(['INDIVIDUAL', 'STUDENT', 'ACADEMIC', 'RESEARCHER', 'ORGANIZATION',
   'PROFESSIONAL', 'VOLUNTEER', 'JOURNALIST', 'DONOR', 'MEDIA', 'SPORTS', 'ATHLETE',
-  'CLUB', 'FEDERATION', 'INSTITUTION', 'UNIVERSITY']);
+  'CLUB', 'FEDERATION', 'INSTITUTION', 'UNIVERSITY', 'TEACHING_ASSISTANT',
+  'ASSISTANT_LECTURER', 'LECTURER', 'ASSISTANT_PROFESSOR', 'ASSOCIATE_PROFESSOR',
+  'PROFESSOR']);
 const RESTRICTED_SIGNUP_ROLES = new Set(['ADMIN', 'PLATFORM', 'GOVERNMENT']);
 const IMPACT_CATEGORIES = new Set(['verified_evidence', 'community_voice', 'policy_change',
   'innovation', 'scale', 'transparency']);
@@ -2097,11 +2099,28 @@ const CONTENT_TABLES = {
   VOD: { table: 'vod_videos', owner: 'owner_id' },
   PODCAST: { table: 'podcast_shows', owner: 'owner_id' },
   EPISODE: { table: 'podcast_episodes', owner: null },
+  NEWS: { table: 'news_articles', owner: 'author_id' },
+  EVENT: { table: 'events', owner: 'author_id' },
+  PROGRAM: { table: 'programs', owner: 'author_id' },
+  PROJECT: { table: 'projects', owner: 'author_id' },
+  COURSE: { table: 'courses', owner: 'author_id' },
+  OPPORTUNITY: { table: 'opportunities', owner: 'author_id' },
+  RESEARCH: { table: 'research_stages', owner: 'researcher_id' },
+  CALL: { table: 'call_rooms', owner: 'host_id' },
+  USER: { table: 'users', owner: 'id' },
+  JOURNALIST: { table: 'journalists', owner: null },
+  ANNOUNCEMENT: { table: 'announcements', owner: 'created_by' },
 };
 
 async function resolveContentTarget(env, type, id) {
   const def = CONTENT_TABLES[type];
   if (!def) throw new HttpError(400, 'invalid_content_type', 'Unsupported content type.');
+  if (type === 'JOURNALIST') {
+    const row = await env.DB.prepare('SELECT id FROM journalists WHERE id=?')
+      .bind(id).first();
+    if (!row) throw new HttpError(404, 'content_not_found', 'Content not found.');
+    return { ownerId: 0, table: def.table };
+  }
   if (type === 'EPISODE') {
     const row = await env.DB.prepare(`SELECT e.id,e.show_id,s.owner_id FROM podcast_episodes e
       JOIN podcast_shows s ON s.id=e.show_id WHERE e.id=?`).bind(id).first();
@@ -2114,20 +2133,31 @@ async function resolveContentTarget(env, type, id) {
   return { ownerId: Number(row.owner_id), table: def.table };
 }
 
+const REACTION_TYPES = new Set(['like', 'support', 'insightful', 'celebrate', 'question']);
+
 async function contentStats(env, type, id, viewerId) {
   const counts = await env.DB.prepare(`SELECT
       (SELECT COUNT(*) FROM content_comments WHERE target_type=? AND target_id=?) comment_count,
       (SELECT COUNT(*) FROM content_reactions WHERE target_type=? AND target_id=?) reaction_count`)
     .bind(type, id, type, id).first();
-  let reacted = false;
+  const grouped = (await env.DB.prepare(`SELECT reaction,COUNT(*) c FROM content_reactions
+    WHERE target_type=? AND target_id=? GROUP BY reaction`)
+    .bind(type, id).all()).results || [];
+  const byReaction = {};
+  for (const row of grouped) byReaction[row.reaction || 'like'] = Number(row.c || 0);
+  let myReaction = null;
   if (viewerId != null) {
-    reacted = !!(await env.DB.prepare(`SELECT 1 x FROM content_reactions
-      WHERE target_type=? AND target_id=? AND user_id=?`).bind(type, id, viewerId).first());
+    const mine = await env.DB.prepare(`SELECT reaction FROM content_reactions
+      WHERE target_type=? AND target_id=? AND user_id=?`)
+      .bind(type, id, viewerId).first();
+    myReaction = mine?.reaction || null;
   }
   return {
     comment_count: Number(counts?.comment_count || 0),
     reaction_count: Number(counts?.reaction_count || 0),
-    reacted,
+    reaction_counts: byReaction,
+    my_reaction: myReaction,
+    reacted: myReaction != null,
   };
 }
 
@@ -2161,6 +2191,8 @@ async function addContentComment(req, env, type, id) {
     notify(env, target.ownerId, 'comment', `${u.name || 'Someone'} commented`,
       text, u.id, null, { dedupeKey: `content-comment:${type}:${id}:${u.id}` }).catch(() => {});
   }
+  if (type === 'NEWS') await recomputeNewsImpact(env, id).catch(() => {});
+  if (type === 'RESEARCH') await recomputeResearchImpact(env, id).catch(() => {});
   const row = await env.DB.prepare(`SELECT c.*,u.name author_name,u.handle author_handle,
       u.picture author_picture,u.email_verified author_verified
     FROM content_comments c JOIN users u ON u.id=c.author_id WHERE c.id=?`)
@@ -2176,22 +2208,37 @@ async function addContentComment(req, env, type, id) {
 async function toggleContentReaction(req, env, type, id) {
   const u = await requireUser(req, env);
   const target = await resolveContentTarget(env, type, id);
-  const has = await env.DB.prepare(`SELECT 1 x FROM content_reactions
+  const b = await readJson(req);
+  const reaction = String(b.reaction || 'like').toLowerCase();
+  if (!REACTION_TYPES.has(reaction)) {
+    throw new HttpError(400, 'invalid_reaction',
+      'Choose like, support, insightful, celebrate or question.');
+  }
+  const existing = await env.DB.prepare(`SELECT reaction FROM content_reactions
     WHERE target_type=? AND target_id=? AND user_id=?`).bind(type, id, u.id).first();
-  if (has) {
+  if (existing && existing.reaction === reaction) {
     await env.DB.prepare(`DELETE FROM content_reactions
       WHERE target_type=? AND target_id=? AND user_id=?`).bind(type, id, u.id).run();
+  } else if (existing) {
+    await env.DB.prepare(`UPDATE content_reactions SET reaction=?,created_at=?
+      WHERE target_type=? AND target_id=? AND user_id=?`)
+      .bind(reaction, nowIso(), type, id, u.id).run();
   } else {
     await env.DB.prepare(`INSERT INTO content_reactions
-      (target_type,target_id,user_id,created_at) VALUES (?,?,?,?)`)
-      .bind(type, id, u.id, nowIso()).run();
+      (target_type,target_id,user_id,reaction,created_at) VALUES (?,?,?,?,?)`)
+      .bind(type, id, u.id, reaction, nowIso()).run();
     if (target.ownerId) {
       notify(env, target.ownerId, 'like', `${u.name || 'Someone'} reacted to your content`,
-        '', u.id, null, { dedupeKey: `content-like:${type}:${id}:${u.id}` }).catch(() => {});
+        reaction, u.id, null,
+        { dedupeKey: `content-reaction:${type}:${id}:${u.id}` }).catch(() => {});
     }
   }
+  if (type === 'NEWS') await recomputeNewsImpact(env, id).catch(() => {});
+  if (type === 'RESEARCH') await recomputeResearchImpact(env, id).catch(() => {});
   const stats = await contentStats(env, type, id, u.id);
-  return json({ ok: true, reacted: stats.reacted, reactions: stats.reaction_count });
+  return json({ ok: true, reacted: stats.reacted,
+    reactions: stats.reaction_count, reaction_counts: stats.reaction_counts,
+    my_reaction: stats.my_reaction });
 }
 async function toggleLike(req, env, id) {
   const u = await requireUser(req, env);
@@ -2636,6 +2683,164 @@ async function createLeaderboard(req, env) {
   }
   const row = await getPostRow(env, id);
   return json({ ...postJson(row, false, null), moderation_status: row.moderation_status }, 201);
+}
+export async function buildLiveLeaderboard(env, scope, period = 'month', limit = 20) {
+  const days = period === 'week' ? 7 : period === 'all' ? 3650 : 30;
+  const since = new Date(Date.now() - days * 86400000).toISOString();
+  if (scope === 'journalists') {
+    const rows = (await env.DB.prepare(`SELECT j.id,j.name,j.outlet_name,j.avatar_url,
+        j.verified,
+        (SELECT COUNT(*) FROM news_articles a WHERE a.journalist_id=j.id
+          AND a.status='PUBLISHED' AND a.created_at>=?) articles,
+        (SELECT COALESCE(SUM(a.impact_score),0) FROM news_articles a
+          WHERE a.journalist_id=j.id AND a.status='PUBLISHED'
+            AND a.created_at>=?) impact
+      FROM journalists j ORDER BY impact DESC, articles DESC, j.name ASC LIMIT ?`)
+      .bind(since, since, limit).all()).results || [];
+    return rows.map((r, i) => ({
+      id: String(r.id), name: r.name, subtitle: r.outlet_name || 'Journalist',
+      score: Number(r.impact || 0), articles: Number(r.articles || 0),
+      avatar_url: r.avatar_url || null, verified: !!r.verified,
+      entity_type: 'JOURNALIST', rank: i + 1,
+    }));
+  }
+  if (scope === 'research') {
+    const rows = (await env.DB.prepare(`SELECT r.id,r.title,r.stage,
+        u.name researcher_name,u.picture researcher_picture,
+        COALESCE(r.impact_score,0) impact,
+        (SELECT COUNT(*) FROM research_reviews v WHERE v.stage_id=r.id) reviews,
+        COALESCE(r.funding_raised_mrc,0) funding
+      FROM research_stages r LEFT JOIN users u ON u.id=r.researcher_id
+      WHERE r.created_at>=?
+      ORDER BY impact DESC, reviews DESC, funding DESC LIMIT ?`)
+      .bind(since, limit).all()).results || [];
+    return rows.map((r, i) => ({
+      id: String(r.id), name: r.title,
+      subtitle: `${r.stage}  ${r.researcher_name || 'Researcher'}`,
+      score: Number(r.impact || 0), reviews: Number(r.reviews || 0),
+      funding_mrc: Number(r.funding || 0), avatar_url: r.researcher_picture || null,
+      entity_type: 'RESEARCH_STAGE', rank: i + 1,
+    }));
+  }
+  const metric = scope === 'institutions' || scope === 'governments'
+    ? 'impact' : 'participants';
+  const { rankings } = await buildLeaderboardRankings(env, scope, metric, days, []);
+  return rankings.slice(0, limit).map((r) => ({
+    ...r, entity_type: scope.replace(/s$/, '').toUpperCase(),
+  }));
+}
+
+export async function runAutoLeaderboards(env) {
+  const scopes = ['institutions', 'journalists', 'research', 'programs', 'events'];
+  const created = [];
+  for (const scope of scopes) {
+    const recent = await env.DB.prepare(`SELECT id FROM leaderboard_snapshots
+      WHERE scope=? AND period='month' AND created_at>?
+      ORDER BY created_at DESC LIMIT 1`)
+      .bind(scope, new Date(Date.now() - 12 * 3600000).toISOString()).first();
+    if (recent) continue;
+    const rankings = await buildLiveLeaderboard(env, scope, 'month', 50);
+    if (!rankings.length) continue;
+    await env.DB.prepare(`INSERT INTO leaderboard_snapshots
+      (scope,period,metric,rankings_json,created_at)
+      VALUES (?,'month',?,?,?)`)
+      .bind(scope, scope === 'institutions' ? 'impact' : 'impact',
+        JSON.stringify(rankings), nowIso()).run();
+    created.push(scope);
+  }
+  return { ok: true, created };
+}
+
+export async function runAutoOpportunities(env) {
+  const at = nowIso();
+  await env.DB.prepare(`UPDATE opportunities SET status='CLOSED'
+    WHERE auto_generated=1 AND deadline IS NOT NULL AND deadline<?`)
+    .bind(at).run().catch(() => {});
+  const events = (await env.DB.prepare(`SELECT e.id,e.author_id,e.title,e.description,
+      e.starts_at,e.location,e.is_online,e.sdg,e.cover_url,e.capacity,
+      (SELECT COUNT(*) FROM event_attendees a WHERE a.event_id=e.id) attendees
+    FROM events e
+    WHERE e.status='PUBLISHED' AND e.verification_status='APPROVED'
+      AND e.starts_at>? AND e.starts_at<?
+      AND COALESCE(e.capacity,0)>0
+      AND (SELECT COUNT(*) FROM event_attendees a WHERE a.event_id=e.id) < e.capacity
+      AND NOT EXISTS (SELECT 1 FROM opportunities o
+        WHERE o.source_type='EVENT' AND o.source_id=CAST(e.id AS TEXT))
+    ORDER BY e.starts_at ASC LIMIT 8`)
+    .bind(at, new Date(Date.now() + 60 * 86400000).toISOString())
+    .all()).results || [];
+  let created = 0;
+  for (const event of events) {
+    const ins = await env.DB.prepare(`INSERT OR IGNORE INTO opportunities
+      (author_id,title,description,type,skills,sdg,location,is_remote,deadline,
+        cover_url,status,verification_status,creation_fee_mrc,auto_generated,
+        source_type,source_id,created_at)
+      VALUES (?,?,?, 'VOLUNTEER',?,?,?,?,?,?, 'OPEN','APPROVED',0,1,
+        'EVENT',?,?)`)
+      .bind(event.author_id, `Join ${event.title}`,
+        event.description || `Volunteer with ${event.title}.`,
+        JSON.stringify(['Community', 'Fieldwork']), event.sdg,
+        event.location || null, event.is_online ? 1 : 0, event.starts_at,
+        event.cover_url || null, String(event.id), at).run();
+    if (ins.meta.changes) {
+      created++;
+      const opp = await env.DB.prepare('SELECT * FROM opportunities WHERE id=?')
+        .bind(ins.meta.last_row_id).first();
+      await notifyOpportunityMatches(env, opp).catch(() => {});
+    }
+  }
+  const projects = (await env.DB.prepare(`SELECT p.id,p.author_id,p.title,p.description,
+      p.category,p.sdg,p.cover,p.status
+    FROM projects p
+    WHERE p.status='ACTIVE' AND p.verification_status='APPROVED'
+      AND NOT EXISTS (SELECT 1 FROM opportunities o
+        WHERE o.source_type='PROJECT' AND o.source_id=CAST(p.id AS TEXT))
+    ORDER BY p.created_at DESC LIMIT 4`).all()).results || [];
+  for (const project of projects) {
+    const ins = await env.DB.prepare(`INSERT OR IGNORE INTO opportunities
+      (author_id,title,description,type,skills,sdg,is_remote,cover_url,status,
+        verification_status,creation_fee_mrc,auto_generated,source_type,
+        source_id,created_at)
+      VALUES (?,?,?, 'COLLABORATION',?,?,0,?, 'OPEN','APPROVED',0,1,
+        'PROJECT',?,?)`)
+      .bind(project.author_id, `Collaborate on ${project.title}`,
+        project.description || `Join the ${project.title} project team.`,
+        JSON.stringify([project.category || 'Community', 'Collaboration']),
+        project.sdg, project.cover || null, String(project.id), at).run();
+    if (ins.meta.changes) {
+      created++;
+      const opp = await env.DB.prepare('SELECT * FROM opportunities WHERE id=?')
+        .bind(ins.meta.last_row_id).first();
+      await notifyOpportunityMatches(env, opp).catch(() => {});
+    }
+  }
+  const research = (await env.DB.prepare(`SELECT r.id,r.researcher_id,r.title,
+      r.summary,r.stage,r.institution_id
+    FROM research_stages r
+    WHERE r.status='ACTIVE' AND r.open_for_review=1
+      AND r.stage IN ('IDEA','LITERATURE','METHODOLOGY')
+      AND NOT EXISTS (SELECT 1 FROM opportunities o
+        WHERE o.source_type='RESEARCH' AND o.source_id=CAST(r.id AS TEXT))
+    ORDER BY r.created_at DESC LIMIT 4`).all()).results || [];
+  for (const stage of research) {
+    const ins = await env.DB.prepare(`INSERT OR IGNORE INTO opportunities
+      (author_id,title,description,type,skills,is_remote,status,
+        verification_status,creation_fee_mrc,auto_generated,source_type,
+        source_id,created_at)
+      VALUES (?,?,?, 'RESEARCH',?,1,'OPEN','APPROVED',0,1,
+        'RESEARCH',?,?)`)
+      .bind(stage.researcher_id, `Research collaboration: ${stage.title}`,
+        stage.summary || `Join this ${stage.stage} research stage.`,
+        JSON.stringify(['Research', stage.stage]),
+        String(stage.id), at).run();
+    if (ins.meta.changes) {
+      created++;
+      const opp = await env.DB.prepare('SELECT * FROM opportunities WHERE id=?')
+        .bind(ins.meta.last_row_id).first();
+      await notifyOpportunityMatches(env, opp).catch(() => {});
+    }
+  }
+  return { ok: true, created };
 }
 async function searchSocial(req, env, url) {
   const q = clean(url.searchParams.get('q'), 80);
@@ -4393,7 +4598,16 @@ async function adminRoutes(req, env, url) {
         .bind(status === 'APPROVED' ? 'PAID' : 'REJECTED', r.invoice_id).run();
     }
     return json({ ok: true });
-  }  throw new HttpError(404, 'not_found', 'Unknown admin route.');
+  }
+  if (path === '/api/v1/admin/automation/run' && method === 'POST') {
+    const news = await syncNewsFeeds(env).catch((error) => ({ error: String(error) }));
+    const opportunities = await runAutoOpportunities(env)
+      .catch((error) => ({ error: String(error) }));
+    const leaderboards = await runAutoLeaderboards(env)
+      .catch((error) => ({ error: String(error) }));
+    return json({ ok: true, news, opportunities, leaderboards });
+  }
+  throw new HttpError(404, 'not_found', 'Unknown admin route.');
 }
 
 /* ---------------- courses ---------------- */
@@ -6215,7 +6429,8 @@ async function taskRoutes(req, env, url, viewer) {
 }
 
 /* ---------------- opportunity marketplace ---------------- */
-const OPPORTUNITY_TYPES = new Set(['JOB', 'INTERNSHIP', 'GRANT', 'VOLUNTEER', 'TRAINING', 'CSR']);
+const OPPORTUNITY_TYPES = new Set(['JOB', 'INTERNSHIP', 'GRANT', 'VOLUNTEER',
+  'TRAINING', 'CSR', 'RESEARCH', 'COLLABORATION', 'PEER_REVIEW']);
 
 function opportunityJson(o, applied) {
   return {
@@ -6229,6 +6444,9 @@ function opportunityJson(o, applied) {
     rejection_reason: o.rejection_reason || null,
     creation_fee_mrc: Number(o.creation_fee_mrc || 0),
     cover_url: o.cover_url || null,
+    auto_generated: !!o.auto_generated,
+    source_type: o.source_type || null,
+    source_id: o.source_id || null,
     author: { id: String(o.author_id), name: o.author_name || 'MASAREEN', avatar_url: o.author_picture || null },
     created_at: o.created_at,
   };
@@ -8503,18 +8721,278 @@ async function newsSnapshot(env, type, id) {
     metrics: { status: row.status || 'ACTIVE', category: row.category || null,
       sdg: row.sdg || null, created_at: row.created_at } };
 }
+function newsSlug(value) {
+  return String(value || '').toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-+|-+$/g, '').slice(0, 100) ||
+    'news';
+}
+
+function decodeXml(value) {
+  return String(value || '')
+    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
+    .replace(/&#x([0-9a-f]+);/gi, (_, h) => {
+      try { return String.fromCodePoint(parseInt(h, 16)); } catch { return ''; }
+    })
+    .replace(/&#(\d+);/g, (_, n) => {
+      try { return String.fromCodePoint(Number(n)); } catch { return ''; }
+    })
+    .replace(/&nbsp;/gi, ' ').replace(/&amp;/gi, '&')
+    .replace(/&quot;/gi, '"').replace(/&#39;|&apos;/gi, "'")
+    .replace(/&lt;/gi, '<').replace(/&gt;/gi, '>');
+}
+
+function stripNewsHtml(value) {
+  return decodeXml(String(value || '')
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' '))
+    .replace(/\s+/g, ' ').trim();
+}
+
+function rssTag(block, names) {
+  for (const name of names) {
+    const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const match = block.match(
+      new RegExp(`<${escaped}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${escaped}>`, 'i'));
+    if (match) return decodeXml(match[1]).trim();
+  }
+  return '';
+}
+
+function rssAttribute(block, tags, attribute = 'url') {
+  for (const tag of tags) {
+    const escaped = tag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp(`<${escaped}\\b[^>]*\\b${attribute}=["']([^"']+)["']`,
+      'i');
+    const match = block.match(re);
+    if (match) return decodeXml(match[1]).trim();
+  }
+  return '';
+}
+
+function rssItems(xml) {
+  const items = [];
+  const re = /<item\b[\s\S]*?<\/item>/gi;
+  let match;
+  while ((match = re.exec(xml)) && items.length < 18) items.push(match[0]);
+  if (items.length) return items;
+  const entryRe = /<entry\b[\s\S]*?<\/entry>/gi;
+  while ((match = entryRe.exec(xml)) && items.length < 18) items.push(match[0]);
+  return items;
+}
+
+function rssItemToNews(block, feed) {
+  const title = stripNewsHtml(rssTag(block, ['title']));
+  let link = rssTag(block, ['link', 'guid']);
+  if (!link) link = rssAttribute(block, ['link', 'guid'], 'href');
+  const description = rssTag(block, ['description', 'summary', 'content:encoded']);
+  const content = rssTag(block, ['content:encoded', 'content']);
+  const creator = stripNewsHtml(rssTag(block,
+    ['dc:creator', 'creator', 'author'])).replace(/^by\s+/i, '');
+  const publishedRaw = rssTag(block, ['pubDate', 'published', 'updated', 'dc:date']);
+  const parsedDate = publishedRaw ? new Date(publishedRaw) : null;
+  const publishedAt = parsedDate && !Number.isNaN(parsedDate.getTime())
+    ? parsedDate.toISOString() : nowIso();
+  const rawHtml = content || description;
+  const mediaUrl = rssAttribute(block,
+    ['media:content', 'media:thumbnail', 'enclosure'], 'url');
+  const isVideoMedia = /\.(mp4|m3u8|webm)(\?|$)/i.test(mediaUrl) ||
+    /<enclosure\b[^>]+type=["']video\//i.test(block) ||
+    /<media:content\b[^>]+type=["']video\//i.test(block);
+  const image = (!isVideoMedia && mediaUrl) ||
+    (rawHtml.match(/<img[^>]+src=["']([^"']+)["']/i) || [])[1] || '';
+  const video = isVideoMedia ? mediaUrl :
+    (rawHtml.match(/<(?:video|iframe)[^>]+src=["']([^"']+)["']/i) || [])[1] || '';
+  const summary = stripNewsHtml(description || content).slice(0, 500);
+  const body = stripNewsHtml(rawHtml).slice(0, 30000);
+  return {
+    title, link, summary, body: body.length >= 30 ? body : `${title}. ${summary}`,
+    creator, publishedAt,
+    image: /^https?:\/\//i.test(image) ? image : '',
+    video: /^https?:\/\//i.test(video) ? video : '',
+    feed,
+  };
+}
+
+async function ensureNewsOutlet(env, feed) {
+  const email = `newsroom+${feed.slug}@masareen.com`;
+  let row = await env.DB.prepare('SELECT id,name FROM users WHERE email=?')
+    .bind(email).first();
+  if (row) return row;
+  const at = nowIso();
+  await env.DB.prepare(`INSERT INTO users
+    (email,email_verified,name,role,org,org_type,signup_method,profile_complete,created_at)
+    VALUES (?,1,?, 'MEDIA', ?, 'Journalist / media','rss',1,?)`)
+    .bind(email, feed.name, feed.name, at).run();
+  row = await env.DB.prepare('SELECT id,name FROM users WHERE email=?')
+    .bind(email).first();
+  return row;
+}
+
+async function ensureJournalist(env, name, outletId, outletName) {
+  const cleanName = clean(name, 120);
+  if (cleanName.length < 2 || cleanName.toLowerCase() === outletName.toLowerCase()) {
+    return null;
+  }
+  const at = nowIso();
+  await env.DB.prepare(`INSERT OR IGNORE INTO journalists
+    (name,slug,outlet_id,outlet_name,title,verified,verification_source,
+      created_at,updated_at)
+    VALUES (?,?,?,?, 'Correspondent',1,'outlet_rss',?,?)`)
+    .bind(cleanName, newsSlug(cleanName), outletId, outletName, at, at).run();
+  return await env.DB.prepare(
+    'SELECT * FROM journalists WHERE name=? AND outlet_id=?')
+    .bind(cleanName, outletId).first();
+}
+
+export async function syncNewsFeeds(env) {
+  const feeds = (await env.DB.prepare(
+    'SELECT * FROM feed_sources WHERE active=1 ORDER BY id').all()).results || [];
+  let inserted = 0;
+  const results = [];
+  for (const feed of feeds) {
+    try {
+      const response = await fetch(feed.rss_url, {
+        headers: { 'user-agent': 'MASAREEN Newsroom/1.0 (+https://masareen.com)' },
+        cf: { cacheTtl: 600, cacheEverything: true },
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const xml = await response.text();
+      const outlet = await ensureNewsOutlet(env, feed);
+      let feedInserted = 0;
+      for (const block of rssItems(xml)) {
+        const item = rssItemToNews(block, feed);
+        if (!item.title || !item.link || !/^https?:\/\//i.test(item.link)) {
+          continue;
+        }
+        const journalist = await ensureJournalist(env, item.creator,
+          outlet.id, feed.name);
+        const at = nowIso();
+        const insertedRow = await env.DB.prepare(`INSERT OR IGNORE INTO news_articles
+          (author_id,outlet_id,journalist_id,title,slug,summary,body,cover_url,
+            status,verification_status,source_name,source_url,image_url,video_url,
+            published_at,impact_domain,auto_generated,created_at,updated_at)
+          VALUES (?,?,?,?,?,?,?,?,'PUBLISHED','PENDING',?,?,?,?,?, 'NEWS',1,?,?)`)
+          .bind(outlet.id, outlet.id, journalist?.id || null,
+            clean(item.title, 180), newsSlug(item.title),
+            clean(item.summary, 500) || null, clean(item.body, 30000),
+            item.image || null, feed.name, item.link, item.image || null,
+            item.video || null, item.publishedAt, item.publishedAt, at).run();
+        if (insertedRow.meta.changes) {
+          feedInserted++;
+          inserted++;
+          const articleId = insertedRow.meta.last_row_id;
+          if (item.image) {
+            await env.DB.prepare(`INSERT INTO news_article_media
+              (article_id,type,url,created_at) VALUES (?,'PHOTO',?,?)`)
+              .bind(articleId, item.image, at).run();
+          }
+          if (item.video) {
+            await env.DB.prepare(`INSERT INTO news_article_media
+              (article_id,type,url,created_at) VALUES (?,'VIDEO',?,?)`)
+              .bind(articleId, item.video, at).run();
+          }
+        }
+      }
+      await env.DB.prepare(`UPDATE feed_sources SET last_synced_at=?,last_error=NULL
+        WHERE id=?`).bind(nowIso(), feed.id).run();
+      results.push({ source: feed.name, inserted: feedInserted });
+    } catch (error) {
+      await env.DB.prepare('UPDATE feed_sources SET last_error=? WHERE id=?')
+        .bind(String(error?.message || error).slice(0, 300), feed.id)
+        .run().catch(() => {});
+      results.push({ source: feed.name, error: String(error?.message || error) });
+    }
+  }
+  return { ok: true, inserted, feeds: results };
+}
+
+async function recomputeNewsImpact(env, articleId) {
+  const article = await env.DB.prepare(
+    'SELECT id,journalist_id FROM news_articles WHERE id=?')
+    .bind(articleId).first();
+  if (!article) return;
+  const counts = await env.DB.prepare(`SELECT
+      (SELECT COUNT(*) FROM content_comments WHERE target_type='NEWS' AND target_id=?) comments,
+      (SELECT COUNT(*) FROM content_reactions WHERE target_type='NEWS' AND target_id=?) reactions,
+      (SELECT COALESCE(SUM(impact_points),0) FROM news_verifications WHERE article_id=?) verification_points`)
+    .bind(articleId, articleId, articleId).first();
+  const views = await env.DB.prepare(
+    'SELECT views,rating_avg,rating_count FROM news_articles WHERE id=?')
+    .bind(articleId).first();
+  const score = Math.round((
+    Number(views?.views || 0) * 0.02 +
+    Number(counts?.reactions || 0) * 1.5 +
+    Number(counts?.comments || 0) * 1.25 +
+    Number(views?.rating_avg || 0) * Number(views?.rating_count || 0) * 1.5 +
+    Number(counts?.verification_points || 0)
+  ) * 100) / 100;
+  await env.DB.prepare('UPDATE news_articles SET impact_score=? WHERE id=?')
+    .bind(score, articleId).run();
+  if (article.journalist_id) {
+    await env.DB.prepare(`UPDATE journalists SET
+      articles_count=(SELECT COUNT(*) FROM news_articles
+        WHERE journalist_id=journalists.id AND status='PUBLISHED'),
+      impact_score=(SELECT COALESCE(SUM(impact_score),0) FROM news_articles
+        WHERE journalist_id=journalists.id AND status='PUBLISHED'),
+      updated_at=? WHERE id=?`)
+      .bind(nowIso(), article.journalist_id).run().catch(() => {});
+  }
+}
+
+async function recomputeResearchImpact(env, stageId) {
+  const counts = await env.DB.prepare(`SELECT
+      (SELECT COUNT(*) FROM content_comments WHERE target_type='RESEARCH' AND target_id=?) comments,
+      (SELECT COUNT(*) FROM content_reactions WHERE target_type='RESEARCH' AND target_id=?) reactions,
+      (SELECT COALESCE(SUM(impact_points),0) FROM research_reviews WHERE stage_id=?) review_points,
+      (SELECT COALESCE(funding_raised_mrc,0) FROM research_stages WHERE id=?) funding`)
+    .bind(stageId, stageId, stageId, stageId).first();
+  const score = Math.round((
+    Number(counts?.comments || 0) * 1.5 +
+    Number(counts?.reactions || 0) * 1.25 +
+    Number(counts?.review_points || 0) +
+    Number(counts?.funding || 0) * 0.15
+  ) * 100) / 100;
+  await env.DB.prepare('UPDATE research_stages SET impact_score=? WHERE id=?')
+    .bind(score, stageId).run().catch(() => {});
+}
+
 function newsJson(a, viewerId) {
+  const journalist = a.journalist_id == null ? null : {
+    id: String(a.journalist_id),
+    name: a.journalist_name || null,
+    slug: a.journalist_slug || null,
+    title: a.journalist_title || null,
+    avatar_url: a.journalist_avatar || null,
+    verified: !!a.journalist_verified,
+  };
   return {
     id: String(a.id), title: a.title, slug: a.slug || null,
     summary: a.summary || null, body: a.body, cover_url: a.cover_url || null,
+    image_url: a.image_url || null, video_url: a.video_url || null,
+    source_name: a.source_name || null, source_url: a.source_url || null,
+    published_at: a.published_at || a.created_at,
     status: a.status, verification_status: a.verification_status,
-    author_id: String(a.author_id), author_name: a.author_name || 'Newsroom',
-    author_avatar: a.author_picture || null,
-    outlet_id: String(a.outlet_id), outlet_name: a.outlet_name || a.author_name || 'Newsroom',
+    verification_note: a.verification_note || null,
+    author_id: String(a.author_id),
+    author_name: journalist?.name || a.author_name || 'Newsroom',
+    author_avatar: journalist?.avatar_url || a.author_picture || null,
+    outlet_id: String(a.outlet_id),
+    outlet_name: a.outlet_name || a.source_name || a.author_name || 'Newsroom',
+    journalist_id: a.journalist_id == null ? null : String(a.journalist_id),
+    journalist,
+    media: parseJsonValue(a.media_json, []),
+    impact_score: Number(a.impact_score || 0),
+    impact_domain: a.impact_domain || 'NEWS',
     data_snapshot: parseJsonValue(a.data_snapshot_json, null),
     funding_goal_mrc: Number(a.funding_goal_mrc || 0),
     funding_raised_mrc: Number(a.funding_raised_mrc || 0),
     mrc_earned: Number(a.mrc_earned || 0), views: Number(a.views || 0),
+    reaction_count: Number(a.reaction_count || 0),
+    comment_count: Number(a.comment_count || 0),
+    reaction_counts: parseJsonValue(a.reaction_counts_json, {}),
+    my_reaction: a.my_reaction || null,
+    reacted: !!a.my_reaction,
     rating_avg: Number(a.rating_avg || 0), rating_count: Number(a.rating_count || 0),
     is_owner: viewerId != null && Number(a.author_id) === Number(viewerId),
     created_at: a.created_at, updated_at: a.updated_at,
@@ -8530,10 +9008,29 @@ async function newsRoutes(req, env, url, viewer) {
   if (path === '/api/v1/news' || path === '/api/v1/news/') {
     if (method === 'GET') {
       const mine = url.searchParams.get('mine') === '1' && viewer;
-      const rows = (await env.DB.prepare(`SELECT a.*,u.name author_name,u.picture author_picture,u.org outlet_name
+      const rows = (await env.DB.prepare(`SELECT a.*,
+          u.name author_name,u.picture author_picture,u.org outlet_name,
+          j.name journalist_name,j.slug journalist_slug,j.title journalist_title,
+          j.avatar_url journalist_avatar,j.verified journalist_verified,
+          (SELECT COUNT(*) FROM content_comments c
+            WHERE c.target_type='NEWS' AND c.target_id=a.id) comment_count,
+          (SELECT COUNT(*) FROM content_reactions r
+            WHERE r.target_type='NEWS' AND r.target_id=a.id) reaction_count,
+          (SELECT reaction FROM content_reactions r
+            WHERE r.target_type='NEWS' AND r.target_id=a.id AND r.user_id=?) my_reaction,
+          (SELECT json_group_array(json_object('type',m.type,'url',m.url,
+             'caption',m.caption)) FROM news_article_media m
+            WHERE m.article_id=a.id) media_json
         FROM news_articles a JOIN users u ON u.id=a.author_id
+        LEFT JOIN journalists j ON j.id=a.journalist_id
         WHERE ${mine ? 'a.author_id=?' : "a.status='PUBLISHED'"}
-        ORDER BY a.created_at DESC LIMIT 80`).bind(...(mine ? [viewer.id] : [])).all()).results || [];
+        ORDER BY COALESCE(a.published_at,a.created_at) DESC LIMIT 80`)
+        .bind(viewer?.id ?? 0, ...(mine ? [viewer.id] : [])).all()).results || [];
+      for (const row of rows) {
+        if (row.source_url && row.auto_generated) {
+          row.impact_score = Number(row.impact_score || 0);
+        }
+      }
       return json(rows.map((a) => newsJson(a, viewer?.id)));
     }
     if (method === 'POST') {
@@ -8616,10 +9113,178 @@ async function newsRoutes(req, env, url, viewer) {
     return json({ ok: true, raised_mrc: raised, payout_mrc: payout,
       platform_fee_mrc: fee, published: publish });
   }
+  if (path === '/api/v1/news/journalists' && method === 'GET') {
+    const q = clean(url.searchParams.get('q'), 100);
+    const outletId = num(url.searchParams.get('outlet_id'));
+    const like = q ? `%${q.replace(/[%_]/g, '')}%` : null;
+    const rows = (await env.DB.prepare(`SELECT j.*,
+        (SELECT COUNT(*) FROM news_articles a
+          WHERE a.journalist_id=j.id AND a.status='PUBLISHED') articles_count,
+        (SELECT COALESCE(SUM(a.impact_score),0) FROM news_articles a
+          WHERE a.journalist_id=j.id AND a.status='PUBLISHED') impact_score
+      FROM journalists j
+      WHERE (? IS NULL OR j.name LIKE ? OR j.outlet_name LIKE ?)
+        AND (? IS NULL OR j.outlet_id=?)
+      ORDER BY impact_score DESC, articles_count DESC, j.name ASC LIMIT 120`)
+      .bind(like, like, like, outletId, outletId).all()).results || [];
+    return json(rows.map((j) => ({
+      id: String(j.id), name: j.name, slug: j.slug || null,
+      outlet_id: j.outlet_id == null ? null : String(j.outlet_id),
+      outlet_name: j.outlet_name || null, title: j.title || null,
+      bio: j.bio || null, avatar_url: j.avatar_url || null,
+      specialties: parseJsonValue(j.specialties_json, []),
+      verified: !!j.verified, verification_source: j.verification_source || null,
+      articles_count: Number(j.articles_count || 0),
+      impact_score: Number(j.impact_score || 0),
+    })));
+  }
+  const journalistMatch = /^\/api\/v1\/news\/journalists\/(\d+)$/.exec(path);
+  if (journalistMatch && method === 'GET') {
+    const id = Number(journalistMatch[1]);
+    const j = await env.DB.prepare(`SELECT j.*,
+        (SELECT COUNT(*) FROM news_articles a
+          WHERE a.journalist_id=j.id AND a.status='PUBLISHED') articles_count,
+        (SELECT COALESCE(SUM(a.impact_score),0) FROM news_articles a
+          WHERE a.journalist_id=j.id AND a.status='PUBLISHED') impact_score
+      FROM journalists j WHERE j.id=?`).bind(id).first();
+    if (!j) throw new HttpError(404, 'journalist_not_found', 'Journalist not found.');
+    const rows = (await env.DB.prepare(`SELECT a.*,
+        u.name author_name,u.picture author_picture,u.org outlet_name,
+        j2.name journalist_name,j2.slug journalist_slug,j2.title journalist_title,
+        j2.avatar_url journalist_avatar,j2.verified journalist_verified,
+        (SELECT COUNT(*) FROM content_comments c
+          WHERE c.target_type='NEWS' AND c.target_id=a.id) comment_count,
+        (SELECT COUNT(*) FROM content_reactions r
+          WHERE r.target_type='NEWS' AND r.target_id=a.id) reaction_count,
+        (SELECT reaction FROM content_reactions r
+          WHERE r.target_type='NEWS' AND r.target_id=a.id AND r.user_id=?) my_reaction,
+        (SELECT json_group_array(json_object('type',m.type,'url',m.url,
+          'caption',m.caption)) FROM news_article_media m
+          WHERE m.article_id=a.id) media_json
+      FROM news_articles a JOIN users u ON u.id=a.author_id
+      LEFT JOIN journalists j2 ON j2.id=a.journalist_id
+      WHERE a.journalist_id=? AND a.status='PUBLISHED'
+      ORDER BY COALESCE(a.published_at,a.created_at) DESC LIMIT 60`)
+      .bind(viewer?.id ?? 0, id).all()).results || [];
+    return json({
+      id: String(j.id), name: j.name, slug: j.slug || null,
+      outlet_id: j.outlet_id == null ? null : String(j.outlet_id),
+      outlet_name: j.outlet_name || null, title: j.title || null,
+      bio: j.bio || null, avatar_url: j.avatar_url || null,
+      specialties: parseJsonValue(j.specialties_json, []),
+      verified: !!j.verified, verification_source: j.verification_source || null,
+      articles_count: Number(j.articles_count || 0),
+      impact_score: Number(j.impact_score || 0),
+      articles: rows.map((a) => newsJson(a, viewer?.id)),
+    });
+  }
+  if (path === '/api/v1/news/sync' && method === 'POST') {
+    const syncToken = req.headers.get('x-sync-token') ||
+      url.searchParams.get('token') || '';
+    const tokenAllowed = !!env.NEWS_SYNC_TOKEN &&
+      syncToken === env.NEWS_SYNC_TOKEN;
+    if (!tokenAllowed && (!viewer || !isAdminUser(env, viewer))) {
+      throw new HttpError(403, 'not_allowed',
+        'Only platform admins can sync feeds.');
+    }
+    const result = await syncNewsFeeds(env);
+    if (url.searchParams.get('all') === '1') {
+      result.opportunities = await runAutoOpportunities(env).catch((e) => ({
+        error: String(e),
+      }));
+      result.leaderboards = await runAutoLeaderboards(env).catch((e) => ({
+        error: String(e),
+      }));
+    }
+    return json(result);
+  }
+  const verificationsMatch = /^\/api\/v1\/news\/(\d+)\/verifications$/.exec(path);
+  if (verificationsMatch && method === 'GET') {
+    const rows = (await env.DB.prepare(`SELECT v.*,u.name reviewer_name,u.picture reviewer_picture
+      FROM news_verifications v JOIN users u ON u.id=v.reviewer_id
+      WHERE v.article_id=? ORDER BY v.created_at DESC LIMIT 50`)
+      .bind(Number(verificationsMatch[1])).all()).results || [];
+    return json(rows.map((v) => ({
+      id: String(v.id), article_id: String(v.article_id),
+      reviewer_id: String(v.reviewer_id), reviewer_name: v.reviewer_name,
+      reviewer_picture: v.reviewer_picture || null,
+      verdict: v.verdict, notes: v.notes || null,
+      confidence: Number(v.confidence || 0),
+      impact_points: Number(v.impact_points || 0),
+      reward_mrc: Number(v.reward_mrc || 0), created_at: v.created_at,
+    })));
+  }
+  const verifyMatch = /^\/api\/v1\/news\/(\d+)\/verify$/.exec(path);
+  if (verifyMatch && method === 'POST') {
+    const reviewer = await requireUser(req, env);
+    const article = await env.DB.prepare('SELECT * FROM news_articles WHERE id=?')
+      .bind(Number(verifyMatch[1])).first();
+    if (!article || article.status !== 'PUBLISHED') {
+      throw new HttpError(404, 'article_not_found', 'Article not found.');
+    }
+    if (Number(article.author_id) === Number(reviewer.id)) {
+      throw new HttpError(403, 'self_review', 'You cannot verify your own outlet article.');
+    }
+    const allowedRoles = new Set(['ADMIN', 'JOURNALIST', 'MEDIA', 'ACADEMIC',
+      'RESEARCHER', 'TEACHING_ASSISTANT', 'ASSISTANT_LECTURER', 'LECTURER',
+      'ASSISTANT_PROFESSOR', 'ASSOCIATE_PROFESSOR', 'PROFESSOR']);
+    if (!isAdminUser(env, reviewer) &&
+        !allowedRoles.has(String(reviewer.role || '').toUpperCase())) {
+      throw new HttpError(403, 'not_eligible',
+        'News verification is open to journalists, media and verified academics.');
+    }
+    const b = await readJson(req);
+    const verdict = String(b.verdict || '').toUpperCase();
+    if (!['VERIFIED', 'DISPUTED', 'REJECTED'].includes(verdict)) {
+      throw new HttpError(400, 'invalid_verdict', 'Choose verified, disputed or rejected.');
+    }
+    const confidence = Math.max(0, Math.min(1, Number(b.confidence ?? 0.7)));
+    const reward = 5;
+    const impactPoints = verdict === 'VERIFIED' ? 12 : verdict === 'DISPUTED' ? 4 : 0;
+    const ins = await env.DB.prepare(`INSERT OR IGNORE INTO news_verifications
+      (article_id,reviewer_id,verdict,notes,confidence,impact_points,reward_mrc,created_at)
+      VALUES (?,?,?,?,?,?,?,?)`)
+      .bind(article.id, reviewer.id, verdict, clean(b.notes, 1000) || null,
+        confidence, impactPoints, reward, nowIso()).run();
+    if (!ins.meta.changes) {
+      throw new HttpError(409, 'already_reviewed', 'You already reviewed this article.');
+    }
+    if (reward > 0) {
+      await creditCoins(env, reviewer.id, reward, `News verification #${article.id}`)
+        .catch(() => {});
+    }
+    if (verdict === 'VERIFIED') {
+      await env.DB.prepare(`UPDATE news_articles SET verification_status='VERIFIED',
+        verified_by=?,verified_at=?,verification_note=?,updated_at=? WHERE id=?`)
+        .bind(reviewer.id, nowIso(), clean(b.notes, 500) || null, nowIso(), article.id).run();
+    } else if (article.verification_status !== 'VERIFIED') {
+      await env.DB.prepare(`UPDATE news_articles SET verification_status=?,
+        verification_note=?,updated_at=? WHERE id=?`)
+        .bind(verdict, clean(b.notes, 500) || null, nowIso(), article.id).run();
+    }
+    await notify(env, article.author_id, 'verification',
+      `Article ${verdict.toLowerCase()}`,
+      `${reviewer.name || 'A reviewer'} reviewed "${article.title}".`,
+      reviewer.id, null, { link: `news:${article.id}` }).catch(() => {});
+    await recomputeNewsImpact(env, article.id).catch(() => {});
+    const fresh = await env.DB.prepare(
+      'SELECT verification_status,impact_score FROM news_articles WHERE id=?')
+      .bind(article.id).first();
+    return json({ ok: true, reward_mrc: reward, impact_points: impactPoints,
+      verification_status: fresh?.verification_status || verdict,
+      impact_score: Number(fresh?.impact_score || 0) });
+  }
   const match = /^\/api\/v1\/news\/(\d+)$/.exec(path);
   if (!match) return null;
-  const article = await env.DB.prepare(`SELECT a.*,u.name author_name,u.picture author_picture,u.org outlet_name
-    FROM news_articles a JOIN users u ON u.id=a.author_id WHERE a.id=?`)
+  const article = await env.DB.prepare(`SELECT a.*,
+      u.name author_name,u.picture author_picture,u.org outlet_name,
+      j.name journalist_name,j.slug journalist_slug,j.title journalist_title,
+      j.avatar_url journalist_avatar,j.verified journalist_verified,
+      (SELECT json_group_array(json_object('type',m.type,'url',m.url,
+        'caption',m.caption)) FROM news_article_media m
+        WHERE m.article_id=a.id) media_json
+    FROM news_articles a JOIN users u ON u.id=a.author_id
+    LEFT JOIN journalists j ON j.id=a.journalist_id WHERE a.id=?`)
     .bind(Number(match[1])).first();
   if (!article) throw new HttpError(404, 'article_not_found', 'Article not found.');
   if (method === 'GET') {
@@ -8631,6 +9296,11 @@ async function newsRoutes(req, env, url, viewer) {
       await env.DB.prepare('UPDATE news_articles SET views=views+1 WHERE id=?').bind(article.id).run();
       article.views = Number(article.views || 0) + 1;
     }
+    const stats = await contentStats(env, 'NEWS', article.id, viewer?.id);
+    article.comment_count = stats.comment_count;
+    article.reaction_count = stats.reaction_count;
+    article.reaction_counts = stats.reaction_counts;
+    article.my_reaction = stats.my_reaction;
     return json(newsJson(article, viewer?.id));
   }
   if (method === 'PATCH' || method === 'POST') {
@@ -9679,6 +10349,18 @@ function researchStageJson(r) {
     project_id: r.project_id == null ? null : String(r.project_id),
     post_id: r.post_id == null ? null : String(r.post_id),
     title: r.title, stage: r.stage || 'IDEA', summary: r.summary || null,
+    abstract: r.abstract || null, keywords: parseJsonValue(r.keywords_json, []),
+    authors: parseJsonValue(r.authors_json, []),
+    methodology: r.methodology || null, expected_impact: r.expected_impact || null,
+    funding_goal_mrc: Number(r.funding_goal_mrc || 0),
+    funding_raised_mrc: Number(r.funding_raised_mrc || 0),
+    peer_review_status: r.peer_review_status || 'OPEN',
+    open_for_review: r.open_for_review == null ? true : !!r.open_for_review,
+    published_at: r.published_at || null, doi: r.doi || null,
+    impact_score: Number(r.impact_score || 0),
+    review_count: Number(r.review_count || 0),
+    comment_count: Number(r.comment_count || 0),
+    reaction_count: Number(r.reaction_count || 0),
     status: r.status || 'ACTIVE', media_url: r.media_url || null,
     created_at: r.created_at, updated_at: r.updated_at,
   };
@@ -9687,7 +10369,8 @@ function researchStageJson(r) {
 async function createResearchStage(req, env) {
   const u = await requireUser(req, env);
   const allowedRoles = new Set(['ACADEMIC', 'RESEARCHER', 'STUDENT', 'PROFESSIONAL',
-    'UNIVERSITY', 'INSTITUTION']);
+    'UNIVERSITY', 'INSTITUTION', 'TEACHING_ASSISTANT', 'ASSISTANT_LECTURER',
+    'LECTURER', 'ASSISTANT_PROFESSOR', 'ASSOCIATE_PROFESSOR', 'PROFESSOR']);
   if (!allowedRoles.has(String(u.role || '').toUpperCase()) && !isAdminUser(env, u)) {
     throw new HttpError(403, 'researcher_only',
       'Research stages are for verified academics, researchers and university members.');
@@ -9709,13 +10392,47 @@ async function createResearchStage(req, env) {
     const project = await env.DB.prepare('SELECT id FROM projects WHERE id=?').bind(projectId).first();
     if (!project) projectId = null;
   }
+  const abstract = clean(b.abstract, 4000) || summary || null;
+  const keywords = Array.isArray(b.keywords)
+    ? b.keywords.map((k) => clean(k, 40)).filter(Boolean).slice(0, 12) : [];
+  const authors = (Array.isArray(b.authors) ? b.authors : [])
+    .slice(0, 12)
+    .map((a) => ({
+      name: clean(a?.name, 120),
+      role_title: clean(a?.role_title || a?.role, 80) || null,
+      affiliation: clean(a?.affiliation || a?.institution, 160) || null,
+      user_id: num(a?.user_id),
+    }))
+    .filter((a) => a.name.length > 1);
   const at = nowIso();
   const r = await env.DB.prepare(`INSERT INTO research_stages
-    (researcher_id,institution_id,project_id,title,stage,summary,status,media_url,created_at,updated_at)
-    VALUES (?,?,?,?,?,?,'ACTIVE',?,?,?)`)
+    (researcher_id,institution_id,project_id,title,stage,summary,abstract,
+      keywords_json,authors_json,methodology,expected_impact,funding_goal_mrc,
+      status,media_url,created_at,updated_at)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?, 'ACTIVE',?,?,?)`)
     .bind(u.id, institutionId, projectId, title, stage, summary || null,
+      abstract, JSON.stringify(keywords), JSON.stringify(authors),
+      clean(b.methodology, 6000) || null, clean(b.expected_impact, 4000) || null,
+      Math.max(0, Number(b.funding_goal_mrc || 0)),
       safeMediaUrl(b.media_url), at, at).run();
   const id = r.meta.last_row_id;
+  if (!authors.some((a) => Number(a.user_id) === Number(u.id))) {
+    authors.unshift({
+      name: u.name || 'Researcher', role_title: roleLabel(u.role),
+      affiliation: institutionId == null ? null : String(institutionId),
+      user_id: u.id,
+    });
+  }
+  for (let i = 0; i < authors.length; i++) {
+    await env.DB.prepare(`INSERT INTO research_authors
+      (stage_id,user_id,name,role_title,affiliation,author_order,created_at)
+      VALUES (?,?,?,?,?,?,?)`)
+      .bind(id, authors[i].user_id || null, authors[i].name,
+        authors[i].role_title || null, authors[i].affiliation || null, i, at)
+      .run().catch(() => {});
+  }
+  await env.DB.prepare('UPDATE research_stages SET authors_json=? WHERE id=?')
+    .bind(JSON.stringify(authors), id).run();
   const postText = `${title}\n\n${summary || ''}`.trim();
   const post = await env.DB.prepare(`INSERT INTO posts
     (author_id,text,kind,structured_json,moderation_status,embedding_json,embedding_status,source,created_at,updated_at)
@@ -9744,6 +10461,120 @@ async function createResearchStage(req, env) {
   return json(researchStageJson(row), 201);
 }
 
+async function researchReviews(env, stageId) {
+  const rows = (await env.DB.prepare(`SELECT v.*,u.name reviewer_name,u.picture reviewer_picture,
+      u.role reviewer_role
+    FROM research_reviews v JOIN users u ON u.id=v.reviewer_id
+    WHERE v.stage_id=? ORDER BY v.created_at DESC LIMIT 60`)
+    .bind(stageId).all()).results || [];
+  return rows.map((v) => ({
+    id: String(v.id), stage_id: String(v.stage_id),
+    reviewer_id: String(v.reviewer_id), reviewer_name: v.reviewer_name,
+    reviewer_picture: v.reviewer_picture || null,
+    reviewer_role: roleLabel(v.reviewer_role),
+    verdict: v.verdict, comments: v.comments || null,
+    score: Number(v.score || 0), reward_mrc: Number(v.reward_mrc || 0),
+    impact_points: Number(v.impact_points || 0), created_at: v.created_at,
+  }));
+}
+
+async function submitResearchReview(req, env, stageId) {
+  const reviewer = await requireUser(req, env);
+  const stage = await env.DB.prepare('SELECT * FROM research_stages WHERE id=?')
+    .bind(stageId).first();
+  if (!stage) throw new HttpError(404, 'research_not_found', 'Research stage not found.');
+  if (Number(stage.researcher_id) === Number(reviewer.id)) {
+    throw new HttpError(403, 'self_review', 'You cannot peer review your own work.');
+  }
+  if (!stage.open_for_review || stage.status === 'ARCHIVED') {
+    throw new HttpError(409, 'review_closed', 'This research stage is not open for review.');
+  }
+  const allowedRoles = new Set(['ADMIN', 'ACADEMIC', 'RESEARCHER', 'LECTURER',
+    'ASSISTANT_LECTURER', 'TEACHING_ASSISTANT', 'ASSISTANT_PROFESSOR',
+    'ASSOCIATE_PROFESSOR', 'PROFESSOR', 'UNIVERSITY', 'INSTITUTION']);
+  if (!isAdminUser(env, reviewer) &&
+      !allowedRoles.has(String(reviewer.role || '').toUpperCase())) {
+    throw new HttpError(403, 'not_eligible',
+      'Peer review is open to verified academics and research institutions.');
+  }
+  const b = await readJson(req);
+  const verdict = String(b.verdict || '').toUpperCase();
+  if (!['ACCEPT', 'MINOR_REVISIONS', 'MAJOR_REVISIONS', 'REJECT'].includes(verdict)) {
+    throw new HttpError(400, 'invalid_verdict',
+      'Choose accept, minor revisions, major revisions or reject.');
+  }
+  const score = Math.max(1, Math.min(5, Number(b.score || 3)));
+  const comments = clean(b.comments, 5000);
+  if (comments.length < 30) {
+    throw new HttpError(400, 'review_notes_required',
+      'Write at least 30 characters of constructive review notes.');
+  }
+  const reward = 8;
+  const impactPoints = verdict === 'ACCEPT' ? 14 :
+    verdict === 'MINOR_REVISIONS' ? 8 : verdict === 'MAJOR_REVISIONS' ? 4 : 0;
+  const ins = await env.DB.prepare(`INSERT OR IGNORE INTO research_reviews
+    (stage_id,reviewer_id,verdict,comments,score,reward_mrc,impact_points,created_at)
+    VALUES (?,?,?,?,?,?,?,?)`)
+    .bind(stageId, reviewer.id, verdict, comments, score, reward,
+      impactPoints, nowIso()).run();
+  if (!ins.meta.changes) {
+    throw new HttpError(409, 'already_reviewed', 'You already reviewed this research stage.');
+  }
+  await creditCoins(env, reviewer.id, reward, `Peer review: ${stage.title}`)
+    .catch(() => {});
+  const counts = (await env.DB.prepare(`SELECT verdict,COUNT(*) c
+    FROM research_reviews WHERE stage_id=? GROUP BY verdict`)
+    .bind(stageId).all()).results || [];
+  const count = (v) => Number(counts.find((r) => r.verdict === v)?.c || 0);
+  const reviewStatus = count('REJECT') > 0 ? 'CHANGES_REQUESTED' :
+    count('ACCEPT') >= 2 ? 'ACCEPTED' :
+      count('MINOR_REVISIONS') + count('MAJOR_REVISIONS') > 0
+        ? 'REVISIONS' : 'UNDER_REVIEW';
+  await env.DB.prepare(`UPDATE research_stages SET peer_review_status=?,
+    published_at=CASE WHEN ?='ACCEPTED' THEN COALESCE(published_at,?) ELSE published_at END,
+    updated_at=? WHERE id=?`)
+    .bind(reviewStatus, reviewStatus, nowIso(), nowIso(), stageId).run();
+  await notify(env, stage.researcher_id, 'research',
+    `Peer review: ${verdict.replace(/_/g, ' ').toLowerCase()}`,
+    `${reviewer.name || 'A reviewer'} reviewed "${stage.title}".`,
+    reviewer.id, null, { link: `research:${stageId}` }).catch(() => {});
+  await recomputeResearchImpact(env, stageId).catch(() => {});
+  return json({ ok: true, reward_mrc: reward, impact_points: impactPoints,
+    peer_review_status: reviewStatus }, 201);
+}
+
+async function fundResearchStage(req, env, stageId) {
+  const supporter = await requireUser(req, env);
+  const stage = await env.DB.prepare('SELECT * FROM research_stages WHERE id=?')
+    .bind(stageId).first();
+  if (!stage) throw new HttpError(404, 'research_not_found', 'Research stage not found.');
+  if (Number(stage.researcher_id) === Number(supporter.id)) {
+    throw new HttpError(400, 'own_research', 'You cannot fund your own research.');
+  }
+  const b = await readJson(req);
+  const amount = Math.round(Number(b.amount_mrc || 0) * 100) / 100;
+  if (!Number.isFinite(amount) || amount < 1 || amount > 50000) {
+    throw new HttpError(400, 'invalid_amount', 'Fund between 1 and 50,000 MRC.');
+  }
+  const fee = Math.round(amount * 0.10 * 100) / 100;
+  const payout = Math.round((amount - fee) * 100) / 100;
+  await debitCoins(env, supporter.id, amount, `Research funding #${stageId}`);
+  await creditCoins(env, stage.researcher_id, payout, `Research revenue #${stageId}`)
+    .catch(() => {});
+  await env.DB.prepare(`UPDATE research_stages SET
+    funding_raised_mrc=funding_raised_mrc+?, updated_at=? WHERE id=?`)
+    .bind(amount, nowIso(), stageId).run();
+  await env.DB.prepare(`INSERT INTO research_funding
+    (stage_id,user_id,amount_mrc,fee_mrc,created_at) VALUES (?,?,?,?,?)`)
+    .bind(stageId, supporter.id, amount, fee, nowIso()).run();
+  await notify(env, stage.researcher_id, 'funding',
+    `${supporter.name || 'A supporter'} funded your research`,
+    `+${payout} MRC for "${stage.title}".`, supporter.id, null,
+    { link: `research:${stageId}` }).catch(() => {});
+  await recomputeResearchImpact(env, stageId).catch(() => {});
+  return json({ ok: true, amount_mrc: amount, payout_mrc: payout,
+    platform_fee_mrc: fee }, 201);
+}
 async function fundEvent(req, env, id) {
   const u = await requireUser(req, env);
   const event = await env.DB.prepare('SELECT * FROM events WHERE id=?').bind(id).first();
@@ -9839,7 +10670,13 @@ async function sportsRoutes(req, env, url, viewer) {
       const userId = num(url.searchParams.get('user_id'));
       const institutionId = num(url.searchParams.get('institution_id'));
       const limit = clamp(parseInt(url.searchParams.get('limit') || '50', 10) || 50, 1, 100);
-      const rows = (await env.DB.prepare(`SELECT r.*, u.name researcher_name, u.picture researcher_picture
+      const rows = (await env.DB.prepare(`SELECT r.*,
+          u.name researcher_name,u.picture researcher_picture,
+          (SELECT COUNT(*) FROM research_reviews v WHERE v.stage_id=r.id) review_count,
+          (SELECT COUNT(*) FROM content_comments c
+            WHERE c.target_type='RESEARCH' AND c.target_id=r.id) comment_count,
+          (SELECT COUNT(*) FROM content_reactions x
+            WHERE x.target_type='RESEARCH' AND x.target_id=r.id) reaction_count
         FROM research_stages r LEFT JOIN users u ON u.id=r.researcher_id
         WHERE (? IS NULL OR r.researcher_id=?) AND (? IS NULL OR r.institution_id=?)
         ORDER BY r.created_at DESC LIMIT ?`)
@@ -9847,6 +10684,43 @@ async function sportsRoutes(req, env, url, viewer) {
       return json(rows.map(researchStageJson));
     }
     if (req.method === 'POST') return await createResearchStage(req, env);
+  }
+  const researchDetail = /^\/api\/v1\/research\/stages\/(\d+)(?:\/(reviews|fund))?$/.exec(path);
+  if (researchDetail) {
+    const stageId = Number(researchDetail[1]);
+    if (researchDetail[2] === 'reviews' && req.method === 'GET') {
+      return json(await researchReviews(env, stageId));
+    }
+    if (researchDetail[2] === 'reviews' && req.method === 'POST') {
+      return await submitResearchReview(req, env, stageId);
+    }
+    if (researchDetail[2] === 'fund' && req.method === 'POST') {
+      return await fundResearchStage(req, env, stageId);
+    }
+    if (!researchDetail[2] && req.method === 'GET') {
+      const viewer = await currentUser(req, env);
+      const row = await env.DB.prepare(`SELECT r.*,
+          u.name researcher_name,u.picture researcher_picture,
+          (SELECT COUNT(*) FROM research_reviews v WHERE v.stage_id=r.id) review_count,
+          (SELECT COUNT(*) FROM content_comments c
+            WHERE c.target_type='RESEARCH' AND c.target_id=r.id) comment_count,
+          (SELECT COUNT(*) FROM content_reactions x
+            WHERE x.target_type='RESEARCH' AND x.target_id=r.id) reaction_count
+        FROM research_stages r LEFT JOIN users u ON u.id=r.researcher_id
+        WHERE r.id=?`).bind(stageId).first();
+      if (!row) throw new HttpError(404, 'research_not_found', 'Research stage not found.');
+      const authors = (await env.DB.prepare(`SELECT * FROM research_authors
+        WHERE stage_id=? ORDER BY author_order ASC LIMIT 20`).bind(stageId).all()).results || [];
+      const reviews = await researchReviews(env, stageId);
+      const stats = await contentStats(env, 'RESEARCH', stageId, viewer?.id);
+      return json({ ...researchStageJson(row),
+        authors: authors.map((a) => ({
+          user_id: a.user_id == null ? null : String(a.user_id), name: a.name,
+          role_title: a.role_title || null, affiliation: a.affiliation || null,
+          author_order: Number(a.author_order || 0),
+        })),
+        reviews, reactions: stats });
+    }
   }
 
   if (path === '/api/v1/entity-links') {
@@ -10436,6 +11310,21 @@ export async function socialRoutes(req, env, ctx) {
     if (path === '/api/v1/leaderboards/options' && req.method === 'GET') {
       return await listLeaderboardOptions(req, env);
     }
+    if (path === '/api/v1/leaderboards/live' && req.method === 'GET') {
+      const scope = String(url.searchParams.get('scope') || 'institutions')
+        .toLowerCase();
+      const allowed = new Set(['institutions', 'governments', 'journalists',
+        'research', 'programs', 'opportunities', 'events', 'courses', 'projects']);
+      if (!allowed.has(scope)) {
+        throw new HttpError(400, 'invalid_scope', 'Choose a valid leaderboard scope.');
+      }
+      const period = ['week', 'month', 'all'].includes(
+        String(url.searchParams.get('period') || '')) ?
+        String(url.searchParams.get('period')) : 'month';
+      const rankings = await buildLiveLeaderboard(env, scope, period,
+        clamp(parseInt(url.searchParams.get('limit') || '20', 10) || 20, 1, 100));
+      return json({ ok: true, scope, period, generated_at: nowIso(), rankings });
+    }
     if (path === '/api/v1/leaderboards' && req.method === 'POST') {
       return await createLeaderboard(req, env);
     }
@@ -10766,7 +11655,7 @@ export async function socialRoutes(req, env, ctx) {
     if (path === '/api/v1/discovery/feed' && req.method === 'GET') return await discoveryFeed(req, env, url);
     if (path === '/api/v1/posts' && req.method === 'GET') return await listPosts(req, env, url);
     if (path === '/api/v1/posts' && req.method === 'POST') return await createPost(req, env);
-    const contentMatch = /^\/api\/v1\/content\/(vod|podcast|episode)\/(\d+)\/(comments|react)$/.exec(path);
+    const contentMatch = /^\/api\/v1\/content\/([a-z_]+)\/(\d+)\/(comments|react)$/.exec(path);
     if (contentMatch) {
       const type = contentMatch[1].toUpperCase();
       const contentId = Number(contentMatch[2]);

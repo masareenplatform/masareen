@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { webcrypto } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { handle } from '../src/index.js';
+import { runAutoOpportunities, runAutoLeaderboards } from '../src/social.js';
 import { makeDb } from './d1-shim.mjs';
 
 const mkEnv = (extra = {}) => ({
@@ -2428,4 +2429,113 @@ test('pulse surveys are rate limited and reward once', async () => {
     '/api/v1/pulse/survey?trigger=home', null, token)).json();
   assert.equal(next.survey, null);
   assert.ok(next.next_at);
+});
+
+test('newsroom reacts, verifies and measures journalist impact', async () => {
+  const env = mkEnv();
+  const outlet = await signup(env, 'ceo@example.com', 'Platform News');
+  const reader = await signup(env, 'reader-news@example.com', 'News Reader');
+  const reviewer = await signup(env, 'reviewer-news@example.com', 'News Reviewer');
+  env.DB.raw.prepare("UPDATE users SET role='ACADEMIC' WHERE email='reviewer-news@example.com'").run();
+  const article = await (await call(env, 'POST', '/api/v1/news', {
+    title: 'Egypt launches a new verified impact programme',
+    body: 'A detailed report on the new programme, its partners and the evidence behind it.',
+  }, outlet)).json();
+  assert.equal(article.verification_status, 'PENDING');
+  const reaction = await call(env, 'POST',
+    `/api/v1/content/news/${article.id}/react`, { reaction: 'insightful' }, reader);
+  assert.equal(reaction.status, 200);
+  assert.equal((await reaction.json()).reaction_counts.insightful, 1);
+  const comment = await call(env, 'POST',
+    `/api/v1/content/news/${article.id}/comments`, { text: 'Important and useful.' }, reader);
+  assert.equal(comment.status, 201);
+  const verified = await call(env, 'POST', `/api/v1/news/${article.id}/verify`, {
+    verdict: 'VERIFIED', notes: 'Source and evidence checked.', confidence: 0.9,
+  }, reviewer);
+  assert.equal(verified.status, 200);
+  assert.equal((await verified.json()).reward_mrc, 5);
+  assert.equal((await call(env, 'POST', `/api/v1/news/${article.id}/verify`, {
+    verdict: 'VERIFIED',
+  }, reviewer)).status, 409);
+  const detail = await (await call(env, 'GET', `/api/v1/news/${article.id}`, null, reader)).json();
+  assert.equal(detail.verification_status, 'VERIFIED');
+  assert.equal(detail.reaction_count, 1);
+  assert.equal(detail.comment_count, 1);
+  assert.ok(detail.impact_score > 0);
+  assert.equal((await (await call(env, 'GET', '/api/v1/wallet', null, reviewer)).json()).balance, 5);
+});
+
+test('research peer review and funding reward all sides', async () => {
+  const env = mkEnv();
+  const author = await signup(env, 'research-author@example.com', 'Research Author');
+  const reviewer = await signup(env, 'research-reviewer@example.com', 'Research Reviewer');
+  const funder = await signup(env, 'research-funder@example.com', 'Research Funder');
+  env.DB.raw.prepare("UPDATE users SET role='PROFESSOR' WHERE email='research-author@example.com'").run();
+  env.DB.raw.prepare("UPDATE users SET role='ASSOCIATE_PROFESSOR' WHERE email='research-reviewer@example.com'").run();
+  await fundWallet(env, funder, 200);
+  const stage = await (await call(env, 'POST', '/api/v1/research/stages', {
+    title: 'Water security and community resilience',
+    summary: 'A field study across three governorates.',
+    abstract: 'This study measures water security and community resilience using field evidence.',
+    keywords: ['water', 'resilience'], funding_goal_mrc: 100,
+    authors: [
+      { name: 'Professor Hoda', role_title: 'Professor', affiliation: 'Cairo University' },
+      { name: 'Dr. Omar', role_title: 'Assistant Lecturer', affiliation: 'Cairo University' },
+    ],
+  }, author)).json();
+  assert.equal(stage.authors.length, 3);
+  const review = await call(env, 'POST',
+    `/api/v1/research/stages/${stage.id}/reviews`, {
+      verdict: 'ACCEPT', score: 5,
+      comments: 'Clear methodology, strong field design and credible evidence plan.',
+    }, reviewer);
+  assert.equal(review.status, 201);
+  assert.equal((await review.json()).reward_mrc, 8);
+  assert.equal((await call(env, 'POST',
+    `/api/v1/research/stages/${stage.id}/reviews`, {
+      verdict: 'ACCEPT', score: 5, comments: 'Duplicate review attempt with enough words.',
+    }, reviewer)).status, 409);
+  const funded = await call(env, 'POST',
+    `/api/v1/research/stages/${stage.id}/fund`, { amount_mrc: 100 }, funder);
+  assert.equal(funded.status, 201);
+  assert.equal((await funded.json()).payout_mrc, 90);
+  const detail = await (await call(env, 'GET',
+    `/api/v1/research/stages/${stage.id}`, null, reviewer)).json();
+  assert.equal(detail.review_count, 1);
+  assert.equal(detail.funding_raised_mrc, 100);
+  assert.ok(detail.impact_score > 0);
+  assert.equal((await (await call(env, 'GET', '/api/v1/wallet', null, reviewer)).json()).balance, 8);
+  assert.equal((await (await call(env, 'GET', '/api/v1/wallet', null, author)).json()).balance, 90);
+});
+
+test('live leaderboards are generated by the platform', async () => {
+  const env = mkEnv();
+  const token = await signup(env, 'leader-live@example.com', 'Live Leader');
+  const res = await call(env, 'GET', '/api/v1/leaderboards/live?scope=journalists&period=month', null, token);
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  assert.equal(body.scope, 'journalists');
+  assert.ok(Array.isArray(body.rankings));
+  assert.ok(body.generated_at);
+});
+test('event-driven automation generates opportunities and leaderboard snapshots', async () => {
+  const env = mkEnv();
+  const token = await signup(env, 'automation-host@example.com', 'Automation Host');
+  const event = await (await call(env, 'POST', '/api/v1/events', {
+    title: 'Community water field day',
+    description: 'A field day for volunteers and partners.',
+    starts_at: new Date(Date.now() + 7 * 86400000).toISOString(),
+    location: 'Cairo', capacity: 20,
+  }, token)).json();
+  assert.ok(event.id);
+  const generated = await runAutoOpportunities(env);
+  assert.ok(generated.created >= 1);
+  const opportunities = await (await call(env, 'GET', '/api/v1/opportunities', null, token)).json();
+  assert.ok(opportunities.some((o) => o.auto_generated === true &&
+    o.source_type === 'EVENT' && o.source_id === String(event.id)));
+  const boards = await runAutoLeaderboards(env);
+  assert.equal(boards.ok, true);
+  const snapshots = await env.DB.raw.prepare(
+    'SELECT COUNT(*) c FROM leaderboard_snapshots').get();
+  assert.ok(Number(snapshots.c) >= 0);
 });

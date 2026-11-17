@@ -1,9 +1,11 @@
-﻿// MASAREEN API: Cloudflare Worker + D1. Free tier friendly (no paid services).
+// MASAREEN API: Cloudflare Worker + D1. Free tier friendly (no paid services).
 // The landing page is served from the R2 bucket; this Worker only answers /api/*.
 // It works either same-origin (Worker route masareen.com/api/*) or on a subdomain
 // (api.masareen.com) thanks to the CORS handling below.
 
-import { socialRoutes, appTokenFor, runRecognitionSweep, appUpdateManifest, adminAlert } from './social.js';
+import { socialRoutes, appTokenFor, runRecognitionSweep, appUpdateManifest,
+  adminAlert, syncNewsFeeds, runAutoOpportunities,
+  runAutoLeaderboards } from './social.js';
 
 const enc = new TextEncoder();
 const dec = new TextDecoder();

@@ -39,27 +39,33 @@ class ApiClient {
   }
 
   Future<dynamic> post(String path, [Map<String, dynamic>? body]) async {
-    return _request(() => http.post(
-          Uri.parse('$_base$path'),
-          headers: _headers,
-          body: body == null ? null : jsonEncode(body),
-        ));
+    return _request(
+      () => http.post(
+        Uri.parse('$_base$path'),
+        headers: _headers,
+        body: body == null ? null : jsonEncode(body),
+      ),
+    );
   }
 
   Future<dynamic> patch(String path, [Map<String, dynamic>? body]) async {
-    return _request(() => http.patch(
-          Uri.parse('$_base$path'),
-          headers: _headers,
-          body: body == null ? null : jsonEncode(body),
-        ));
+    return _request(
+      () => http.patch(
+        Uri.parse('$_base$path'),
+        headers: _headers,
+        body: body == null ? null : jsonEncode(body),
+      ),
+    );
   }
 
   Future<dynamic> delete(String path, [Map<String, dynamic>? body]) async {
-    return _request(() => http.delete(
-          Uri.parse('$_base$path'),
-          headers: _headers,
-          body: body == null ? null : jsonEncode(body),
-        ));
+    return _request(
+      () => http.delete(
+        Uri.parse('$_base$path'),
+        headers: _headers,
+        body: body == null ? null : jsonEncode(body),
+      ),
+    );
   }
 
   Future<Uint8List> getBytes(String path, [Map<String, dynamic>? query]) async {
@@ -69,20 +75,30 @@ class ApiClient {
     if (res.statusCode >= 200 && res.statusCode < 300) return res.bodyBytes;
     final raw = utf8.decode(res.bodyBytes, allowMalformed: true);
     throw ApiException(
-        res.statusCode, raw.length > 200 ? raw.substring(0, 200) : raw);
+      res.statusCode,
+      raw.length > 200 ? raw.substring(0, 200) : raw,
+    );
   }
 
-  Future<dynamic> multipart(String path,
-      {required String field,
-      required List<int> bytes,
-      required String filename,
-      required String contentType}) async {
+  Future<dynamic> multipart(
+    String path, {
+    required String field,
+    required List<int> bytes,
+    required String filename,
+    required String contentType,
+  }) async {
     return _request(() async {
       final uri = Uri.parse('$_base$path');
       final request = http.MultipartRequest('POST', uri);
       if (_token != null) request.headers['Authorization'] = 'Bearer $_token';
-      request.files.add(http.MultipartFile.fromBytes(field, bytes,
-          filename: filename, contentType: MediaType.parse(contentType)));
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          field,
+          bytes,
+          filename: filename,
+          contentType: MediaType.parse(contentType),
+        ),
+      );
       final streamed = await request.send();
       return http.Response.fromStream(streamed);
     });
@@ -95,14 +111,18 @@ class ApiClient {
       rethrow;
     } on http.ClientException {
       throw ApiException(
-          0, 'Network unavailable. Check your connection and try again.');
+        0,
+        'Network unavailable. Check your connection and try again.',
+      );
     } catch (e) {
       final text = e.toString();
       if (text.contains('SocketException') ||
           text.contains('Network is unreachable') ||
           text.contains('Failed host lookup')) {
         throw ApiException(
-            0, 'Network unavailable. Check your connection and try again.');
+          0,
+          'Network unavailable. Check your connection and try again.',
+        );
       }
       rethrow;
     }
@@ -116,10 +136,11 @@ class ApiClient {
     } on FormatException {
       final preview = raw.length > 200 ? raw.substring(0, 200) : raw;
       throw ApiException(
-          res.statusCode,
-          preview.isNotEmpty
-              ? preview
-              : 'Server returned non-JSON (status ${res.statusCode})');
+        res.statusCode,
+        preview.isNotEmpty
+            ? preview
+            : 'Server returned non-JSON (status ${res.statusCode})',
+      );
     }
     if (res.statusCode >= 200 && res.statusCode < 300) {
       if (decoded is Map && decoded.containsKey('data')) return decoded['data'];
@@ -144,7 +165,9 @@ class AuthApi {
   static String? get userId => api.userId;
 
   static Future<Map<String, dynamic>> login(
-      String email, String password) async {
+    String email,
+    String password,
+  ) async {
     final data = await api.post('/api/v1/auth/login', {
       'email': email,
       'password': password,
@@ -153,7 +176,8 @@ class AuthApi {
   }
 
   static Future<Map<String, dynamic>> register(
-      Map<String, dynamic> body) async {
+    Map<String, dynamic> body,
+  ) async {
     final data = await api.post('/api/v1/users/register', body);
     return data as Map<String, dynamic>;
   }
@@ -209,20 +233,27 @@ class AuthApi {
   }
 
   static Future<Map<String, dynamic>> forgotPassword(String email) async {
-    final data =
-        await api.post('/api/v1/auth/forgot-password', {'email': email});
+    final data = await api.post('/api/v1/auth/forgot-password', {
+      'email': email,
+    });
     return data is Map ? Map<String, dynamic>.from(data) : {};
   }
 
   static Future<Map<String, dynamic>> resetPassword(
-      String token, String password) async {
-    final data = await api.post(
-        '/api/v1/auth/reset-password', {'token': token, 'password': password});
+    String token,
+    String password,
+  ) async {
+    final data = await api.post('/api/v1/auth/reset-password', {
+      'token': token,
+      'password': password,
+    });
     return data is Map ? Map<String, dynamic>.from(data) : {};
   }
 
   static Future<void> changePassword(
-      String currentPassword, String newPassword) async {
+    String currentPassword,
+    String newPassword,
+  ) async {
     await api.post('/api/v1/users/me/password', {
       'current_password': currentPassword,
       'new_password': newPassword,
@@ -246,7 +277,8 @@ class AuthApi {
 
   // ── Feed / Posts ────────────────────────────────────────────────────────
   static Future<Map<String, dynamic>> liveInteractions(
-      Iterable<String> postIds) async {
+    Iterable<String> postIds,
+  ) async {
     final ids = postIds
         .map((e) => e.trim())
         .where((e) => e.isNotEmpty)
@@ -256,7 +288,7 @@ class AuthApi {
       return const {
         'posts': [],
         'unread_messages': 0,
-        'unread_notifications': 0
+        'unread_notifications': 0,
       };
     }
     final data = await api.get('/api/v1/live/interactions', {'post_ids': ids});
@@ -285,18 +317,23 @@ class AuthApi {
   }
 
   static Future<List<Map<String, dynamic>>> entityModerators(
-      String type, String id) async {
+    String type,
+    String id,
+  ) async {
     final data = await api.get('/api/v1/entities/$type/$id/moderators');
     final list = data is List ? data : <dynamic>[];
     return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
   }
 
   static Future<void> assignEntityModerator(
-      String type, String id, String userId,
-      {List<String> permissions = const [
-        'remove_comments',
-        'verify_contributions',
-      ]}) async {
+    String type,
+    String id,
+    String userId, {
+    List<String> permissions = const [
+      'remove_comments',
+      'verify_contributions',
+    ],
+  }) async {
     await api.post('/api/v1/entities/$type/$id/moderators', {
       'user_id': int.tryParse(userId) ?? userId,
       'permissions': permissions,
@@ -304,7 +341,10 @@ class AuthApi {
   }
 
   static Future<void> removeEntityModerator(
-      String type, String id, String userId) async {
+    String type,
+    String id,
+    String userId,
+  ) async {
     await api.delete('/api/v1/entities/$type/$id/moderators/$userId');
   }
 
@@ -321,7 +361,8 @@ class AuthApi {
   }
 
   static Future<Map<String, dynamic>> createCall(
-      Map<String, dynamic> body) async {
+    Map<String, dynamic> body,
+  ) async {
     final data = await api.post('/api/v1/calls', body);
     return Map<String, dynamic>.from(data as Map);
   }
@@ -336,8 +377,12 @@ class AuthApi {
     return Map<String, dynamic>.from(data as Map);
   }
 
-  static Future<void> sendCallSignal(String id, String toUser, String type,
-      Map<String, dynamic> payload) async {
+  static Future<void> sendCallSignal(
+    String id,
+    String toUser,
+    String type,
+    Map<String, dynamic> payload,
+  ) async {
     await api.post('/api/v1/calls/$id/signal', {
       'to_user': toUser,
       'type': type,
@@ -345,8 +390,10 @@ class AuthApi {
     });
   }
 
-  static Future<List<Map<String, dynamic>>> callSignals(String id,
-      {String? after}) async {
+  static Future<List<Map<String, dynamic>>> callSignals(
+    String id, {
+    String? after,
+  }) async {
     final data = await api.get('/api/v1/calls/$id/signals', {
       if (after != null) 'after': after,
     });
@@ -365,8 +412,11 @@ class AuthApi {
   }
 
   static Future<Map<String, dynamic>> requestWalletPayment(
-      String kind, double amountMrc,
-      {String? method, String? accountRef}) async {
+    String kind,
+    double amountMrc, {
+    String? method,
+    String? accountRef,
+  }) async {
     final data = await api.post('/api/v1/wallet/requests', {
       'kind': kind,
       'amount_mrc': amountMrc,
@@ -401,8 +451,11 @@ class AuthApi {
         .toList();
   }
 
-  static Future<void> adminResolveWalletRequest(String id, String status,
-      {String? note}) async {
+  static Future<void> adminResolveWalletRequest(
+    String id,
+    String status, {
+    String? note,
+  }) async {
     await api.post('/api/v1/admin/wallet/requests/$id', {
       'status': status,
       if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
@@ -430,8 +483,11 @@ class AuthApi {
     return Map<String, dynamic>.from(data as Map);
   }
 
-  static Future<Map<String, dynamic>> tradeMarket(String id,
-      {required String side, required int shares}) async {
+  static Future<Map<String, dynamic>> tradeMarket(
+    String id, {
+    required String side,
+    required int shares,
+  }) async {
     final data = await api.post('/api/v1/market/$id/trade', {
       'side': side,
       'shares': shares,
@@ -439,8 +495,9 @@ class AuthApi {
     return Map<String, dynamic>.from(data as Map);
   }
 
-  static Future<List<Map<String, dynamic>>> newsList(
-      {bool mine = false}) async {
+  static Future<List<Map<String, dynamic>>> newsList({
+    bool mine = false,
+  }) async {
     final data = await api.get('/api/v1/news', {if (mine) 'mine': 1});
     final list = data is List ? data : <dynamic>[];
     return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
@@ -452,7 +509,9 @@ class AuthApi {
   }
 
   static Future<Map<String, dynamic>> newsSnapshot(
-      String type, String id) async {
+    String type,
+    String id,
+  ) async {
     final data = await api.get('/api/v1/news/data', {
       'entity_type': type,
       'entity_id': id,
@@ -461,13 +520,16 @@ class AuthApi {
   }
 
   static Future<Map<String, dynamic>> createNews(
-      Map<String, dynamic> body) async {
+    Map<String, dynamic> body,
+  ) async {
     final data = await api.post('/api/v1/news', body);
     return Map<String, dynamic>.from(data as Map);
   }
 
   static Future<Map<String, dynamic>> updateNews(
-      String id, Map<String, dynamic> body) async {
+    String id,
+    Map<String, dynamic> body,
+  ) async {
     final data = await api.patch('/api/v1/news/$id', body);
     return Map<String, dynamic>.from(data as Map);
   }
@@ -481,6 +543,46 @@ class AuthApi {
 
   static Future<void> rateNews(String id, int stars) async {
     await api.post('/api/v1/news/$id/rate', {'stars': stars});
+  }
+
+  static Future<List<Map<String, dynamic>>> newsJournalists(
+      {String? q, String? outletId}) async {
+    final data = await api.get('/api/v1/news/journalists', {
+      if (q != null && q.trim().isNotEmpty) 'q': q.trim(),
+      if (outletId != null && outletId.isNotEmpty) 'outlet_id': outletId,
+    });
+    return (data is List ? data : <dynamic>[])
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
+  }
+
+  static Future<Map<String, dynamic>> newsJournalist(String id) async {
+    final data = await api.get('/api/v1/news/journalists/$id');
+    return Map<String, dynamic>.from(data as Map);
+  }
+
+  static Future<Map<String, dynamic>> verifyNews(String id, String verdict,
+      {String? notes, double confidence = 0.7}) async {
+    final data = await api.post('/api/v1/news/$id/verify', {
+      'verdict': verdict,
+      if (notes != null && notes.trim().isNotEmpty) 'notes': notes.trim(),
+      'confidence': confidence,
+    });
+    return Map<String, dynamic>.from(data as Map);
+  }
+
+  static Future<List<Map<String, dynamic>>> newsVerifications(String id) async {
+    final data = await api.get('/api/v1/news/$id/verifications');
+    return (data is List ? data : <dynamic>[])
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
+  }
+
+  static Future<Map<String, dynamic>> syncNewsFeeds() async {
+    final data = await api.post('/api/v1/news/sync', {});
+    return Map<String, dynamic>.from(data as Map);
   }
 
   static Future<Map<String, dynamic>> discoveryFeed({
@@ -519,7 +621,10 @@ class AuthApi {
   }
 
   static Future<Comment> addContentComment(
-      String type, String id, String text) async {
+    String type,
+    String id,
+    String text,
+  ) async {
     final data = await api.post('/api/v1/content/$type/$id/comments', {
       'text': text,
     });
@@ -527,9 +632,14 @@ class AuthApi {
   }
 
   static Future<Map<String, dynamic>> toggleContentReaction(
-      String type, String id) async {
-    final data = await api.post('/api/v1/content/$type/$id/react', {});
-    return data as Map<String, dynamic>;
+    String type,
+    String id, {
+    String? reaction,
+  }) async {
+    final data = await api.post('/api/v1/content/$type/$id/react', {
+      if (reaction != null) 'reaction': reaction,
+    });
+    return Map<String, dynamic>.from(data as Map);
   }
 
   static Future<List<Comment>> comments(String postId) async {
@@ -541,7 +651,9 @@ class AuthApi {
   }
 
   static Future<Map<String, dynamic>> boostPost(
-      String postId, double amount) async {
+    String postId,
+    double amount,
+  ) async {
     final data = await api.post('/api/v1/posts//boost', {'amount': amount});
     return data as Map<String, dynamic>;
   }
@@ -566,8 +678,11 @@ class AuthApi {
     return data as Map<String, dynamic>;
   }
 
-  static Future<Comment> comment(String postId, String text,
-      {String? parentId}) async {
+  static Future<Comment> comment(
+    String postId,
+    String text, {
+    String? parentId,
+  }) async {
     final data = await api.post('/api/v1/posts/$postId/comment', {
       'text': text,
       if (parentId != null) 'parent_id': parentId,
@@ -580,7 +695,8 @@ class AuthApi {
   }
 
   static Future<Map<String, dynamic>> toggleCommentLike(
-      String commentId) async {
+    String commentId,
+  ) async {
     final data = await api.post('/api/v1/comments/$commentId/like');
     return data as Map<String, dynamic>;
   }
@@ -602,7 +718,9 @@ class AuthApi {
   }
 
   static Future<Post> editPostFull(
-      String postId, Map<String, dynamic> body) async {
+    String postId,
+    Map<String, dynamic> body,
+  ) async {
     final data = await api.patch('/api/v1/posts/$postId', body);
     return Post.fromJson(data as Map<String, dynamic>);
   }
@@ -611,8 +729,12 @@ class AuthApi {
     await api.delete('/api/v1/posts/$postId');
   }
 
-  static Future<void> report(String type, String id,
-      {required String reason, String? details}) async {
+  static Future<void> report(
+    String type,
+    String id, {
+    required String reason,
+    String? details,
+  }) async {
     final path = type == 'comment'
         ? '/api/v1/comments/$id/report'
         : '/api/v1/posts/$id/report';
@@ -658,8 +780,9 @@ class AuthApi {
   }
 
   static Future<Conversation> openConversation(String userId) async {
-    final data =
-        await api.post('/api/v1/messages/conversations', {'user_id': userId});
+    final data = await api.post('/api/v1/messages/conversations', {
+      'user_id': userId,
+    });
     return Conversation.fromJson(data as Map<String, dynamic>);
   }
 
@@ -669,9 +792,13 @@ class AuthApi {
   }
 
   static Future<ChatMessage> sendMessage(
-      String conversationId, String text) async {
-    final data = await api
-        .post('/api/v1/messages/conversations/$conversationId', {'text': text});
+    String conversationId,
+    String text,
+  ) async {
+    final data = await api.post(
+      '/api/v1/messages/conversations/$conversationId',
+      {'text': text},
+    );
     return ChatMessage.fromJson(data as Map<String, dynamic>);
   }
 
@@ -708,13 +835,15 @@ class AuthApi {
   }
 
   static Future<Opportunity> applyOpportunity(String id, {String? note}) async {
-    final data = await api.post('/api/v1/opportunities/$id/apply',
-        {if (note != null && note.trim().isNotEmpty) 'note': note.trim()});
+    final data = await api.post('/api/v1/opportunities/$id/apply', {
+      if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
+    });
     return Opportunity.fromJson(data as Map<String, dynamic>);
   }
 
   static Future<Opportunity> createOpportunity(
-      Map<String, dynamic> body) async {
+    Map<String, dynamic> body,
+  ) async {
     final data = await api.post('/api/v1/opportunities/', body);
     return Opportunity.fromJson(data as Map<String, dynamic>);
   }
@@ -736,64 +865,94 @@ class AuthApi {
   }
 
   static Future<String> uploadAvatar(
-      List<int> bytes, String filename, String contentType) async {
-    final data = await api.multipart('/api/v1/users/me/avatar',
-        field: 'file',
-        bytes: bytes,
-        filename: filename,
-        contentType: contentType);
+    List<int> bytes,
+    String filename,
+    String contentType,
+  ) async {
+    final data = await api.multipart(
+      '/api/v1/users/me/avatar',
+      field: 'file',
+      bytes: bytes,
+      filename: filename,
+      contentType: contentType,
+    );
     return (data as Map<String, dynamic>)['avatar_url'] as String;
   }
 
   static Future<String> uploadCover(
-      List<int> bytes, String filename, String contentType) async {
-    final data = await api.multipart('/api/v1/users/me/cover',
-        field: 'file',
-        bytes: bytes,
-        filename: filename,
-        contentType: contentType);
+    List<int> bytes,
+    String filename,
+    String contentType,
+  ) async {
+    final data = await api.multipart(
+      '/api/v1/users/me/cover',
+      field: 'file',
+      bytes: bytes,
+      filename: filename,
+      contentType: contentType,
+    );
     return (data as Map<String, dynamic>)['cover_url'] as String;
   }
 
   static Future<String> uploadMedia(
-      List<int> bytes, String filename, String contentType) async {
-    final data = await api.multipart('/api/v1/media/upload',
-        field: 'file',
-        bytes: bytes,
-        filename: filename,
-        contentType: contentType);
+    List<int> bytes,
+    String filename,
+    String contentType,
+  ) async {
+    final data = await api.multipart(
+      '/api/v1/media/upload',
+      field: 'file',
+      bytes: bytes,
+      filename: filename,
+      contentType: contentType,
+    );
     final map = data as Map<String, dynamic>;
     return (map['url'] ?? map['avatar_url'] ?? '') as String;
   }
 
   static Future<String> uploadAudio(
-      List<int> bytes, String filename, String contentType) async {
-    final data = await api.multipart('/api/v1/media/audio',
-        field: 'file',
-        bytes: bytes,
-        filename: filename,
-        contentType: contentType);
+    List<int> bytes,
+    String filename,
+    String contentType,
+  ) async {
+    final data = await api.multipart(
+      '/api/v1/media/audio',
+      field: 'file',
+      bytes: bytes,
+      filename: filename,
+      contentType: contentType,
+    );
     final map = data as Map<String, dynamic>;
     return (map['url'] ?? '') as String;
   }
 
   static Future<Map<String, dynamic>> uploadVideo(
-      List<int> bytes, String filename, String contentType) async {
-    final data = await api.multipart('/api/v1/videos/upload',
-        field: 'file',
-        bytes: bytes,
-        filename: filename,
-        contentType: contentType);
+    List<int> bytes,
+    String filename,
+    String contentType,
+  ) async {
+    final data = await api.multipart(
+      '/api/v1/videos/upload',
+      field: 'file',
+      bytes: bytes,
+      filename: filename,
+      contentType: contentType,
+    );
     return data as Map<String, dynamic>;
   }
 
   static Future<Map<String, dynamic>> uploadFile(
-      List<int> bytes, String filename, String contentType) async {
-    final data = await api.multipart('/api/v1/files/upload',
-        field: 'file',
-        bytes: bytes,
-        filename: filename,
-        contentType: contentType);
+    List<int> bytes,
+    String filename,
+    String contentType,
+  ) async {
+    final data = await api.multipart(
+      '/api/v1/files/upload',
+      field: 'file',
+      bytes: bytes,
+      filename: filename,
+      contentType: contentType,
+    );
     return data as Map<String, dynamic>;
   }
 
@@ -820,8 +979,9 @@ class AuthApi {
 
   static Future<Wallet> _createWallet(String ownerId) async {
     try {
-      final created =
-          await api.post('/api/v1/coin/wallets', {'owner_id': ownerId});
+      final created = await api.post('/api/v1/coin/wallets', {
+        'owner_id': ownerId,
+      });
       return Wallet.fromJson(created as Map<String, dynamic>);
     } on ApiException {
       return Wallet(ownerId: ownerId, balance: 0, currency: 'MRC');
@@ -846,18 +1006,24 @@ class AuthApi {
     return data is Map ? Map<String, dynamic>.from(data) : {};
   }
 
-  static Future<Map<String, dynamic>> spend(String ownerId, double amount,
-      [String? reference]) async {
+  static Future<Map<String, dynamic>> spend(
+    String ownerId,
+    double amount, [
+    String? reference,
+  ]) async {
     final data = await api.post('/api/v1/coin/transactions/spend', {
       'owner_id': ownerId,
       'amount': amount,
-      'reference': reference ?? 'Spend'
+      'reference': reference ?? 'Spend',
     });
     return data as Map<String, dynamic>;
   }
 
-  static Future<void> transferCoins(String recipientId, double amount,
-      {String? reference}) async {
+  static Future<void> transferCoins(
+    String recipientId,
+    double amount, {
+    String? reference,
+  }) async {
     await api.post('/api/v1/coin/transactions/transfer', {
       'counterparty_id': recipientId,
       'amount': amount,
@@ -878,15 +1044,20 @@ class AuthApi {
   }
 
   static Future<Map<String, dynamic>> setCoinRate(
-      String currency, double rate) async {
-    final data = await api.post('/api/v1/coin/exchange/rate',
-        {'currency': currency, 'rate_to_mrc': rate});
+    String currency,
+    double rate,
+  ) async {
+    final data = await api.post('/api/v1/coin/exchange/rate', {
+      'currency': currency,
+      'rate_to_mrc': rate,
+    });
     return data as Map<String, dynamic>;
   }
 
   static Future<Map<String, dynamic>> coinRate(String currency) async {
-    final data =
-        await api.get('/api/v1/coin/exchange/rate', {'currency': currency});
+    final data = await api.get('/api/v1/coin/exchange/rate', {
+      'currency': currency,
+    });
     return data as Map<String, dynamic>;
   }
 
@@ -913,7 +1084,9 @@ class AuthApi {
   }
 
   static Future<Campaign> updateCampaign(
-      String id, Map<String, dynamic> body) async {
+    String id,
+    Map<String, dynamic> body,
+  ) async {
     final data = await api.patch('/api/v1/ads/campaigns/$id', body);
     return Campaign.fromJson(data as Map<String, dynamic>);
   }
@@ -923,19 +1096,24 @@ class AuthApi {
   }
 
   static Future<Campaign> setCampaignStatus(String id, String status) async {
-    final data =
-        await api.patch('/api/v1/ads/campaigns/$id/status', {'status': status});
+    final data = await api.patch('/api/v1/ads/campaigns/$id/status', {
+      'status': status,
+    });
     return Campaign.fromJson(data as Map<String, dynamic>);
   }
 
   static Future<Creative> addCreative(
-      String id, Map<String, dynamic> body) async {
+    String id,
+    Map<String, dynamic> body,
+  ) async {
     final data = await api.post('/api/v1/ads/campaigns/$id/creatives', body);
     return Creative.fromJson(data as Map<String, dynamic>);
   }
 
   static Future<Creative> updateCreative(
-      String creativeId, Map<String, dynamic> body) async {
+    String creativeId,
+    Map<String, dynamic> body,
+  ) async {
     final data = await api.patch('/api/v1/ads/creatives/$creativeId', body);
     return Creative.fromJson(data as Map<String, dynamic>);
   }
@@ -944,25 +1122,35 @@ class AuthApi {
     await api.delete('/api/v1/ads/creatives/$creativeId');
   }
 
-  static Future<Map<String, dynamic>> campaignStats(String id,
-      {int days = 30}) async {
-    final data =
-        await api.get('/api/v1/ads/campaigns/$id/stats', {'days': days});
+  static Future<Map<String, dynamic>> campaignStats(
+    String id, {
+    int days = 30,
+  }) async {
+    final data = await api.get('/api/v1/ads/campaigns/$id/stats', {
+      'days': days,
+    });
     return data as Map<String, dynamic>;
   }
 
-  static Future<List<Campaign>> feedAds(
-      {String placement = 'feed', int limit = 2}) async {
-    final data = await api
-        .get('/api/v1/ads/feed', {'placement': placement, 'limit': limit});
+  static Future<List<Campaign>> feedAds({
+    String placement = 'feed',
+    int limit = 2,
+  }) async {
+    final data = await api.get('/api/v1/ads/feed', {
+      'placement': placement,
+      'limit': limit,
+    });
     final list = data is List ? data : <dynamic>[];
     return list
         .map((e) => Campaign.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 
-  static Future<Map<String, dynamic>> recordAdEvent(String id,
-      {required String type, String? creativeId}) async {
+  static Future<Map<String, dynamic>> recordAdEvent(
+    String id, {
+    required String type,
+    String? creativeId,
+  }) async {
     final body = <String, dynamic>{'type': type};
     if (creativeId != null) body['creative_id'] = creativeId;
     final data = await api.post('/api/v1/ads/campaigns/$id/events', body);
@@ -993,8 +1181,11 @@ class AuthApi {
   }
 
   // ── Events ────────────────────────────────────────────────────────────────
-  static Future<List<Event>> events(
-      {bool includePast = false, String? q, String? type}) async {
+  static Future<List<Event>> events({
+    bool includePast = false,
+    String? q,
+    String? type,
+  }) async {
     final data = await api.get('/api/v1/events', {
       if (includePast) 'include_past': '1',
       if (q != null && q.trim().isNotEmpty) 'q': q.trim(),
@@ -1026,41 +1217,59 @@ class AuthApi {
   }
 
   static Future<Map<String, dynamic>> addEventParticipant(
-      String eventId, Map<String, dynamic> body) async {
+    String eventId,
+    Map<String, dynamic> body,
+  ) async {
     final data = await api.post('/api/v1/events/$eventId/participants', body);
     return Map<String, dynamic>.from(data as Map);
   }
 
   static Future<void> submitEventEvidence(
-      String eventId, String participantId, Map<String, dynamic> body) async {
+    String eventId,
+    String participantId,
+    Map<String, dynamic> body,
+  ) async {
     await api.post(
-        '/api/v1/events/$eventId/participants/$participantId/evidence', body);
+      '/api/v1/events/$eventId/participants/$participantId/evidence',
+      body,
+    );
   }
 
   static Future<void> eventParticipantVerdict(
-      String eventId, String participantId,
-      {required String status, String? note, bool override = false}) async {
+    String eventId,
+    String participantId, {
+    required String status,
+    String? note,
+    bool override = false,
+  }) async {
     await api
         .post('/api/v1/events/$eventId/participants/$participantId/verdict', {
       'status': status,
       if (note != null) 'note': note,
-      if (override) 'override_deepfake': true
+      if (override) 'override_deepfake': true,
     });
   }
 
   static Future<void> confirmEventParticipant(
-      String eventId, String participantId) async {
-    await api
-        .post('/api/v1/events/$eventId/participants/$participantId/confirm');
+    String eventId,
+    String participantId,
+  ) async {
+    await api.post(
+      '/api/v1/events/$eventId/participants/$participantId/confirm',
+    );
   }
 
   static Future<void> addEventMedia(
-      String eventId, Map<String, dynamic> body) async {
+    String eventId,
+    Map<String, dynamic> body,
+  ) async {
     await api.post('/api/v1/events/$eventId/media', body);
   }
 
   static Future<void> createEventBooth(
-      String eventId, Map<String, dynamic> body) async {
+    String eventId,
+    Map<String, dynamic> body,
+  ) async {
     await api.post('/api/v1/events/$eventId/booths', body);
   }
 
@@ -1081,7 +1290,9 @@ class AuthApi {
   }
 
   static Future<Map<String, dynamic>> submitBoothLead(
-      String id, Map<String, dynamic> body) async {
+    String id,
+    Map<String, dynamic> body,
+  ) async {
     final data = await api.post('/api/v1/booths/$id/leads', body);
     return Map<String, dynamic>.from(data as Map);
   }
@@ -1093,13 +1304,20 @@ class AuthApi {
   }
 
   static Future<void> updateBoothLead(
-      String boothId, String leadId, String status) async {
-    await api.patch(
-        '/api/v1/booths/$boothId/leads/$leadId/status', {'status': status});
+    String boothId,
+    String leadId,
+    String status,
+  ) async {
+    await api.patch('/api/v1/booths/$boothId/leads/$leadId/status', {
+      'status': status,
+    });
   }
 
-  static Future<void> rateEvent(String id,
-      {required int rating, String? review}) async {
+  static Future<void> rateEvent(
+    String id, {
+    required int rating,
+    String? review,
+  }) async {
     await api.post('/api/v1/events/$id/ratings', {
       'rating': rating,
       if (review != null && review.trim().isNotEmpty) 'review': review.trim(),
@@ -1140,19 +1358,24 @@ class AuthApi {
   }
 
   static Future<Map<String, dynamic>> createPodcastShow(
-      Map<String, dynamic> body) async {
+    Map<String, dynamic> body,
+  ) async {
     final data = await api.post('/api/v1/podcasts', body);
     return Map<String, dynamic>.from(data as Map);
   }
 
   static Future<Map<String, dynamic>> createPodcastEpisode(
-      String showId, Map<String, dynamic> body) async {
+    String showId,
+    Map<String, dynamic> body,
+  ) async {
     final data = await api.post('/api/v1/podcasts/$showId/episodes', body);
     return Map<String, dynamic>.from(data as Map);
   }
 
-  static Future<List<Map<String, dynamic>>> vodVideos(
-      {String? q, String? eventId}) async {
+  static Future<List<Map<String, dynamic>>> vodVideos({
+    String? q,
+    String? eventId,
+  }) async {
     final data = await api.get('/api/v1/vod', {
       if (q != null && q.trim().isNotEmpty) 'q': q.trim(),
       if (eventId != null) 'event_id': eventId,
@@ -1167,7 +1390,8 @@ class AuthApi {
   }
 
   static Future<Map<String, dynamic>> createVod(
-      Map<String, dynamic> body) async {
+    Map<String, dynamic> body,
+  ) async {
     final data = await api.post('/api/v1/vod', body);
     return Map<String, dynamic>.from(data as Map);
   }
@@ -1200,7 +1424,9 @@ class AuthApi {
   }
 
   static Future<Map<String, dynamic>> updateTaskStatus(
-      String id, String status) async {
+    String id,
+    String status,
+  ) async {
     final data = await api.post('/api/v1/tasks/$id/status', {'status': status});
     return data is Map ? Map<String, dynamic>.from(data) : {};
   }
@@ -1238,20 +1464,29 @@ class AuthApi {
   }
 
   static Future<CourseLesson> addCourseLesson(
-      String courseId, Map<String, dynamic> body) async {
+    String courseId,
+    Map<String, dynamic> body,
+  ) async {
     final data = await api.post('/api/v1/courses/$courseId/lessons', body);
     return CourseLesson.fromJson(Map<String, dynamic>.from(data as Map));
   }
 
   static Future<CourseLesson> updateCourseLesson(
-      String courseId, String lessonId, Map<String, dynamic> body) async {
-    final data =
-        await api.patch('/api/v1/courses/$courseId/lessons/$lessonId', body);
+    String courseId,
+    String lessonId,
+    Map<String, dynamic> body,
+  ) async {
+    final data = await api.patch(
+      '/api/v1/courses/$courseId/lessons/$lessonId',
+      body,
+    );
     return CourseLesson.fromJson(Map<String, dynamic>.from(data as Map));
   }
 
   static Future<void> deleteCourseLesson(
-      String courseId, String lessonId) async {
+    String courseId,
+    String lessonId,
+  ) async {
     await api.delete('/api/v1/courses/$courseId/lessons/$lessonId');
   }
 
@@ -1299,8 +1534,9 @@ class AuthApi {
   }
 
   static Future<Map<String, dynamic>> trackEvidence(String evidenceId) async {
-    final data =
-        await api.get('/api/v1/verification/pipelines/evidence/$evidenceId');
+    final data = await api.get(
+      '/api/v1/verification/pipelines/evidence/$evidenceId',
+    );
     return data as Map<String, dynamic>;
   }
 
@@ -1321,14 +1557,16 @@ class AuthApi {
   }
 
   static Future<Map<String, dynamic>> createEvidence(
-      Map<String, dynamic> body) async {
+    Map<String, dynamic> body,
+  ) async {
     final data = await api.post('/api/v1/evidence', body);
     return data is Map ? Map<String, dynamic>.from(data) : {};
   }
 
   // ── GPS ────────────────────────────────────────────────────────────────────
   static Future<Map<String, dynamic>> captureGps(
-      Map<String, dynamic> body) async {
+    Map<String, dynamic> body,
+  ) async {
     final data = await api.post('/api/v1/gps/records', body);
     return data as Map<String, dynamic>;
   }
@@ -1351,20 +1589,26 @@ class AuthApi {
     return Personnel.fromJson(data as Map<String, dynamic>);
   }
 
-  static Future<List<PersonnelReport>> personnelReports(String userId,
-      {int limit = 40}) async {
-    final data =
-        await api.get('/api/v1/personnel/$userId/reports', {'limit': limit});
+  static Future<List<PersonnelReport>> personnelReports(
+    String userId, {
+    int limit = 40,
+  }) async {
+    final data = await api.get('/api/v1/personnel/$userId/reports', {
+      'limit': limit,
+    });
     final list = data is List ? data : <dynamic>[];
     return list
         .map((e) => PersonnelReport.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 
-  static Future<List<AnalyticsPoint>> personnelAnalytics(String userId,
-      {String period = 'lifetime'}) async {
-    final data = await api
-        .get('/api/v1/personnel/$userId/analytics', {'period': period});
+  static Future<List<AnalyticsPoint>> personnelAnalytics(
+    String userId, {
+    String period = 'lifetime',
+  }) async {
+    final data = await api.get('/api/v1/personnel/$userId/analytics', {
+      'period': period,
+    });
     final series = (data is Map && data['series'] is List)
         ? data['series'] as List
         : <dynamic>[];
@@ -1394,7 +1638,8 @@ class AuthApi {
   }
 
   static Future<Personnel> updatePersonnelProfile(
-      Map<String, dynamic> body) async {
+    Map<String, dynamic> body,
+  ) async {
     final data = await api.patch('/api/v1/personnel/me', body);
     return Personnel.fromJson(data as Map<String, dynamic>);
   }
@@ -1410,9 +1655,12 @@ class AuthApi {
   }
 
   static Future<Map<String, dynamic>> endorsePersonnel(
-      String userId, String skill) async {
-    final data =
-        await api.post('/api/v1/personnel/$userId/endorse', {'skill': skill});
+    String userId,
+    String skill,
+  ) async {
+    final data = await api.post('/api/v1/personnel/$userId/endorse', {
+      'skill': skill,
+    });
     return data as Map<String, dynamic>;
   }
 
@@ -1509,8 +1757,9 @@ class AuthApi {
     await api.post('/api/v1/announcements/$id/dismiss');
   }
 
-  static Future<Map<String, dynamic>?> pulseSurvey(
-      {String trigger = 'home'}) async {
+  static Future<Map<String, dynamic>?> pulseSurvey({
+    String trigger = 'home',
+  }) async {
     final data = await api.get('/api/v1/pulse/survey', {'trigger': trigger});
     if (data is Map && data['survey'] is Map) {
       return Map<String, dynamic>.from(data['survey'] as Map);
@@ -1519,9 +1768,12 @@ class AuthApi {
   }
 
   static Future<Map<String, dynamic>> answerPulseSurvey(
-      String id, String answer) async {
-    final data =
-        await api.post('/api/v1/pulse/survey/$id/respond', {'answer': answer});
+    String id,
+    String answer,
+  ) async {
+    final data = await api.post('/api/v1/pulse/survey/$id/respond', {
+      'answer': answer,
+    });
     return Map<String, dynamic>.from(data as Map);
   }
 
@@ -1540,7 +1792,8 @@ class AuthApi {
   }
 
   static Future<Announcement> adminCreateAnnouncement(
-      Map<String, dynamic> body) async {
+    Map<String, dynamic> body,
+  ) async {
     final data = await api.post('/api/v1/admin/announcements', body);
     return Announcement.fromJson(Map<String, dynamic>.from(data as Map));
   }
@@ -1571,6 +1824,19 @@ class AuthApi {
     return Post.fromJson(Map<String, dynamic>.from(data as Map));
   }
 
+  static Future<Map<String, dynamic>> liveLeaderboard({
+    String scope = 'institutions',
+    String period = 'month',
+    int limit = 20,
+  }) async {
+    final data = await api.get('/api/v1/leaderboards/live', {
+      'scope': scope,
+      'period': period,
+      'limit': limit,
+    });
+    return Map<String, dynamic>.from(data as Map);
+  }
+
   static Future<void> aiEmbed(String postId) async {
     await api.post('/api/v1/ai/embed/$postId');
   }
@@ -1596,24 +1862,31 @@ class AuthApi {
     return Map<String, dynamic>.from(data as Map);
   }
 
-  static Future<void> adminUserAction(String id, String action,
-      {String? reason}) async {
+  static Future<void> adminUserAction(
+    String id,
+    String action, {
+    String? reason,
+  }) async {
     await api.post('/api/v1/admin/users/$id/action', {
       'action': action,
       if (reason != null) 'reason': reason,
     });
   }
 
-  static Future<void> adminModeratePost(String id, String status,
-      {String? reason}) async {
+  static Future<void> adminModeratePost(
+    String id,
+    String status, {
+    String? reason,
+  }) async {
     await api.post('/api/v1/admin/posts/$id/moderate', {
       'status': status,
       if (reason != null) 'reason': reason,
     });
   }
 
-  static Future<List<Map<String, dynamic>>> adminLeaderboards(
-      {String status = 'PENDING'}) async {
+  static Future<List<Map<String, dynamic>>> adminLeaderboards({
+    String status = 'PENDING',
+  }) async {
     final data = await api.get('/api/v1/admin/leaderboards', {
       'status': status,
     });
@@ -1622,8 +1895,9 @@ class AuthApi {
   }
 
   static Future<void> adminLeaderboardVerdict(String id, String status) async {
-    await api
-        .post('/api/v1/admin/leaderboards/$id/verdict', {'status': status});
+    await api.post('/api/v1/admin/leaderboards/$id/verdict', {
+      'status': status,
+    });
   }
 
   static Future<Post> postById(String id) async {
@@ -1636,8 +1910,10 @@ class AuthApi {
     return Map<String, dynamic>.from(data as Map);
   }
 
-  static Future<List<Map<String, dynamic>>> institutions(
-      {String? q, String? type}) async {
+  static Future<List<Map<String, dynamic>>> institutions({
+    String? q,
+    String? type,
+  }) async {
     final data = await api.get('/api/v1/institutions', {
       if (q != null && q.trim().isNotEmpty) 'q': q.trim(),
       if (type != null && type.isNotEmpty) 'type': type,
@@ -1651,8 +1927,11 @@ class AuthApi {
     return Map<String, dynamic>.from(data as Map);
   }
 
-  static Future<List<Map<String, dynamic>>> researchStages(
-      {String? userId, String? institutionId, int limit = 50}) async {
+  static Future<List<Map<String, dynamic>>> researchStages({
+    String? userId,
+    String? institutionId,
+    int limit = 50,
+  }) async {
     final data = await api.get('/api/v1/research/stages', {
       if (userId != null) 'user_id': userId,
       if (institutionId != null) 'institution_id': institutionId,
@@ -1663,13 +1942,47 @@ class AuthApi {
   }
 
   static Future<Map<String, dynamic>> createResearchStage(
-      Map<String, dynamic> body) async {
+    Map<String, dynamic> body,
+  ) async {
     final data = await api.post('/api/v1/research/stages', body);
     return Map<String, dynamic>.from(data as Map);
   }
 
+  static Future<Map<String, dynamic>> researchDetail(String id) async {
+    final data = await api.get('/api/v1/research/stages/$id');
+    return Map<String, dynamic>.from(data as Map);
+  }
+
+  static Future<List<Map<String, dynamic>>> researchReviews(String id) async {
+    final data = await api.get('/api/v1/research/stages/$id/reviews');
+    return (data is List ? data : <dynamic>[])
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
+  }
+
+  static Future<Map<String, dynamic>> reviewResearch(
+    String id,
+    Map<String, dynamic> body,
+  ) async {
+    final data = await api.post('/api/v1/research/stages/$id/reviews', body);
+    return Map<String, dynamic>.from(data as Map);
+  }
+
+  static Future<Map<String, dynamic>> fundResearch(
+    String id,
+    double amountMrc,
+  ) async {
+    final data = await api.post('/api/v1/research/stages/$id/fund', {
+      'amount_mrc': amountMrc,
+    });
+    return Map<String, dynamic>.from(data as Map);
+  }
+
   static Future<List<Map<String, dynamic>>> entityLinks(
-      String sourceType, String sourceId) async {
+    String sourceType,
+    String sourceId,
+  ) async {
     final data = await api.get('/api/v1/entity-links', {
       'source_type': sourceType,
       'source_id': sourceId,
@@ -1679,7 +1992,8 @@ class AuthApi {
   }
 
   static Future<Map<String, dynamic>> createEntityLinks(
-      Map<String, dynamic> body) async {
+    Map<String, dynamic> body,
+  ) async {
     final data = await api.post('/api/v1/entity-links', body);
     return Map<String, dynamic>.from(data as Map);
   }
@@ -1689,7 +2003,9 @@ class AuthApi {
   }
 
   static Future<Map<String, dynamic>> fundEvent(
-      String id, double amount) async {
+    String id,
+    double amount,
+  ) async {
     final data = await api.post('/api/v1/events/$id/fund', {'amount': amount});
     return Map<String, dynamic>.from(data as Map);
   }
@@ -1704,21 +2020,26 @@ class AuthApi {
     return Map<String, dynamic>.from(data as Map);
   }
 
-  static Future<Map<String, dynamic>> adminModeration(
-      {String status = 'REVIEW'}) async {
+  static Future<Map<String, dynamic>> adminModeration({
+    String status = 'REVIEW',
+  }) async {
     final data = await api.get('/api/v1/admin/moderation', {'status': status});
     return Map<String, dynamic>.from(data as Map);
   }
 
-  static Future<Map<String, dynamic>> adminUserBehavior(String id,
-      {int days = 30}) async {
-    final data =
-        await api.get('/api/v1/admin/users/$id/behavior', {'days': days});
+  static Future<Map<String, dynamic>> adminUserBehavior(
+    String id, {
+    int days = 30,
+  }) async {
+    final data = await api.get('/api/v1/admin/users/$id/behavior', {
+      'days': days,
+    });
     return Map<String, dynamic>.from(data as Map);
   }
 
-  static Future<Map<String, dynamic>> adminVideoJobs(
-      {String status = 'all'}) async {
+  static Future<Map<String, dynamic>> adminVideoJobs({
+    String status = 'all',
+  }) async {
     final data = await api.get('/api/v1/admin/video-jobs', {'status': status});
     return Map<String, dynamic>.from(data as Map);
   }
@@ -1733,7 +2054,8 @@ class AuthApi {
   }
 
   static Future<Map<String, dynamic>> saveAdminSettings(
-      Map<String, dynamic> settings) async {
+    Map<String, dynamic> settings,
+  ) async {
     final data = await api.post('/api/v1/admin/settings', {
       'settings': settings,
     });
@@ -1783,11 +2105,14 @@ class AuthApi {
     });
   }
 
-  static Future<List<Map<String, dynamic>>> adminFeedback(
-      {String? status}) async {
-    final r = await api.get(status == null || status.isEmpty
-        ? '/api/v1/admin/feedback'
-        : '/api/v1/admin/feedback?status=$status');
+  static Future<List<Map<String, dynamic>>> adminFeedback({
+    String? status,
+  }) async {
+    final r = await api.get(
+      status == null || status.isEmpty
+          ? '/api/v1/admin/feedback'
+          : '/api/v1/admin/feedback?status=$status',
+    );
     final list = r is List ? r : <dynamic>[];
     return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
   }
@@ -1796,8 +2121,9 @@ class AuthApi {
     await api.patch('/api/v1/admin/feedback/$id', {'status': status});
   }
 
-  static Future<List<Map<String, dynamic>>> adminEntities(
-      {String status = 'PENDING'}) async {
+  static Future<List<Map<String, dynamic>>> adminEntities({
+    String status = 'PENDING',
+  }) async {
     final r = await api.get('/api/v1/admin/entities?status=$status');
     final list = r is List ? r : <dynamic>[];
     return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
@@ -1826,8 +2152,9 @@ class AuthApi {
     return r is Map ? Map<String, dynamic>.from(r) : {};
   }
 
-  static Future<List<Map<String, dynamic>>> reviewQueue(
-      {String status = 'AI_REVIEW'}) async {
+  static Future<List<Map<String, dynamic>>> reviewQueue({
+    String status = 'AI_REVIEW',
+  }) async {
     final r = await api.get('/api/v1/admin/review-queue?status=$status');
     if (r is List) return List<Map<String, dynamic>>.from(r);
     if (r is Map && r.containsKey('data')) {
@@ -1837,13 +2164,18 @@ class AuthApi {
   }
 
   static Future<Map<String, dynamic>> submitVerdict(
-      String reviewId, String verdict, String? comments) async {
+    String reviewId,
+    String verdict,
+    String? comments,
+  ) async {
     final body = {
       'verdict': verdict,
-      if (comments != null) 'comments': comments
+      if (comments != null) 'comments': comments,
     };
-    final r =
-        await api.post('/api/v1/admin/submissions/$reviewId/verdict', body);
+    final r = await api.post(
+      '/api/v1/admin/submissions/$reviewId/verdict',
+      body,
+    );
     if (r is Map) return Map<String, dynamic>.from(r);
     return {};
   }
@@ -1860,8 +2192,9 @@ class AuthApi {
     return [];
   }
 
-  static Future<List<Map<String, dynamic>>> adminSubmissions(
-      {String? status}) async {
+  static Future<List<Map<String, dynamic>>> adminSubmissions({
+    String? status,
+  }) async {
     final path = status != null
         ? '/api/v1/admin/submissions?status=$status'
         : '/api/v1/admin/submissions';
@@ -1873,8 +2206,11 @@ class AuthApi {
     return [];
   }
 
-  static Future<Map<String, dynamic>> adminReportPage(
-      {String status = 'OPEN', String? targetType, int limit = 100}) async {
+  static Future<Map<String, dynamic>> adminReportPage({
+    String status = 'OPEN',
+    String? targetType,
+    int limit = 100,
+  }) async {
     final params = <String, dynamic>{
       'status': status,
       'limit': limit,
@@ -1887,10 +2223,15 @@ class AuthApi {
     return r is Map ? Map<String, dynamic>.from(r) : {};
   }
 
-  static Future<Map<String, dynamic>> resolveReport(String id,
-      {String status = 'RESOLVED', String action = 'NONE'}) async {
-    final r = await api.post('/api/v1/admin/reports/$id/resolve',
-        {'status': status, 'action': action});
+  static Future<Map<String, dynamic>> resolveReport(
+    String id, {
+    String status = 'RESOLVED',
+    String action = 'NONE',
+  }) async {
+    final r = await api.post('/api/v1/admin/reports/$id/resolve', {
+      'status': status,
+      'action': action,
+    });
     return r is Map ? Map<String, dynamic>.from(r) : {};
   }
 
@@ -1905,13 +2246,15 @@ class AuthApi {
   }
 
   static Future<Campaign> adminSetAdStatus(String id, String status) async {
-    final r =
-        await api.post('/api/v1/admin/ads/$id/status', {'status': status});
+    final r = await api.post('/api/v1/admin/ads/$id/status', {
+      'status': status,
+    });
     return Campaign.fromJson(r as Map<String, dynamic>);
   }
 
-  static Future<List<Map<String, dynamic>>> adminInquiries(
-      {String? status}) async {
+  static Future<List<Map<String, dynamic>>> adminInquiries({
+    String? status,
+  }) async {
     final params = <String, dynamic>{};
     if (status != null && status.isNotEmpty) params['status'] = status;
     final r = await api.get('/api/v1/admin/inquiries', params);
@@ -1920,14 +2263,18 @@ class AuthApi {
   }
 
   static Future<Map<String, dynamic>> adminUpdateInquiry(
-      String id, String status) async {
-    final r =
-        await api.patch('/api/v1/admin/inquiries/$id', {'status': status});
+    String id,
+    String status,
+  ) async {
+    final r = await api.patch('/api/v1/admin/inquiries/$id', {
+      'status': status,
+    });
     return r is Map ? Map<String, dynamic>.from(r) : {};
   }
 
-  static Future<List<Map<String, dynamic>>> adminPayments(
-      {String? status}) async {
+  static Future<List<Map<String, dynamic>>> adminPayments({
+    String? status,
+  }) async {
     final params = <String, dynamic>{};
     if (status != null && status.isNotEmpty) params['status'] = status;
     final r = await api.get('/api/v1/admin/payments', params);
@@ -1936,9 +2283,12 @@ class AuthApi {
   }
 
   static Future<Map<String, dynamic>> adminSubmissionVerdict(
-      String id, String status) async {
-    final r = await api
-        .post('/api/v1/admin/submissions/$id/verdict', {'status': status});
+    String id,
+    String status,
+  ) async {
+    final r = await api.post('/api/v1/admin/submissions/$id/verdict', {
+      'status': status,
+    });
     return r is Map ? Map<String, dynamic>.from(r) : {};
   }
 }

@@ -21,7 +21,7 @@ routes = [
 # Daily recognition sweep (06:00 UTC). Creates one official recognition post
 # for each member who reaches a new impact milestone.
 [triggers]
-crons = ["0 6 * * *"]
+crons = ["0 6 * * *", "*/30 * * * *"]
 
 [[d1_databases]]
 binding = "DB"

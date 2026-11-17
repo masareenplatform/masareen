@@ -26,7 +26,7 @@ navigation. Push notifications and the existing MASAREEN backend are unchanged.
 
 - Android application ID: `com.masaren.next`
 - Display name: `MASAREEN Next`
-- Version: `0.5.0+20`
+- Version: `0.5.1+21`
 - The current `apps/mobile` app remains the production build and is not replaced.
 
 ## Run

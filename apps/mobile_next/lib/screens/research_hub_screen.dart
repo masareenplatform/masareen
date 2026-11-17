@@ -1,9 +1,9 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:masaren/api_client.dart';
 import 'package:masaren/l10n.dart';
 import 'package:masaren/models.dart';
-import 'package:masaren/screens/post_detail_screen.dart';
+import 'package:masaren/screens/research_stage_screen.dart';
 
 class ResearchHubScreen extends StatefulWidget {
   final User user;
@@ -67,15 +67,14 @@ class _ResearchHubScreenState extends State<ResearchHubScreen> {
     if (created == true) _load();
   }
 
-  Future<void> _openPost(String postId) async {
-    if (postId.isEmpty) return;
-    try {
-      final post = await AuthApi.postById(postId);
-      if (!mounted) return;
-      await Navigator.of(context).push(MaterialPageRoute(
-          builder: (_) => PostDetailScreen(
-              post: post, currentUser: widget.user, onChanged: (_) {})));
-    } catch (_) {}
+  Future<void> _openStage(String stageId) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) =>
+            ResearchStageScreen(stageId: stageId, user: widget.user),
+      ),
+    );
+    _load();
   }
 
   @override
@@ -100,9 +99,11 @@ class _ResearchHubScreenState extends State<ResearchHubScreen> {
                         Text(_error!, textAlign: TextAlign.center),
                         const SizedBox(height: 12),
                         FilledButton(
-                            onPressed: _load,
-                            child: Text(MasarenLocalizations.of(
-                                context, 'common.retry'))),
+                          onPressed: _load,
+                          child: Text(
+                            MasarenLocalizations.of(context, 'common.retry'),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -114,15 +115,23 @@ class _ResearchHubScreenState extends State<ResearchHubScreen> {
                           physics: const AlwaysScrollableScrollPhysics(),
                           padding: const EdgeInsets.all(32),
                           children: [
-                            Icon(Icons.science_outlined,
-                                size: 42, color: cs.primary),
+                            Icon(
+                              Icons.science_outlined,
+                              size: 42,
+                              color: cs.primary,
+                            ),
                             const SizedBox(height: 12),
                             Text(
-                                _t('research.empty',
-                                    'No research stages yet. Share your first one.'),
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                    color: cs.onSurfaceVariant, height: 1.5)),
+                              _t(
+                                'research.empty',
+                                'No research stages yet. Share your first one.',
+                              ),
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: cs.onSurfaceVariant,
+                                height: 1.5,
+                              ),
+                            ),
                           ],
                         )
                       : ListView.builder(
@@ -131,16 +140,14 @@ class _ResearchHubScreenState extends State<ResearchHubScreen> {
                           itemCount: _items.length,
                           itemBuilder: (_, index) {
                             final item = _items[index];
-                            final postId = (item['post_id'] ?? '').toString();
                             final created = DateTime.tryParse(
-                                (item['created_at'] ?? '').toString());
+                              (item['created_at'] ?? '').toString(),
+                            );
                             return Card(
                               margin: const EdgeInsets.only(bottom: 10),
                               child: InkWell(
                                 borderRadius: BorderRadius.circular(14),
-                                onTap: postId.isEmpty
-                                    ? null
-                                    : () => _openPost(postId),
+                                onTap: () => _openStage(item['id'].toString()),
                                 child: Padding(
                                   padding: const EdgeInsets.all(15),
                                   child: Column(
@@ -151,86 +158,110 @@ class _ResearchHubScreenState extends State<ResearchHubScreen> {
                                         children: [
                                           Container(
                                             padding: const EdgeInsets.symmetric(
-                                                horizontal: 9, vertical: 4),
+                                              horizontal: 9,
+                                              vertical: 4,
+                                            ),
                                             decoration: BoxDecoration(
-                                              color: cs.primary
-                                                  .withValues(alpha: 0.09),
+                                              color: cs.primary.withValues(
+                                                alpha: 0.09,
+                                              ),
                                               borderRadius:
-                                                  BorderRadius.circular(999),
+                                                  BorderRadius.circular(
+                                                999,
+                                              ),
                                             ),
                                             child: Text(
-                                                (item['stage'] ?? 'IDEA')
-                                                    .toString(),
-                                                style: TextStyle(
-                                                    fontSize: 10.5,
-                                                    fontWeight: FontWeight.w800,
-                                                    color: cs.primary)),
+                                              (item['stage'] ?? 'IDEA')
+                                                  .toString(),
+                                              style: TextStyle(
+                                                fontSize: 10.5,
+                                                fontWeight: FontWeight.w800,
+                                                color: cs.primary,
+                                              ),
+                                            ),
                                           ),
                                           const Spacer(),
                                           if (created != null)
                                             Text(
-                                                DateFormat.yMMMd()
-                                                    .format(created.toLocal()),
-                                                style: TextStyle(
-                                                    fontSize: 11,
-                                                    color:
-                                                        cs.onSurfaceVariant)),
+                                              DateFormat.yMMMd().format(
+                                                created.toLocal(),
+                                              ),
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                color: cs.onSurfaceVariant,
+                                              ),
+                                            ),
                                         ],
                                       ),
                                       const SizedBox(height: 8),
-                                      Text((item['title'] ?? '').toString(),
-                                          style: TextStyle(
-                                              fontSize: 15.5,
-                                              fontWeight: FontWeight.w800,
-                                              height: 1.3,
-                                              color: cs.onSurface)),
+                                      Text(
+                                        (item['title'] ?? '').toString(),
+                                        style: TextStyle(
+                                          fontSize: 15.5,
+                                          fontWeight: FontWeight.w800,
+                                          height: 1.3,
+                                          color: cs.onSurface,
+                                        ),
+                                      ),
                                       if ((item['summary'] ?? '')
                                           .toString()
                                           .isNotEmpty) ...[
                                         const SizedBox(height: 5),
-                                        Text((item['summary'] ?? '').toString(),
-                                            maxLines: 3,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: TextStyle(
-                                                fontSize: 13,
-                                                height: 1.45,
-                                                color: cs.onSurfaceVariant)),
+                                        Text(
+                                          (item['summary'] ?? '').toString(),
+                                          maxLines: 3,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            height: 1.45,
+                                            color: cs.onSurfaceVariant,
+                                          ),
+                                        ),
                                       ],
                                       const SizedBox(height: 10),
                                       Row(
                                         children: [
-                                          Icon(Icons.person_outline,
-                                              size: 15,
-                                              color: cs.onSurfaceVariant),
+                                          Icon(
+                                            Icons.person_outline,
+                                            size: 15,
+                                            color: cs.onSurfaceVariant,
+                                          ),
                                           const SizedBox(width: 4),
                                           Expanded(
                                             child: Text(
-                                                (item['researcher_name'] ??
-                                                        _t('research.researcher',
-                                                            'Researcher'))
-                                                    .toString(),
-                                                style: TextStyle(
-                                                    fontSize: 12,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: cs.onSurface)),
+                                              (item['researcher_name'] ??
+                                                      _t(
+                                                        'research.researcher',
+                                                        'Researcher',
+                                                      ))
+                                                  .toString(),
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w600,
+                                                color: cs.onSurface,
+                                              ),
+                                            ),
                                           ),
                                           if ((item['institution_id'] ?? '')
                                               .toString()
                                               .isNotEmpty)
                                             Row(
                                               children: [
-                                                Icon(Icons.school_outlined,
-                                                    size: 14,
-                                                    color: cs.primary),
+                                                Icon(
+                                                  Icons.school_outlined,
+                                                  size: 14,
+                                                  color: cs.primary,
+                                                ),
                                                 const SizedBox(width: 4),
                                                 Text(
-                                                    _t('research.linked',
-                                                        'Linked'),
-                                                    style: TextStyle(
-                                                        fontSize: 11,
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                        color: cs.primary)),
+                                                  _t('research.linked',
+                                                      'Linked'),
+                                                  style: TextStyle(
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: cs.primary,
+                                                  ),
+                                                ),
                                               ],
                                             ),
                                         ],
@@ -258,6 +289,11 @@ class _ResearchStageSheet extends StatefulWidget {
 class _ResearchStageSheetState extends State<_ResearchStageSheet> {
   final _title = TextEditingController();
   final _summary = TextEditingController();
+  final _abstract = TextEditingController();
+  final _methodology = TextEditingController();
+  final _impact = TextEditingController();
+  final _funding = TextEditingController();
+  final _coauthors = TextEditingController();
   final _institution = TextEditingController();
   final _project = TextEditingController();
   String _stage = 'IDEA';
@@ -268,6 +304,11 @@ class _ResearchStageSheetState extends State<_ResearchStageSheet> {
   void dispose() {
     _title.dispose();
     _summary.dispose();
+    _abstract.dispose();
+    _methodology.dispose();
+    _impact.dispose();
+    _funding.dispose();
+    _coauthors.dispose();
     _institution.dispose();
     _project.dispose();
     super.dispose();
@@ -280,8 +321,12 @@ class _ResearchStageSheetState extends State<_ResearchStageSheet> {
 
   Future<void> _save() async {
     if (_title.text.trim().length < 3) {
-      setState(() =>
-          _error = _t('research.titleRequired', 'Add a title for this stage.'));
+      setState(
+        () => _error = _t(
+          'research.titleRequired',
+          'Add a title for this stage.',
+        ),
+      );
       return;
     }
     setState(() {
@@ -292,6 +337,24 @@ class _ResearchStageSheetState extends State<_ResearchStageSheet> {
       await AuthApi.createResearchStage({
         'title': _title.text.trim(),
         'summary': _summary.text.trim(),
+        'abstract': _abstract.text.trim(),
+        'methodology': _methodology.text.trim(),
+        'expected_impact': _impact.text.trim(),
+        'funding_goal_mrc': double.tryParse(_funding.text.trim()) ?? 0,
+        'authors': _coauthors.text
+            .split('\n')
+            .map((line) => line.trim())
+            .where((line) => line.isNotEmpty)
+            .map((line) {
+              final parts = line.split('|').map((p) => p.trim()).toList();
+              return {
+                'name': parts.isNotEmpty ? parts[0] : '',
+                'role_title': parts.length > 1 ? parts[1] : null,
+                'affiliation': parts.length > 2 ? parts[2] : null,
+              };
+            })
+            .where((a) => (a['name'] ?? '').toString().isNotEmpty)
+            .toList(),
         'stage': _stage,
         if (_institution.text.trim().isNotEmpty)
           'institution_id': int.tryParse(_institution.text.trim()),
@@ -320,30 +383,41 @@ class _ResearchStageSheetState extends State<_ResearchStageSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(_t('research.share', 'Share research stage'),
-                style: TextStyle(
-                    fontSize: 19,
-                    fontWeight: FontWeight.w800,
-                    color: cs.onSurface)),
+            Text(
+              _t('research.share', 'Share research stage'),
+              style: TextStyle(
+                fontSize: 19,
+                fontWeight: FontWeight.w800,
+                color: cs.onSurface,
+              ),
+            ),
             const SizedBox(height: 4),
             Text(
-                _t('research.shareBody',
-                    'Publish progress to your feed and your institution profile.'),
-                style: TextStyle(
-                    fontSize: 12.5, height: 1.45, color: cs.onSurfaceVariant)),
+              _t(
+                'research.shareBody',
+                'Publish progress to your feed and your institution profile.',
+              ),
+              style: TextStyle(
+                fontSize: 12.5,
+                height: 1.45,
+                color: cs.onSurfaceVariant,
+              ),
+            ),
             const SizedBox(height: 16),
             TextField(
               controller: _title,
               maxLength: 160,
               textCapitalization: TextCapitalization.sentences,
               decoration: InputDecoration(
-                  labelText: _t('research.stageTitle', 'Stage title')),
+                labelText: _t('research.stageTitle', 'Stage title'),
+              ),
             ),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
               initialValue: _stage,
-              decoration:
-                  InputDecoration(labelText: _t('research.stage', 'Stage')),
+              decoration: InputDecoration(
+                labelText: _t('research.stage', 'Stage'),
+              ),
               items: widget.stages
                   .map((s) => DropdownMenuItem(value: s, child: Text(s)))
                   .toList(),
@@ -356,9 +430,49 @@ class _ResearchStageSheetState extends State<_ResearchStageSheet> {
               maxLines: 8,
               maxLength: 3000,
               textCapitalization: TextCapitalization.sentences,
-              decoration:
-                  InputDecoration(labelText: _t('research.summary', 'Summary')),
+              decoration: InputDecoration(
+                labelText: _t('research.summary', 'Summary'),
+              ),
             ),
+            TextField(
+              controller: _abstract,
+              minLines: 2,
+              maxLines: 6,
+              decoration: const InputDecoration(labelText: 'Abstract'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _methodology,
+              minLines: 2,
+              maxLines: 5,
+              decoration: const InputDecoration(labelText: 'Methodology'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _impact,
+              minLines: 2,
+              maxLines: 4,
+              decoration: const InputDecoration(labelText: 'Expected impact'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _funding,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Funding goal (MRC)',
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _coauthors,
+              minLines: 2,
+              maxLines: 5,
+              decoration: const InputDecoration(
+                labelText: 'Co-authors',
+                helperText: 'One per line: Name | Role | Affiliation',
+              ),
+            ),
+            const SizedBox(height: 12),
             Row(
               children: [
                 Expanded(
@@ -366,9 +480,9 @@ class _ResearchStageSheetState extends State<_ResearchStageSheet> {
                     controller: _institution,
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
-                        labelText:
-                            _t('research.institutionId', 'University ID'),
-                        helperText: _t('research.optional', 'Optional')),
+                      labelText: _t('research.institutionId', 'University ID'),
+                      helperText: _t('research.optional', 'Optional'),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -377,30 +491,34 @@ class _ResearchStageSheetState extends State<_ResearchStageSheet> {
                     controller: _project,
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
-                        labelText: _t('research.projectId', 'Project ID'),
-                        helperText: _t('research.optional', 'Optional')),
+                      labelText: _t('research.projectId', 'Project ID'),
+                      helperText: _t('research.optional', 'Optional'),
+                    ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 10),
-
             if (_error != null)
               Padding(
                 padding: const EdgeInsets.only(top: 10),
-                child: Text(_error!,
-                    style: TextStyle(color: cs.error, fontSize: 12.5)),
+                child: Text(
+                  _error!,
+                  style: TextStyle(color: cs.error, fontSize: 12.5),
+                ),
               ),
             const SizedBox(height: 16),
             FilledButton(
               onPressed: _saving ? null : _save,
               style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(48)),
+                minimumSize: const Size.fromHeight(48),
+              ),
               child: _saving
                   ? const SizedBox(
                       width: 18,
                       height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2))
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
                   : Text(_t('research.publish', 'Publish stage')),
             ),
           ],
