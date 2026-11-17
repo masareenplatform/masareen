@@ -9,6 +9,7 @@ import 'package:masaren/l10n.dart';
 import 'package:masaren/models.dart';
 import 'package:masaren/screens/admin_screen.dart';
 import 'package:masaren/screens/admin_insights_screen.dart';
+import 'package:masaren/screens/admin_wallet_screen.dart';
 import 'package:masaren/screens/ads_screen.dart';
 import 'package:masaren/screens/courses_screen.dart';
 import 'package:masaren/screens/calls_screen.dart';
@@ -367,6 +368,7 @@ class _HomeShellState extends State<HomeShell> {
     if (screen is VerificationScreen) return 'verification';
     if (screen is AdminScreen) return 'admin';
     if (screen is AdminInsightsScreen) return 'insights';
+    if (screen is AdminWalletScreen) return 'admin-wallet';
     if (screen is SettingsScreen) return 'settings';
     return _webActive;
   }
@@ -1909,6 +1911,14 @@ class _WebSidebar extends StatelessWidget {
                         t('Reports & analytics', 'التقارير والتحليلات'),
                         selected: activeKey == 'insights',
                         onTap: () => onOpen(AdminInsightsScreen(user: user))),
+                  if (admin)
+                    _webItem(
+                        context,
+                        Icons.account_balance_wallet_outlined,
+                        Icons.account_balance_wallet,
+                        t('MRC payments', 'مدفوعات MRC'),
+                        selected: activeKey == 'admin-wallet',
+                        onTap: () => onOpen(AdminWalletScreen(user: user))),
                   _webItem(context, Icons.help_outline, Icons.help,
                       t('Help center', 'مركز المساعدة'),
                       onTap: () => onOpen(const HelpCenterScreen())),

@@ -13,6 +13,7 @@ import 'package:masaren/screens/admin_ota_screen.dart';
 import 'package:masaren/screens/admin_announcements_screen.dart';
 import 'package:masaren/screens/admin_insights_screen.dart';
 import 'package:masaren/screens/admin_operations_screen.dart';
+import 'package:masaren/screens/admin_wallet_screen.dart';
 import 'package:masaren/screens/messages_screen.dart';
 import 'package:masaren/screens/wallet_screen.dart';
 import 'package:masaren/theme.dart';
@@ -436,6 +437,10 @@ class _AdminScreenState extends State<AdminScreen> {
         Navigator.of(context).push(MaterialPageRoute(
             builder: (_) => AdminOperationsScreen(user: widget.user)));
         break;
+      case 'wallet':
+        Navigator.of(context).push(MaterialPageRoute(
+            builder: (_) => AdminWalletScreen(user: widget.user)));
+        break;
       case 'announcements':
         Navigator.of(context).push(MaterialPageRoute(
             builder: (_) => AdminAnnouncementsScreen(user: widget.user)));
@@ -491,6 +496,16 @@ class _AdminScreenState extends State<AdminScreen> {
                   child: ListTile(
                     leading: Icon(Icons.query_stats_outlined),
                     title: Text('Reports & analytics'),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'wallet',
+                  child: ListTile(
+                    leading: const Icon(Icons.account_balance_wallet_outlined),
+                    title: Text(
+                        Localizations.localeOf(context).languageCode == 'ar'
+                            ? 'مدفوعات MRC'
+                            : 'MRC payments'),
                   ),
                 ),
                 PopupMenuItem(

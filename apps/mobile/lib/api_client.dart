@@ -392,6 +392,23 @@ class AuthApi {
         .toList();
   }
 
+  static Future<List<Map<String, dynamic>>> adminWalletRequests() async {
+    final data = await api.get('/api/v1/admin/wallet/requests');
+    final rows = data is Map ? data['rows'] : data;
+    return (rows is List ? rows : <dynamic>[])
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
+  }
+
+  static Future<void> adminResolveWalletRequest(String id, String status,
+      {String? note}) async {
+    await api.post('/api/v1/admin/wallet/requests/$id', {
+      'status': status,
+      if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
+    });
+  }
+
   static Future<List<Map<String, dynamic>>> marketList() async {
     final data = await api.get('/api/v1/market');
     final list = data is List ? data : <dynamic>[];
