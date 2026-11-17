@@ -1,6 +1,6 @@
 name: masaren
 description: MASAREEN, Impact Infrastructure Platform mobile app
-version: 0.4.16+21
+version: 0.4.17+22
 publish_to: none
 
 environment:

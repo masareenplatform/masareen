@@ -60,8 +60,8 @@ CONTACT_COPY_USER = "false"
 
 # App update manifest served at /api/app/version. Bump these when a new APK is
 # uploaded to R2 (the android-apk workflow does it automatically on release).
-APP_ANDROID_VERSION = "0.4.16"
-APP_ANDROID_BUILD = "21"
+APP_ANDROID_VERSION = "0.4.17"
+APP_ANDROID_BUILD = "22"
 APP_IOS_VERSION = "0.4.13"
 APP_IOS_BUILD = "18"
 APP_MIN_BUILD = "7"

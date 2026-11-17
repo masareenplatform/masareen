@@ -69,7 +69,7 @@ class AppUpdateInfo {
 /// open the download/TestFlight page. Dart-only patches are handled by
 /// Shorebird (see shorebird.yaml and the platform guide).
 class AppUpdater {
-  static Future<AppUpdateInfo?> check() async {
+  static Future<AppUpdateInfo?> check({bool includeChannels = false}) async {
     if (!Platform.isAndroid && !Platform.isIOS) return null;
     final info = await PackageInfo.fromPlatform();
     final currentBuild = int.tryParse(info.buildNumber) ?? 0;
@@ -78,7 +78,18 @@ class AppUpdater {
     final platform = data[Platform.isAndroid ? 'android' : 'ios'];
     if (platform is! Map) return null;
     final build = (platform['build'] as num?)?.toInt() ?? 0;
-    if (build <= currentBuild) return null;
+    final channels = (data['channels'] is List)
+        ? (data['channels'] as List)
+              .whereType<Map>()
+              .map(
+                (e) => AppUpdateChannel.fromJson(Map<String, dynamic>.from(e)),
+              )
+              .where((c) => c.build > 0 && c.url.isNotEmpty)
+              .toList()
+        : const <AppUpdateChannel>[];
+    if (build <= currentBuild && (!includeChannels || channels.length < 2)) {
+      return null;
+    }
     final ota = data['ota'];
     return AppUpdateInfo(
       version: platform['version']?.toString() ?? '',
@@ -88,16 +99,7 @@ class AppUpdater {
       minimumBuild: (data['minimumBuild'] as num?)?.toInt() ?? 0,
       otaAppId: ota is Map ? (ota['appId']?.toString() ?? '') : '',
       force: data['force'] == true,
-      channels: (data['channels'] is List)
-          ? (data['channels'] as List)
-                .whereType<Map>()
-                .map(
-                  (e) =>
-                      AppUpdateChannel.fromJson(Map<String, dynamic>.from(e)),
-                )
-                .where((c) => c.build > 0 && c.url.isNotEmpty)
-                .toList()
-          : const [],
+      channels: channels,
     );
   }
 
@@ -111,7 +113,7 @@ class AppUpdater {
     bool silent = true,
   }) async {
     try {
-      final update = await check();
+      final update = await check(includeChannels: !silent);
       if (!context.mounted) return;
       if (update == null) {
         if (!silent) {
