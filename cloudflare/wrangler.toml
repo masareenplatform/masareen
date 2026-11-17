@@ -62,8 +62,8 @@ CONTACT_COPY_USER = "false"
 # uploaded to R2 (the android-apk workflow does it automatically on release).
 APP_ANDROID_VERSION = "0.4.17"
 APP_ANDROID_BUILD = "22"
-APP_IOS_VERSION = "0.4.13"
-APP_IOS_BUILD = "18"
+APP_IOS_VERSION = "0.4.16"
+APP_IOS_BUILD = "21"
 APP_MIN_BUILD = "7"
 APP_NOTES = "Calls and rooms, timeline sharing, manual MRC payments, invoices, admin payment review and web parity."
 # Shorebird app id for Dart-only OTA patches (optional, see docs).
