@@ -487,6 +487,8 @@ async function adminStats(env) {
   const l7 = await one('SELECT COUNT(*) c FROM login_events WHERE at>?', daysAgo(7));
   const active7 = await one('SELECT COUNT(DISTINCT user_id) c FROM login_events WHERE at>?', daysAgo(7));
   const msgs = await one('SELECT COUNT(*) c FROM contact_messages');
+  const realUsers = await one('SELECT COUNT(*) c FROM users WHERE COALESCE(is_demo,0)=0');
+  const demoUsers = await one('SELECT COUNT(*) c FROM users WHERE COALESCE(is_demo,0)=1');
   const testers = await one('SELECT COUNT(*) c FROM testers');
   const testersInvited = await one("SELECT COUNT(*) c FROM testers WHERE status IN ('invited','active')");
   const posts = await one('SELECT COUNT(*) c FROM posts WHERE hidden=0');
@@ -501,7 +503,7 @@ async function adminStats(env) {
     const d = new Date(Date.now() - i * 86400_000).toISOString().slice(0, 10);
     series.push({ date: d, signups: (su.find((x) => x.d === d) || {}).c || 0, logins: (lo.find((x) => x.d === d) || {}).c || 0 });
   }
-  return { totals: { users: total.c || 0, google: google.c || 0, profileComplete: complete.c || 0, signups7d: s7.c || 0, signups30d: s30.c || 0, logins24h: l24.c || 0, logins7d: l7.c || 0, activeUsers7d: active7.c || 0, messages: msgs.c || 0, testers: testers.c || 0, testersInvited: testersInvited.c || 0, posts: posts.c || 0, impactVotes: votes.c || 0 }, byType, byRole, byCountry, series };
+  return { totals: { users: total.c || 0, realUsers: realUsers.c || 0, demoUsers: demoUsers.c || 0, google: google.c || 0, profileComplete: complete.c || 0, signups7d: s7.c || 0, signups30d: s30.c || 0, logins24h: l24.c || 0, logins7d: l7.c || 0, activeUsers7d: active7.c || 0, messages: msgs.c || 0, testers: testers.c || 0, testersInvited: testersInvited.c || 0, posts: posts.c || 0, impactVotes: votes.c || 0 }, byType, byRole, byCountry, series };
 }
 function page(url, def = 50, max = 200) {
   const limit = Math.min(max, Math.max(1, parseInt(url.searchParams.get('limit') || def, 10) || def));
@@ -595,7 +597,7 @@ async function adminRoutes(req, env, url) {
     const args = q ? [like, like, like, like, like] : [];
     const rows = (await env.DB.prepare(`SELECT id,email,email_verified,name,role,org,org_type,country,city,interest,
         university,university_id,department,academic_year,degree_level,employer,job_title,
-        signup_method,profile_complete,created_at,last_login_at,login_count FROM users ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`).bind(...args, limit, offset).all()).results;
+        signup_method,profile_complete,is_demo,created_at,last_login_at,login_count FROM users ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`).bind(...args, limit, offset).all()).results;
     const total = (await env.DB.prepare(`SELECT COUNT(*) c FROM users ${where}`).bind(...args).first()).c;
     return json({ ok: true, total, rows });
   }

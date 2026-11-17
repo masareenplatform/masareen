@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+// ignore_for_file: deprecated_member_use
+import 'package:flutter/material.dart';
 import 'package:masaren/l10n.dart';
 import 'package:masaren/theme.dart';
 
@@ -80,8 +81,7 @@ class AppAvatar extends StatelessWidget {
           )
         : fallback;
     if (onTap == null) return child;
-    return Clickable(
-      onTap: onTap, child: child);
+    return Clickable(onTap: onTap, child: child);
   }
 }
 
@@ -330,12 +330,60 @@ class Clickable extends StatelessWidget {
 
 TextDirection textDirectionFor(String? text) {
   if (text == null || text.isEmpty) return TextDirection.ltr;
-  final firstArabic = RegExp(r'[\u0590-\u08FF\uFB1D-\uFDFD\uFE70-\uFEFC]')
-      .firstMatch(text);
+  final firstArabic =
+      RegExp(r'[\u0590-\u08FF\uFB1D-\uFDFD\uFE70-\uFEFC]').firstMatch(text);
   if (firstArabic == null) return TextDirection.ltr;
   final before = text.substring(0, firstArabic.start);
   if (RegExp(r'[A-Za-z\u00C0-\u024F]').hasMatch(before)) {
     return TextDirection.ltr;
   }
   return TextDirection.rtl;
+}
+
+class HoverLift extends StatefulWidget {
+  final Widget child;
+  final double scale;
+  final double lift;
+  final BorderRadius? borderRadius;
+  final Color? hoverColor;
+
+  const HoverLift({
+    super.key,
+    required this.child,
+    this.scale = 1.006,
+    this.lift = 2,
+    this.borderRadius,
+    this.hoverColor,
+  });
+
+  @override
+  State<HoverLift> createState() => _HoverLiftState();
+}
+
+class _HoverLiftState extends State<HoverLift> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 170),
+        curve: Curves.easeOutCubic,
+        transform: Matrix4.identity()
+          ..translate(0.0, _hover ? -widget.lift : 0.0)
+          ..scale(_hover ? widget.scale : 1.0),
+        transformAlignment: Alignment.center,
+        decoration: widget.hoverColor == null
+            ? null
+            : BoxDecoration(
+                color: _hover ? widget.hoverColor : Colors.transparent,
+                borderRadius: widget.borderRadius,
+              ),
+        child: widget.child,
+      ),
+    );
+  }
 }

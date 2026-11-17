@@ -24,9 +24,12 @@ function Put-Object {
   Write-Host "uploaded $Key"
 }
 
-Put-Object "index.html"  "text/html; charset=utf-8" "public, max-age=300"
-Put-Object "admin.html"  "text/html; charset=utf-8" "public, max-age=300"
-Put-Object "favicon.ico" "image/x-icon" "public, max-age=86400"
+Put-Object "index.html"       "text/html; charset=utf-8" "public, max-age=300"
+Put-Object "admin.html"       "text/html; charset=utf-8" "public, max-age=300"
+Put-Object "mobile-auth.html" "text/html; charset=utf-8" "public, max-age=300"
+Put-Object "privacy.html"     "text/html; charset=utf-8" "public, max-age=300"
+Put-Object "terms.html"       "text/html; charset=utf-8" "public, max-age=300"
+Put-Object "favicon.ico"      "image/x-icon" "public, max-age=86400"
 
 Get-ChildItem -LiteralPath "assets" -Filter "*.png" -File | ForEach-Object {
   Put-Object "assets/$($_.Name)" "image/png" "public, max-age=31536000, immutable"

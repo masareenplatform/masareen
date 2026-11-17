@@ -60,12 +60,12 @@ CONTACT_COPY_USER = "false"
 
 # App update manifest served at /api/app/version. Bump these when a new APK is
 # uploaded to R2 (the android-apk workflow does it automatically on release).
-APP_ANDROID_VERSION = "0.4.4"
-APP_ANDROID_BUILD = "9"
-APP_IOS_VERSION = "0.4.2"
-APP_IOS_BUILD = "7"
+APP_ANDROID_VERSION = "0.4.13"
+APP_ANDROID_BUILD = "18"
+APP_IOS_VERSION = "0.4.13"
+APP_IOS_BUILD = "18"
 APP_MIN_BUILD = "7"
-APP_NOTES = "Course lessons, voice notes, feedback, event announcements, member previews, OTA admin controls, and stability fixes."
+APP_NOTES = "Marketplace, verified newsroom, camera provenance, calls, sharing, invoices and web parity."
 # Shorebird app id for Dart-only OTA patches (optional, see docs).
 SHOREBIRD_APP_ID = ""
 # Live origin behind the /live/* edge cache proxy.

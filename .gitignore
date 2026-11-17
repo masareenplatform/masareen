@@ -77,3 +77,23 @@ backend/_run/            # generated native-run symlink workspace (run_native.ps
 *.err                   # runtime error dumps
 analyze*.txt            # ad-hoc analysis logs
 _run/
+
+# --- Secrets & credentials (never commit) ---
+*creds*.txt
+*credential*.txt
+*secret*.txt
+*secret*.json
+github.txt
+codemagic_api.txt
+resendapi.txt
+resend_domains.json
+cloudflarecreds.txt
+google/
+*.pem
+**/serviceAccountKey.json
+PLATFORM_GENOME_CURRENT.md
+
+# Live/HLS ingest token
+tools/media/ingest-token.txt
+tools/media/recordings/
+tools/media/out/

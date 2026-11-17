@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
@@ -311,6 +311,87 @@ class AuthApi {
   static Future<void> deleteEvent(String id) async {
     await api.delete('/api/v1/events/$id');
   }
+
+  static Future<List<Map<String, dynamic>>> calls() async {
+    final data = await api.get('/api/v1/calls');
+    return (data is List ? data : <dynamic>[])
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
+  }
+
+  static Future<Map<String, dynamic>> createCall(
+      Map<String, dynamic> body) async {
+    final data = await api.post('/api/v1/calls', body);
+    return Map<String, dynamic>.from(data as Map);
+  }
+
+  static Future<Map<String, dynamic>> callRoom(String id) async {
+    final data = await api.get('/api/v1/calls/$id');
+    return Map<String, dynamic>.from(data as Map);
+  }
+
+  static Future<Map<String, dynamic>> joinCall(String id) async {
+    final data = await api.post('/api/v1/calls/$id/join', {});
+    return Map<String, dynamic>.from(data as Map);
+  }
+
+  static Future<void> sendCallSignal(String id, String toUser, String type,
+      Map<String, dynamic> payload) async {
+    await api.post('/api/v1/calls/$id/signal', {
+      'to_user': toUser,
+      'type': type,
+      'payload': payload,
+    });
+  }
+
+  static Future<List<Map<String, dynamic>>> callSignals(String id,
+      {String? after}) async {
+    final data = await api.get('/api/v1/calls/$id/signals', {
+      if (after != null) 'after': after,
+    });
+    return (data is List ? data : <dynamic>[])
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
+  }
+
+  static Future<void> leaveCall(String id) async {
+    await api.post('/api/v1/calls/$id/leave', {});
+  }
+
+  static Future<void> endCall(String id) async {
+    await api.post('/api/v1/calls/$id/end', {});
+  }
+
+  static Future<Map<String, dynamic>> requestWalletPayment(
+      String kind, double amountMrc,
+      {String? method, String? accountRef}) async {
+    final data = await api.post('/api/v1/wallet/requests', {
+      'kind': kind,
+      'amount_mrc': amountMrc,
+      'method': method ?? 'MANUAL',
+      'account_ref': accountRef,
+    });
+    return Map<String, dynamic>.from(data as Map);
+  }
+
+  static Future<List<Map<String, dynamic>>> walletRequests() async {
+    final data = await api.get('/api/v1/wallet/requests');
+    return (data is List ? data : <dynamic>[])
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
+  }
+
+  static Future<List<Map<String, dynamic>>> invoices() async {
+    final data = await api.get('/api/v1/invoices');
+    return (data is List ? data : <dynamic>[])
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
+  }
+
   static Future<List<Map<String, dynamic>>> marketList() async {
     final data = await api.get('/api/v1/market');
     final list = data is List ? data : <dynamic>[];
@@ -341,7 +422,8 @@ class AuthApi {
     return Map<String, dynamic>.from(data as Map);
   }
 
-  static Future<List<Map<String, dynamic>>> newsList({bool mine = false}) async {
+  static Future<List<Map<String, dynamic>>> newsList(
+      {bool mine = false}) async {
     final data = await api.get('/api/v1/news', {if (mine) 'mine': 1});
     final list = data is List ? data : <dynamic>[];
     return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
@@ -373,8 +455,7 @@ class AuthApi {
     return Map<String, dynamic>.from(data as Map);
   }
 
-  static Future<Map<String, dynamic>> fundNews(
-      String id, double amount) async {
+  static Future<Map<String, dynamic>> fundNews(String id, double amount) async {
     final data = await api.post('/api/v1/news/$id/fund', {
       'amount_mrc': amount,
     });
@@ -384,6 +465,7 @@ class AuthApi {
   static Future<void> rateNews(String id, int stars) async {
     await api.post('/api/v1/news/$id/rate', {'stars': stars});
   }
+
   static Future<Map<String, dynamic>> discoveryFeed({
     int limit = 12,
     int offset = 0,
@@ -396,6 +478,7 @@ class AuthApi {
     });
     return Map<String, dynamic>.from(data as Map);
   }
+
   static Future<Map<String, dynamic>> rateImpact(
     String postId, {
     required int stars,
@@ -410,11 +493,8 @@ class AuthApi {
     return data as Map<String, dynamic>;
   }
 
-
-  static Future<List<Comment>> contentComments(
-      String type, String id) async {
-    final data =
-        await api.get('/api/v1/content/$type/$id/comments');
+  static Future<List<Comment>> contentComments(String type, String id) async {
+    final data = await api.get('/api/v1/content/$type/$id/comments');
     final list = data is List ? data : <dynamic>[];
     return list
         .map((e) => Comment.fromJson(e as Map<String, dynamic>))
@@ -434,6 +514,7 @@ class AuthApi {
     final data = await api.post('/api/v1/content/$type/$id/react', {});
     return data as Map<String, dynamic>;
   }
+
   static Future<List<Comment>> comments(String postId) async {
     final data = await api.get('/api/v1/posts/$postId/comments');
     final list = data is List ? data : <dynamic>[];
@@ -632,11 +713,11 @@ class AuthApi {
     return User.fromJson(data as Map<String, dynamic>);
   }
 
-
   static Future<Map<String, dynamic>> joinAndroidTesting() async {
     final data = await api.post('/api/v1/testing/join', {});
     return Map<String, dynamic>.from(data as Map);
   }
+
   static Future<String> uploadAvatar(
       List<int> bytes, String filename, String contentType) async {
     final data = await api.multipart('/api/v1/users/me/avatar',
@@ -942,10 +1023,12 @@ class AuthApi {
   static Future<void> eventParticipantVerdict(
       String eventId, String participantId,
       {required String status, String? note, bool override = false}) async {
-    await api.post(
-        '/api/v1/events/$eventId/participants/$participantId/verdict',
-        {'status': status, if (note != null) 'note': note,
-         if (override) 'override_deepfake': true});
+    await api
+        .post('/api/v1/events/$eventId/participants/$participantId/verdict', {
+      'status': status,
+      if (note != null) 'note': note,
+      if (override) 'override_deepfake': true
+    });
   }
 
   static Future<void> confirmEventParticipant(

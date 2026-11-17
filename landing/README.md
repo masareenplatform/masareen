@@ -1,11 +1,11 @@
 # MASAREEN landing page (masareen.com)
 
-Static site: `index.html` + `admin.html` + `assets/` + `favicon.ico`. No build step.
+Static site: `index.html` + `admin.html` + `mobile-auth.html` + `privacy.html` + `terms.html` + `assets/` + `favicon.ico`. No build step.
 It is hosted in an **R2 bucket** (custom domain). The sign-up, login tracking and contact form call the **API Worker** in `../cloudflare`.
 
 ## Deploy to R2
 
-1. Upload the files — sets the correct Content-Type and cache headers and uploads `index.html`, `admin.html`, `favicon.ico` and `assets/*.png`:
+1. Upload the files — sets the correct Content-Type and cache headers and uploads `index.html`, `admin.html`, `mobile-auth.html`, `privacy.html`, `terms.html`, `favicon.ico` and `assets/*.png`:
    - Windows: `.\upload-to-r2.ps1 <bucket>`
    - macOS/Linux: `./upload-to-r2.sh <bucket>`
 2. **R2 > bucket > Settings > Custom Domains** > add `masareen.com` (and `www`). The Google client is authorized for `https://masareen.com` only, so either keep `www` redirecting to the apex domain or add `https://www.masareen.com` to *Authorized JavaScript origins* in Google Cloud Console.

@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -10,6 +10,7 @@ import 'package:masaren/widgets/engagement_tools.dart';
 import 'package:masaren/models.dart';
 import 'package:masaren/l10n.dart';
 import 'package:masaren/widgets/ad_feed_card.dart';
+import 'package:masaren/widgets/stacked_avatars.dart';
 import 'package:masaren/widgets/post_media_gallery.dart';
 import 'package:masaren/widgets/role_badge.dart';
 import 'package:masaren/profile_router.dart';
@@ -33,7 +34,6 @@ import 'package:masaren/screens/projects_screen.dart';
 import 'package:masaren/screens/verification_screen.dart';
 import 'package:masaren/services/live_sync_service.dart';
 import 'package:masaren/services/analytics_service.dart';
-import 'package:masaren/services/share_policy.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 class FeedScreen extends StatefulWidget {
@@ -202,9 +202,7 @@ class FeedScreenState extends State<FeedScreen> {
       _scrollReportTimer =
           Timer(const Duration(milliseconds: 1400), _reportScroll);
     }
-    if (!_scrollController.hasClients ||
-        _loading ||
-        _loadingMore) {
+    if (!_scrollController.hasClients || _loading || _loadingMore) {
       return;
     }
     final position = _scrollController.position;
@@ -287,6 +285,7 @@ class FeedScreenState extends State<FeedScreen> {
       _discoveryLoading = false;
     }
   }
+
   Future<void> _loadWallet() async {
     try {
       final wallet = await AuthApi.wallet(widget.user.id);
@@ -381,8 +380,8 @@ class FeedScreenState extends State<FeedScreen> {
   void scrollBy(double delta) {
     if (!_scrollController.hasClients) return;
     final position = _scrollController.position;
-    final next = (_scrollController.offset + delta)
-        .clamp(0.0, position.maxScrollExtent);
+    final next =
+        (_scrollController.offset + delta).clamp(0.0, position.maxScrollExtent);
     _scrollController.jumpTo(next);
   }
 
@@ -422,25 +421,32 @@ class FeedScreenState extends State<FeedScreen> {
     }
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen));
   }
+
   Future<void> _onShare(Post p) async {
-    if (!SharePolicy.post(p)) {
-      SharePolicy.deny(context);
-      return;
-    }
-    await Clipboard.setData(
-        ClipboardData(text: 'https://masareen.com/p/${p.id}'));
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(MasarenLocalizations.of(context, 'post.linkCopied'))));
     try {
       final res = await AuthApi.share(p.id);
       final i = _posts.indexWhere((e) => e.id == p.id);
       if (i != -1) {
         final shares = (res['shares'] as num?)?.toInt() ?? (p.shares + 1);
-        _posts[i] = _posts[i].copyWith(shares: shares);
+        final sharedBy = (res['shared_by'] is List)
+            ? (res['shared_by'] as List)
+                .whereType<Map>()
+                .map((u) => Author.fromJson(Map<String, dynamic>.from(u)))
+                .toList()
+            : p.sharedBy;
+        _posts[i] = _posts[i].copyWith(shares: shares, sharedBy: sharedBy);
         if (mounted) setState(() {});
       }
-    } catch (_) {}
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(Localizations.localeOf(context).languageCode == 'ar'
+              ? 'تمت المشاركة في خلاصتك'
+              : 'Shared to your timeline')));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(e.toString())));
+    }
   }
 
   Future<void> _onImpact(Post p) async {
@@ -567,7 +573,8 @@ class FeedScreenState extends State<FeedScreen> {
     var discoveryIndex = 0;
     if (posts.isEmpty) {
       for (final item in _discoveries) {
-        items.add(_DiscoveryCard(item: item, onTap: () => _openDiscovery(item)));
+        items
+            .add(_DiscoveryCard(item: item, onTap: () => _openDiscovery(item)));
       }
       return items;
     }
@@ -1668,419 +1675,454 @@ class _PostCard extends StatelessWidget {
         post.kind == 'announcement' || post.kind == 'opportunity';
     final highImpact = (post.impactValue ?? 0) >= 6.5;
 
-    return Container(
-      margin: const EdgeInsets.fromLTRB(12, 6, 12, 10),
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: highImpact ? null : cs.surface,
-        gradient: highImpact
-            ? LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  cs.primary.withValues(alpha: 0.075),
-                  cs.surface,
-                  cs.surface,
-                ],
-              )
-            : null,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: highImpact
-              ? cs.primary.withValues(alpha: 0.38)
-              : cs.outlineVariant.withValues(alpha: 0.55),
-        ),
-        boxShadow: highImpact
-            ? null
-            : [
-                BoxShadow(
-                  color: Colors.black.withValues(
-                      alpha: Theme.of(context).brightness == Brightness.dark
-                          ? 0.18
-                          : 0.045),
-                  blurRadius: 14,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (typeLabel.isNotEmpty)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.08),
-              ),
-              child: Row(
-                children: [
-                  Icon(_typeIcon, size: 14, color: color),
-                  const SizedBox(width: 6),
-                  Text(typeLabel.toUpperCase(),
-                      style: TextStyle(
-                          color: color,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 1.2)),
-                  if (isPlatform) ...[
-                    const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: color.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                          MasarenLocalizations.of(context, 'post.masareen'),
-                          style: TextStyle(
-                              color: color,
-                              fontSize: 9,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 0.5)),
-                    ),
+    return HoverLift(
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(12, 6, 12, 10),
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: highImpact ? null : cs.surface,
+          gradient: highImpact
+              ? LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    cs.primary.withValues(alpha: 0.075),
+                    cs.surface,
+                    cs.surface,
                   ],
+                )
+              : null,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: highImpact
+                ? cs.primary.withValues(alpha: 0.38)
+                : cs.outlineVariant.withValues(alpha: 0.55),
+          ),
+          boxShadow: highImpact
+              ? null
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(
+                        alpha: Theme.of(context).brightness == Brightness.dark
+                            ? 0.18
+                            : 0.045),
+                    blurRadius: 14,
+                    offset: const Offset(0, 4),
+                  ),
                 ],
-              ),
-            ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-            child: Row(
-              children: [
-                AppAvatar(
-                    name: post.author.name,
-                    url: post.author.avatarUrl,
-                    size: 40,
-                    onTap: onAuthor),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Clickable(
-                    onTap: onAuthor,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Flexible(
-                              child: Text(post.author.name,
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 14,
-                                      color: cs.onSurface)),
-                            ),
-                            if (post.author.verified)
-                              Padding(
-                                padding: const EdgeInsets.only(left: 4),
-                                child: Icon(Icons.verified,
-                                    size: 15, color: cs.primary),
-                              ),
-                            RoleBadge(role: post.author.role),
-                          ],
-                        ),
-                        if (post.programTag != null)
-                          Text(post.programTag!,
-                              style: TextStyle(
-                                  color: cs.onSurfaceVariant, fontSize: 12)),
-                        if (post.rankingReason != null &&
-                            post.rankingReason!.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 3),
-                            child: Row(
-                              children: [
-                                Icon(Icons.auto_awesome,
-                                    size: 12, color: cs.primary),
-                                const SizedBox(width: 4),
-                                Flexible(
-                                  child: Text(post.rankingReason!,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                          color: cs.primary,
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w600)),
-                                ),
-                              ],
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-                if (post.author.id != currentUser.id &&
-                    post.kind != 'announcement')
-                  Padding(
-                    padding: const EdgeInsets.only(left: 6),
-                    child: Tooltip(
-                      message: post.author.isFollowing
-                          ? MasarenLocalizations.of(context, 'post.following')
-                          : MasarenLocalizations.of(context, 'post.follow'),
-                      child: IconButton(
-                        onPressed: onFollow,
-                        visualDensity: VisualDensity.compact,
-                        style: IconButton.styleFrom(
-                          minimumSize: const Size(32, 32),
-                          padding: EdgeInsets.zero,
-                          backgroundColor: post.author.isFollowing
-                              ? cs.surfaceContainerHighest
-                              : cs.primary.withValues(alpha: 0.10),
-                          side: BorderSide(
-                              color: post.author.isFollowing
-                                  ? cs.outlineVariant
-                                  : cs.primary.withValues(alpha: 0.35)),
-                        ),
-                        icon: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 180),
-                          transitionBuilder: (child, animation) =>
-                              ScaleTransition(scale: animation, child: child),
-                          child: Icon(
-                            post.author.isFollowing
-                                ? Icons.check_rounded
-                                : Icons.add_rounded,
-                            key: ValueKey(post.author.isFollowing),
-                            size: 18,
-                            color: post.author.isFollowing
-                                ? cs.onSurfaceVariant
-                                : cs.primary,
-                          ),
-                        ),
-                      ),
-                    ),
-                  )
-                else if (post.kind == 'recognition')
-                  Icon(Icons.emoji_events,
-                      color: Colors.amber.shade700, size: 20)
-                else if (post.kind == 'opportunity')
-                  const Icon(Icons.work_outline, color: Colors.blue, size: 20)
-                else if (post.kind == 'interview')
-                  const Icon(Icons.mic, color: Colors.green, size: 20),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-            child: Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: [
-                if (post.type == 'ARTICLE')
-                  _PostBadge(
-                    label:
-                        MasarenLocalizations.of(context, 'post.verifiedNews'),
-                    icon: Icons.verified,
-                    color: Colors.blue,
-                  ),
-                if (post.kind == 'recognition')
-                  _PostBadge(
-                    label: MasarenLocalizations.of(context, 'post.recognition'),
-                    icon: Icons.emoji_events,
-                    color: Colors.amber.shade700,
-                  ),
-                if (post.kind == 'interview')
-                  _PostBadge(
-                    label: MasarenLocalizations.of(context, 'post.interview'),
-                    icon: Icons.mic,
-                    color: Colors.green.shade600,
-                  ),
-                if (post.confidenceLabel != null)
-                  _PostBadge(
-                    label: post.confidenceLabel!,
-                    icon: Icons.shield_outlined,
-                    color: _confidenceColor(post.confidenceScore),
-                  ),
-                if (post.likes > 10)
-                  _PostBadge(
-                    label: MasarenLocalizations.of(context, 'post.trending'),
-                    icon: Icons.trending_up,
-                    color: Colors.deepOrange,
-                  ),
-                if (post.impactValue != null && post.impactValue! > 0)
-                  _PostBadge(
-                    label:
-                        '${MasarenLocalizations.of(context, 'feed.impact')} ${post.impactValue!.toStringAsFixed(1)}',
-                    icon: Icons.verified,
-                    color: cs.primary,
-                  ),
-              ],
-            ),
-          ),
-          if (post.sdg != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              child: SdgBadge(sdg: post.sdg!),
-            ),
-          Clickable(
-            onTap: onOpen,
-            behavior: HitTestBehavior.opaque,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-              child: Text(post.text,
-                  textDirection: textDirectionFor(post.text),
-                  style: TextStyle(color: cs.onSurface, height: 1.4)),
-            ),
-          ),
-          if (post.structured?['rankings'] is List)
-            _leaderboardCard(context, post.structured!),
-          if (post.media.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 10),
-              child: _ReactionMedia(
-                liked: post.likedByMe,
-                onLike: onLike,
-                child: PostMediaGallery(
-                  media: post.media,
-                  videoId: post.id,
-                  videoHlsUrl: post.videoHlsUrl,
-                  videoPosterUrl: post.videoPosterUrl,
-                  onImageTap: onImageTap,
-                ),
-              ),
-            ),
-          if (post.files.isNotEmpty) PostFilesList(files: post.files),
-          if (post.linkUrl != null && post.linkUrl!.isNotEmpty)
-            PostLinkCard(url: post.linkUrl!),
-          if (post.impactValue != null && post.impactValue! > 0)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-              child: Container(
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (typeLabel.isNotEmpty)
+              Container(
+                width: double.infinity,
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: cs.primaryContainer,
-                  borderRadius: BorderRadius.circular(8),
+                  color: color.withValues(alpha: 0.08),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.verified, size: 14, color: cs.primary),
+                    Icon(_typeIcon, size: 14, color: color),
                     const SizedBox(width: 6),
-                    Flexible(
-                      child: Text(
-                        '${MasarenLocalizations.of(context, 'post.impactScore')}: ${post.impactValue!.toStringAsFixed(1)} ${post.impactLabel ?? ""}',
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
+                    Text(typeLabel.toUpperCase(),
                         style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: cs.onPrimaryContainer),
+                            color: color,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1.2)),
+                    if (isPlatform) ...[
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: color.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                            MasarenLocalizations.of(context, 'post.masareen'),
+                            style: TextStyle(
+                                color: color,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.5)),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: Row(
+                children: [
+                  AppAvatar(
+                      name: post.author.name,
+                      url: post.author.avatarUrl,
+                      size: 40,
+                      onTap: onAuthor),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Clickable(
+                      onTap: onAuthor,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Flexible(
+                                child: Text(post.author.name,
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14,
+                                        color: cs.onSurface)),
+                              ),
+                              if (post.author.verified)
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 4),
+                                  child: Icon(Icons.verified,
+                                      size: 15, color: cs.primary),
+                                ),
+                              RoleBadge(role: post.author.role),
+                            ],
+                          ),
+                          if (post.programTag != null)
+                            Text(post.programTag!,
+                                style: TextStyle(
+                                    color: cs.onSurfaceVariant, fontSize: 12)),
+                          if (post.rankingReason != null &&
+                              post.rankingReason!.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 3),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.auto_awesome,
+                                      size: 12, color: cs.primary),
+                                  const SizedBox(width: 4),
+                                  Flexible(
+                                    child: Text(post.rankingReason!,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                            color: cs.primary,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  if (post.author.id != currentUser.id &&
+                      post.kind != 'announcement')
+                    Padding(
+                      padding: const EdgeInsets.only(left: 6),
+                      child: Tooltip(
+                        message: post.author.isFollowing
+                            ? MasarenLocalizations.of(context, 'post.following')
+                            : MasarenLocalizations.of(context, 'post.follow'),
+                        child: IconButton(
+                          onPressed: onFollow,
+                          visualDensity: VisualDensity.compact,
+                          style: IconButton.styleFrom(
+                            minimumSize: const Size(32, 32),
+                            padding: EdgeInsets.zero,
+                            backgroundColor: post.author.isFollowing
+                                ? cs.surfaceContainerHighest
+                                : cs.primary.withValues(alpha: 0.10),
+                            side: BorderSide(
+                                color: post.author.isFollowing
+                                    ? cs.outlineVariant
+                                    : cs.primary.withValues(alpha: 0.35)),
+                          ),
+                          icon: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 180),
+                            transitionBuilder: (child, animation) =>
+                                ScaleTransition(scale: animation, child: child),
+                            child: Icon(
+                              post.author.isFollowing
+                                  ? Icons.check_rounded
+                                  : Icons.add_rounded,
+                              key: ValueKey(post.author.isFollowing),
+                              size: 18,
+                              color: post.author.isFollowing
+                                  ? cs.onSurfaceVariant
+                                  : cs.primary,
+                            ),
+                          ),
+                        ),
+                      ),
+                    )
+                  else if (post.kind == 'recognition')
+                    Icon(Icons.emoji_events,
+                        color: Colors.amber.shade700, size: 20)
+                  else if (post.kind == 'opportunity')
+                    const Icon(Icons.work_outline, color: Colors.blue, size: 20)
+                  else if (post.kind == 'interview')
+                    const Icon(Icons.mic, color: Colors.green, size: 20),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+              child: Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  if (post.type == 'ARTICLE')
+                    _PostBadge(
+                      label:
+                          MasarenLocalizations.of(context, 'post.verifiedNews'),
+                      icon: Icons.verified,
+                      color: Colors.blue,
+                    ),
+                  if (post.kind == 'recognition')
+                    _PostBadge(
+                      label:
+                          MasarenLocalizations.of(context, 'post.recognition'),
+                      icon: Icons.emoji_events,
+                      color: Colors.amber.shade700,
+                    ),
+                  if (post.kind == 'interview')
+                    _PostBadge(
+                      label: MasarenLocalizations.of(context, 'post.interview'),
+                      icon: Icons.mic,
+                      color: Colors.green.shade600,
+                    ),
+                  if (post.confidenceLabel != null)
+                    _PostBadge(
+                      label: post.confidenceLabel!,
+                      icon: Icons.shield_outlined,
+                      color: _confidenceColor(post.confidenceScore),
+                    ),
+                  if (post.likes > 10)
+                    _PostBadge(
+                      label: MasarenLocalizations.of(context, 'post.trending'),
+                      icon: Icons.trending_up,
+                      color: Colors.deepOrange,
+                    ),
+                  if (post.impactValue != null && post.impactValue! > 0)
+                    _PostBadge(
+                      label:
+                          '${MasarenLocalizations.of(context, 'feed.impact')} ${post.impactValue!.toStringAsFixed(1)}',
+                      icon: Icons.verified,
+                      color: cs.primary,
+                    ),
+                ],
+              ),
+            ),
+            if (post.sharedBy.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                child: Row(
+                  children: [
+                    StackedAvatars(
+                        people: post.sharedBy,
+                        total: post.sharedBy.length,
+                        size: 22,
+                        max: 5),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        Localizations.localeOf(context).languageCode == 'ar'
+                            ? 'شاركه ${post.sharedBy.first.name}'
+                                '${post.sharedBy.length > 1 ? ' و${post.sharedBy.length - 1} آخرون' : ''}'
+                            : 'Shared by ${post.sharedBy.first.name}'
+                                '${post.sharedBy.length > 1 ? ' and ${post.sharedBy.length - 1} others' : ''}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                            fontSize: 11,
+                            color: cs.onSurfaceVariant,
+                            fontWeight: FontWeight.w600),
                       ),
                     ),
                   ],
                 ),
               ),
-            ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
-            child: Row(
-              children: [
-                Expanded(
-                  child: _Action(
-                    icon: Icons.favorite,
-                    active: post.likedByMe,
-                    activeColor: Colors.redAccent,
-                    label: _compactCount(post.likes),
-                    tooltip: MasarenLocalizations.of(context, 'post.likes'),
-                    onTap: onLike,
-                  ),
-                ),
-                Expanded(
-                  child: _Action(
-                    icon: Icons.mode_comment_outlined,
-                    label: _compactCount(post.comments),
-                    tooltip: MasarenLocalizations.of(context, 'post.comments'),
-                    onTap: onComment,
-                  ),
-                ),
-                Expanded(
-                  child: _Action(
-                    icon: Icons.fact_check_outlined,
-                    label: MasarenLocalizations.of(context, 'feed.impact'),
-                    tooltip:
-                        MasarenLocalizations.of(context, 'post.rateImpact'),
-                    onTap: onImpact,
-                  ),
-                ),
-                Expanded(
-                  child: _Action(
-                    icon: Icons.share_outlined,
-                    label: _compactCount(post.shares),
-                    tooltip: MasarenLocalizations.of(context, 'post.shares'),
-                    onTap: onShare,
-                  ),
-                ),
-                Expanded(
-                  child: _Action(
-                    icon: post.bookmarkedByMe
-                        ? Icons.bookmark
-                        : Icons.bookmark_border,
-                    active: post.bookmarkedByMe,
-                    activeColor: cs.primary,
-                    label: post.bookmarkedByMe
-                        ? MasarenLocalizations.of(context, 'post.saved')
-                        : MasarenLocalizations.of(context, 'post.save'),
-                    onTap: onBookmark,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (post.topComments.isNotEmpty)
-            InkWell(
-              onTap: onComment,
+            if (post.sdg != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                child: SdgBadge(sdg: post.sdg!),
+              ),
+            Clickable(
+              onTap: onOpen,
+              behavior: HitTestBehavior.opaque,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 2, 16, 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    for (final c in post.topComments)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 5),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            AppAvatar(
-                                name: c.authorName ?? 'Member',
-                                url: c.authorPicture,
-                                size: 20),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: RichText(
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                text: TextSpan(
-                                  style: TextStyle(
-                                      color: cs.onSurfaceVariant,
-                                      fontSize: 12.5,
-                                      height: 1.3),
-                                  children: [
-                                    TextSpan(
-                                        text: '${c.authorName ?? 'Member'} ',
-                                        style: TextStyle(
-                                            color: cs.onSurface,
-                                            fontWeight: FontWeight.w700)),
-                                    TextSpan(text: c.text),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    if (post.comments > post.topComments.length)
-                      Text(
-                        MasarenLocalizations.of(context, 'post.viewAllComments')
-                            .replaceAll('{count}', '${post.comments}'),
-                        style: TextStyle(
-                            color: cs.onSurfaceVariant,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600),
-                      ),
-                  ],
-                ),
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                child: Text(post.text,
+                    textDirection: textDirectionFor(post.text),
+                    style: TextStyle(color: cs.onSurface, height: 1.4)),
               ),
             ),
-        ],
+            if (post.structured?['rankings'] is List)
+              _leaderboardCard(context, post.structured!),
+            if (post.media.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 10),
+                child: _ReactionMedia(
+                  liked: post.likedByMe,
+                  onLike: onLike,
+                  child: PostMediaGallery(
+                    media: post.media,
+                    videoId: post.id,
+                    videoHlsUrl: post.videoHlsUrl,
+                    videoPosterUrl: post.videoPosterUrl,
+                    onImageTap: onImageTap,
+                  ),
+                ),
+              ),
+            if (post.files.isNotEmpty) PostFilesList(files: post.files),
+            if (post.linkUrl != null && post.linkUrl!.isNotEmpty)
+              PostLinkCard(url: post.linkUrl!),
+            if (post.impactValue != null && post.impactValue! > 0)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: cs.primaryContainer,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.verified, size: 14, color: cs.primary),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          '${MasarenLocalizations.of(context, 'post.impactScore')}: ${post.impactValue!.toStringAsFixed(1)} ${post.impactLabel ?? ""}',
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                          style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: cs.onPrimaryContainer),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _Action(
+                      icon: Icons.favorite,
+                      active: post.likedByMe,
+                      activeColor: Colors.redAccent,
+                      label: _compactCount(post.likes),
+                      tooltip: MasarenLocalizations.of(context, 'post.likes'),
+                      onTap: onLike,
+                    ),
+                  ),
+                  Expanded(
+                    child: _Action(
+                      icon: Icons.mode_comment_outlined,
+                      label: _compactCount(post.comments),
+                      tooltip:
+                          MasarenLocalizations.of(context, 'post.comments'),
+                      onTap: onComment,
+                    ),
+                  ),
+                  Expanded(
+                    child: _Action(
+                      icon: Icons.fact_check_outlined,
+                      label: MasarenLocalizations.of(context, 'feed.impact'),
+                      tooltip:
+                          MasarenLocalizations.of(context, 'post.rateImpact'),
+                      onTap: onImpact,
+                    ),
+                  ),
+                  Expanded(
+                    child: _Action(
+                      icon: Icons.share_outlined,
+                      label: _compactCount(post.shares),
+                      tooltip: MasarenLocalizations.of(context, 'post.shares'),
+                      onTap: onShare,
+                    ),
+                  ),
+                  Expanded(
+                    child: _Action(
+                      icon: post.bookmarkedByMe
+                          ? Icons.bookmark
+                          : Icons.bookmark_border,
+                      active: post.bookmarkedByMe,
+                      activeColor: cs.primary,
+                      label: post.bookmarkedByMe
+                          ? MasarenLocalizations.of(context, 'post.saved')
+                          : MasarenLocalizations.of(context, 'post.save'),
+                      onTap: onBookmark,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (post.topComments.isNotEmpty)
+              InkWell(
+                onTap: onComment,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 2, 16, 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      for (final c in post.topComments)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 5),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              AppAvatar(
+                                  name: c.authorName ?? 'Member',
+                                  url: c.authorPicture,
+                                  size: 20),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: RichText(
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  text: TextSpan(
+                                    style: TextStyle(
+                                        color: cs.onSurfaceVariant,
+                                        fontSize: 12.5,
+                                        height: 1.3),
+                                    children: [
+                                      TextSpan(
+                                          text: '${c.authorName ?? 'Member'} ',
+                                          style: TextStyle(
+                                              color: cs.onSurface,
+                                              fontWeight: FontWeight.w700)),
+                                      TextSpan(text: c.text),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      if (post.comments > post.topComments.length)
+                        Text(
+                          MasarenLocalizations.of(
+                                  context, 'post.viewAllComments')
+                              .replaceAll('{count}', '${post.comments}'),
+                          style: TextStyle(
+                              color: cs.onSurfaceVariant,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -2448,15 +2490,15 @@ class _DiscoveryCard extends StatelessWidget {
                             ),
                             if (item.verified) ...[
                               const SizedBox(width: 4),
-                              Icon(Icons.verified,
-                                  size: 13, color: cs.primary),
+                              Icon(Icons.verified, size: 13, color: cs.primary),
                             ],
                             const Spacer(),
                             Container(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 7, vertical: 3),
                               decoration: BoxDecoration(
-                                  color: AppColors.accent.withValues(alpha: .14),
+                                  color:
+                                      AppColors.accent.withValues(alpha: .14),
                                   borderRadius: BorderRadius.circular(99)),
                               child: Text('${item.impactPercent}%',
                                   style: const TextStyle(
@@ -2485,8 +2527,7 @@ class _DiscoveryCard extends StatelessWidget {
                         const SizedBox(height: 5),
                         Row(
                           children: [
-                            Icon(Icons.arrow_forward,
-                                size: 13, color: accent),
+                            Icon(Icons.arrow_forward, size: 13, color: accent),
                             const SizedBox(width: 3),
                             Text('Open',
                                 style: TextStyle(

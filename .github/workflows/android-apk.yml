@@ -11,7 +11,7 @@ on:
         required: false
         default: ''
       publish_release:
-        description: 'Publish as GitHub Release "latest-apk" (used by the landing page button)'
+        description: 'Publish as GitHub Release "latest-apk" and upload to R2'
         type: boolean
         default: true
 
@@ -25,20 +25,25 @@ jobs:
     defaults:
       run:
         working-directory: apps/mobile
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: '17' }
       - uses: subosito/flutter-action@v2
-        with: { flutter-version: '3.44.5', channel: stable, cache: true }
+        with: { channel: stable, cache: true }
       - name: Generate Android project (git-ignored in repo)
         run: |
           flutter create --platforms=android --org com.masaren --project-name masaren .
           pip install pillow
           python3 tool/patch_android.py
       - run: flutter pub get
-      - name: Analyze
-        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+      - name: Analyze & Test
+        run: |
+          flutter analyze
+          flutter test
       - name: Build release APK
         run: |
           ARGS=""
@@ -47,6 +52,15 @@ jobs:
           cp build/app/outputs/flutter-apk/app-release.apk ../../masareen.apk
       - uses: actions/upload-artifact@v4
         with: { name: masareen-apk, path: masareen.apk }
+      - name: Upload APK to Cloudflare R2
+        if: (github.event_name == 'push' || github.event.inputs.publish_release == 'true') && env.CLOUDFLARE_API_TOKEN != ''
+        working-directory: .
+        run: |
+          npx --yes wrangler@4 r2 object put masareen-landing/downloads/masareen.apk \
+            --file masareen.apk \
+            --content-type "application/vnd.android.package-archive" \
+            --cache-control "public, max-age=300" \
+            --remote
       - name: Publish release
         if: github.event_name == 'push' || github.event.inputs.publish_release == 'true'
         working-directory: .

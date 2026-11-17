@@ -1,4 +1,4 @@
-﻿const String _defaultMediaBase = String.fromEnvironment(
+const String _defaultMediaBase = String.fromEnvironment(
   'API_BASE_URL',
   defaultValue: 'https://masareen.com',
 );
@@ -254,11 +254,13 @@ class DiscoveryItem {
         title: (j['title'] ?? 'Untitled').toString(),
         subtitle: (j['subtitle'] ?? '').toString(),
         imageUrl: resolveMediaUrl(j['image_url']?.toString()),
-        impactPercent:
-            j['impact_percent'] is num ? (j['impact_percent'] as num).round() : 0,
+        impactPercent: j['impact_percent'] is num
+            ? (j['impact_percent'] as num).round()
+            : 0,
         verified: j['verified'] == true,
       );
 }
+
 class PostMedia {
   final String url;
   final String type;
@@ -354,6 +356,7 @@ class Post {
   final int likes;
   final int comments;
   final int shares;
+  final List<Author> sharedBy;
   final bool likedByMe;
   final bool bookmarkedByMe;
   final List<Comment> commentList;
@@ -402,6 +405,7 @@ class Post {
     this.likes = 0,
     this.comments = 0,
     this.shares = 0,
+    this.sharedBy = const [],
     this.likedByMe = false,
     this.bookmarkedByMe = false,
     this.commentList = const [],
@@ -472,6 +476,12 @@ class Post {
             ? (j['comments'] as List).length
             : (j['comments'] is num ? (j['comments'] as num).toInt() : 0),
         shares: j['shares'] is num ? (j['shares'] as num).toInt() : 0,
+        sharedBy: (j['shared_by'] is List)
+            ? (j['shared_by'] as List)
+                .whereType<Map>()
+                .map((u) => Author.fromJson(Map<String, dynamic>.from(u)))
+                .toList()
+            : const [],
         likedByMe: j['likedByMe'] ?? false,
         bookmarkedByMe: j['bookmarkedByMe'] ?? false,
         commentList: (j['comments'] is List)
@@ -521,6 +531,7 @@ class Post {
     int? comments,
     List<Comment>? commentList,
     int? shares,
+    List<Author>? sharedBy,
     String? editedAt,
     double? confidenceScore,
     String? confidenceLabel,
@@ -557,6 +568,7 @@ class Post {
         likes: likes ?? this.likes,
         comments: comments ?? this.comments,
         shares: shares ?? this.shares,
+        sharedBy: sharedBy ?? this.sharedBy,
         likedByMe: likedByMe ?? this.likedByMe,
         bookmarkedByMe: bookmarkedByMe ?? this.bookmarkedByMe,
         commentList: commentList ?? this.commentList,

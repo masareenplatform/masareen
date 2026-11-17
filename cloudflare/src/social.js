@@ -706,6 +706,7 @@ function postJson(r, likedByMe, ranking, bookmarkedByMe = false, followingAuthor
     location_claim: r.location_claim || null,
     actor_factor: r.actor_factor == null ? null : Number(r.actor_factor),
     consistency_factor: r.consistency_factor == null ? null : Number(r.consistency_factor),
+    shared_by: parseJsonValue(r.shared_by_json, []),
     promoted: !!(r.boosted_until && Date.parse(r.boosted_until) > Date.now()),
     boosted_until: r.boosted_until || null,
     boost_weight: r.boost_weight == null ? 0 : Number(r.boost_weight),
@@ -746,7 +747,9 @@ function postJson(r, likedByMe, ranking, bookmarkedByMe = false, followingAuthor
 }
 
 const POST_SELECT = `SELECT p.*, u.name author_name, u.handle author_handle, u.picture author_picture,
-  u.role author_role, u.email_verified author_verified
+  u.role author_role, u.email_verified author_verified,
+  (SELECT json_group_array(json_object('id',u2.id,'name',u2.name,'avatar_url',u2.picture))
+   FROM post_shares ps JOIN users u2 ON u2.id=ps.user_id WHERE ps.post_id=p.id) shared_by_json
   FROM posts p JOIN users u ON u.id=p.author_id`;
 
 async function getPostRow(env, id) {
@@ -2732,10 +2735,6 @@ async function sharePost(req, env, id) {
     FROM posts p JOIN users u ON u.id=p.author_id WHERE p.id=? AND p.hidden=0`)
     .bind(id).first();
   if (!post) throw new HttpError(404, 'post_not_found', 'This post no longer exists.');
-  if (!post.author_verified || Number(post.confidence_score || 0) < 60) {
-    throw new HttpError(403, 'verified_only',
-      'Only verified impact can be shared outside MASAREEN.');
-  }
   const shareKey = `share:${u.id}`;
   const since = new Date(Date.now() - 3600000).toISOString();
   const recent = await env.DB.prepare('SELECT COUNT(*) c FROM rate_limits WHERE key=? AND created_at>?')
@@ -2744,10 +2743,15 @@ async function sharePost(req, env, id) {
     throw new HttpError(429, 'rate_limited', 'You are sharing too quickly. Please slow down.');
   }
   await env.DB.prepare('INSERT INTO rate_limits (key, created_at) VALUES (?,?)').bind(shareKey, nowIso()).run();
-  await env.DB.prepare('UPDATE posts SET share_count=share_count+1 WHERE id=?').bind(id).run();
-  await recomputeImpact(env, id);
+  const shareIns = await env.DB.prepare('INSERT OR IGNORE INTO post_shares (post_id,user_id,created_at) VALUES (?,?,?)')
+    .bind(id, u.id, nowIso()).run();
+  if (shareIns.meta.changes) {
+    await env.DB.prepare('UPDATE posts SET share_count=share_count+1 WHERE id=?').bind(id).run();
+    await recomputeImpact(env, id);
+  }
   const row = await getPostRow(env, id);
-  return json({ ok: true, shares: row.share_count });
+  return json({ ok: true, shares: row.share_count,
+    shared_by: parseJsonValue(row.shared_by_json, []) });
 }
 
 async function boostPost(req, env, id) {
@@ -3685,10 +3689,10 @@ async function adminRoutes(req, env, url) {
     const like = `%${search.replace(/[%_]/g, '')}%`;
     const where = search ? 'WHERE email LIKE ? OR name LIKE ? OR role LIKE ?' : '';
     const args = search ? [like, like, like] : [];
-    const rows = (await env.DB.prepare(`SELECT id,email,email_verified,name,role,country,city,created_at,last_login_at,login_count,handle
+    const rows = (await env.DB.prepare(`SELECT id,email,email_verified,name,role,country,city,created_at,last_login_at,login_count,handle,is_demo
       FROM users ${where} ORDER BY created_at DESC LIMIT ?`).bind(...args, limit).all()).results || [];
     return json(rows.map((u) => ({ id: String(u.id), email: u.email, name: u.name, full_name: u.name, role: u.role,
-      handle: u.handle, country: u.country, city: u.city, created_at: u.created_at,
+      handle: u.handle, country: u.country, city: u.city, is_demo: !!u.is_demo, created_at: u.created_at,
       last_login_at: u.last_login_at, login_count: u.login_count, email_verified: !!u.email_verified })));
   }
 
@@ -3881,8 +3885,9 @@ async function adminRoutes(req, env, url) {
     const days = clamp(parseInt(url.searchParams.get('days') || '30', 10) || 30, 1, 365);
     const since = new Date(Date.now() - days * 86400000).toISOString();
     const totals = await one(`SELECT
-      (SELECT COUNT(*) FROM users) users,
-      (SELECT COUNT(*) FROM users WHERE created_at>=?) new_users,
+      (SELECT COUNT(*) FROM users WHERE COALESCE(is_demo,0)=0) users,
+      (SELECT COUNT(*) FROM users WHERE COALESCE(is_demo,0)=1) demo_users,
+      (SELECT COUNT(*) FROM users WHERE created_at>=? AND COALESCE(is_demo,0)=0) new_users,
       (SELECT COUNT(*) FROM posts WHERE hidden=0) posts,
       (SELECT COUNT(*) FROM posts WHERE created_at>=?) new_posts,
       (SELECT COALESCE(SUM(impact_value),0) FROM posts WHERE hidden=0) impact,
@@ -3905,7 +3910,7 @@ async function adminRoutes(req, env, url) {
     return json({
       ok: true, days,
       totals: {
-        users: Number(totals.users || 0), new_users: Number(totals.new_users || 0),
+        users: Number(totals.users || 0), demo_users: Number(totals.demo_users || 0), new_users: Number(totals.new_users || 0),
         posts: Number(totals.posts || 0), new_posts: Number(totals.new_posts || 0),
         impact: Number(totals.impact || 0), evidence: Number(totals.evidence || 0),
         mrc_spend: Number(totals.mrc_spend || 0), transactions: Number(totals.transactions || 0),
@@ -4345,7 +4350,50 @@ async function adminRoutes(req, env, url) {
       .bind(Number(announcementMatch[1])).run();
     return json({ ok: true });
   }
-  throw new HttpError(404, 'not_found', 'Unknown admin route.');
+  if (path === '/api/v1/admin/wallet/requests' && method === 'GET') {
+    const rows = (await env.DB.prepare(`SELECT r.*,u.name user_name,u.email user_email
+      FROM wallet_payment_requests r LEFT JOIN users u ON u.id=r.user_id
+      ORDER BY r.created_at DESC LIMIT 300`).all()).results || [];
+    return json({ ok: true, rows });
+  }
+  const walletReq = /^\/api\/v1\/admin\/wallet\/requests\/(\d+)$/.exec(path);
+  if (walletReq && method === 'POST') {
+    const b = await readJson(req);
+    const status = String(b.status || '').toUpperCase();
+    if (!['APPROVED', 'REJECTED'].includes(status)) {
+      throw new HttpError(400, 'invalid_status', 'Choose APPROVED or REJECTED.');
+    }
+    const r = await env.DB.prepare('SELECT * FROM wallet_payment_requests WHERE id=?')
+      .bind(Number(walletReq[1])).first();
+    if (!r || r.status !== 'PENDING') {
+      throw new HttpError(409, 'already_processed', 'Request is missing or already processed.');
+    }
+    const at = nowIso();
+    const claim = await env.DB.prepare(`UPDATE wallet_payment_requests
+      SET status=?,admin_note=?,updated_at=? WHERE id=? AND status='PENDING'`)
+      .bind(status, clean(b.note, 300) || null, at, r.id).run();
+    if (!claim.meta.changes) {
+      throw new HttpError(409, 'already_processed', 'Request was already processed.');
+    }
+    try {
+      if (status === 'APPROVED' && r.kind === 'BUY') {
+        await creditCoins(env, r.user_id, Number(r.amount_mrc), `MRC purchase #${r.id}`);
+      }
+      if (status === 'REJECTED' && r.kind === 'CASHOUT') {
+        await creditCoins(env, r.user_id, Number(r.amount_mrc), `Cash-out rejected #${r.id}`);
+      }
+    } catch (e) {
+      await env.DB.prepare(`UPDATE wallet_payment_requests
+        SET status='PENDING',admin_note=NULL,updated_at=? WHERE id=?`)
+        .bind(nowIso(), r.id).run().catch(() => {});
+      throw e;
+    }
+    if (r.invoice_id) {
+      await env.DB.prepare('UPDATE invoices SET status=? WHERE id=?')
+        .bind(status === 'APPROVED' ? 'PAID' : 'REJECTED', r.invoice_id).run();
+    }
+    return json({ ok: true });
+  }  throw new HttpError(404, 'not_found', 'Unknown admin route.');
 }
 
 /* ---------------- courses ---------------- */
@@ -7793,6 +7841,32 @@ async function refundCreationFee(env, ownerId, fee, kind, title) {
     `Refund: ${kind.toLowerCase()} ${clean(title, 80) || ''}`.trim(), null);
 }
 
+
+function callRoomJson(r, participants = []) {
+  return {
+    id: String(r.id), code: r.code, host_id: String(r.host_id),
+    host_name: r.host_name || null, title: r.title,
+    description: r.description || null, scheduled_at: r.scheduled_at || null,
+    started_at: r.started_at || null, ended_at: r.ended_at || null,
+    status: r.status, entity_type: r.entity_type || null,
+    entity_id: r.entity_id == null ? null : String(r.entity_id),
+    reward_mrc: Number(r.reward_mrc || 0),
+    max_participants: Number(r.max_participants || 2),
+    participants,
+  };
+}
+
+async function payCallReward(env, room, userId) {
+  const reward = Number(room.reward_mrc || 0);
+  if (reward <= 0) return false;
+  const p = await env.DB.prepare(`SELECT * FROM call_participants
+    WHERE room_id=? AND user_id=? AND reward_paid=0`).bind(room.id, userId).first();
+  if (!p) return false;
+  await env.DB.prepare('UPDATE call_participants SET reward_paid=1 WHERE room_id=? AND user_id=?')
+    .bind(room.id, userId).run();
+  await creditCoins(env, userId, reward, `Call reward: ${room.title}`);
+  return true;
+}
 function coinTxJson(r) {
   return {
     id: String(r.id),
@@ -7876,6 +7950,20 @@ async function rateFor(env, currency) {
   return { currency: row.currency, rate_to_mrc: Number(row.rate_to_mrc), updated_at: row.updated_at };
 }
 
+
+async function createInvoice(env, userId, kind, description, amountMrc, amountEgp, status, refType, refId) {
+  const at = nowIso();
+  const ins = await env.DB.prepare(`INSERT INTO invoices
+    (user_id,kind,description,amount_mrc,amount_egp,status,reference_type,reference_id,created_at)
+    VALUES (?,?,?,?,?,?,?,?,?)`)
+    .bind(userId, kind, description || null, Number(amountMrc || 0),
+      Number(amountEgp || 0), status || 'ISSUED', refType || null,
+      refId == null ? null : String(refId), at).run();
+  const id = ins.meta.last_row_id;
+  const number = `INV-${new Date().getUTCFullYear()}-${String(id).padStart(6, '0')}`;
+  await env.DB.prepare('UPDATE invoices SET number=? WHERE id=?').bind(number, id).run();
+  return { id: Number(id), number };
+}
 async function recordCoinTx(env, ownerId, type, amount, reference, counterpartyId = null) {
   const wallet = await env.DB.prepare('SELECT * FROM coin_wallets WHERE owner_id=?').bind(ownerId).first();
   const after = Number(wallet && wallet.balance || 0);
@@ -8805,7 +8893,178 @@ async function userRoutes(req, env, url, viewer) {
     } catch (_) { jsonUser.programs = []; }
     return json(jsonUser);
   }
-  if (path === '/api/v1/coin/wallets' || path === '/api/v1/wallet') {
+  if (path === '/api/v1/calls' && req.method === 'GET') {
+    if (!viewer) throw new HttpError(401, 'not_signed_in', 'Please sign in.');
+    const rows = (await env.DB.prepare(`SELECT r.*,h.name host_name,
+      (SELECT COUNT(*) FROM call_participants p WHERE p.room_id=r.id AND p.left_at IS NULL) participants
+      FROM call_rooms r JOIN users h ON h.id=r.host_id
+      WHERE r.status IN ('SCHEDULED','LIVE') OR (r.host_id=? OR EXISTS(SELECT 1 FROM call_participants p2 WHERE p2.room_id=r.id AND p2.user_id=?))
+      ORDER BY COALESCE(r.started_at,r.scheduled_at,r.created_at) DESC LIMIT 80`)
+      .bind(viewer.id, viewer.id).all()).results || [];
+    return json(rows.map((r) => ({ ...callRoomJson(r), participant_count: Number(r.participants || 0) })));
+  }
+  if (path === '/api/v1/calls' && req.method === 'POST') {
+    if (!viewer) throw new HttpError(401, 'not_signed_in', 'Please sign in.');
+    const b = await readJson(req);
+    const title = clean(b.title, 160);
+    if (title.length < 3) throw new HttpError(400, 'invalid_title', 'Add a call title.');
+    const reward = Math.max(0, Math.min(500, Number(b.reward_mrc || 0)));
+    if (reward > 0 && !b.entity_type && !b.entity_id) {
+      throw new HttpError(400, 'reward_needs_entity',
+        'MRC rewards must be linked to a program, event or activity.');
+    }
+    const at = nowIso();
+    const scheduled = b.scheduled_at && !Number.isNaN(Date.parse(b.scheduled_at))
+      ? new Date(b.scheduled_at).toISOString() : null;
+    const code = 'CALL-' + Math.random().toString(36).slice(2, 8).toUpperCase();
+    const ins = await env.DB.prepare(`INSERT INTO call_rooms
+      (code,host_id,title,description,scheduled_at,status,entity_type,entity_id,reward_mrc,max_participants,created_at)
+      VALUES (?,?,?,?,?,'SCHEDULED',?,?,?,?,?)`)
+      .bind(code, viewer.id, title, clean(b.description, 1000) || null, scheduled,
+        clean(b.entity_type, 30) || null, num(b.entity_id),
+        Math.round(reward * 100) / 100,
+        Math.max(2, Math.min(8, Number(b.max_participants || 2))), at).run();
+    await env.DB.prepare(`INSERT INTO call_participants (room_id,user_id,role,joined_at)
+      VALUES (?,?,'HOST',?)`).bind(ins.meta.last_row_id, viewer.id, at).run();
+    const row = await env.DB.prepare(`SELECT r.*,h.name host_name FROM call_rooms r
+      JOIN users h ON h.id=r.host_id WHERE r.id=?`).bind(ins.meta.last_row_id).first();
+    return json(callRoomJson(row), 201);
+  }
+  const callMatch = /^\/api\/v1\/calls\/(\d+)(?:\/(join|signal|signals|leave|end))?$/.exec(path);
+  if (callMatch) {
+    if (!viewer) throw new HttpError(401, 'not_signed_in', 'Please sign in.');
+    const roomId = Number(callMatch[1]);
+    const room = await env.DB.prepare(`SELECT r.*,h.name host_name FROM call_rooms r
+      JOIN users h ON h.id=r.host_id WHERE r.id=?`).bind(roomId).first();
+    if (!room) throw new HttpError(404, 'call_not_found', 'Call room not found.');
+    if (!callMatch[2] && req.method === 'GET') {
+      const participants = (await env.DB.prepare(`SELECT p.*,u.name,u.picture
+        FROM call_participants p JOIN users u ON u.id=p.user_id WHERE p.room_id=?`)
+        .bind(roomId).all()).results || [];
+      return json({ ...callRoomJson(room, participants.map((p) => ({
+        user_id: String(p.user_id), name: p.name, avatar_url: p.picture || null,
+        role: p.role, joined_at: p.joined_at, left_at: p.left_at,
+      }))) });
+    }
+    if (callMatch[2] === 'join' && req.method === 'POST') {
+      const at = nowIso();
+      await env.DB.prepare(`INSERT INTO call_participants (room_id,user_id,role,joined_at)
+        VALUES (?,?, 'GUEST', ?)
+        ON CONFLICT(room_id,user_id) DO UPDATE SET joined_at=excluded.joined_at,left_at=NULL`)
+        .bind(roomId, viewer.id, at).run();
+      if (room.status === 'SCHEDULED') {
+        await env.DB.prepare("UPDATE call_rooms SET status='LIVE',started_at=? WHERE id=?")
+          .bind(at, roomId).run();
+      }
+      return json({ ok: true, room: callRoomJson(room), ice_servers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+      ] });
+    }
+    if (callMatch[2] === 'signal' && req.method === 'POST') {
+      const b = await readJson(req);
+      const to = Number(b.to_user);
+      if (!to || !['offer', 'answer', 'ice'].includes(String(b.type))) {
+        throw new HttpError(400, 'invalid_signal', 'Invalid call signal.');
+      }
+      await env.DB.prepare(`INSERT INTO call_signals
+        (room_id,from_user,to_user,type,payload_json,created_at) VALUES (?,?,?,?,?,?)`)
+        .bind(roomId, viewer.id, to, String(b.type),
+          JSON.stringify(b.payload || {}), nowIso()).run();
+      return json({ ok: true });
+    }
+    if (callMatch[2] === 'signals' && req.method === 'GET') {
+      const after = Number(url.searchParams.get('after') || 0);
+      const rows = (await env.DB.prepare(`SELECT * FROM call_signals
+        WHERE room_id=? AND to_user=? AND id>? ORDER BY id ASC LIMIT 100`)
+        .bind(roomId, viewer.id, after).all()).results || [];
+      return json(rows.map((r) => ({ id: String(r.id), from_user: String(r.from_user),
+        type: r.type, payload: parseJsonValue(r.payload_json, {}), created_at: r.created_at })));
+    }
+    if (callMatch[2] === 'leave' && req.method === 'POST') {
+      await env.DB.prepare('UPDATE call_participants SET left_at=? WHERE room_id=? AND user_id=?')
+        .bind(nowIso(), roomId, viewer.id).run();
+      await payCallReward(env, room, viewer.id).catch(() => {});
+      return json({ ok: true });
+    }
+    if (callMatch[2] === 'end' && req.method === 'POST') {
+      if (Number(room.host_id) !== Number(viewer.id) && !isAdminUser(env, viewer)) {
+        throw new HttpError(403, 'not_allowed', 'Only the host can end this call.');
+      }
+      const at = nowIso();
+      await env.DB.prepare("UPDATE call_rooms SET status='ENDED',ended_at=? WHERE id=?")
+        .bind(at, roomId).run();
+      const parts = (await env.DB.prepare('SELECT user_id FROM call_participants WHERE room_id=?')
+        .bind(roomId).all()).results || [];
+      for (const p of parts) await payCallReward(env, room, p.user_id).catch(() => {});
+      return json({ ok: true });
+    }
+  }  if (path === '/api/v1/wallet/requests' && req.method === 'GET') {
+    if (!viewer) throw new HttpError(401, 'not_signed_in', 'Please sign in.');
+    const rows = (await env.DB.prepare(`SELECT * FROM wallet_payment_requests
+      WHERE user_id=? ORDER BY created_at DESC LIMIT 100`).bind(viewer.id).all()).results || [];
+    return json(rows.map((r) => ({
+      id: String(r.id), kind: r.kind, amount_mrc: Number(r.amount_mrc),
+      amount_egp: Number(r.amount_egp), method: r.method,
+      account_ref: r.account_ref, status: r.status, admin_note: r.admin_note,
+      invoice_id: r.invoice_id == null ? null : String(r.invoice_id),
+      created_at: r.created_at, updated_at: r.updated_at,
+    })));
+  }
+  if (path === '/api/v1/wallet/requests' && req.method === 'POST') {
+    if (!viewer) throw new HttpError(401, 'not_signed_in', 'Please sign in.');
+    const b = await readJson(req);
+    const kind = String(b.kind || '').toUpperCase();
+    if (!['BUY', 'CASHOUT'].includes(kind)) {
+      throw new HttpError(400, 'invalid_kind', 'Choose BUY or CASHOUT.');
+    }
+    const amount = Math.round(Number(b.amount_mrc) * 100) / 100;
+    if (!Number.isFinite(amount) || amount < 10 || amount > 50000) {
+      throw new HttpError(400, 'invalid_amount', 'Choose between 10 and 50,000 MRC.');
+    }
+    const method = clean(b.method, 40) || 'MANUAL';
+    const accountRef = clean(b.account_ref, 160) || null;
+    const rate = 1;
+    const egp = Math.round(amount * rate * 100) / 100;
+    if (kind === 'CASHOUT') await debitCoins(env, viewer.id, amount, 'Cash-out request');
+    const invoice = await createInvoice(env, viewer.id, kind,
+      `${kind === 'BUY' ? 'MRC purchase' : 'MRC cash-out'} request`,
+      amount, egp, 'PENDING', 'WALLET_REQUEST', null);
+    const at = nowIso();
+    const ins = await env.DB.prepare(`INSERT INTO wallet_payment_requests
+      (user_id,kind,amount_mrc,amount_egp,method,account_ref,status,invoice_id,created_at,updated_at)
+      VALUES (?,?,?,?,?,?,'PENDING',?,?,?)`)
+      .bind(viewer.id, kind, amount, egp, method, accountRef, invoice.id, at, at).run();
+    await env.DB.prepare('UPDATE invoices SET reference_id=? WHERE id=?')
+      .bind(String(ins.meta.last_row_id), invoice.id).run();
+    return json({ ok: true, id: String(ins.meta.last_row_id),
+      kind, amount_mrc: amount, amount_egp: egp, status: 'PENDING',
+      invoice_id: String(invoice.id), invoice_number: invoice.number }, 201);
+  }
+  if (path === '/api/v1/invoices' && req.method === 'GET') {
+    if (!viewer) throw new HttpError(401, 'not_signed_in', 'Please sign in.');
+    const rows = (await env.DB.prepare(`SELECT * FROM invoices
+      WHERE user_id=? ORDER BY created_at DESC LIMIT 200`).bind(viewer.id).all()).results || [];
+    return json(rows.map((r) => ({
+      id: String(r.id), number: r.number, kind: r.kind,
+      description: r.description, amount_mrc: Number(r.amount_mrc),
+      amount_egp: Number(r.amount_egp), status: r.status,
+      reference_type: r.reference_type,
+      reference_id: r.reference_id, created_at: r.created_at,
+    })));
+  }
+  const invoiceMatch = /^\/api\/v1\/invoices\/(\d+)$/.exec(path);
+  if (invoiceMatch && req.method === 'GET') {
+    if (!viewer) throw new HttpError(401, 'not_signed_in', 'Please sign in.');
+    const r = await env.DB.prepare('SELECT * FROM invoices WHERE id=? AND user_id=?')
+      .bind(Number(invoiceMatch[1]), viewer.id).first();
+    if (!r) throw new HttpError(404, 'invoice_not_found', 'Invoice not found.');
+    return json({ id: String(r.id), number: r.number, kind: r.kind,
+      description: r.description, amount_mrc: Number(r.amount_mrc),
+      amount_egp: Number(r.amount_egp), status: r.status,
+      reference_type: r.reference_type, reference_id: r.reference_id,
+      created_at: r.created_at });
+  }  if (path === '/api/v1/coin/wallets' || path === '/api/v1/wallet') {
     return json({ owner_id: viewer ? String(viewer.id) : '', ownerId: viewer ? String(viewer.id) : '',
       balance: 0, currency: 'MAS', updated_at: nowIso() });
   }

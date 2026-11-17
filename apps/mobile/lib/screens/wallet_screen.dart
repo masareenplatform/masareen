@@ -1,10 +1,11 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:masaren/api_client.dart';
 import 'package:masaren/l10n.dart';
 import 'package:masaren/theme.dart';
 import 'package:masaren/widgets.dart';
 import 'package:masaren/models.dart';
 import 'package:masaren/screens/payments_screen.dart';
+import 'package:masaren/screens/wallet_requests_screen.dart';
 import 'package:masaren/screens/pro_screen.dart';
 
 class WalletScreen extends StatefulWidget {
@@ -111,7 +112,8 @@ class _WalletScreenState extends State<WalletScreen> {
                               width: 18,
                               height: 18,
                               child: CircularProgressIndicator(strokeWidth: 2))
-                          : Text(MasarenLocalizations.of(context,
+                          : Text(MasarenLocalizations.of(
+                              context,
                               alreadyClaimed
                                   ? 'wallet.claimedToday'
                                   : 'wallet.claim')),
@@ -255,8 +257,8 @@ class _WalletScreenState extends State<WalletScreen> {
                         hintText: MasarenLocalizations.of(
                             context, 'wallet.recipientId'),
                         prefixIcon: const Icon(Icons.person_outline, size: 20),
-                        contentPadding:
-                            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -269,8 +271,8 @@ class _WalletScreenState extends State<WalletScreen> {
                         hintText: MasarenLocalizations.of(
                             context, 'wallet.amountMrc'),
                         prefixIcon: const Icon(Icons.token, size: 20),
-                        contentPadding:
-                            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
                       ),
                     ),
                   ],
@@ -579,6 +581,22 @@ class _WalletScreenState extends State<WalletScreen> {
                           )),
                         ],
                       ),
+                      const SizedBox(height: 14),
+                      Card(
+                        child: ListTile(
+                          leading: const Icon(Icons.receipt_long_outlined),
+                          title: const Text('Buy MRC, cash out & invoices'),
+                          subtitle: const Text(
+                              'Manual InstaPay / bank processing until Paymob is active'),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () async {
+                            await Navigator.of(context).push(MaterialPageRoute(
+                                builder: (_) =>
+                                    WalletRequestsScreen(user: widget.user)));
+                            await _load();
+                          },
+                        ),
+                      ),
                       const SizedBox(height: 20),
                       InkWell(
                         borderRadius: BorderRadius.circular(16),
@@ -760,4 +778,3 @@ class _TxTile extends StatelessWidget {
     );
   }
 }
-

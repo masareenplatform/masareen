@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:masaren/api_client.dart';
@@ -36,7 +36,8 @@ class _WebMessengerDockState extends State<WebMessengerDock> {
   void initState() {
     super.initState();
     _load();
-    _poll = Timer.periodic(const Duration(seconds: 12), (_) => _load(silent: true));
+    _poll =
+        Timer.periodic(const Duration(seconds: 12), (_) => _load(silent: true));
   }
 
   @override
@@ -173,9 +174,7 @@ class _WebMessengerDockState extends State<WebMessengerDock> {
               child: child,
             ),
           ),
-          child: _open
-              ? _panel(context)
-              : _chatHead(context, unread),
+          child: _open ? _panel(context) : _chatHead(context, unread),
         ),
       ],
     );
@@ -196,6 +195,7 @@ class _WebMessengerDockState extends State<WebMessengerDock> {
             Container(
               width: 58,
               height: 58,
+              alignment: Alignment.center,
               decoration: BoxDecoration(
                 gradient: brandGradient,
                 shape: BoxShape.circle,
@@ -205,11 +205,14 @@ class _WebMessengerDockState extends State<WebMessengerDock> {
                       blurRadius: 24,
                       offset: const Offset(0, 8)),
                 ],
-                border: Border.all(
-                    color: cs.surface, width: 3),
+                border: Border.all(color: cs.surface, width: 3),
               ),
-              child: const Icon(Icons.chat_bubble_rounded,
-                  color: Colors.white, size: 26),
+              child: const Text('···',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 28,
+                      height: .7,
+                      fontWeight: FontWeight.w900)),
             ),
             if (unread > 0)
               Positioned(
@@ -261,8 +264,8 @@ class _WebMessengerDockState extends State<WebMessengerDock> {
             decoration: BoxDecoration(
               gradient: brandGradient,
               border: Border(
-                  bottom: BorderSide(
-                      color: Colors.white.withValues(alpha: .12))),
+                  bottom:
+                      BorderSide(color: Colors.white.withValues(alpha: .12))),
             ),
             child: Row(
               children: [
@@ -286,8 +289,7 @@ class _WebMessengerDockState extends State<WebMessengerDock> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                          active?.peer.name ?? _t('Chats', 'المحادثات'),
+                      Text(active?.peer.name ?? _t('Chats', 'المحادثات'),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
@@ -382,8 +384,8 @@ class _WebMessengerDockState extends State<WebMessengerDock> {
     }
     return ListView.separated(
       itemCount: _conversations.length,
-      separatorBuilder: (_, __) => Divider(
-          height: 1, color: cs.outlineVariant.withValues(alpha: .5)),
+      separatorBuilder: (_, __) =>
+          Divider(height: 1, color: cs.outlineVariant.withValues(alpha: .5)),
       itemBuilder: (_, index) {
         final c = _conversations[index];
         final unread = c.unreadCount > 0;
@@ -422,9 +424,8 @@ class _WebMessengerDockState extends State<WebMessengerDock> {
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                               fontSize: 12.5,
-                              fontWeight: unread
-                                  ? FontWeight.w800
-                                  : FontWeight.w600,
+                              fontWeight:
+                                  unread ? FontWeight.w800 : FontWeight.w600,
                               color: cs.onSurface)),
                       const SizedBox(height: 2),
                       Text(c.lastMessage ?? '',
@@ -433,9 +434,8 @@ class _WebMessengerDockState extends State<WebMessengerDock> {
                           textDirection: textDirectionFor(c.lastMessage),
                           style: TextStyle(
                               fontSize: 11,
-                              color: unread
-                                  ? cs.onSurface
-                                  : cs.onSurfaceVariant,
+                              color:
+                                  unread ? cs.onSurface : cs.onSurfaceVariant,
                               fontWeight:
                                   unread ? FontWeight.w600 : FontWeight.w400)),
                     ],
@@ -484,9 +484,7 @@ class _WebMessengerDockState extends State<WebMessengerDock> {
                             horizontal: 11, vertical: 8),
                         constraints: const BoxConstraints(maxWidth: 270),
                         decoration: BoxDecoration(
-                          color: m.mine
-                              ? cs.primary
-                              : cs.surfaceContainerLow,
+                          color: m.mine ? cs.primary : cs.surfaceContainerLow,
                           borderRadius: BorderRadius.only(
                             topLeft: const Radius.circular(14),
                             topRight: const Radius.circular(14),
@@ -510,8 +508,8 @@ class _WebMessengerDockState extends State<WebMessengerDock> {
           decoration: BoxDecoration(
             color: cs.surface,
             border: Border(
-                top: BorderSide(
-                    color: cs.outlineVariant.withValues(alpha: .6))),
+                top:
+                    BorderSide(color: cs.outlineVariant.withValues(alpha: .6))),
           ),
           child: Row(
             children: [
@@ -659,8 +657,7 @@ class _NewChatSheetState extends State<_NewChatSheet> {
               controller: _search,
               autofocus: true,
               decoration: const InputDecoration(
-                  hintText: 'Search people...',
-                  prefixIcon: Icon(Icons.search)),
+                  hintText: 'Search people...', prefixIcon: Icon(Icons.search)),
               onChanged: (value) {
                 _debounce?.cancel();
                 _debounce =

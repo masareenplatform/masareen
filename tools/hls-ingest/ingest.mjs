@@ -190,7 +190,20 @@ async function processJob(job) {
   }
 }
 
+async function requeueStale() {
+  try {
+    const stale = await api('/api/v1/internal/video-jobs?status=processing&stale_seconds=900&limit=10');
+    for (const job of Array.isArray(stale) ? stale : []) {
+      log('requeueing stale job', job.id);
+      await updateJob(job.id, { status: 'queued', error: null });
+    }
+  } catch (error) {
+    log('stale sweep failed', error.message);
+  }
+}
+
 async function tick() {
+  await requeueStale();
   const jobs = await api('/api/v1/internal/video-jobs?status=queued&limit=1');
   for (const job of Array.isArray(jobs) ? jobs : []) {
     await processJob(job);

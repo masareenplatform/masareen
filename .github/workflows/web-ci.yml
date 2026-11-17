@@ -1,17 +1,32 @@
-name: Web build
+name: Web & Worker CI
 
 on:
-  push: { paths: ['apps/web/**', 'landing/**', '.github/workflows/web-ci.yml'] }
-  pull_request: { paths: ['apps/web/**', 'landing/**'] }
+  push: { paths: ['landing/**', 'cloudflare/**', '.github/workflows/web-ci.yml'] }
+  pull_request: { paths: ['landing/**', 'cloudflare/**'] }
 
 jobs:
-  web:
+  validate:
     runs-on: ubuntu-latest
-    defaults: { run: { working-directory: apps/web } }
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: '20' }
-      - run: npm install --no-audit --no-fund
-      - run: npx tsc --noEmit
-      - run: npx vite build
+        with: { node-version: '22' }
+      - name: Validate static web pages & inline scripts
+        run: |
+          node -e '
+            const fs = require("node:fs");
+            const vm = require("node:vm");
+            for (const page of ["landing/index.html", "landing/admin.html", "landing/mobile-auth.html", "landing/privacy.html", "landing/terms.html"]) {
+              if (!fs.existsSync(page)) throw new Error("Missing page: " + page);
+              const html = fs.readFileSync(page, "utf8");
+              if (!html.includes("<!DOCTYPE html") && !html.includes("<!doctype html")) {
+                throw new Error("Missing DOCTYPE in " + page);
+              }
+              const scripts = [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi)];
+              scripts.forEach((m, idx) => new vm.Script(m[1], { filename: `${page}#script-${idx}` }));
+              console.log(`Validated ${page} (${scripts.length} inline script block(s))`);
+            }
+          '
+      - name: Run Cloudflare Worker test suite
+        working-directory: cloudflare
+        run: npm test

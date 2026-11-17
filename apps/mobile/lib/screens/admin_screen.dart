@@ -103,8 +103,8 @@ class _AdminScreenState extends State<AdminScreen> {
   @override
   void initState() {
     super.initState();
-    _isAdmin = widget.user.isAdmin ||
-        widget.user.role.toUpperCase().contains('ADMIN');
+    _isAdmin =
+        widget.user.isAdmin || widget.user.role.toUpperCase().contains('ADMIN');
     if (_isAdmin) {
       _loadStats();
       _loadRate();
@@ -366,8 +366,7 @@ class _AdminScreenState extends State<AdminScreen> {
   Future<void> _submissionVerdict(
       Map<String, dynamic> submission, String status) async {
     try {
-      await AuthApi.adminSubmissionVerdict(
-          submission['id'].toString(), status);
+      await AuthApi.adminSubmissionVerdict(submission['id'].toString(), status);
       if (!mounted) return;
       await _loadSubmissions(force: true);
       _loadStats();
@@ -388,6 +387,7 @@ class _AdminScreenState extends State<AdminScreen> {
       _snack(_err(error));
     }
   }
+
   Future<void> _setAdStatus(Campaign campaign, String status,
       {bool confirm = false}) async {
     if (confirm) {
@@ -403,7 +403,8 @@ class _AdminScreenState extends State<AdminScreen> {
                 child: Text(MasarenLocalizations.of(context, 'action.cancel'))),
             FilledButton(
                 onPressed: () => Navigator.pop(ctx, true),
-                child: Text(MasarenLocalizations.of(context, 'common.confirm'))),
+                child:
+                    Text(MasarenLocalizations.of(context, 'common.confirm'))),
           ],
         ),
       );
@@ -440,8 +441,8 @@ class _AdminScreenState extends State<AdminScreen> {
             builder: (_) => AdminAnnouncementsScreen(user: widget.user)));
         break;
       case 'ota':
-        Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => AdminOtaScreen(user: widget.user)));
+        Navigator.of(context).push(MaterialPageRoute(
+            builder: (_) => AdminOtaScreen(user: widget.user)));
         break;
       case 'feedback':
         Navigator.of(context).push(MaterialPageRoute(
@@ -481,8 +482,15 @@ class _AdminScreenState extends State<AdminScreen> {
                   value: 'operations',
                   child: ListTile(
                     leading: const Icon(Icons.monitor_heart_outlined),
-                    title: Text(MasarenLocalizations.of(
-                        context, 'admin.operations')),
+                    title: Text(
+                        MasarenLocalizations.of(context, 'admin.operations')),
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'insights',
+                  child: ListTile(
+                    leading: Icon(Icons.query_stats_outlined),
+                    title: Text('Reports & analytics'),
                   ),
                 ),
                 PopupMenuItem(
@@ -512,8 +520,8 @@ class _AdminScreenState extends State<AdminScreen> {
                   value: 'entities',
                   child: ListTile(
                     leading: const Icon(Icons.fact_check_outlined),
-                    title: Text(MasarenLocalizations.of(
-                        context, 'admin.entityReview')),
+                    title: Text(
+                        MasarenLocalizations.of(context, 'admin.entityReview')),
                   ),
                 ),
                 PopupMenuItem(
@@ -580,9 +588,9 @@ class _AdminScreenState extends State<AdminScreen> {
     }
     if (_stats == null) {
       return ErrorView(
-        message: _statsError ??
-            'Could not load the dashboard. Pull to refresh.',
-        onRetry: _loadStats);
+          message:
+              _statsError ?? 'Could not load the dashboard. Pull to refresh.',
+          onRetry: _loadStats);
     }
     final stats = _stats!;
     final totals = _asMap(stats['totals']);
@@ -1291,7 +1299,8 @@ class _AdminScreenState extends State<AdminScreen> {
     try {
       await AuthApi.testPush(
         title: 'MASAREEN test notification',
-        body: 'If you can read this, in-app and push notifications are working.',
+        body:
+            'If you can read this, in-app and push notifications are working.',
       );
       if (!mounted) return;
       _snack(MasarenLocalizations.of(context, 'admin.testSent'));
@@ -1328,7 +1337,8 @@ class _AdminScreenState extends State<AdminScreen> {
           children: [
             ListTile(
               leading: const Icon(Icons.chat_bubble_outline),
-              title: Text(MasarenLocalizations.of(context, 'admin.messageUser')),
+              title:
+                  Text(MasarenLocalizations.of(context, 'admin.messageUser')),
               onTap: () => Navigator.pop(ctx, 'message'),
             ),
             ListTile(
@@ -1344,7 +1354,8 @@ class _AdminScreenState extends State<AdminScreen> {
               onTap: () => Navigator.pop(ctx, 'tester'),
             ),
             ListTile(
-              leading: Icon(suspended ? Icons.play_circle_outline : Icons.block),
+              leading:
+                  Icon(suspended ? Icons.play_circle_outline : Icons.block),
               title: Text(suspended
                   ? MasarenLocalizations.of(context, 'admin.unsuspend')
                   : MasarenLocalizations.of(context, 'admin.suspend')),
@@ -1369,14 +1380,16 @@ class _AdminScreenState extends State<AdminScreen> {
         context: context,
         builder: (ctx) => AlertDialog(
           title: Text(MasarenLocalizations.of(context, 'admin.deleteUser')),
-          content: Text(MasarenLocalizations.of(context, 'admin.deleteUserHint')),
+          content:
+              Text(MasarenLocalizations.of(context, 'admin.deleteUserHint')),
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
                 child: Text(MasarenLocalizations.of(context, 'action.cancel'))),
             FilledButton(
                 onPressed: () => Navigator.pop(ctx, true),
-                child: Text(MasarenLocalizations.of(context, 'common.confirm'))),
+                child:
+                    Text(MasarenLocalizations.of(context, 'common.confirm'))),
           ],
         ),
       );
@@ -1393,6 +1406,7 @@ class _AdminScreenState extends State<AdminScreen> {
       _snack(_err(error));
     }
   }
+
   Widget _buildUsers() {
     final cs = Theme.of(context).colorScheme;
     return Column(
@@ -1460,8 +1474,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                 children: [
                                   Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.end,
+                                    crossAxisAlignment: CrossAxisAlignment.end,
                                     children: [
                                       if (verified)
                                         const Icon(Icons.verified,

@@ -74,7 +74,7 @@ table{width:100%;border-collapse:collapse;font-size:.84rem}th,td{text-align:star
   function load(){
     api('/api/admin/stats').then(function(s){
       if(!s.ok)return;var t=s.totals;
-      $('kpis').innerHTML=[['Registered',t.users],['via Google',t.google],['Profiles complete',t.profileComplete],['New, 7 days',t.signups7d],['New, 30 days',t.signups30d],['Logins, 24h',t.logins24h],['Logins, 7 days',t.logins7d],['Active users, 7d',t.activeUsers7d],['Play testers',t.testers||0],['Testers invited',t.testersInvited||0],['Posts',t.posts||0],['Impact ratings',t.impactVotes||0],['Messages',t.messages]].map(function(k){return '<div class="card kpi"><b>'+k[1]+'</b><span>'+k[0]+'</span></div>'}).join('');
+      $('kpis').innerHTML=[['Registered',t.users],['Real users',t.realUsers||0],['Demo accounts',t.demoUsers||0],['via Google',t.google],['Profiles complete',t.profileComplete],['New, 7 days',t.signups7d],['New, 30 days',t.signups30d],['Logins, 24h',t.logins24h],['Logins, 7 days',t.logins7d],['Active users, 7d',t.activeUsers7d],['Play testers',t.testers||0],['Testers invited',t.testersInvited||0],['Posts',t.posts||0],['Impact ratings',t.impactVotes||0],['Messages',t.messages]].map(function(k){return '<div class="card kpi"><b>'+k[1]+'</b><span>'+k[0]+'</span></div>'}).join('');
       bars($('byType'),s.byType);bars($('byRole'),s.byRole||[]);bars($('byCountry'),s.byCountry);chart(s.series)});
     table()}
   function table(){
@@ -86,7 +86,7 @@ table{width:100%;border-collapse:collapse;font-size:.84rem}th,td{text-align:star
       if(tab==='users'){h=['Name','Email','Role','Organization','Details','Country','Method','Profile','Joined','Last login','Logins'];
         row=function(u){var details=[u.university,u.department,u.academic_year,u.degree_level,u.employer,u.job_title].filter(Boolean).join(' · ');
           var org=[u.org||u.university||u.employer||'',u.org_type?'('+u.org_type+')':''].filter(Boolean).join(' ');
-          return [esc(u.name),esc(u.email)+(u.email_verified?'':' <span class="pill no">unverified</span>'),esc(u.role||'-'),esc(org),esc(details),esc(u.country),esc(u.signup_method),u.profile_complete?'<span class="pill">complete</span>':'<span class="pill no">pending</span>',fmt(u.created_at),fmt(u.last_login_at),u.login_count]}}
+          return [esc(u.name)+(u.is_demo?' <span class="pill">demo</span>':''),esc(u.email)+(u.email_verified?'':' <span class="pill no">unverified</span>'),esc(u.role||'-'),esc(org),esc(details),esc(u.country),esc(u.signup_method),u.profile_complete?'<span class="pill">complete</span>':'<span class="pill no">pending</span>',fmt(u.created_at),fmt(u.last_login_at),u.login_count]}}
       else if(tab==='testers'){h=['Name','Email','Country','Device','Android','Source','Status','Joined','Set status'];
         row=function(x){var badge=x.status==='active'?'<span class="pill">active</span>':x.status==='invited'?'<span class="pill" style="background:#fff7e6;color:#8a6100">invited</span>':x.status==='declined'?'<span class="pill no">declined</span>':'<span class="pill no">pending</span>';
           var actions=['invited','active','declined'].map(function(s){return '<button class="btn" data-tid="'+x.id+'" data-st="'+s+'" style="padding:.25rem .5rem;font-size:.72rem;margin:0 .15rem .15rem 0">'+s+'</button>'}).join('');

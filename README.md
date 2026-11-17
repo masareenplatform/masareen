@@ -9,6 +9,29 @@
 
 ---
 
+## Current production stack (2026-10)
+
+| Layer | Implementation |
+|---|---|
+| Site | Static bilingual landing served from **Cloudflare R2** at `masareen.com` |
+| API | One **Cloudflare Worker** (`cloudflare/`) answering `/api/*`, deployed to production |
+| Data | **Cloudflare D1** (`masareen`, 63 tables) + **R2** for media under `/media/*` |
+| Email | **Resend** (verification, password reset, contact, notifications) |
+| Push | **Firebase Cloud Messaging** (`cloudflare/src/fcm.js`) |
+| Mobile | **Flutter** app in `apps/mobile/` (Android APK + unsigned iOS IPA) |
+| CI | GitHub Actions: Worker tests + deploy, landing validation, APK, iOS IPA |
+
+Start here:
+
+- **Operating guide:** [`docs/MASAREEN_PLATFORM_GUIDE.txt`](docs/MASAREEN_PLATFORM_GUIDE.txt) — architecture, API, operations, limitations, next steps.
+- **Worker + D1 + R2 setup:** [`cloudflare/README.md`](cloudflare/README.md)
+- **Landing deployment:** [`landing/README.md`](landing/README.md)
+- **Imported legacy material:** `docs/archive/repo/`, `backend/`, `apps/web/`, `apps/admin/`, `infrastructure/`, `k8s/`, `ip-legal/`, `testing/`, `logo/`.
+
+> The sections below describe the earlier FastAPI / React / Kafka / Kubernetes design. That code is kept for reference under `backend/`, `apps/web/`, `apps/admin/`, `infrastructure/` and `k8s/`; production now runs on the Cloudflare stack above.
+
+---
+
 ## Table of Contents
 
 1. [Overview](#overview)
@@ -432,20 +455,20 @@ GitHub Actions does this automatically (`.github/workflows/android-apk.yml`) and
 
 ## Cloudflare backend (`cloudflare/`)
 
-Free-tier Worker + D1 database: Google sign-up, registrations, login tracking, contact messages and the CEO dashboard (`/admin.html`). Setup: `cloudflare/README.md`.
+Free-tier API Worker + D1 database. The Worker answers only `/api/*`; the landing page and CEO dashboard are served from an R2 bucket. It handles Google sign-up (client ID for the `masareen` Google project is already configured), role-aware registrations (student university/ID/department/year, professional employer/title, organization details), login tracking, contact messages and the dashboard data. Same-domain route or separate `api.` host are both supported (CORS included). On Windows, `cloudflare\setup.ps1` performs the one-time setup and deploy. Details: `cloudflare/README.md`.
 
 ## Landing page (`landing/`)
 
-Static bilingual (EN/AR) site for Cloudflare R2 / `masareen.com`; see `landing/README.md`.
+Static bilingual (EN/AR) site for Cloudflare R2 at `masareen.com`; `./upload-to-r2.sh <bucket>` (macOS/Linux) or `.\upload-to-r2.ps1 <bucket>` (Windows) deploys it. Includes the store-ready privacy policy (`privacy.html`) and terms of use (`terms.html`), linked from the footer. See `landing/README.md`.
 
 ---
 
 ## Mobile App (Flutter)
 
 **Package:** `com.masaren.app`
-**Version:** 0.2.0+2
+**Version:** 0.4.13+18
 **Platform:** Android (arm64-v8a only)
-**Size:** 22.8 MB
+**Size:** 116 MB
 
 ### Features
 

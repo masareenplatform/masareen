@@ -2125,7 +2125,7 @@ test('TIYE x ACU demo seed signs in and exposes connected event hubs', async () 
   assert.ok(ktiDetail.participants.some((p) => p.role === 'HOST' && p.user_id === String(acu.id)));
 });
 
-test('podcast and VOD entities are linked, playable and share-gated', async () => {
+test('podcast and VOD entities are linked, playable and shareable', async () => {
   const env = mkEnv();
   env.DB.raw.exec(readFileSync(new URL('../migrations/028-tiye-acu-demo-seed.sql', import.meta.url), 'utf8'));
   const login = await (await call(env, 'POST', '/api/v1/auth/login', {
@@ -2162,9 +2162,13 @@ test('podcast and VOD entities are linked, playable and share-gated', async () =
   assert.equal(verifiedPost.verified_content, true);
   assert.equal((await call(env, 'POST', `/api/v1/posts/${verifiedPost.id}/share`, null, tiye)).status, 200);
   const draft = await (await call(env, 'POST', '/api/v1/posts', {
-    text: 'An unverified draft that must not leave the platform.',
+    text: 'An unverified draft that can still be shared inside the platform.',
   }, tiye)).json();
-  assert.equal((await call(env, 'POST', `/api/v1/posts/${draft.id}/share`, null, tiye)).status, 403);
+  const draftShare = await call(env, 'POST', `/api/v1/posts/${draft.id}/share`, null, tiye);
+  assert.equal(draftShare.status, 200);
+  const draftBody = await draftShare.json();
+  assert.equal(draftBody.shares, 1);
+  assert.equal(draftBody.shared_by.length, 1);
 });
 
 test('non-linear ISA, GPS integrity, paid promotion and seeded feed rotation work', async () => {
@@ -2314,4 +2318,87 @@ test('deepfake and NSFW detection block explicit content and gate verification',
       status: 'VERIFIED', override_deepfake: true,
     }, admin);
   assert.equal(overrideVerdict.status, 200);
+});
+
+test('timeline sharing, manual MRC payments and call signaling stay consistent', async () => {
+  const env = mkEnv();
+  const host = await signup(env, 'call-host@example.com', 'Call Host');
+  const guest = await signup(env, 'call-guest@example.com', 'Call Guest');
+  const admin = await signup(env, 'ceo@example.com', 'Platform Admin');
+  const guestMe = await (await call(env, 'GET', '/api/v1/users/me', null, guest)).json();
+
+  const post = await (await call(env, 'POST', '/api/v1/posts', {
+    text: 'A post that can be shared inside the timeline.', kind: 'STORY',
+  }, host)).json();
+  const shared = await call(env, 'POST', `/api/v1/posts/${post.id}/share`, null, guest);
+  assert.equal(shared.status, 200);
+  const sharedBody = await shared.json();
+  assert.equal(sharedBody.shares, 1);
+  assert.equal(sharedBody.shared_by.length, 1);
+  const repeated = await (await call(env, 'POST', `/api/v1/posts/${post.id}/share`, null, guest)).json();
+  assert.equal(repeated.shares, 1);
+  assert.equal(repeated.shared_by.length, 1);
+  const feed = await (await call(env, 'GET', '/api/v1/posts?mode=latest&limit=50')).json();
+  const feedPost = feed.find((p) => p.id === post.id);
+  assert.ok(feedPost);
+  assert.equal(feedPost.shared_by.length, 1);
+
+  const buy = await call(env, 'POST', '/api/v1/wallet/requests', {
+    kind: 'BUY', amount_mrc: 100, method: 'InstaPay', account_ref: 'TEST-BUY-1',
+  }, guest);
+  assert.equal(buy.status, 201);
+  const buyBody = await buy.json();
+  assert.equal(buyBody.status, 'PENDING');
+  assert.equal(buyBody.amount_egp, 100);
+  assert.match(buyBody.invoice_number, /^INV-\d{4}-\d{6}$/);
+  const invoices = await (await call(env, 'GET', '/api/v1/invoices', null, guest)).json();
+  assert.equal(invoices.find((i) => i.id === buyBody.invoice_id).status, 'PENDING');
+
+  const adminList = await (await call(env, 'GET', '/api/v1/admin/wallet/requests', null, admin)).json();
+  assert.ok(adminList.rows.some((r) => r.id === Number(buyBody.id)));
+  const approved = await call(env, 'POST',
+    `/api/v1/admin/wallet/requests/${buyBody.id}`, { status: 'APPROVED' }, admin);
+  assert.equal(approved.status, 200);
+  assert.equal((await (await call(env, 'GET', '/api/v1/wallet', null, guest)).json()).balance, 100);
+  assert.equal((await call(env, 'POST',
+    `/api/v1/admin/wallet/requests/${buyBody.id}`, { status: 'APPROVED' }, admin)).status, 409);
+
+  const cashout = await (await call(env, 'POST', '/api/v1/wallet/requests', {
+    kind: 'CASHOUT', amount_mrc: 40, method: 'InstaPay', account_ref: 'TEST-OUT-1',
+  }, guest)).json();
+  assert.equal((await (await call(env, 'GET', '/api/v1/wallet', null, guest)).json()).balance, 60);
+  const rejected = await call(env, 'POST',
+    `/api/v1/admin/wallet/requests/${cashout.id}`, { status: 'REJECTED', note: 'Missing reference' }, admin);
+  assert.equal(rejected.status, 200);
+  assert.equal((await (await call(env, 'GET', '/api/v1/wallet', null, guest)).json()).balance, 100);
+  const cashoutInvoice = (await (await call(env, 'GET', '/api/v1/invoices', null, guest)).json())
+    .find((i) => i.id === cashout.invoice_id);
+  assert.equal(cashoutInvoice.status, 'REJECTED');
+
+  const noEntityReward = await call(env, 'POST', '/api/v1/calls', {
+    title: 'Rewarded call without an entity', reward_mrc: 10,
+  }, host);
+  assert.equal(noEntityReward.status, 400);
+  const created = await call(env, 'POST', '/api/v1/calls', {
+    title: 'Community check-in', description: 'Quick alignment call.',
+  }, host);
+  assert.equal(created.status, 201);
+  const room = await created.json();
+  const rooms = await (await call(env, 'GET', '/api/v1/calls', null, guest)).json();
+  assert.ok(rooms.some((r) => r.id === room.id));
+  const joined = await call(env, 'POST', `/api/v1/calls/${room.id}/join`, {}, guest);
+  assert.equal(joined.status, 200);
+  assert.ok((await joined.json()).ice_servers.length >= 1);
+  const detail = await (await call(env, 'GET', `/api/v1/calls/${room.id}`, null, host)).json();
+  assert.ok(detail.participants.some((p) => p.user_id === guestMe.id && p.left_at == null));
+
+  const signal = await call(env, 'POST', `/api/v1/calls/${room.id}/signal`, {
+    to_user: guestMe.id, type: 'offer', payload: { sdp: 'v=0', type: 'offer' },
+  }, host);
+  assert.equal(signal.status, 200);
+  const signals = await (await call(env, 'GET', `/api/v1/calls/${room.id}/signals`, null, guest)).json();
+  assert.equal(signals.length, 1);
+  assert.equal(signals[0].type, 'offer');
+  assert.equal((await call(env, 'POST', `/api/v1/calls/${room.id}/end`, {}, guest)).status, 403);
+  assert.equal((await call(env, 'POST', `/api/v1/calls/${room.id}/end`, {}, host)).status, 200);
 });

@@ -17,9 +17,17 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: '22' }
-      - run: node --test --no-warnings test/worker.test.mjs
-      - run: npm install --no-audit --no-fund
-      # Needs repo secrets CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID (free account is fine).
-      - name: Deploy
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Run full Worker & Social API test suite
+        run: npm test
+      - name: Apply D1 database migrations
+        if: env.CLOUDFLARE_API_TOKEN != ''
+        run: npm run db:migrate:all
+      - name: Deploy Worker
         if: env.CLOUDFLARE_API_TOKEN != ''
         run: npx wrangler deploy
+      - name: Upload static landing pages to R2
+        if: env.CLOUDFLARE_API_TOKEN != ''
+        working-directory: landing
+        run: bash ./upload-to-r2.sh masareen-landing

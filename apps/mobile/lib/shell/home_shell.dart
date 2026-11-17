@@ -1,4 +1,6 @@
-﻿import 'package:flutter/foundation.dart';
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -6,8 +8,10 @@ import 'package:masaren/api_client.dart';
 import 'package:masaren/l10n.dart';
 import 'package:masaren/models.dart';
 import 'package:masaren/screens/admin_screen.dart';
+import 'package:masaren/screens/admin_insights_screen.dart';
 import 'package:masaren/screens/ads_screen.dart';
 import 'package:masaren/screens/courses_screen.dart';
+import 'package:masaren/screens/calls_screen.dart';
 import 'package:masaren/screens/create_post_screen.dart';
 import 'package:masaren/screens/create_leaderboard_screen.dart';
 import 'package:masaren/screens/event_dashboard_screen.dart';
@@ -89,6 +93,7 @@ class _HomeShellState extends State<HomeShell> {
   int _unreadMessages = 0;
   double? _balance;
   DateTime? _lastBack;
+  Timer? _balanceTimer;
 
   final _feedKey = GlobalKey<FeedScreenState>();
   final _profileKey = GlobalKey<ProfileScreenState>();
@@ -100,14 +105,21 @@ class _HomeShellState extends State<HomeShell> {
   };
 
   NavigatorState? get _tabNavigator => _navKeys[_tab]?.currentState;
-  bool get _wideWeb =>
-      kIsWeb && MediaQuery.sizeOf(context).width >= 1024;
+  bool get _wideWeb => kIsWeb && MediaQuery.sizeOf(context).width >= 1024;
 
   @override
   void initState() {
     super.initState();
     shellPush = pushInTab;
     _loadUser();
+    _balanceTimer = Timer.periodic(const Duration(seconds: 8), (_) async {
+      try {
+        final user = _user;
+        if (user == null) return;
+        final wallet = await AuthApi.wallet(user.id);
+        if (mounted) setState(() => _balance = wallet.balance);
+      } catch (_) {}
+    });
     AnalyticsService.instance.start();
     _startNotificationPolling();
     _checkForUpdates();
@@ -120,6 +132,7 @@ class _HomeShellState extends State<HomeShell> {
 
   @override
   void dispose() {
+    _balanceTimer?.cancel();
     AnalyticsService.instance.flush();
     if (shellPush != null) shellPush = null;
     _tabNotifier.dispose();
@@ -348,10 +361,12 @@ class _HomeShellState extends State<HomeShell> {
     if (screen is OpportunitiesScreen) return 'opportunities';
     if (screen is LiveTvScreen) return 'live';
     if (screen is PodcastHubScreen) return 'podcasts';
+    if (screen is CallsScreen) return 'calls';
     if (screen is VodHubScreen) return 'vod';
     if (screen is PassportScreen) return 'passport';
     if (screen is VerificationScreen) return 'verification';
     if (screen is AdminScreen) return 'admin';
+    if (screen is AdminInsightsScreen) return 'insights';
     if (screen is SettingsScreen) return 'settings';
     return _webActive;
   }
@@ -503,6 +518,7 @@ class _HomeShellState extends State<HomeShell> {
     final width = MediaQuery.sizeOf(context).width;
     final showRail = width >= 1380;
     return Scaffold(
+      key: ValueKey(Theme.of(context).brightness),
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
@@ -510,88 +526,103 @@ class _HomeShellState extends State<HomeShell> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-          _WebSidebar(
-            user: user,
-            balance: _balance,
-            activeKey: _webActive,
-            unreadMessages: _unreadMessages,
-            unreadNotifications: _unreadNotifications,
-            isDark: Theme.of(context).brightness == Brightness.dark,
-            isArabic:
-                Localizations.localeOf(context).languageCode == 'ar',
-            onTab: _webTab,
-            onProfile: () {
-              _webNavKey.currentState?.popUntil((r) => r.isFirst);
-              _goToProfile();
-            },
-            onCreate: _showCreateSheet,
-            onOpen: _openWeb,
-            onToggleTheme: widget.onToggleTheme,
-            onToggleLocale: widget.onToggleLocale,
-            onCheckUpdates: () => AppUpdater.checkAndPrompt(context,
-                silent: false),
-            onLogout: widget.onLogout,
-          ),
-          Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                return Listener(
-                  onPointerSignal: (event) {
-                    if (event is! PointerScrollEvent || _tab != 0) return;
-                    const feedWidth = 720.0;
-                    final gutter = (constraints.maxWidth - feedWidth) / 2;
-                    if (gutter <= 0) return;
-                    final x = event.localPosition.dx;
-                    if (x >= gutter && x <= constraints.maxWidth - gutter) {
-                      return;
-                    }
-                    _feedKey.currentState?.scrollBy(event.scrollDelta.dy);
+                _WebSidebar(
+                  user: user,
+                  balance: _balance,
+                  activeKey: _webActive,
+                  unreadMessages: _unreadMessages,
+                  unreadNotifications: _unreadNotifications,
+                  isDark: Theme.of(context).brightness == Brightness.dark,
+                  isArabic:
+                      Localizations.localeOf(context).languageCode == 'ar',
+                  onTab: _webTab,
+                  onProfile: () {
+                    _webNavKey.currentState?.popUntil((r) => r.isFirst);
+                    _goToProfile();
                   },
-                  child: ColoredBox(
-              color: Theme.of(context).scaffoldBackgroundColor,
-              child: Align(
-                alignment: Alignment.topCenter,
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 1040),
-                  child: SizedBox.expand(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).scaffoldBackgroundColor,
-                        border: BorderDirectional(
-                          start: BorderSide(
-                              color:
-                                  cs.outlineVariant.withValues(alpha: .45)),
-                          end: BorderSide(
-                              color:
-                                  cs.outlineVariant.withValues(alpha: .45)),
+                  onCreate: _showCreateSheet,
+                  onOpen: _openWeb,
+                  onToggleTheme: widget.onToggleTheme,
+                  onToggleLocale: widget.onToggleLocale,
+                  onCheckUpdates: () =>
+                      AppUpdater.checkAndPrompt(context, silent: false),
+                  onLogout: widget.onLogout,
+                ),
+                Expanded(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      return Listener(
+                        onPointerSignal: (event) {
+                          if (event is! PointerScrollEvent) return;
+                          final contentWidth = _tab == 0 ? 720.0 : 1040.0;
+                          final gutter =
+                              (constraints.maxWidth - contentWidth) / 2;
+                          if (gutter <= 0) return;
+                          final x = event.localPosition.dx;
+                          if (x >= gutter &&
+                              x <= constraints.maxWidth - gutter) {
+                            return;
+                          }
+                          final box = context.findRenderObject() as RenderBox?;
+                          if (box == null) return;
+                          final target = box.localToGlobal(Offset(
+                              constraints.maxWidth / 2,
+                              event.localPosition.dy));
+                          GestureBinding.instance.handlePointerEvent(
+                            PointerScrollEvent(
+                              position: target,
+                              scrollDelta: event.scrollDelta,
+                              kind: event.kind,
+                            ),
+                          );
+                        },
+                        child: ColoredBox(
+                          color: Theme.of(context).scaffoldBackgroundColor,
+                          child: Align(
+                            alignment: Alignment.topCenter,
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 1040),
+                              child: SizedBox.expand(
+                                child: DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context)
+                                        .scaffoldBackgroundColor,
+                                    border: BorderDirectional(
+                                      start: BorderSide(
+                                          color: cs.outlineVariant
+                                              .withValues(alpha: .45)),
+                                      end: BorderSide(
+                                          color: cs.outlineVariant
+                                              .withValues(alpha: .45)),
+                                    ),
+                                  ),
+                                  child: Navigator(
+                                    key: _webNavKey,
+                                    onGenerateRoute: (_) =>
+                                        _shellRoute(_webRoot()),
+                                    onDidRemovePage: (_) {},
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
-                      child: Navigator(
-                        key: _webNavKey,
-                        onGenerateRoute: (_) => _shellRoute(_webRoot()),
-                        onDidRemovePage: (_) {},
-                      ),
-                    ),
+                      );
+                    },
                   ),
                 ),
-              ),
-            ),
-                );
-              },
-            ),
-          ),
-          if (showRail)
-            _WebRightRail(
-              user: user,
-              balance: _balance,
-              onSearch: () => _openWeb(SearchScreen(user: user)),
-              onMarket: () => _openWeb(MarketScreen(user: user)),
-              onNews: () => _openWeb(NewsroomScreen(user: user)),
-              onProfile: () {
-                _webNavKey.currentState?.popUntil((r) => r.isFirst);
-                _goToProfile();
-              },
-            ),
+                if (showRail)
+                  _WebRightRail(
+                    user: user,
+                    balance: _balance,
+                    onSearch: () => _openWeb(SearchScreen(user: user)),
+                    onMarket: () => _openWeb(MarketScreen(user: user)),
+                    onNews: () => _openWeb(NewsroomScreen(user: user)),
+                    onProfile: () {
+                      _webNavKey.currentState?.popUntil((r) => r.isFirst);
+                      _goToProfile();
+                    },
+                  ),
               ],
             ),
           ),
@@ -819,8 +850,7 @@ class _ShellDrawer extends StatelessWidget {
                     _tile(context,
                         icon: Icons.candlestick_chart_outlined,
                         label: 'Impact Market',
-                        onTap: () =>
-                            _open(context, MarketScreen(user: user))),
+                        onTap: () => _open(context, MarketScreen(user: user))),
                     _tile(context,
                         icon: Icons.leaderboard_outlined,
                         label: _t(context, 'nav.leaderboards', 'Leaderboards'),
@@ -911,8 +941,7 @@ class _ShellDrawer extends StatelessWidget {
                     _tile(context,
                         icon: Icons.help_outline,
                         label: 'Help center',
-                        onTap: () =>
-                            _open(context, const HelpCenterScreen())),
+                        onTap: () => _open(context, const HelpCenterScreen())),
                     _tile(context,
                         icon: Icons.feedback_outlined,
                         label: _t(context, 'feedback.title', 'Send feedback'),
@@ -1540,55 +1569,55 @@ class _CreatePostSheet extends StatelessWidget {
                   itemCount: types.length,
                   itemBuilder: (_, i) {
                     final t = types[i];
-                return Clickable(
-                  onTap: () {
-                    final nav = navigator ?? Navigator.of(context);
-                    Navigator.of(context).pop();
-                    nav
-                        .push<bool>(_shellRoute(
-                            CreatePostScreen(user: user, initialKind: t.kind)))
-                        .then((result) {
-                      if (result == true) onPosted?.call();
-                    });
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: t.color.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(16),
-                      border:
-                          Border.all(color: t.color.withValues(alpha: 0.15)),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(14),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: t.color.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Icon(t.icon, color: t.color, size: 22),
+                    return Clickable(
+                      onTap: () {
+                        final nav = navigator ?? Navigator.of(context);
+                        Navigator.of(context).pop();
+                        nav
+                            .push<bool>(_shellRoute(CreatePostScreen(
+                                user: user, initialKind: t.kind)))
+                            .then((result) {
+                          if (result == true) onPosted?.call();
+                        });
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: t.color.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                              color: t.color.withValues(alpha: 0.15)),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(14),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: t.color.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(t.icon, color: t.color, size: 22),
+                              ),
+                              const Spacer(),
+                              Text(t.label,
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14,
+                                      color: cs.onSurface)),
+                              const SizedBox(height: 2),
+                              Text(t.desc,
+                                  style: TextStyle(
+                                      color: cs.onSurfaceVariant, fontSize: 11),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis),
+                            ],
                           ),
-                          const Spacer(),
-                          Text(t.label,
-                              style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 14,
-                                  color: cs.onSurface)),
-                          const SizedBox(height: 2),
-                          Text(t.desc,
-                              style: TextStyle(
-                                  color: cs.onSurfaceVariant, fontSize: 11),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis),
-                        ],
+                        ),
                       ),
-                    ),
-                  ),
-                );
+                    );
                   },
                 );
               },
@@ -1668,8 +1697,8 @@ class _WebSidebar extends StatelessWidget {
                   Image.asset('assets/images/masaren_logo.png', height: 30),
                   const Spacer(),
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: cs.primary.withValues(alpha: .09),
                       borderRadius: BorderRadius.circular(20),
@@ -1717,7 +1746,8 @@ class _WebSidebar extends StatelessWidget {
                                     ? user.role.toLowerCase()
                                     : '${balance!.toStringAsFixed(0)} MRC',
                                 style: TextStyle(
-                                    fontSize: 10.5, color: cs.onSurfaceVariant)),
+                                    fontSize: 10.5,
+                                    color: cs.onSurfaceVariant)),
                           ],
                         ),
                       ),
@@ -1775,27 +1805,29 @@ class _WebSidebar extends StatelessWidget {
                 children: [
                   _webSection(context, t('WORKSPACE', 'مساحة العمل')),
                   _webItem(context, Icons.home_outlined, Icons.home_rounded,
-                      t('Home', 'الرئيسية'), selected: activeKey == 'home',
-                      onTap: () => onTab(0)),
-                  _webItem(context, Icons.explore_outlined, Icons.explore_rounded,
-                      t('Explore', 'استكشف'), selected: activeKey == 'explore',
-                      onTap: () => onTab(1)),
+                      t('Home', 'الرئيسية'),
+                      selected: activeKey == 'home', onTap: () => onTab(0)),
+                  _webItem(context, Icons.explore_outlined,
+                      Icons.explore_rounded, t('Explore', 'استكشف'),
+                      selected: activeKey == 'explore', onTap: () => onTab(1)),
                   _webItem(context, Icons.candlestick_chart_outlined,
                       Icons.candlestick_chart, t('Impact Market', 'سوق الأثر'),
                       onTap: () => onOpen(MarketScreen(user: user))),
-                  _webItem(context, Icons.newspaper_outlined,
-                      Icons.newspaper, t('Newsroom', 'غرفة الأخبار'),
+                  _webItem(context, Icons.newspaper_outlined, Icons.newspaper,
+                      t('Newsroom', 'غرفة الأخبار'),
                       onTap: () => onOpen(NewsroomScreen(user: user))),
                   _webItem(context, Icons.event_outlined, Icons.event,
                       t('Events', 'الفعاليات'),
                       onTap: () => onOpen(EventsScreen(user: user))),
                   _webItem(context, Icons.school_outlined, Icons.school,
-                      t('Courses', 'الدورات'), selected: activeKey == 'courses',
-                      onTap: () => onTab(3)),
+                      t('Courses', 'الدورات'),
+                      selected: activeKey == 'courses', onTap: () => onTab(3)),
                   const SizedBox(height: 8),
                   _webSection(context, t('COMMUNITY', 'المجتمع')),
                   _webItem(context, Icons.forum_outlined, Icons.forum,
-                      t('Messages', 'الرسائل'), badge: unreadMessages, selected: activeKey == 'messages',
+                      t('Messages', 'الرسائل'),
+                      badge: unreadMessages,
+                      selected: activeKey == 'messages',
                       onTap: () => onOpen(MessagesScreen(user: user))),
                   _webItem(context, Icons.notifications_outlined,
                       Icons.notifications, t('Notifications', 'الإشعارات'),
@@ -1809,8 +1841,8 @@ class _WebSidebar extends StatelessWidget {
                       t('Search', 'البحث'),
                       onTap: () => onOpen(SearchScreen(user: user))),
                   _webItem(context, Icons.person_outline, Icons.person,
-                      t('My profile', 'ملفي'), selected: activeKey == 'profile',
-                      onTap: onProfile),
+                      t('My profile', 'ملفي'),
+                      selected: activeKey == 'profile', onTap: onProfile),
                   const SizedBox(height: 8),
                   _webSection(context, t('GROW', 'النمو')),
                   _webItem(context, Icons.hub_outlined, Icons.hub,
@@ -1822,10 +1854,28 @@ class _WebSidebar extends StatelessWidget {
                   _webItem(context, Icons.work_outline, Icons.work,
                       t('Opportunities', 'الفرص'),
                       onTap: () => onOpen(OpportunitiesScreen(user: user))),
+                  _webItem(context, Icons.insights_outlined, Icons.insights,
+                      t('Event dashboard', 'لوحة الفعاليات'),
+                      onTap: () => onOpen(EventDashboardScreen(user: user))),
+                  _webItem(context, Icons.account_balance_outlined,
+                      Icons.account_balance, t('Universities', 'الجامعات'),
+                      onTap: () => onOpen(UniversitiesScreen(user: user))),
+                  _webItem(context, Icons.science_outlined, Icons.science,
+                      t('Research hub', 'مركز البحث'),
+                      onTap: () => onOpen(ResearchHubScreen(user: user))),
+                  _webItem(context, Icons.leaderboard_outlined,
+                      Icons.leaderboard, t('Leaderboards', 'لوحات التصنيف'),
+                      onTap: () => onOpen(CreateLeaderboardScreen(user: user))),
+                  _webItem(context, Icons.video_call_outlined, Icons.video_call,
+                      t('Calls & rooms', 'المكالمات والغرف'),
+                      selected: activeKey == 'calls',
+                      onTap: () => onOpen(CallsScreen(user: user))),
                   _webItem(context, Icons.live_tv_outlined, Icons.live_tv,
-                      t('Live TV', 'البث المباشر'), onTap: () => onOpen(const LiveTvScreen())),
+                      t('Live TV', 'البث المباشر'),
+                      onTap: () => onOpen(const LiveTvScreen())),
                   _webItem(context, Icons.podcasts, Icons.podcasts,
-                      t('Podcasts', 'البودكاست'), onTap: () => onOpen(PodcastHubScreen(user: user))),
+                      t('Podcasts', 'البودكاست'),
+                      onTap: () => onOpen(PodcastHubScreen(user: user))),
                   _webItem(context, Icons.video_library_outlined,
                       Icons.video_library, t('VOD', 'الفيديو حسب الطلب'),
                       onTap: () => onOpen(VodHubScreen(user: user))),
@@ -1836,7 +1886,8 @@ class _WebSidebar extends StatelessWidget {
                       Icons.workspace_premium, t('MASAREEN Pro', 'مصارين برو'),
                       onTap: () => onOpen(ProScreen(user: user))),
                   _webItem(context, Icons.campaign_outlined, Icons.campaign,
-                      t('Ads Manager', 'إدارة الإعلانات'), onTap: () => onOpen(AdsScreen(user: user))),
+                      t('Ads Manager', 'إدارة الإعلانات'),
+                      onTap: () => onOpen(AdsScreen(user: user))),
                   _webItem(context, Icons.badge_outlined, Icons.badge,
                       t('Impact passport', 'جواز الأثر'),
                       onTap: () => onOpen(PassportScreen(user: user))),
@@ -1844,9 +1895,26 @@ class _WebSidebar extends StatelessWidget {
                       Icons.verified_user, t('Verification', 'التوثيق'),
                       onTap: () => onOpen(VerificationScreen(user: user))),
                   if (admin)
-                    _webItem(context, Icons.admin_panel_settings_outlined,
-                        Icons.admin_panel_settings, t('Administration', 'الإدارة'),
+                    _webItem(
+                        context,
+                        Icons.admin_panel_settings_outlined,
+                        Icons.admin_panel_settings,
+                        t('Administration', 'الإدارة'),
                         onTap: () => onOpen(AdminScreen(user: user))),
+                  if (admin)
+                    _webItem(
+                        context,
+                        Icons.query_stats_outlined,
+                        Icons.query_stats,
+                        t('Reports & analytics', 'التقارير والتحليلات'),
+                        selected: activeKey == 'insights',
+                        onTap: () => onOpen(AdminInsightsScreen(user: user))),
+                  _webItem(context, Icons.help_outline, Icons.help,
+                      t('Help center', 'مركز المساعدة'),
+                      onTap: () => onOpen(const HelpCenterScreen())),
+                  _webItem(context, Icons.feedback_outlined, Icons.feedback,
+                      t('Send feedback', 'أرسل ملاحظات'),
+                      onTap: () => onOpen(FeedbackScreen(user: user))),
                 ],
               ),
             ),
@@ -1857,16 +1925,23 @@ class _WebSidebar extends StatelessWidget {
                 children: [
                   _webIconButton(
                       context,
-                      isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+                      isDark
+                          ? Icons.light_mode_outlined
+                          : Icons.dark_mode_outlined,
                       'Theme',
                       () => onToggleTheme?.call()),
-                  _webIconButton(context, Icons.language_outlined,
-                      'Language', () => onToggleLocale?.call()),
-                  _webIconButton(context, Icons.settings_outlined, 'Settings',
-                      () => onOpen(SettingsScreen(user: user, onLogout: onLogout))),
+                  _webIconButton(context, Icons.language_outlined, 'Language',
+                      () => onToggleLocale?.call()),
+                  _webIconButton(
+                      context,
+                      Icons.settings_outlined,
+                      'Settings',
+                      () => onOpen(
+                          SettingsScreen(user: user, onLogout: onLogout))),
                   const Spacer(),
-                  _webIconButton(context, Icons.logout_outlined, 'Sign out',
-                      onLogout, danger: true),
+                  _webIconButton(
+                      context, Icons.logout_outlined, 'Sign out', onLogout,
+                      danger: true),
                 ],
               ),
             ),
@@ -1903,6 +1978,7 @@ class _WebSidebar extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 2),
       child: InkWell(
         borderRadius: BorderRadius.circular(11),
+        hoverColor: cs.primary.withValues(alpha: .055),
         onTap: onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
@@ -1914,8 +1990,7 @@ class _WebSidebar extends StatelessWidget {
           child: Row(
             children: [
               Icon(selected ? activeIcon : icon,
-                  size: 19,
-                  color: selected ? cs.primary : cs.onSurfaceVariant),
+                  size: 19, color: selected ? cs.primary : cs.onSurfaceVariant),
               const SizedBox(width: 11),
               Expanded(
                 child: Text(label,
@@ -1947,8 +2022,8 @@ class _WebSidebar extends StatelessWidget {
     );
   }
 
-  Widget _webIconButton(BuildContext context, IconData icon, String tooltip,
-      VoidCallback onTap,
+  Widget _webIconButton(
+      BuildContext context, IconData icon, String tooltip, VoidCallback onTap,
       {bool danger = false}) {
     final cs = Theme.of(context).colorScheme;
     return IconButton(
@@ -1956,8 +2031,7 @@ class _WebSidebar extends StatelessWidget {
       onPressed: onTap,
       iconSize: 19,
       visualDensity: VisualDensity.compact,
-      icon: Icon(icon,
-          color: danger ? AppColors.warm : cs.onSurfaceVariant),
+      icon: Icon(icon, color: danger ? AppColors.warm : cs.onSurfaceVariant),
     );
   }
 }
@@ -2090,17 +2164,21 @@ class _WebRightRailState extends State<_WebRightRail> {
               ),
             ),
             const SizedBox(height: 18),
-            _heading(context, t('TRENDING MARKETS', 'الأسواق الرائجة'), t('See all', 'عرض الكل'), widget.onMarket),
+            _heading(context, t('TRENDING MARKETS', 'الأسواق الرائجة'),
+                t('See all', 'عرض الكل'), widget.onMarket),
             const SizedBox(height: 6),
             if (markets.isEmpty)
-              _muted(context, t('Market data is loading...', 'جارٍ تحميل بيانات السوق...'))
+              _muted(context,
+                  t('Market data is loading...', 'جارٍ تحميل بيانات السوق...'))
             else
               ...markets.map((m) => _marketRow(context, m)),
             const SizedBox(height: 18),
-            _heading(context, t('VERIFIED NEWSROOM', 'غرفة أخبار موثقة'), t('Open', 'فتح'), widget.onNews),
+            _heading(context, t('VERIFIED NEWSROOM', 'غرفة أخبار موثقة'),
+                t('Open', 'فتح'), widget.onNews),
             const SizedBox(height: 6),
             if (news.isEmpty)
-              _muted(context, t('No published news yet.', 'لا توجد أخبار منشورة بعد.'))
+              _muted(context,
+                  t('No published news yet.', 'لا توجد أخبار منشورة بعد.'))
             else
               ...news.map((n) => _newsRow(context, n)),
             const SizedBox(height: 18),
@@ -2124,16 +2202,13 @@ class _WebRightRailState extends State<_WebRightRail> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 13)),
+                                  fontWeight: FontWeight.w800, fontSize: 13)),
                           const SizedBox(height: 2),
-                          Text(
-                              widget.user.email,
+                          Text(widget.user.email,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                  color: cs.onSurfaceVariant,
-                                  fontSize: 10.5)),
+                                  color: cs.onSurfaceVariant, fontSize: 10.5)),
                         ],
                       ),
                     ),
@@ -2145,7 +2220,8 @@ class _WebRightRailState extends State<_WebRightRail> {
             ),
             const SizedBox(height: 14),
             Text(
-                t('MASAREEN Web 0.4.13  |  one engine, every screen', 'مصارين ويب 0.4.13  |  محرك واحد لكل الشاشات'),
+                t('MASAREEN Web 0.4.13  |  one engine, every screen',
+                    'مصارين ويب 0.4.13  |  محرك واحد لكل الشاشات'),
                 style: TextStyle(
                     fontSize: 9.5,
                     color: cs.onSurfaceVariant.withValues(alpha: .7))),
@@ -2155,8 +2231,8 @@ class _WebRightRailState extends State<_WebRightRail> {
     );
   }
 
-  Widget _heading(BuildContext context, String title, String action,
-      VoidCallback onTap) {
+  Widget _heading(
+      BuildContext context, String title, String action, VoidCallback onTap) {
     final cs = Theme.of(context).colorScheme;
     return Row(
       children: [
@@ -2174,8 +2250,8 @@ class _WebRightRailState extends State<_WebRightRail> {
               padding: EdgeInsets.zero,
               minimumSize: Size.zero,
               tapTargetSize: MaterialTapTargetSize.shrinkWrap),
-          child: Text(action,
-              style: TextStyle(fontSize: 10.5, color: cs.primary)),
+          child:
+              Text(action, style: TextStyle(fontSize: 10.5, color: cs.primary)),
         ),
       ],
     );
@@ -2183,7 +2259,8 @@ class _WebRightRailState extends State<_WebRightRail> {
 
   Widget _muted(BuildContext context, String text) => Text(text,
       style: TextStyle(
-          fontSize: 11.5, color: Theme.of(context).colorScheme.onSurfaceVariant));
+          fontSize: 11.5,
+          color: Theme.of(context).colorScheme.onSurfaceVariant));
 
   Widget _panel(BuildContext context,
       {required Widget child, Gradient? gradient}) {
@@ -2244,14 +2321,15 @@ class _WebRightRailState extends State<_WebRightRail> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text((m['name'] ?? '').toString(),
-                      textDirection: textDirectionFor((m['name'] ?? '').toString()),
+                      textDirection:
+                          textDirectionFor((m['name'] ?? '').toString()),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                           fontSize: 11.5, fontWeight: FontWeight.w700)),
                   Text('${(m['price_mrc'] as num).toStringAsFixed(1)} MRC',
-                      style: TextStyle(
-                          fontSize: 10, color: cs.onSurfaceVariant)),
+                      style:
+                          TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
                 ],
               ),
             ),
@@ -2259,7 +2337,8 @@ class _WebRightRailState extends State<_WebRightRail> {
                 style: TextStyle(
                     fontSize: 10.5,
                     fontWeight: FontWeight.w800,
-                    color: positive ? const Color(0xFF0F9D58) : AppColors.warm)),
+                    color:
+                        positive ? const Color(0xFF0F9D58) : AppColors.warm)),
           ],
         ),
       ),
@@ -2282,9 +2361,7 @@ class _WebRightRailState extends State<_WebRightRail> {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                    fontSize: 11.5,
-                    height: 1.35,
-                    fontWeight: FontWeight.w700)),
+                    fontSize: 11.5, height: 1.35, fontWeight: FontWeight.w700)),
             const SizedBox(height: 3),
             Row(
               children: [
@@ -2297,8 +2374,8 @@ class _WebRightRailState extends State<_WebRightRail> {
                       '${n['outlet_name'] ?? 'Newsroom'}  |  ${n['rating_avg'] ?? 0} stars',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                          fontSize: 9.5, color: cs.onSurfaceVariant)),
+                      style:
+                          TextStyle(fontSize: 9.5, color: cs.onSurfaceVariant)),
                 ),
               ],
             ),
