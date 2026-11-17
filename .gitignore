@@ -101,3 +101,11 @@ tools/media/out/
 # Generated Flutter platform projects for the experimental app
 apps/mobile_next/android/
 apps/mobile_next/ios/
+
+# Generated live TV bulletin work files
+tools/media/bulletin-slides/
+tools/media/bulletin-concat.txt
+tools/media/bulletin-voice.txt
+tools/media/bulletin-voice.wav
+tools/media/tv-frame.jpg
+tools/media/tv/source/
